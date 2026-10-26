@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+from tesserae.spec import marker
 from tesserae.spec.nodes import LoadError, parse_view
 from tesserae.spec.translate import Translator, to_yaml
 from tesserae.spec.widgets import WidgetDecl, decl_from_params
@@ -158,7 +159,7 @@ def test_the_repository_has_the_files_the_sweep_expects():
 
 @pytest.mark.parametrize("path", FILES, ids=lambda p: str(p.relative_to(ROOT)))
 def test_every_file_translates_and_loads_in_the_new_syntax(path):
-    old = yaml.safe_load(path.read_text(encoding="utf-8"))
+    old = marker.strip(yaml.safe_load(path.read_text(encoding="utf-8")))  # the first-line marker is not part of any syntax to translate
     params = params_for(path)
     translator = Translator(params_of=params.get)
     text = to_yaml(translator.translate(old))
@@ -176,7 +177,7 @@ def test_the_known_gaps_are_still_gaps():
     failing = set()
     for path in FILES:
         params = params_for(path)
-        text = to_yaml(Translator(params_of=params.get).translate(yaml.safe_load(path.read_text(encoding="utf-8"))))
+        text = to_yaml(Translator(params_of=params.get).translate(marker.strip(yaml.safe_load(path.read_text(encoding="utf-8")))))
         try:
             parse_view(text, path.name, resolver=resolver_for(params))
         except LoadError:

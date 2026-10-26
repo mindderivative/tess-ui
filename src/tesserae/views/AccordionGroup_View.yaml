@@ -1,3 +1,4 @@
+tesserae: 0.5
 # Several accordion sections as one set, with a divider between them. `items` is a list of {value, title, text} (the text is the section's content; for more than text,
 # use `Accordion` sections yourself). `mode: single` keeps one open (opening one closes the rest), `multiple` lets any number be; `open` is the value that is open, or the list
 # of values with `multiple`, and is two-way. The up and down arrows move between the headers, and Home and End go to the first and last.

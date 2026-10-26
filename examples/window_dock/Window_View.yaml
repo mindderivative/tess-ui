@@ -1,3 +1,4 @@
+tesserae: 0.5
 # The whole window: its title bar, a rail, a dock of panels around the screens, and a status bar.
 # Edit it while the app runs with hot_reload=True: the title, sizes and panels change in place, and a panel the user
 # moved stays where they put it.

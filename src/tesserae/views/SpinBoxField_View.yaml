@@ -1,3 +1,4 @@
+tesserae: 0.5
 # A spin box with a visible label above it and a line of supporting or error text under it, as a text field has them. `value` is two-way. The label also names the
 # spin box for a screen reader; when `error` is not empty it replaces the supporting text, in the error colour.
 params:

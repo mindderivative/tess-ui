@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.5.1.5
+
+[#292](https://github.com/mindderivative/tesserae/issues/292): the first line of a Tesserae file.
+
+### Added
+
+- **A view, stylesheet or theme may start with `tesserae: 0.5`**, the release series it was written for (the first two numbers of Tesserae's version). It is read before anything else in the
+  file, and nothing else in the file sees it (not a node's properties, a stylesheet's `styles:` or a theme's fields). It must be the first line: a `tesserae:` under a comment, a blank line
+  or `---` is an error that names the line it is on. A value that is not a release series says to write `tesserae: 0.5`; a newer series says to upgrade, an older one to run
+  `tesserae migrate-yaml`. It is **optional in this series**: a file without it loads, and the log says once, at the info level, that it has none. A later series will require it.
+  [The first line](guide/naming-convention.md#the-first-line) describes it.
+- **Every file Tesserae ships or writes has it:** the 90 shipped views and stylesheets, the default theme, the five project templates (`tesserae new`, `tesserae add screen`), the examples,
+  the whole-file blocks in the docs, and everything `tesserae migrate-yaml` writes (the key, then the file's own comments). `tools/stamp_language.py --write` puts it on the shipped files and
+  changes its value when a new series is started.
+- **A mapping read from such a file keeps working:** `yaml.safe_load` of a stylesheet or theme file with the key, given to `App(stylesheet_spec=)`, `custom_theme_spec=` or `RuleSheet.of`, is accepted.
+- The editor schemas allow the key (`tesserae-widget-schema.json`, `tesserae-stylesheet-schema.json`, `tesserae-theme-schema.json`), checked with the real YAML language server.
+
+### Changed
+
+- **A schema modeline (`# yaml-language-server: $schema=...`) cannot be used in a file that starts with the key.** The server reads a modeline only from the comments before the first key (tried on the
+  real server: line 1 applies, under the key or beside it does not). Such a file takes its schema from the `yaml.schemas` setting that `tesserae schema --project` prints.
+- `migrate-yaml` writes a translated file with a block-style top level (`widget: Rect`, not `{widget: Rect}`), since a flow mapping cannot follow the first line.
+
 ## 0.5.1.4
 
 ### Changed

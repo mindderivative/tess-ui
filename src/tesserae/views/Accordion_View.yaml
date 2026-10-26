@@ -1,3 +1,4 @@
+tesserae: 0.5
 # One section of an accordion: a 56 pixel header button (the title, and a chevron that turns over when it opens) and, while `expanded`, the content (the children). A press,
 # Enter or Space toggles it; `expanded` is two-way. A screen reader hears a button that says whether it is expanded and what it controls. `AccordionGroup` makes several
 # of them behave as one set.

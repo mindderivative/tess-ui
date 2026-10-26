@@ -1,3 +1,4 @@
+tesserae: 0.5
 # One destination of a navigation rail: an icon in a 56 by 32 pill with its label under it (or, in an expanded rail, a 56 high pill with the label beside the
 # icon). A selected item has a `secondary_container` pill; a `badge` sits on the icon. A screen reader hears a link named by the label, current when it is
 # selected. `handlers: {on_click: ...}` on the call is what a press does.

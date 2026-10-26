@@ -1,3 +1,4 @@
+tesserae: 0.5
 # One row. A view with `params:` is a component: Tasks_View.yaml calls it as `widget: TaskItem`.
 params:
   task: {type: dict, required: true}

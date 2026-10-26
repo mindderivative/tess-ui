@@ -7,6 +7,7 @@ The look of [`TextField`](../../components/text-fields.md) (in [Text fields](../
 ## The stylesheet
 
 ```yaml
+tesserae: 0.5
 # The look of TextField (Material 3). A state here is the state of the whole field: `focused` is true while anything inside it has the focus.
 # A later rule wins a tie, so error comes after focused and hovered: a field in error keeps the error colour while it is used.
 styles:

@@ -2674,6 +2674,13 @@
   ],
   "additionalProperties": false,
   "properties": {
+    "tesserae": {
+      "type": [
+        "number",
+        "string"
+      ],
+      "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+    },
     "styles": {
       "type": "array",
       "items": {

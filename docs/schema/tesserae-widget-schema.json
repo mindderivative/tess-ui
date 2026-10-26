@@ -171,6 +171,13 @@
     },
     "expects": {
       "type": "object"
+    },
+    "tesserae": {
+      "type": [
+        "number",
+        "string"
+      ],
+      "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
     }
   },
   "allOf": [
@@ -270,6 +277,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -349,6 +363,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "title",
             "expanded",
@@ -454,6 +469,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -515,6 +537,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "items",
             "mode",
@@ -619,6 +642,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -689,6 +719,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "value",
             "limit",
@@ -793,6 +824,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -972,6 +1010,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "label",
             "variant",
@@ -1083,6 +1122,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -1224,6 +1270,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "items",
             "mode",
@@ -1334,6 +1381,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "draw": {
             "anyOf": [
               {
@@ -1371,6 +1425,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "draw"
           ]
         }
@@ -1471,6 +1526,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -1615,6 +1677,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "variant",
             "headline",
@@ -1725,6 +1788,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -1824,6 +1894,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "items",
             "variant",
@@ -1931,6 +2002,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "checked": {
             "anyOf": [
               {
@@ -2003,6 +2081,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "checked",
             "disabled",
             "error",
@@ -2106,6 +2185,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -2275,6 +2361,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "label",
             "variant",
@@ -2386,6 +2473,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -2504,6 +2598,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "chips",
             "mode",
@@ -2613,6 +2708,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "value": {
             "anyOf": [
               {
@@ -2698,6 +2800,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "value",
             "track",
             "wavy",
@@ -2803,6 +2906,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -2870,6 +2980,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "disabled",
             "measured_width",
@@ -2973,6 +3084,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -3092,6 +3210,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "open",
             "date",
@@ -3200,6 +3319,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -3291,6 +3417,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "day",
             "selected",
@@ -3396,6 +3523,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -3539,6 +3673,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "open",
             "headline",
@@ -3650,6 +3785,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -3724,6 +3866,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "variant",
             "orientation",
@@ -3828,6 +3971,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -3871,6 +4021,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "closed"
           ]
@@ -3973,6 +4124,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -4028,6 +4186,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "title",
             "closable"
@@ -4130,6 +4289,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -4243,6 +4409,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "icon",
             "label",
@@ -4350,6 +4517,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -4414,6 +4588,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "label",
             "x",
@@ -4518,6 +4693,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "icon": {
             "anyOf": [
               {
@@ -4579,6 +4761,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "icon",
             "path",
             "view_box"
@@ -4681,6 +4864,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -4863,6 +5053,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "icon",
             "selected_icon",
@@ -4975,6 +5166,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "src": {
             "anyOf": [
               {
@@ -5043,6 +5241,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "src",
             "fit",
             "alt",
@@ -5146,6 +5345,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "value": {
             "anyOf": [
@@ -5268,6 +5474,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "value",
             "track",
             "thickness",
@@ -5375,6 +5582,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "text": {
             "anyOf": [
@@ -5568,6 +5782,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "text",
             "typography_role",
             "font_family",
@@ -5681,6 +5896,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -5869,6 +6091,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "headline",
             "supporting",
@@ -5983,6 +6206,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "contained": {
             "anyOf": [
               {
@@ -6032,6 +6262,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "contained",
             "label"
           ]
@@ -6133,6 +6364,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -6300,6 +6538,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "frosted",
             "open",
@@ -6413,6 +6652,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -6507,6 +6753,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "label",
             "icon",
@@ -6614,6 +6861,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -6696,6 +6950,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "frosted",
             "open",
@@ -6802,6 +7057,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -6884,6 +7146,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "label",
             "icon",
@@ -6990,6 +7253,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -7072,6 +7342,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "frosted",
             "open",
@@ -7178,6 +7449,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -7248,6 +7526,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "items",
             "selected",
@@ -7353,6 +7632,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -7408,6 +7694,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "items",
             "width"
@@ -7511,6 +7798,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -7597,6 +7891,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "frosted",
             "items",
@@ -7703,6 +7998,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -7797,6 +8099,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "icon",
             "label",
@@ -7904,6 +8207,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -7986,6 +8296,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "screen",
             "label",
@@ -8092,6 +8403,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -8163,6 +8481,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "items",
             "expanded",
@@ -8267,6 +8586,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -8346,6 +8672,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "edges",
             "snap",
@@ -8450,6 +8777,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -8600,6 +8934,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "open",
             "anchor",
@@ -8710,6 +9045,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -8789,6 +9131,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "page",
             "pages",
@@ -8894,6 +9237,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -8964,6 +9314,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "period",
             "disabled",
@@ -9068,6 +9419,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "selected": {
             "anyOf": [
               {
@@ -9151,6 +9509,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "selected",
             "group",
             "disabled",
@@ -9255,6 +9614,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "low": {
             "anyOf": [
@@ -9428,6 +9794,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "low",
             "high",
             "min",
@@ -9540,6 +9907,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -9583,6 +9957,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "disabled"
           ]
@@ -9684,6 +10059,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -9796,6 +10178,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "orientation",
             "snap",
@@ -9902,6 +10285,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -10066,6 +10456,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "frosted",
             "query",
@@ -10177,6 +10568,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -10320,6 +10718,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "frosted",
             "open",
@@ -10431,6 +10830,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -10501,6 +10907,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "options",
             "selected",
@@ -10606,6 +11013,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -10709,6 +11123,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "open",
             "title",
@@ -10815,6 +11230,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -10946,6 +11368,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "open",
             "title",
@@ -11055,6 +11478,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -11158,6 +11588,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "title",
             "back",
@@ -11264,6 +11695,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "value": {
             "anyOf": [
@@ -11425,6 +11863,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "value",
             "min",
             "max",
@@ -11535,6 +11974,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           }
         },
         "required": [
@@ -11560,7 +12006,8 @@
             "focus_group",
             "tooltip",
             "params",
-            "expects"
+            "expects",
+            "tesserae"
           ]
         }
       }
@@ -11660,6 +12107,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -11812,6 +12266,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "open",
             "message",
@@ -11923,6 +12378,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -12005,6 +12467,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "messages",
             "chosen",
@@ -12110,6 +12573,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "value": {
             "anyOf": [
@@ -12251,6 +12721,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "value",
             "min",
             "max",
@@ -12360,6 +12831,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -12536,6 +13014,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "label",
             "supporting",
@@ -12648,6 +13127,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -12779,6 +13265,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "label",
             "icon",
@@ -12888,6 +13375,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -12994,6 +13488,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "orientation",
             "position",
@@ -13101,6 +13596,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -13177,6 +13679,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "text",
             "width",
@@ -13284,6 +13787,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "src": {
             "anyOf": [
               {
@@ -13345,6 +13855,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "src",
             "content",
             "alt"
@@ -13448,6 +13959,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "selected": {
             "anyOf": [
               {
@@ -13519,6 +14037,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "selected",
             "disabled",
             "label",
@@ -13623,6 +14142,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -13696,6 +14222,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "tabs",
             "selected",
@@ -13800,6 +14327,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "text": {
             "anyOf": [
@@ -13977,6 +14511,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "text",
             "typography_role",
             "font_family",
@@ -14089,6 +14624,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -14448,6 +14990,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "variant",
             "label",
@@ -14574,6 +15117,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "text": {
             "anyOf": [
@@ -14825,6 +15375,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "text",
             "placeholder",
             "multiline",
@@ -14944,6 +15495,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -15023,6 +15581,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "hour",
             "minute",
@@ -15128,6 +15687,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -15231,6 +15797,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "open",
             "hour",
@@ -15338,6 +15905,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "hour": {
             "anyOf": [
               {
@@ -15426,6 +16000,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "hour",
             "minute",
             "mode",
@@ -15531,6 +16106,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -15595,6 +16177,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "title",
             "icon",
@@ -15698,6 +16281,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -15889,6 +16479,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "variant",
             "orientation",
@@ -16004,6 +16595,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -16152,6 +16750,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "frosted",
             "title",
@@ -16263,6 +16862,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -16333,6 +16939,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "nodes",
             "expanded",
@@ -16438,6 +17045,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -16520,6 +17134,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "nodes",
             "level",
@@ -16625,6 +17240,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -16753,6 +17375,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "label",
             "icon",
@@ -16861,6 +17484,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -17032,6 +17662,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "frame",
             "width",
@@ -17145,6 +17776,13 @@
           "expects": {
             "type": "object"
           },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+          },
           "children": {
             "type": "array",
             "items": {
@@ -17249,6 +17887,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "item_height",
             "overscan",
@@ -17355,6 +17994,13 @@
           },
           "expects": {
             "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -17508,6 +18154,7 @@
             "tooltip",
             "params",
             "expects",
+            "tesserae",
             "children",
             "title",
             "borderless",

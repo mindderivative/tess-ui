@@ -1,3 +1,4 @@
+tesserae: 0.5
 # The Material 3 chip: assist (an action), filter (a toggle), input (a piece of what the user entered, with a close) or suggestion (a suggested reply or
 # query). 32 pixels tall with 8 pixel corners, a `label_large` label and an optional 18 pixel leading `icon` or 24 pixel avatar (`avatar_text`, letters in a
 # circle). A filter chip flips `selected` on a press, and while it is on it is `secondary_container` with a check in place of its icon. An input chip has a close

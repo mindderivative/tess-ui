@@ -3,6 +3,13 @@
 What to change in an existing app when you upgrade. Each section is the release you are moving to; the
 [changelog](changelog.md) has everything else that changed.
 
+## The first line of a file
+
+Nothing has to change. A view, stylesheet or theme may start with `tesserae: 0.5` (the release series), and the files Tesserae ships and writes do: `tesserae new`,
+`tesserae add screen` and `tesserae migrate-yaml`. A file without it loads and is noted once in the log (info level); a later series will ask for it. To add it to your
+own files, put it on the first line, above the comments: [the first line](guide/naming-convention.md#the-first-line) says what is checked. A schema modeline
+(`# yaml-language-server: $schema=...`) cannot sit under it; use the `yaml.schemas` setting of [Editor Support](guide/editor-support.md).
+
 ## To 0.5.1
 
 Nothing in a working app has to change, but one thing that loaded before is now refused: a handler that assigns to a name it cannot write (a plain param, a loop

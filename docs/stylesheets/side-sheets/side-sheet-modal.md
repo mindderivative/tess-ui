@@ -7,6 +7,7 @@ The look of [`SideSheetModal`](../../components/side-sheets.md) (in [Side sheets
 ## The stylesheet
 
 ```yaml
+tesserae: 0.5
 # The look of the modal side sheet: surface_container_low at level 1, with 16 pixel corners on the side that opens onto the content.
 styles:
   - widget: SideSheetModal

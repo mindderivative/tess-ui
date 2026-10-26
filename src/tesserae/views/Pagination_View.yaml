@@ -1,3 +1,4 @@
+tesserae: 0.5
 # Page navigation (not Material 3 itself, which has page indicators and a pager): previous and next, and between them the page numbers with an ellipsis for
 # the stretches left out, the current page filled. `page` (two-way, from 1) is the page showing and `pages` how many there are; the first, the last and the
 # pages beside the current one always show. `compact` is a "3 of 12" between the arrows, and `dots` is a row of dots, one to a page, for a carousel.

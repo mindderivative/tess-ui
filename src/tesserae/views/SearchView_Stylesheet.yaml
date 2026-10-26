@@ -1,3 +1,4 @@
+tesserae: 0.5
 # The look of SearchView (Material 3): a surface_container_high panel with 28 pixel corners, 8 pixels above and below the rows.
 styles:
   - widget: SearchView

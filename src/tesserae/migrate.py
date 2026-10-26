@@ -25,6 +25,7 @@ import yaml
 
 from tesserae.spec.nodes import LoadError, parse_view
 from tesserae.spec.rules import RuleSheet, is_rule_sheet
+from tesserae.spec import marker
 from tesserae.spec.translate import Translator, to_yaml, translate_rules
 from tesserae.spec.widgets import WidgetDecl, decl_from_params
 
@@ -103,6 +104,11 @@ def _header(text: str) -> str:
     return "\n".join(lines) + "\n" if lines else ""
 
 
+def _stamped(text: str) -> str:
+    """A migrated file starts with the line it was written for (`tesserae: 0.5`), then its own comments."""
+    return f"{marker.KEY}: {marker.LINE}\n{text}"
+
+
 def _has_inner_comments(text: str) -> bool:
     """Whether the body of a file (after its header) has a `#` comment, not counting a `#` inside a quoted string (a colour)."""
     for line in text[len(_header(text)):].splitlines():
@@ -172,7 +178,7 @@ def migrate_project(root: str | Path, *, write: bool = False, force: bool = Fals
             new = {"name": stem, **new}
             translator.notes.append(f"named '{stem}', the bind key for {viewmodels[stem].name}")
         text = path.read_text(encoding="utf-8")
-        result = FileResult(path, "migrated", path.with_name(f"{stem}_View.yaml"), _header(text) + to_yaml(new), translator.notes,
+        result = FileResult(path, "migrated", path.with_name(f"{stem}_View.yaml"), _stamped(_header(text) + to_yaml(new)), translator.notes,
                             lost_comments=_has_inner_comments(text))
         assert result.new_path is not None
         if result.new_path != path and (result.new_path in claimed or result.new_path.exists()):
@@ -192,7 +198,7 @@ def migrate_project(root: str | Path, *, write: bool = False, force: bool = Fals
         own = stem if stem in params or (path.parent / f"{stem}_Component.yaml").exists() else None
         new, notes = translate_rules(data, own)
         text = path.read_text(encoding="utf-8")
-        result = FileResult(path, "migrated", path, _header(text) + to_yaml(new), notes, lost_comments=_has_inner_comments(text))
+        result = FileResult(path, "migrated", path, _stamped(_header(text) + to_yaml(new)), notes, lost_comments=_has_inner_comments(text))
         translated[path] = result
         report.results.append(result)
 
@@ -226,7 +232,7 @@ def _validate(translated: dict[Path, FileResult], params: dict[str, Any]) -> Non
             continue
         try:
             if path.name.endswith("_Stylesheet.yaml"):
-                RuleSheet.of(yaml.safe_load(result.text))
+                RuleSheet.of(marker.strip(yaml.safe_load(result.text)))
             else:
                 parse_view(result.text, str(result.new_path), resolver=lambda name: decls.get(name) or shipped.decl(name))
         except LoadError as exc:

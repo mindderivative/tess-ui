@@ -7,6 +7,7 @@ The look of [`Badge`](../../components/badges.md) (in [Badges](../../components/
 ## The stylesheet
 
 ```yaml
+tesserae: 0.5
 # The look of Badge (Material 3): an error-coloured dot or pill, with the label in on_error. Anchored, the mark is placed over the host's top right
 # corner: a dot overlaps it by 4, a pill starts 12 in from the corner and sits 4 above it.
 styles:

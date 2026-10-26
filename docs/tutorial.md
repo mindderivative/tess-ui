@@ -20,6 +20,7 @@ that holds the state. The view says which ViewModel serves it with its `name:`, 
 serves with `views`.
 
 ```yaml title="Tasks_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial/step1/Tasks_View.yaml"
 ```
 
@@ -53,10 +54,12 @@ A task is more than a line of text: it has a checkbox and a remove button. That 
 `for:` with a `key:` repeats the call for each element of a list, adding and removing rows as the list changes.
 
 ```yaml title="TaskItem_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial/step2/TaskItem_View.yaml"
 ```
 
 ```yaml title="Tasks_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial/step2/Tasks_View.yaml"
 ```
 
@@ -80,18 +83,22 @@ See [Components & Embedding](guide/components.md) and [Component Views](guide/co
 Inline `style:` is fine for one node. Two kinds of file take styling out of the views:
 
 ```yaml title="Brand_Theme.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial/step3/Brand_Theme.yaml"
 ```
 
 ```yaml title="Tasks_Stylesheet.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial/step3/Tasks_Stylesheet.yaml"
 ```
 
 ```yaml title="Tasks_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial/step3/Tasks_View.yaml"
 ```
 
 ```yaml title="TaskItem_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial/step3/TaskItem_View.yaml"
 ```
 
@@ -117,10 +124,12 @@ Two numbers in the same shape: that is a view with params. `Stat` is a file like
 other kind of component.
 
 ```yaml title="Stat_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial/step4/Stat_View.yaml"
 ```
 
 ```yaml title="Tasks_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial/step4/Tasks_View.yaml"
 ```
 
@@ -129,6 +138,7 @@ other kind of component.
 ```
 
 ```yaml title="Tasks_Stylesheet.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial/step4/Tasks_Stylesheet.yaml"
 ```
 
@@ -147,6 +157,7 @@ A **screen** is a view that is opened and registered with the app. Settings is a
 share state: the app owns it, and any ViewModel reads it as `self.state`.
 
 ```yaml title="Settings_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial/step5/Settings_View.yaml"
 ```
 
@@ -155,6 +166,7 @@ share state: the app owns it, and any ViewModel reads it as `self.state`.
 ```
 
 ```yaml title="Tasks_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial/step5/Tasks_View.yaml"
 ```
 
@@ -186,14 +198,17 @@ bar, and the screens themselves, each a call of a view with a `route:`. The app 
 brings the two screens in.
 
 ```yaml title="Window_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial/step6/Window_View.yaml"
 ```
 
 ```yaml title="Tasks_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial/step6/Tasks_View.yaml"
 ```
 
 ```yaml title="Settings_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial/step6/Settings_View.yaml"
 ```
 

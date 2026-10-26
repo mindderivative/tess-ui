@@ -98,6 +98,8 @@ class Reader:
                         out.append(part)
                 return " or ".join(out)
         kind = schema.get("type")
+        if isinstance(kind, list):  # a key that takes more than one JSON type (`tesserae: 0.5` is a number to a YAML parser, text to a person)
+            return " or ".join(dict.fromkeys(self.values({**schema, "type": one}) for one in kind))
         if kind == "string" and "pattern" in schema and "%" in schema["pattern"]:
             return "a percentage such as `50%`"
         return {"number": "a number", "integer": "an integer", "string": "text", "boolean": "`true` or `false`",

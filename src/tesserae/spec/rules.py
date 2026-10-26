@@ -27,7 +27,7 @@ from pathlib import Path
 from typing import Any, Callable, Collection, Iterable, Optional
 
 from tesserae.expr import ExprError, Origin, compile_template
-from tesserae.spec import placement, sizes, widgets as registry
+from tesserae.spec import marker, placement, sizes, widgets as registry
 from tesserae.spec.nodes import LoadError, load_marked
 from tesserae.spec.widgets import style_fields_of
 
@@ -137,7 +137,7 @@ def _build(spec: Any, file: str, text: str, parts_of: Optional[Callable[[str], O
     if not isinstance(spec, dict):
         raise fail(top_at, f"a stylesheet is a mapping with 'styles:', got {type(spec).__name__}")
     for key in spec:
-        if key != "styles":
+        if key not in ("styles", marker.KEY):  # `tesserae:` is the first-line marker of the file the mapping was read from
             raise fail(getattr(spec, "key_at", {}).get(key, top_at), f"a stylesheet has only 'styles:', not '{key}'")
     items = spec.get("styles") or []
     if not isinstance(items, list):
@@ -232,4 +232,5 @@ def load_rule_sheet(path: Any, parts_of: Optional[Callable[[str], Optional[Colle
     """Reads a stylesheet file in the rule shape; `parts_of` as for `RuleSheet.of`."""
     file = Path(path)
     text = file.read_text(encoding="utf-8")
+    marker.note_if_missing(text, str(file))
     return RuleSheet.of(load_marked(text, str(file)), str(file), text, parts_of)

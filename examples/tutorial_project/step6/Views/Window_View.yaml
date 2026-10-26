@@ -1,3 +1,4 @@
+tesserae: 0.5
 # The frame around the screens. With no OS title bar, the window's own title bar is the one at the top.
 name: Window
 widget: Window

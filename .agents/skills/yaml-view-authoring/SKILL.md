@@ -16,6 +16,8 @@ The language is documented in `docs/guide/view-language.md` (the whole language)
 | `Brand_Theme.yaml` | `Brand` | `seed:`, `colors:`, `typography:`, `components:` |
 | `Tasks_Stylesheet.yaml` | `Tasks` | a `styles:` list of rules; each names a `widget` |
 
+**The first line of every file is `tesserae: 0.5`** (the release series; comments come after it, not before; `tools/stamp_language.py --write` adds it to a file Tesserae ships, and `tesserae new` and `migrate-yaml` write it). A `tesserae:` anywhere else is an error that names its line, and a schema modeline cannot sit under it (use `yaml.schemas`). It is optional in this series (a file without it loads and is noted once), required from the next: always write it in new files. A docs block that shows a whole file (a fence with `title="Main_View.yaml"`) starts with it too, as a test checks.
+
 CamelCase names. A view with `params:` is a component: another view calls it by name with the params as plain keys. A view with no `name:` has no ViewModel.
 
 ## A node

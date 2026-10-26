@@ -30,6 +30,7 @@ white text we add next reads on any desktop theme) and open it.
 === "Declarative"
 
     ```yaml title="Counter_View.yaml"
+    tesserae: 0.5
     --8<-- "examples/getting_started/declarative/step1/Counter_View.yaml"
     ```
 
@@ -63,6 +64,7 @@ A **node** is one thing on screen. Add a label that says `Count: 0`.
 === "Declarative"
 
     ```yaml title="Counter_View.yaml"
+    tesserae: 0.5
     --8<-- "examples/getting_started/declarative/step2/Counter_View.yaml"
     ```
 
@@ -99,6 +101,7 @@ Add a button: a purple, rounded box with a centred text node in it.
 === "Declarative"
 
     ```yaml title="Counter_View.yaml"
+    tesserae: 0.5
     --8<-- "examples/getting_started/declarative/step3/Counter_View.yaml"
     ```
 
@@ -132,6 +135,7 @@ things a little differently:
     ```
 
     ```yaml title="Counter_View.yaml"
+    tesserae: 0.5
     --8<-- "examples/getting_started/declarative/step4/Counter_View.yaml"
     ```
 

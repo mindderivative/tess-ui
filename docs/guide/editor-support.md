@@ -69,14 +69,18 @@ The project schema is a snapshot: run `tesserae schema --project` again after yo
 
 ### Or one file at a time
 
-The server also reads a comment at the top of a file. A path in it is
-resolved from the file's own folder, and a URL works too:
+The server also reads a comment at the top of a file, a *modeline*, and a path in it is resolved from the file's own folder (a URL works too):
 
+<!-- old-syntax: a modeline for a file in the older syntax, which has no marker -->
 ```yaml
-# yaml-language-server: $schema=/path/to/site-packages/tesserae/schema/tesserae-widget-schema.json  (or the project's, in .tesserae/)
-name: counter
-widget: Container
+# yaml-language-server: $schema=/path/to/site-packages/tesserae/schema/tesserae-yaml-schema.json
+kind: Container
+id: root
 ```
+
+That is for a file with no `tesserae:` first line, such as one in the older syntax. **A file that starts with `tesserae: 0.5` cannot use one**: the server reads a
+modeline only from the comments before the first key, and the `tesserae:` line is the first key, so a comment under it, or beside it, is not applied (tried on the real
+server). Such a file takes its schema from the `yaml.schemas` setting above, which `tesserae schema --project` prints and which does not care what is on the first line.
 
 ## What it knows, and what it can't
 

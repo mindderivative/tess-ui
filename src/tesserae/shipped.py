@@ -14,6 +14,7 @@ from typing import Optional
 
 import yaml
 
+from tesserae.spec import marker
 from tesserae.spec.nodes import ViewDoc, parse_view
 from tesserae.spec.rules import RuleSheet, load_rule_sheet
 from tesserae.spec.widgets import WidgetDecl, decl_from_params
@@ -82,13 +83,17 @@ class ViewLibrary:
             return None
         if path not in self._docs:
             self.read.add(path.resolve())
-            self._docs[path] = parse_view(path.read_text(encoding="utf-8"), str(path), resolver=self.decl, view_name=name)
+            text = path.read_text(encoding="utf-8")
+            marker.note_if_missing(text, str(path))
+            self._docs[path] = parse_view(text, str(path), resolver=self.decl, view_name=name)
         return self._docs[path]
 
     def parse(self, path: Path, name: Optional[str] = None) -> ViewDoc:
         """Parses a view file that is not looked up by name (the one being opened), against this library."""
         self.read.add(path.resolve())
-        return parse_view(path.read_text(encoding="utf-8"), str(path), resolver=self.decl, view_name=name or path.name.removesuffix("_View.yaml"))
+        text = path.read_text(encoding="utf-8")
+        marker.note_if_missing(text, str(path))
+        return parse_view(text, str(path), resolver=self.decl, view_name=name or path.name.removesuffix("_View.yaml"))
 
     def used(self, doc: ViewDoc) -> set[str]:
         """The names of the widgets `doc` uses: its own nodes' and, through every view it calls (and those call), theirs. A view's stylesheet belongs to

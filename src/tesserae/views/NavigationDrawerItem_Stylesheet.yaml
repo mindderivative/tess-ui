@@ -1,3 +1,4 @@
+tesserae: 0.5
 # The look of NavigationDrawerItem (Material 3): a pill (28 pixel corners) that is secondary_container when selected, 16 pixels in on the left and 24 on the right, the
 # icon, label and badge in on_secondary_container when selected and on_surface_variant otherwise.
 styles:

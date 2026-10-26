@@ -1,3 +1,4 @@
+tesserae: 0.5
 # The Material 3 standard navigation drawer: a permanent column of destinations beside the content, 360 pixels wide (256 to 360), a `surface` column. While `open` it takes
 # its width from the content and when it is closed it takes none (the width eases): that is how it collapses, and a rail can take its place. Children with `slot: header`
 # and `slot: footer` go above and below the destinations. See `NavigationDrawerPanel` for the items and the keyboard.

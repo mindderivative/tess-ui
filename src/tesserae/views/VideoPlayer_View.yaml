@@ -1,3 +1,4 @@
+tesserae: 0.5
 # A video player: a picture surface with the usual transport controls under it. Tesserae has no decoder, so the app supplies the frames: a `frame` (rgba bytes, width, height) that a
 # ViewModel updates as it plays, like an `Image`'s `frame`. The player owns none of the playing: `playing` (two-way) is what the play button flips, `position` (two-way, seconds) is where the seek
 # slider is and what it writes when dragged, and the app's player follows both and moves `position` on as the video plays. `duration` is the length in seconds. `muted` (two-way) is the volume button.

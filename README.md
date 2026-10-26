@@ -11,6 +11,7 @@ app authors write views, not Python widget-class trees, and a plain `Signal`-dri
 [changelog](https://mindderivative.github.io/tesserae/changelog/) says what each release changed.
 
 ```yaml
+tesserae: 0.5
 # Counter_View.yaml
 name: Counter
 widget: Container

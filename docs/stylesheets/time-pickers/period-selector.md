@@ -7,6 +7,7 @@ The look of [`PeriodSelector`](../../components/time-pickers.md) (in [Time picke
 ## The stylesheet
 
 ```yaml
+tesserae: 0.5
 # The look of PeriodSelector: an outlined frame with 8 pixel corners. The halves' colours are in the view, because a rule cannot see the loop variable that
 # says which half is which.
 styles:

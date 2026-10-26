@@ -1,3 +1,4 @@
+tesserae: 0.5
 # A status bar (a desktop convention, not Material 3): a thin strip at the bottom of a window with short items on its left, centre and right. `items` is a
 # list of {text} and optionally {icon, side, value, tooltip}: `side` is start (the default), center or end; an item with a `value` can be pressed, and pressing
 # it sets `clicked` to the value; `tooltip` explains it. `progress` (0 to 1) or `busy` shows a 4 pixel indicator along the top edge. The bar is announced

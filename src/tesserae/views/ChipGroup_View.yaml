@@ -1,3 +1,4 @@
+tesserae: 0.5
 # A group of chips, wrapping onto new rows. `chips` is a list of {value, label} and optionally {icon, avatar_text, disabled}. `mode` says how they behave:
 # `none` suggestion/assist chips that act (the last one pressed goes to `chosen`); `single` and `multiple` filter chips (`selected` is the chosen value, or the
 # list of them); `input` chips with a close button and a text field after them, so typing and pressing Enter adds a chip, and the close removes one (`chips`

@@ -1,3 +1,4 @@
+tesserae: 0.5
 # The Material 3 split button: a main action and, 2 pixels beside it, a menu button whose chevron turns over while its menu is open. `variant` and `size` are Button's (filled, tonal,
 # elevated, outlined, text; xs to xl). The main part has a `label` and an optional `icon` and calls `on_click`; the trailing part opens a `Menu` of `items` ({value, label} and the
 # rest of Menu's rows) and pressing a row sets `chosen`. The inner corners are small and the outer ones round, and the trailing part is round on both sides while its menu is open.

@@ -7,6 +7,7 @@ The look of [`SpinBoxField`](../../components/spin-boxes.md) (in [Spin box](../.
 ## The stylesheet
 
 ```yaml
+tesserae: 0.5
 # The look of SpinBoxField: the label in on_surface_variant, the supporting text in on_surface_variant and an error in error; 16 pixels in from the edge, as a
 # text field's are.
 styles:

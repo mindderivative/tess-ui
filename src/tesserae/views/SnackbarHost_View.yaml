@@ -1,3 +1,4 @@
+tesserae: 0.5
 # Several snackbars, one after another (Material 3 shows one at a time). `messages` is a list of {message} and optionally {action, value, id, duration}; the first
 # shows, and when it closes it is taken off the list and the next one shows. Add to the list (`messages = messages + [{'message': 'Saved'}]`) from anywhere that can
 # write it. The `value` of an action that was pressed goes to `chosen`. It takes no room where it is written.

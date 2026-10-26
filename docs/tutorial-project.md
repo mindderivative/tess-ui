@@ -48,6 +48,7 @@ tasks/
 ```
 
 ```yaml title="Views/Main_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial_project/step1/Views/Main_View.yaml"
 ```
 
@@ -70,10 +71,12 @@ tasks/
 A task row is a view of its own, in the same folder as the screen:
 
 ```yaml title="Views/TaskItem_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial_project/step2/Views/TaskItem_View.yaml"
 ```
 
 ```yaml title="Views/Main_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial_project/step2/Views/Main_View.yaml"
 ```
 
@@ -90,18 +93,22 @@ A task row is a view of its own, in the same folder as the screen:
 Themes and stylesheets each have a folder, and the app names them:
 
 ```yaml title="Themes/Brand_Theme.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial_project/step3/Themes/Brand_Theme.yaml"
 ```
 
 ```yaml title="Styles/Tasks_Stylesheet.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial_project/step3/Styles/Tasks_Stylesheet.yaml"
 ```
 
 ```yaml title="Views/Main_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial_project/step3/Views/Main_View.yaml"
 ```
 
 ```yaml title="Views/TaskItem_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial_project/step3/Views/TaskItem_View.yaml"
 ```
 
@@ -118,14 +125,17 @@ Themes and stylesheets each have a folder, and the app names them:
 Any view says `widget: Stat`, wherever it is, because every view in `Views/` is found by its name:
 
 ```yaml title="Views/Stat_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial_project/step4/Views/Stat_View.yaml"
 ```
 
 ```yaml title="Views/Main_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial_project/step4/Views/Main_View.yaml"
 ```
 
 ```yaml title="Styles/Tasks_Stylesheet.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial_project/step4/Styles/Tasks_Stylesheet.yaml"
 ```
 
@@ -142,10 +152,12 @@ Add `Views/Settings_View.yaml` and `ViewModels/Settings_ViewModel.py` (`tesserae
 pair; [The `tesserae` command](guide/cli.md) says what it makes), then fill them in and share state through the app:
 
 ```yaml title="Views/Settings_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial_project/step5/Views/Settings_View.yaml"
 ```
 
 ```yaml title="Views/Main_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial_project/step5/Views/Main_View.yaml"
 ```
 
@@ -172,14 +184,17 @@ The app's frame is one more view, a `widget: Window` file in `Views/`, opened by
 bar, and the two screens as calls with a `route:`:
 
 ```yaml title="Views/Window_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial_project/step6/Views/Window_View.yaml"
 ```
 
 ```yaml title="Views/Settings_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial_project/step6/Views/Settings_View.yaml"
 ```
 
 ```yaml title="Views/Main_View.yaml"
+tesserae: 0.5
 --8<-- "examples/tutorial_project/step6/Views/Main_View.yaml"
 ```
 

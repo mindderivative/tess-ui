@@ -1,3 +1,4 @@
+tesserae: 0.5
 # The Material 3 segmented button: two to five connected segments in one outlined pill. `options` is a list of {value, label, icon, disabled};
 # `selected` is the chosen value, or with `multiple: true` the list of chosen values, and a press writes it back.
 # A chosen segment is `secondary_container` with a check that takes the place of its icon. Single-select behaves as a radio group (one Tab stop, the

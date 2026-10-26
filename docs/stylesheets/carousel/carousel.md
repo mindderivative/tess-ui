@@ -7,6 +7,7 @@ The look of [`Carousel`](../../components/carousel.md) (in [Carousel](../../comp
 ## The stylesheet
 
 ```yaml
+tesserae: 0.5
 # The look of Carousel: the item captions in white over a darkened band.
 styles:
   - {widget: Carousel, part: title, style: {foreground: "#FFFFFF"}}

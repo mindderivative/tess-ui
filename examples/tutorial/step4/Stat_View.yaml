@@ -1,3 +1,4 @@
+tesserae: 0.5
 # A number with a label under it, called as `widget: Stat`. Its look is its rules in Tasks_Stylesheet.yaml.
 params:
   label: {type: str, required: true}

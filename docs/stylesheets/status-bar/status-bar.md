@@ -7,6 +7,7 @@ The look of [`StatusBar`](../../components/status-bar.md) (in [Status bar](../..
 ## The stylesheet
 
 ```yaml
+tesserae: 0.5
 # The look of StatusBar: a thin surface_container strip with label_small text in on_surface_variant; an item that can be pressed has a state layer.
 styles:
   - widget: StatusBar

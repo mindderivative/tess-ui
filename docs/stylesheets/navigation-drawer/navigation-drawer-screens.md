@@ -7,6 +7,7 @@ The look of [`NavigationDrawerScreens`](../../components/navigation-drawer.md) (
 ## The stylesheet
 
 ```yaml
+tesserae: 0.5
 # The look of the screens drawer: section headings in on_surface_variant.
 styles:
   - {widget: NavigationDrawerScreens, part: heading, style: {foreground: on_surface_variant, padding: {left: 16, right: 16, top: 18, bottom: 18}}}

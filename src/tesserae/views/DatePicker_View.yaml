@@ -1,3 +1,4 @@
+tesserae: 0.5
 # The Material 3 modal date picker: a dialog with the chosen date at the top (and a button that swaps the grid for a typed field), the month with arrows to move between months, the weekday
 # initials and a grid of six weeks of `DatePickerDay`s, and Cancel and OK. `date` is a text `year-month-day` ("2026-10-09", or empty for none) and is two-way, changing only when OK is
 # pressed; `open` is two-way (Escape and a press on the scrim close it). `earliest` and `latest` bound the days that can be chosen; `week_starts` is `sunday` (the default) or `monday`. Today

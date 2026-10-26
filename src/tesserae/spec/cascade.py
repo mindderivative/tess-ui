@@ -22,6 +22,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Optional
 
+from tesserae.spec import marker
+
 __all__ = ["STYLE_FIELDS", "STYLE_GROUPS", "STYLE_GROUP_OF", "Sheet", "check_stylesheet", "check_theme", "component_key", "resolve_style"]
 
 _THEME_FIELDS = ("seed", "dark", "colors", "styles", "components", "typography")
@@ -33,10 +35,10 @@ def _check_fields(spec: Any, allowed: tuple[str, ...]) -> None:
     if not isinstance(spec, dict):
         raise ValueError(f"must be a mapping, got {type(spec).__name__}")
     for key in spec:
-        if key not in allowed:
+        if key not in allowed and key != marker.KEY:  # the first-line marker of a file the dict was read from
             expected = ", ".join(f"`{name}`" for name in allowed)
             raise ValueError(f"unknown field `{key}`, expected one of {expected}")  # tre's wording
-    Sheet.of(spec)
+    Sheet.of({key: value for key, value in spec.items() if key != marker.KEY})
 
 
 def check_theme(spec: Any) -> None:

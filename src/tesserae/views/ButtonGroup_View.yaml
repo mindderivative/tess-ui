@@ -1,3 +1,4 @@
+tesserae: 0.5
 # The Material 3 button group: buttons that behave as a set. `mode: none` is a row of actions (the last one pressed goes to `chosen`), `single` is a
 # choice of one (`selected` is the chosen value) and `multiple` a set (`selected` is the list of chosen values). `connected: true` joins the buttons with
 # a 2 pixel gap and square inner corners; otherwise they stand 8 pixels apart. One Tab stop; the arrow keys move the focus (and, for

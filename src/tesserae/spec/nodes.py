@@ -19,7 +19,7 @@ from typing import Any, Callable, Iterator, Optional
 import yaml
 
 from tesserae import a11y as a11y_module
-from tesserae.spec import placement, sizes
+from tesserae.spec import marker, placement, sizes
 from tesserae.expr import Expr, ExprError, NestedTemplate, Origin, Statements, compile_expr, compile_statements, compile_template, is_action_name, timer_handlers
 from tesserae.spec import widgets as registry
 from tesserae.spec.widgets import Property, PropertyError, WidgetDecl, decl_from_params, is_expression, style_fields_of
@@ -126,6 +126,9 @@ def _mark(node: yaml.Node) -> Position:
 def load_marked(text: str, file: str = "<view>") -> Any:
     """Parses one YAML document into plain values, mappings as `PMap` and lists as `PSeq`. YAML errors and duplicate keys are
     `LoadError`s."""
+    scanned = marker.scan(text)
+    if scanned.problem:  # the first line comes before the YAML: a file for another line may not parse as this one
+        raise LoadError(scanned.problem, file=file, line=scanned.line, column=0, text=text)
     loader = yaml.SafeLoader(text)
     try:
         root = loader.get_single_node()
@@ -158,7 +161,7 @@ def load_marked(text: str, file: str = "<view>") -> Any:
             return seq
         return loader.construct_object(node, deep=True)
 
-    return None if root is None else convert(root)
+    return None if root is None else marker.strip(convert(root)) if scanned.found else convert(root)
 
 
 # -- the model -------------------------------------------------------------------------------------------------------------

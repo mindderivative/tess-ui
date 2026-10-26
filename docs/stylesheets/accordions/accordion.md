@@ -7,6 +7,7 @@ The look of [`Accordion`](../../components/accordions.md) (in [Accordions](../..
 ## The stylesheet
 
 ```yaml
+tesserae: 0.5
 # The look of Accordion: the header's title in on_surface and its chevron in on_surface_variant, 16 pixels in from each side; the content 16 pixels in and 16 below.
 styles:
   - widget: Accordion

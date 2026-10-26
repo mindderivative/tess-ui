@@ -1,3 +1,4 @@
+tesserae: 0.5
 # The Material 3 snackbar: a short message near the bottom of the window, over the content, that goes by itself. It is not modal, takes no focus and blocks
 # nothing. `open` shows it (and is written false when it closes); it closes `duration` milliseconds after it opens (4000 by default; 0 keeps it up) unless the
 # pointer is over it, when the action or the close button is pressed, and calls `on_close` then. An `action` is a text button after the message: pressing it runs

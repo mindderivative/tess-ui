@@ -1,3 +1,4 @@
+tesserae: 0.5
 # The Material 3 floating action button, and its extended form: an icon in a prominent container, with a label beside it when `label` is given. In four
 # colours (`variant`: primary, secondary, tertiary, surface) and three sizes (`size`: small 40, medium 56, large 96). An extended FAB collapses to just its icon
 # when `collapsed` is true; bind that to the way a list scrolls (`collapsed: "{{ way == 'down' }}"`) for the usual behaviour. `label` names it for a screen

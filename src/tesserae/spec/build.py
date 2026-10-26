@@ -209,7 +209,9 @@ def shipped_default_theme() -> dict[str, Any]:
 
         import yaml
 
-        _shipped = yaml.safe_load((Path(__file__).parent / "default_theme.yaml").read_text(encoding="utf-8"))
+        from tesserae.spec import marker
+
+        _shipped = marker.strip(yaml.safe_load((Path(__file__).parent / "default_theme.yaml").read_text(encoding="utf-8")))
     return _shipped
 
 

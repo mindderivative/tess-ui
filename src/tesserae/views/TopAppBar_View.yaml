@@ -1,3 +1,4 @@
+tesserae: 0.5
 # The Material 3 top app bar: a navigation icon, a title and up to three action icons across the top of a screen. `variant`: `small` (64 tall, the title beside the icon),
 # `center` (64, the title in the middle), `medium` (112, the title under the row of icons) and `large` (152, a bigger title under them). The medium and large collapse to the
 # small form while `collapsed` is true (bind it to the way a list under it has scrolled), and `scrolled` (true once content is under the bar) turns its colour from `surface` to

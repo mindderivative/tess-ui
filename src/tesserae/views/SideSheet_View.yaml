@@ -1,3 +1,4 @@
+tesserae: 0.5
 # The Material 3 standard side sheet: supplementary content beside the main content, inline, so it pushes the content and takes room only while it is `open`
 # (the width eases open and shut). Put it first in its row for the start side, last for the end. A header with a title, `back` and a close button, content that scrolls (children),
 # and actions at the bottom (children with `slot: actions`). A standard sheet is a landmark, not a dialog: it takes no focus and traps none.

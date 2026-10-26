@@ -91,7 +91,9 @@ class View:
 def _header(text: str) -> str:
     """The comment at the top of a file, as one paragraph."""
     lines = []
-    for line in text.splitlines():
+    for number, line in enumerate(text.splitlines()):
+        if number == 0 and line.startswith("tesserae:"):  # the first-line marker (`tesserae: 0.5`) comes before the header comment
+            continue
         if not line.startswith("#"):
             break
         lines.append(line.lstrip("#").strip())

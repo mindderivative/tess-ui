@@ -1,3 +1,4 @@
+tesserae: 0.5
 widget: Container
 classes: [page]
 children:

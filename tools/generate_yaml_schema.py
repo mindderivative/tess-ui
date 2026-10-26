@@ -607,7 +607,7 @@ def _component() -> dict[str, Any]:
 
 def _theme() -> dict[str, Any]:
     from tesserae import tokens
-    from tesserae.spec import build
+    from tesserae.spec import build, marker
 
     # A component's stylesheet (`<Name>_Stylesheet.yaml`, 0.3.4) is a stylesheet whose values may be the
     # component's `{{ parameters }}`, so a stylesheet's styles are as loose as a fragment's.
@@ -640,6 +640,7 @@ def _theme() -> dict[str, Any]:
     return _root("tesserae-theme-schema.json", "Tesserae theme or stylesheet",
                  "A theme or stylesheet file: `styles:` rules, and for a theme also a `seed`, `dark`, `colors`, `typography` and `components`.",
                  defs, {"type": "object", "additionalProperties": False, "properties": {
+                     marker.KEY: marker.SCHEMA,
                      "seed": {"$ref": "#/definitions/color", "description": "The colour the theme's palette is made from."},
                      "dark": {"type": "boolean", "description": "Whether it is the dark scheme."},
                      "colors": colors, "typography": typography,
@@ -695,6 +696,7 @@ def _widget() -> dict[str, Any]:
 
 def _stylesheet() -> dict[str, Any]:
     """A stylesheet of rules (`*_Stylesheet.yaml`): `widget:`, `variant:`, `part:`, `state:` and a `style:` of fields."""
+    from tesserae.spec import marker
     from tesserae.spec.rules import STATES
 
     defs = _style_definitions()
@@ -716,6 +718,7 @@ def _stylesheet() -> dict[str, Any]:
     return _root("tesserae-stylesheet-schema.json", "Tesserae stylesheet of rules",
                  "A stylesheet of rules: `<Name>_Stylesheet.yaml`, or the file `App(stylesheet=)` names. Each rule says which widgets it is for and the style it sets.",
                  defs, {"type": "object", "required": ["styles"], "additionalProperties": False, "properties": {
+                     marker.KEY: marker.SCHEMA,
                      "styles": {"type": "array", "items": rule, "description": "The rules, in order: a later rule wins a tie."}}})
 
 

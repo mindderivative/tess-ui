@@ -1,3 +1,4 @@
+tesserae: 0.5
 # The inside of a side sheet (Material 3): a header with an optional back button, the title and a close button, a content area that scrolls, and a row of actions at
 # the bottom. `SideSheet` (standard, inline) and `SideSheetModal` (over a scrim) both put it in a sheet; use it on its own for a custom one. Children are the
 # content; children with `slot: actions` are the action buttons (a row, right-aligned).

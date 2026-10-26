@@ -1,3 +1,4 @@
+tesserae: 0.5
 # A navigation rail whose destinations are the app's screens: `items` is a list of {screen, label, icon} and optionally {badge}. The destination of the
 # screen showing is selected, and pressing one navigates to its screen. The up and down arrows move the focus along the rail.
 params:

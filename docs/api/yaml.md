@@ -593,6 +593,7 @@ window_region: <drag | none>
 A stylesheet has only `styles:`; a theme has everything. See [Themes](../themes/index.md).
 
 ```yaml
+tesserae: <a number or text>
 seed: <a color>
 dark: <true or false>
 colors:
@@ -606,6 +607,7 @@ styles:
 
 | Key | Values | What it does |
 | --- | --- | --- |
+| `tesserae` | a number or text | The release series of Tesserae this file was written for (0.5). It must be the first line of the file. |
 | `seed` | a color | The colour the theme's palette is made from. |
 | `dark` | `true` or `false` | Whether it is the dark scheme. |
 | `colors` | a mapping | Colour roles to replace: a role name and a colour. |

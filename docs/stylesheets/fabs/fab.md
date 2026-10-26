@@ -7,6 +7,7 @@ The look of [`Fab`](../../components/fabs.md) (in [Floating action buttons](../.
 ## The stylesheet
 
 ```yaml
+tesserae: 0.5
 # The look of Fab (Material 3): a container at elevation level 3 that lifts to 4 when hovered and settles back when pressed. The container colour is the
 # variant's, the icon and label its "on" colour. The extended form (with a label that shows) is 56 tall with 16 pixels of padding before the icon and 20
 # after the label.

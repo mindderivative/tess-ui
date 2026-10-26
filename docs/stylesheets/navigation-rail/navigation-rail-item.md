@@ -7,6 +7,7 @@ The look of [`NavigationRailItem`](../../components/navigation-rail.md) (in [Nav
 ## The stylesheet
 
 ```yaml
+tesserae: 0.5
 # The look of NavigationRailItem (Material 3): a 56 by 32 pill that is secondary_container when selected, with a 24 pixel icon in on_secondary_container
 # (on_surface_variant otherwise) and the label in on_surface (on_surface_variant otherwise). In an expanded rail the pill is 56 high and as wide as the
 # item, with the label inside it.

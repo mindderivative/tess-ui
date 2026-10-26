@@ -14,6 +14,7 @@ The part before the suffix is the **name**, and it is CamelCase. Which ViewModel
 names but by a second name, the view's **bind key**:
 
 ```yaml
+tesserae: 0.5
 # Counter_View.yaml
 name: Counter            # the bind key
 widget: Container
@@ -60,6 +61,34 @@ More names say what a YAML file is:
 
 A file named for one kind and loaded as another is refused, naming what its name says it is: `load_theme("card_Stylesheet.yaml")`,
 say (`load_theme` and `load_stylesheet` are in `tesserae.spec.themes`). A theme or stylesheet file with neither suffix (`themes/Brand.yaml`) still loads; the suffixes are recommended, not required.
+
+## The first line
+
+Every view, stylesheet and theme starts with the line it was written for, and comments come after it:
+
+```yaml
+tesserae: 0.5
+# A card for one subject.
+name: Card
+widget: Container
+```
+
+`tesserae: 0.5` is the release series of Tesserae: the first two numbers of its version. It is read before anything else in the file, so Tesserae knows a file is one of its own and
+which language it is in, and a person reading it knows too. It has to be the **first line** (a byte order mark and Windows line endings are fine), and nothing in the file
+treats it as a property or a rule.
+
+| What the file has | What happens |
+| --- | --- |
+| `tesserae: 0.5` on line 1 | it loads |
+| `tesserae:` anywhere else, under a comment, a blank line or `---` | an error that names the line it is on: move it to line 1 |
+| a value that is not a release series (a whole version with three numbers, `yes`, nothing) | an error: write `tesserae: 0.5` |
+| a newer series | an error: the file was written for a newer Tesserae, so upgrade |
+| an older series | an error: run `tesserae migrate-yaml` |
+| no `tesserae:` line | it loads, and the log says once, at the info level, that the file has none. The line is optional for now, and a later series will ask for it |
+
+`tesserae new`, `tesserae add screen` and `tesserae migrate-yaml` write it, and so does every file Tesserae ships. A mapping you read from such a file yourself
+(`yaml.safe_load`) and give to `App(stylesheet_spec=...)` or `custom_theme_spec=` may keep the key: the checks ignore it. The files of the older syntax have none, which is how they
+are told apart. An editor's schema modeline cannot sit under the line: see [Editor Support](editor-support.md#or-one-file-at-a-time).
 
 ## The views Tesserae ships
 

@@ -16,6 +16,7 @@ from typing import Any, Iterator
 import yaml
 
 from tesserae.fonts import check_font_families
+from tesserae.spec import marker
 from tesserae.spec.expand import (
     STYLE_SUFFIX, STYLESHEET_SUFFIX, THEME_SUFFIX, _expand_includes, _normalize_scalars, kind_of_file,
 )
@@ -29,8 +30,13 @@ def _load_mapping(path: str | Path, what: str, suffix: str | None = None) -> dic
     if suffix is not None and kind is not None and not path.name.endswith(suffix):
         raise ValueError(f"{path}: loaded as {what}, but its name says it's {kind} ("
                          f"*{STYLE_SUFFIX} is one node's style, *{STYLESHEET_SUFFIX} a stylesheet, *{THEME_SUFFIX} a theme)")
+    text = path.read_text(encoding="utf-8")
+    scanned = marker.scan(text)
+    if scanned.problem:
+        raise ValueError(f"{path}:{scanned.line}: {scanned.problem}")
+    marker.note_if_missing(text, str(path))
     try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        data = marker.strip(yaml.safe_load(text))
     except yaml.YAMLError as exc:
         raise ValueError(f"{path}: invalid YAML: {exc}") from exc
     if data is None:

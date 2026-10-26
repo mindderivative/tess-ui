@@ -1,3 +1,4 @@
+tesserae: 0.5
 # The Material 3 docked search view: the panel that opens under a search bar (`anchor`, the bar's name in the calling view) and shows suggestions, history and results as list
 # rows. `results` is a list of {value, label} and optionally {supporting, icon}; pressing a row sets `chosen` to its `value` and closes the view. With a `query` and no
 # results the `empty` text shows. Escape and a press outside close it (writing false to `open`). The number of results is announced politely. Bind `open` to the bar's `active`.

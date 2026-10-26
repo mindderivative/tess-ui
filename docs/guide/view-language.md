@@ -5,6 +5,7 @@ and the properties of that widget, a list of `children:`, and a few keys every n
 guide pages are about the widgets and the app around it.
 
 ```yaml
+tesserae: 0.5
 name: counter
 widget: Container
 style: {flex_direction: vertical, width: 240, height: 120, gap: 12, padding: 16}
@@ -20,7 +21,7 @@ children:
     a11y: {label: Add one}
 ```
 
-Files are named `<Name>_View.yaml` and found by name in `Views/` or a folder the app searches ([Projects](projects.md)). A view with `params:` is a component: another view calls it by
+Every file starts with the line `tesserae: 0.5`, the release series it is written for ([the first line](naming-convention.md#the-first-line)). Files are named `<Name>_View.yaml` and found by name in `Views/` or a folder the app searches ([Projects](projects.md)). A view with `params:` is a component: another view calls it by
 its name, with the params as plain keys. There is no other difference.
 
 ## Nodes

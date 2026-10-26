@@ -7,6 +7,7 @@ The look of [`NavigationDrawerModal`](../../components/navigation-drawer.md) (in
 ## The stylesheet
 
 ```yaml
+tesserae: 0.5
 # The look of the modal navigation drawer: surface_container_low at level 1, 16 pixel corners on the right (the side that opens onto the content).
 styles:
   - widget: NavigationDrawerModal

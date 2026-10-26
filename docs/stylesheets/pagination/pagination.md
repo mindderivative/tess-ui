@@ -7,6 +7,7 @@ The look of [`Pagination`](../../components/pagination.md) (in [Pagination](../.
 ## The stylesheet
 
 ```yaml
+tesserae: 0.5
 # The look of Pagination: the ellipsis and the "3 of 12" in on_surface_variant and on_surface.
 styles:
   - {widget: Pagination, part: gap, style: {foreground: on_surface_variant}}

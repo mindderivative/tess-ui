@@ -1,3 +1,4 @@
+tesserae: 0.5
 name: Settings
 widget: Container
 classes: [page]

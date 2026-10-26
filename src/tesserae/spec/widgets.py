@@ -15,6 +15,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable, Optional
 
+from tesserae.spec import marker
+
 __all__ = [
     "PROPERTY_TYPES", "RESERVED_KEYS", "Property", "PropertyError", "WidgetDecl", "declare", "decl_from_params", "is_expression", "json_schema", "lookup",
     "names", "register_widget", "style_fields_of", "unregister_widget", "widget",
@@ -365,6 +367,7 @@ _UNIVERSAL: dict[str, dict[str, Any]] = {
     "tooltip": {"type": ["string", "object"]},
     # the header of a view file, valid on its root
     "params": {"type": ["array", "object"]}, "expects": {"type": "object"},
+    "tesserae": marker.SCHEMA,  # the first line of the file (it is looser than that, being allowed on any node, as `params` is)
 }
 _EXPRESSION = {"type": "string", "pattern": r"\{\{"}
 _JSON_TYPE = {
