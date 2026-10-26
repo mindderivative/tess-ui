@@ -17,7 +17,8 @@ The board is the GitHub project "Tesserae UI Framework" (`python3 tools/board.py
 
 ## 1. Understand before changing
 
-- `graphify query "<question>"` first (AGENTS.md), then read only the lines it located. For a view or stylesheet change, also read `design/yaml-language.md` for why the component needed what it did.
+- **Query the graph before the first grep or source read, every time** (AGENTS.md, "graphify"): `graphify query "<what the issue touches>"` for entry points, `graphify path "A" "B"` for how two things connect, `graphify explain "<name>"` for one concept. Then read only the lines it located. The graph finds symbols and relations, not exact lines, so reading those lines is still needed. Nothing enforces this under pi (the `hook-guard` hooks did not fire there), so do it on purpose: put the query you ran in the first comment on the issue (`board.py move ... --comment "Started. graphify: <query> -> <files>"`), and when you skip it, say why. The Stop hook keeps the graph current (`tools/graphify_refresh.sh --check`).
+- For a view or stylesheet change, also read `design/yaml-language.md` for why the component needed what it did.
 - State the expected behaviour in one sentence. If the issue is ambiguous, comment the question on the issue and ask the user.
 
 ## 2. Test first, and show it tests something
