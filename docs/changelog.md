@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.5.1.7
+
+[#294](https://github.com/mindderivative/tesserae/issues/294): a file whose content is another kind says what it looks like.
+
+### Fixed
+
+- **A view that holds a stylesheet or a theme says so.** `Brand_View.yaml` with `styles:` used to give only `a node needs a 'widget:' (its keys are: styles)`; it now goes on with `this looks like a stylesheet: name it Brand_Stylesheet.yaml`. A theme's `seed:`, `dark:`, `colors:`, `typography:` or `components:` says `a theme` and `Brand_Theme.yaml`. Only the root of the file is judged: a nested node with `styles:` is a mistake in the node, not in the file's name.
+- **A stylesheet or a theme that holds a view says so, and a stylesheet that holds a theme.** `Brand_Stylesheet.yaml` with `widget:` or `seed:` is refused when it is loaded, as `<path>: this looks like a view: name it Brand_View.yaml`; the same for a rule sheet (`a stylesheet has only 'styles:', not 'widget' (this looks like a view: name it ...)`), a theme file (`unknown field ... (this looks like a view: ...)`) and a dict given to `App(stylesheet_spec=)` or `custom_theme_spec=`, where there is no file name and the hint says `<Name>`.
+- The hint is decided from the root keys alone and always says "looks like". `widget:` is a view; a theme key is a theme and wins over `styles:`, which a theme may hold too; `styles:` alone is a stylesheet. A file that looks like none of them, and the older syntax (`kind:`, `component:`, `view:`, `include:`), keep their messages.
+
+[Stylesheet and theme files](guide/naming-convention.md#stylesheet-and-theme-files) and [what is checked](guide/naming-convention.md#what-is-checked) describe it.
+
 ## 0.5.1.6
 
 [#293](https://github.com/mindderivative/tesserae/issues/293): a name that is not found says where the file is.

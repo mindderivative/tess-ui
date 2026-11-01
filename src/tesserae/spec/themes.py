@@ -16,6 +16,7 @@ from typing import Any, Iterator
 import yaml
 
 from tesserae.fonts import check_font_families
+from tesserae.project import looks_like
 from tesserae.spec import marker
 from tesserae.spec.expand import (
     STYLE_SUFFIX, STYLESHEET_SUFFIX, THEME_SUFFIX, _expand_includes, _normalize_scalars, kind_of_file,
@@ -91,7 +92,7 @@ def load_theme(path: str | Path) -> dict[str, Any]:
     from tesserae.spec.cascade import check_theme
 
     try:
-        check_theme(theme)  # an unknown key is found here, naming the file, and not when the theme is first used
+        check_theme(theme, str(path))  # an unknown key is found here, naming the file, and not when the theme is first used
     except ValueError as exc:
         raise ValueError(f"{path}: {exc}") from None
     check_font_families(theme_font_families(theme), str(path))
@@ -100,5 +101,9 @@ def load_theme(path: str | Path) -> dict[str, Any]:
 
 def load_stylesheet(path: str | Path) -> dict[str, Any]:
     """Reads a stylesheet YAML file into the dict `tre`'s
-    `stylesheet_spec=` takes."""
-    return _load_mapping(path, "a stylesheet", STYLESHEET_SUFFIX)
+    `stylesheet_spec=` takes. A file whose keys say it is a view or a theme is refused, naming the file to give it."""
+    sheet = _load_mapping(path, "a stylesheet", STYLESHEET_SUFFIX)
+    hint = looks_like(sheet, "stylesheet", Path(path).name)
+    if hint:
+        raise ValueError(f"{path}: {hint}")
+    return sheet

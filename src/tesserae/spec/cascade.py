@@ -23,13 +23,14 @@ from dataclasses import dataclass, field
 from typing import Any, Iterable, Optional
 
 from tesserae.spec import marker
+from tesserae.project import looks_like
 
 __all__ = ["STYLE_FIELDS", "STYLE_GROUPS", "STYLE_GROUP_OF", "Sheet", "check_stylesheet", "check_theme", "component_key", "resolve_style"]
 
 _THEME_FIELDS = ("seed", "dark", "colors", "styles", "components", "typography")
 
 
-def _check_fields(spec: Any, allowed: tuple[str, ...]) -> None:
+def _check_fields(spec: Any, allowed: tuple[str, ...], is_kind: str, file: str) -> None:
     if spec is None:
         return
     if not isinstance(spec, dict):
@@ -37,18 +38,19 @@ def _check_fields(spec: Any, allowed: tuple[str, ...]) -> None:
     for key in spec:
         if key not in allowed and key != marker.KEY:  # the first-line marker of a file the dict was read from
             expected = ", ".join(f"`{name}`" for name in allowed)
-            raise ValueError(f"unknown field `{key}`, expected one of {expected}")  # tre's wording
+            hint = looks_like(spec, is_kind, file)
+            raise ValueError(f"unknown field `{key}`, expected one of {expected}" + (f" ({hint})" if hint else ""))  # tre's wording
     Sheet.of({key: value for key, value in spec.items() if key != marker.KEY})
 
 
-def check_theme(spec: Any) -> None:
-    """Raises `ValueError` if `spec` isn't a valid theme dict."""
-    _check_fields(spec, _THEME_FIELDS)
+def check_theme(spec: Any, file: str = "") -> None:
+    """Raises `ValueError` if `spec` isn't a valid theme dict. `file` is the file it was read from, for the name a hint gives."""
+    _check_fields(spec, _THEME_FIELDS, "theme", file)
 
 
-def check_stylesheet(spec: Any) -> None:
-    """Raises `ValueError` if `spec` isn't a valid stylesheet dict."""
-    _check_fields(spec, ("styles",))
+def check_stylesheet(spec: Any, file: str = "") -> None:
+    """Raises `ValueError` if `spec` isn't a valid stylesheet dict. `file` as for `check_theme`."""
+    _check_fields(spec, ("styles",), "stylesheet", file)
 
 #: Every field a `style:` can hold, as in `tre`'s `StyleSpec`.
 STYLE_FIELDS = frozenset({

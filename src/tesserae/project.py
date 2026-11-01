@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 from typing import Any, Iterable, Iterator, Optional
 
-__all__ = ["KINDS", "Project", "ProjectError", "is_name", "project_of", "resolve_view"]
+__all__ = ["KINDS", "Project", "ProjectError", "is_name", "kind_of_keys", "looks_like", "project_of", "resolve_view"]
 
 #: Each kind of file: the end of its name, and the folders it is kept in.
 KINDS: dict[str, tuple[str, tuple[str, ...]]] = {
@@ -32,6 +32,8 @@ KINDS: dict[str, tuple[str, tuple[str, ...]]] = {
     "stylesheet": ("_Stylesheet.yaml", ("Styles",)),
     "style": ("_Style.yaml", ("Styles",)),
 }
+#: The root keys only a theme has. A theme may hold `styles:` too, so one of these decides before `styles:` does.
+_THEME_KEYS = frozenset({"seed", "dark", "colors", "typography", "components"})
 #: Folders a whole-project search never goes into.
 _SKIPPED = frozenset({"__pycache__", "node_modules", "build", "dist", "site", "site-packages"})
 
@@ -43,6 +45,30 @@ class ProjectError(LookupError):
 def is_name(ref: Any) -> bool:
     """Whether `ref` is a bare name (`"Main"`), not a path (`"Views/Main_View.yaml"`, a `Path`)."""
     return isinstance(ref, str) and ref != "" and not any(c in ref for c in ("/", "\\")) and "." not in ref
+
+
+def kind_of_keys(keys: Iterable[Any]) -> Optional[str]:
+    """What a file's root keys say it looks like: `"view"` (`widget:`), `"theme"` (`seed`, `dark`, `colors`, `typography` or
+    `components`; these win over `styles:`), `"stylesheet"` (`styles:`), or `None` for none of them. Any other key, the first-line
+    `tesserae:` marker included, says nothing. The one list every loader's "looks like" hint reads."""
+    present = set(keys)
+    if "widget" in present:
+        return "view"
+    if present & _THEME_KEYS:
+        return "theme"
+    return "stylesheet" if "styles" in present else None
+
+
+def looks_like(keys: Iterable[Any], is_kind: str, file: str = "") -> Optional[str]:
+    """`this looks like a stylesheet: name it Brand_Stylesheet.yaml`, for a file read as `is_kind` whose root `keys` say it is another
+    kind; `None` when they say nothing or say the same. `file` is the file's name (its part before `_Kind.yaml` is kept, else `<Name>`)."""
+    kind = kind_of_keys(keys)
+    if kind is None or kind == is_kind:
+        return None
+    name = Path(file).name if file else ""
+    suffix = KINDS[is_kind][0]
+    stem = name.removesuffix(suffix) if name.endswith(suffix) else "<Name>"
+    return f"this looks like a {kind}: name it {stem}{KINDS[kind][0]}"
 
 
 class Project:

@@ -3088,3 +3088,15 @@ Scoped with #294 (user approved both, two commits, and the stylesheet-with-theme
 - **Docs:** `guide/projects.md` ("A name in the wrong place"), `guide/naming-convention.md` ("What is checked"), changelog.
 - **Ran** (no full suite): `tests/test_project.py` (39 passed). **Not run:** the rest of the suite (CI), Windows/macOS. The hint's forward slashes rest on `as_posix()`, not on a Windows run.
 - **Still open:** #294 (a file whose content is another kind).
+
+## 0.5.1.7 #294: a file whose content is another kind says what it looks like
+
+graphify: root key kind hint -> `project.py` (KINDS), `spec/nodes.py`, `spec/rules.py`, `spec/cascade.py`, `spec/themes.py`.
+
+- **One list of keys:** `project.kind_of_keys(keys)` beside `KINDS` (`widget` is a view; `seed`/`dark`/`colors`/`typography`/`components` a theme, which wins over `styles:` because a theme may hold it; `styles` alone a stylesheet; anything else, the `tesserae:` marker included, says nothing) and `looks_like(keys, is_kind, file)`, which words the hint (`this looks like a stylesheet: name it Brand_Stylesheet.yaml`; the stem comes from the file name, else `<Name>`). Every site below uses it; none has its own list.
+- **Where it lands:** `Parser.node` at the root only, appended to the existing `(its keys are: ...)` hint; `rules._build` (a rule sheet's unknown key); `cascade._check_fields` through `check_theme(spec, file="")` and `check_stylesheet(spec, file="")`; `load_theme` passes its path; `load_stylesheet` raises `ValueError(f"{path}: {hint}")` after reading (it is the path `App(stylesheet=...)` takes, so the file name is still known; it does not otherwise judge a sheet, since a rule-shaped one would not pass `check_stylesheet`). The older-syntax message, a nested node, a mapping that looks like none of them and `themes._load_mapping`'s name-against-suffix check are unchanged.
+- **Found in review:** `load_stylesheet` was first left out as "reload only"; it is the main path for `App(stylesheet=...)`. A dict from `stylesheet_spec=` has no file name and says `<Name>`.
+- **Tests:** `tests/test_wrong_kind.py` (28 cases: the key table, each pairing, the file name, `<Name>`, no match, the older syntax, a nested node, a same-kind unknown key, the dict checks, `load_theme` and `load_stylesheet` by file).
+- **Mutation checks (8, all caught):** theme keys not winning over `styles:`, the same kind still hinted, the hint on a nested node, no hint in the rule sheet, none in `_check_fields`, none from `load_stylesheet`, `load_theme` dropping the file name, the view hint left out.
+- **Ran** (no full suite): `tests_for --run` (64 test files, 2516 passed, 1 skipped), after regenerating `docs/api/python.md` (the `load_stylesheet` docstring; `test_api_docs` caught it), `docs_audit`, `check.py` (no new mypy errors, strict docs build), `check_version`. **Not run:** the other test files (CI), Windows/macOS.
+- **Still open:** `*_Style.yaml` and `*_Component.yaml` (older syntax) get no content hint, as scoped.

@@ -50,6 +50,9 @@ registered under its file's name.
 - **A file that is not where its name is looked for.** `app.open_view("Extra")` with the file in `Themes/` is an error that says where it is and what to do:
   `found Themes/Extra_View.yaml: views are read from Views/ (or add Themes to App(search=[...]))`. The same name under another kind's suffix is named as what it is
   (`found Views/Brand_View.yaml, a view, not a theme`). See [Projects](projects.md#a-name-in-the-wrong-place).
+- **A file whose content is another kind.** A `*_View.yaml` that holds `styles:` or a theme's `seed:`, a `*_Stylesheet.yaml` or `*_Theme.yaml` that holds `widget:`, a stylesheet that holds a
+  theme's keys: the error says what the file looks like and what to name it (`this looks like a stylesheet: name it Brand_Stylesheet.yaml`). It is a hint from the file's root keys, not a ruling:
+  a file that looks like none of the three keeps its plain message.
 
 ## Stylesheet and theme files
 

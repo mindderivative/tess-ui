@@ -2295,7 +2295,7 @@ Resolves every `include:` and expands every `component:` entry in `yaml_text`, r
 load_stylesheet(path: str | Path) -> dict[str, Any]
 ```
 
-Reads a stylesheet YAML file into the dict `tre`'s `stylesheet_spec=` takes.
+Reads a stylesheet YAML file into the dict `tre`'s `stylesheet_spec=` takes. A file whose keys say it is a view or a theme is refused, naming the file to give it.
 
 ### `load_theme`
 

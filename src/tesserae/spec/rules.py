@@ -30,6 +30,7 @@ from tesserae.expr import ExprError, Origin, compile_template
 from tesserae.spec import marker, placement, sizes, widgets as registry
 from tesserae.spec.nodes import LoadError, load_marked
 from tesserae.spec.widgets import style_fields_of
+from tesserae.project import looks_like
 
 __all__ = ["INTERACTION_STATES", "Identity", "Rule", "RuleSheet", "STATES", "is_rule_sheet", "load_rule_sheet", "ordered",
            "style_fields_of"]
@@ -138,7 +139,8 @@ def _build(spec: Any, file: str, text: str, parts_of: Optional[Callable[[str], O
         raise fail(top_at, f"a stylesheet is a mapping with 'styles:', got {type(spec).__name__}")
     for key in spec:
         if key not in ("styles", marker.KEY):  # `tesserae:` is the first-line marker of the file the mapping was read from
-            raise fail(getattr(spec, "key_at", {}).get(key, top_at), f"a stylesheet has only 'styles:', not '{key}'")
+            raise fail(getattr(spec, "key_at", {}).get(key, top_at), f"a stylesheet has only 'styles:', not '{key}'",
+                       looks_like(spec, "stylesheet", file))
     items = spec.get("styles") or []
     if not isinstance(items, list):
         raise fail(getattr(spec, "val_at", {}).get("styles", top_at), "'styles:' is a list of rules")

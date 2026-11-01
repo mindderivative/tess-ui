@@ -23,6 +23,7 @@ from tesserae.spec import marker, placement, sizes
 from tesserae.expr import Expr, ExprError, NestedTemplate, Origin, Statements, compile_expr, compile_statements, compile_template, is_action_name, timer_handlers
 from tesserae.spec import widgets as registry
 from tesserae.spec.widgets import Property, PropertyError, WidgetDecl, decl_from_params, is_expression, style_fields_of
+from tesserae.project import looks_like
 
 __all__ = ["EVENTS", "ForSpec", "Handler", "LoadError", "Node", "ViewDoc", "load_marked", "parse_view"]
 
@@ -333,7 +334,9 @@ class _Parser:
             old = next((k for k in ("kind", "component", "view", "include") if k in m), None)
             if old:
                 raise self.fail(m.key_at[old], f"'{old}:' is not a key in 0.5.0", OLD_KEYS[old])
-            raise self.fail(at, "a node needs a 'widget:'", f"its keys are: {', '.join(map(str, m)) or 'none'}")
+            keys = ", ".join(map(str, m)) or "none"
+            kind_hint = looks_like(m, "view", self.file) if root else None
+            raise self.fail(at, "a node needs a 'widget:'", f"its keys are: {keys}" + (f"; {kind_hint}" if kind_hint else ""))
         if not isinstance(m["widget"], str):
             raise self.fail(m.val_at["widget"], f"'widget:' takes a widget name, got {_describe(m['widget'])}")
         decl = self.widget_decl(m["widget"], m.val_at["widget"])
