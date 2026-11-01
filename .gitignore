@@ -10,3 +10,6 @@ build/
 
 # graphify knowledge-graph output (built by /graphify; local cache and paths)
 graphify-out/
+
+# pi agent session state (local, per machine)
+.pi/
