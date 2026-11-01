@@ -56,6 +56,71 @@ def test_a_file_in_the_wrong_folder_is_not_found(tmp_path):
         Project(tmp_path).find("view", "Main")
 
 
+# #293: a name that is not found says where the file is, when it is elsewhere in the project
+
+
+def test_a_file_in_the_wrong_folder_is_named_with_where_it_is_and_what_to_do(tmp_path):
+    _write(tmp_path, "Themes/Extra_View.yaml")
+    with pytest.raises(ProjectError) as raised:
+        Project(tmp_path).find("view", "Extra")
+    text = str(raised.value)
+    assert text.startswith("no view called 'Extra' (Extra_View.yaml) in ")  # the old message, first and unchanged
+    assert "found Themes/Extra_View.yaml: views are read from Views/ (or add Themes to App(search=[...]))" in text
+
+
+def test_a_theme_in_the_views_folder_is_named_too(tmp_path):
+    _write(tmp_path, "Views/Brand_Theme.yaml")
+    with pytest.raises(ProjectError, match=r"found Views/Brand_Theme.yaml: themes are read from Themes/ \(or add Views to App"):
+        Project(tmp_path).find("theme", "Brand")
+
+
+def test_a_file_of_another_kind_with_the_same_stem_says_what_it_is(tmp_path):
+    _write(tmp_path, "Views/Brand_View.yaml")
+    with pytest.raises(ProjectError, match=r"found Views/Brand_View.yaml, a view, not a theme"):
+        Project(tmp_path).find("theme", "Brand")
+
+
+def test_every_match_is_listed(tmp_path):
+    _write(tmp_path, "Themes/Extra_View.yaml")
+    _write(tmp_path, "old/Extra_View.yaml")
+    with pytest.raises(ProjectError) as raised:
+        Project(tmp_path).find("view", "Extra")
+    text = str(raised.value)
+    assert "Themes/Extra_View.yaml" in text and "old/Extra_View.yaml" in text
+
+
+def test_a_name_that_is_nowhere_gets_the_old_message_and_nothing_more(tmp_path):
+    _write(tmp_path, "Themes/Other_View.yaml")  # a different name: not a match
+    with pytest.raises(ProjectError) as raised:
+        Project(tmp_path).find("view", "Extra")
+    assert str(raised.value).endswith("add the folder to App(search=[...]) or pass the file's path")
+    assert "found" not in str(raised.value)
+
+
+def test_the_search_skips_what_a_project_search_skips(tmp_path):
+    _write(tmp_path, ".venv/lib/Extra_View.yaml")
+    _write(tmp_path, "node_modules/x/Extra_View.yaml")
+    _write(tmp_path, "env/pyvenv.cfg")
+    _write(tmp_path, "env/Extra_View.yaml")
+    with pytest.raises(ProjectError) as raised:
+        Project(tmp_path).find("view", "Extra")
+    assert "found" not in str(raised.value)
+
+
+def test_a_name_that_is_found_does_not_walk_the_project(tmp_path, monkeypatch):
+    import os
+
+    _write(tmp_path, "Views/Main_View.yaml")
+    walks = []
+    real = os.walk
+    monkeypatch.setattr("tesserae.project.os.walk", lambda *a, **k: walks.append(a) or real(*a, **k))
+    Project(tmp_path).find("view", "Main")
+    assert walks == []
+    with pytest.raises(ProjectError):
+        Project(tmp_path).find("view", "Nope")
+    assert len(walks) == 1  # one walk of the project on the error path, however many kinds it looks for
+
+
 def test_the_error_lists_the_folders_it_looked_in(tmp_path):
     (tmp_path / "Views").mkdir()
     with pytest.raises(ProjectError, match="in Views under"):

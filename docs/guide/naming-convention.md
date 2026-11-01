@@ -47,6 +47,9 @@ registered under its file's name.
   `CounterViewModel serves the view 'counter', but no view has that name`. The view itself then has no ViewModel, and
   fails on the first name it needs. `assert app.check() == []` in a test is the cheap way to keep the two in step.
 - **Two ViewModels for one view.** `app.bind` refuses the second.
+- **A file that is not where its name is looked for.** `app.open_view("Extra")` with the file in `Themes/` is an error that says where it is and what to do:
+  `found Themes/Extra_View.yaml: views are read from Views/ (or add Themes to App(search=[...]))`. The same name under another kind's suffix is named as what it is
+  (`found Views/Brand_View.yaml, a view, not a theme`). See [Projects](projects.md#a-name-in-the-wrong-place).
 
 ## Stylesheet and theme files
 

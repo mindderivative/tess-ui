@@ -85,6 +85,16 @@ A name that is nowhere says where it looked:
 ProjectError: no view called 'Nope' (Nope_View.yaml) in Views under /home/you/notes: add the folder to App(search=[...]) or pass the file's path
 ```
 
+## A name in the wrong place
+
+A file that exists, but where Tesserae does not look, is named in the same error:
+
+```text
+ProjectError: no view called 'Extra' (Extra_View.yaml) in Views under /home/you/notes: add the folder to App(search=[...]) or pass the file's path; found Themes/Extra_View.yaml: views are read from Views/ (or add Themes to App(search=[...]))
+```
+
+A file of another kind with the same name is named for what it is: `found Views/Brand_View.yaml, a view, not a theme`.
+
 ## Adding to a project
 
 `tesserae add screen Settings` writes `Views/Settings_View.yaml` and `ViewModels/Settings_ViewModel.py` and adds

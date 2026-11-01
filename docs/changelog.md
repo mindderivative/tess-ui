@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.5.1.6
+
+[#293](https://github.com/mindderivative/tesserae/issues/293): a name that is not found says where the file is.
+
+### Fixed
+
+- **A view, theme or stylesheet kept in the wrong folder is named in the error that says it was not found.** `Extra_View.yaml` in `Themes/` used to give only `no view called 'Extra' (Extra_View.yaml) in Views under <root>: add the folder to App(search=[...]) or pass the file's path`; the message now goes on with `found Themes/Extra_View.yaml: views are read from Views/ (or add Themes to App(search=[...]))`. Two files with that name are both listed.
+- **A file with the same name under another kind's suffix is named as what it is.** Asking for the theme `Brand` when only `Views/Brand_View.yaml` exists adds `found Views/Brand_View.yaml, a view, not a theme`.
+- A name that is nowhere gives the same message as before. The project is walked once, only when a name is not found, with the folders a `recursive=True` search skips (hidden folders, virtual environments, `node_modules` and the rest); the walk took 5 ms on this repository.
+
+[Finding files by name](guide/projects.md#a-name-in-the-wrong-place) and [what is checked](guide/naming-convention.md#what-is-checked) describe it.
+
 ## 0.5.1.5
 
 [#292](https://github.com/mindderivative/tesserae/issues/292): the first line of a Tesserae file.

@@ -19,7 +19,7 @@ import importlib
 import os
 import sys
 from pathlib import Path
-from typing import Any, Iterable, Optional
+from typing import Any, Iterable, Iterator, Optional
 
 __all__ = ["KINDS", "Project", "ProjectError", "is_name", "project_of", "resolve_view"]
 
@@ -66,13 +66,15 @@ class Project:
             folders = [self.root, *self._subfolders()]
         return folders
 
-    def _subfolders(self) -> list[Path]:
-        out: list[Path] = []
-        for current, names, _ in os.walk(self.root):
+    def _walk(self) -> Iterator[tuple[Path, list[str], list[str]]]:
+        """Each folder under the root a whole-project search goes into, with its subfolders (the kept ones, sorted) and its files."""
+        for current, names, files in os.walk(self.root):
             names[:] = sorted(n for n in names if not n.startswith(".") and n not in _SKIPPED
                               and not (Path(current, n) / "pyvenv.cfg").exists())
-            out += [Path(current, n) for n in names]
-        return out
+            yield Path(current), names, files
+
+    def _subfolders(self) -> list[Path]:
+        return [Path(current, n) for current, names, _ in self._walk() for n in names]
 
     # -- finding --------------------------------------------------------------------------
 
@@ -101,8 +103,32 @@ class Project:
             looked = ", ".join(str(f.relative_to(self.root)) if f.is_relative_to(self.root) else str(f)
                                for f in self.folders(kind)) or "no folder yet"
             raise ProjectError(f"no {kind} called {name!r} ({name}{KINDS[kind][0]}) in {looked}"
-                               f" under {self.root}: add the folder to App(search=[...]) or pass the file's path")
+                               f" under {self.root}: add the folder to App(search=[...]) or pass the file's path"
+                               + self._elsewhere(kind, name))
         return index[name]
+
+    def _elsewhere(self, kind: str, name: str) -> str:
+        """What to add to a not-found message when the file is somewhere the project does not look: one walk of the project,
+        for the exact file name and for the same stem under another kind's suffix. Empty when there is no such file."""
+        exact: list[Path] = []
+        other: list[tuple[Path, str]] = []
+        for folder, _, files in self._walk():
+            for file in sorted(files):
+                if file == f"{name}{KINDS[kind][0]}":
+                    exact.append(folder / file)
+                else:
+                    other += [(folder / file, k) for k, (suffix, _) in KINDS.items() if k != kind and file == f"{name}{suffix}"]
+
+        def rel(path: Path) -> str:
+            return path.relative_to(self.root).as_posix()
+
+        parts: list[str] = []
+        if exact:
+            kept = ", ".join(f"{folder}/" for folder in KINDS[kind][1])
+            where = (f"add {rel(exact[0].parent)} to" if len(exact) == 1 else "add their folders to")
+            parts.append(f"found {' and '.join(rel(p) for p in exact)}: {kind}s are read from {kept} (or {where} App(search=[...]))")
+        parts += [f"found {rel(path)}, a {k}, not a {kind}" for path, k in other]
+        return "".join(f"; {part}" for part in parts)
 
     def resolve(self, kind: str, ref: str | Path) -> Path:
         """`ref` as a file: a path is used as it is, a bare name is found."""
