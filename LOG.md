@@ -3100,3 +3100,9 @@ graphify: root key kind hint -> `project.py` (KINDS), `spec/nodes.py`, `spec/rul
 - **Mutation checks (8, all caught):** theme keys not winning over `styles:`, the same kind still hinted, the hint on a nested node, no hint in the rule sheet, none in `_check_fields`, none from `load_stylesheet`, `load_theme` dropping the file name, the view hint left out.
 - **Ran** (no full suite): `tests_for --run` (64 test files, 2516 passed, 1 skipped), after regenerating `docs/api/python.md` (the `load_stylesheet` docstring; `test_api_docs` caught it), `docs_audit`, `check.py` (no new mypy errors, strict docs build), `check_version`. **Not run:** the other test files (CI), Windows/macOS.
 - **Still open:** `*_Style.yaml` and `*_Component.yaml` (older syntax) get no content hint, as scoped.
+
+## 2026-11-01 origin/main is green on a partial run: `c0a1a01`
+
+- **`c0a1a01` (push, partial; run 41267863638):** all 14 jobs succeeded: `plan`, `docs`, `test` on Ubuntu, macOS and Windows, `build-executable` on all three, `clean-install` on all three with Python 3.12 and 3.14. It carried nine commits (#292, #293, #294, the `.gitignore` line and the doc and tooling commits), and `plan` picked the tests by what they cover (250 files changed), so this is **not a full run**. The forward slashes in #293's hint (`as_posix()`) were first checked on Windows by the `test (windows-latest)` job here.
+- **Annotations only:** Node.js 20 is deprecated for the pinned actions, and the `ubuntu-latest` label moves to Ubuntu 26.
+- **Still true:** the whole suite has not been run since `0eda3fe` (that full run was green); a full run is the user's to call for. This entry is not pushed.
