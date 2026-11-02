@@ -189,7 +189,7 @@ def test_new_makes_a_virtual_environment_with_tesserae_in_it(tmp_path, monkeypat
     assert cli.main(["new", "notes", "--dir", str(tmp_path)]) == 0
     venv, install = calls
     assert venv[1:3] == ["-m", "venv"] and venv[3] == str(tmp_path / "notes" / ".venv")
-    assert install[1:4] == ["-m", "pip", "install"] and install[-1].startswith("tesserae-ui")
+    assert install[1:4] == ["-m", "pip", "install"] and install[-1].startswith("tess-ui")
     assert str(tmp_path / "notes" / ".venv") in install[0]
 
 
@@ -203,7 +203,7 @@ def test_a_failed_install_keeps_the_project_and_says_how_to_finish(tmp_path, mon
     assert cli.main(["new", "notes", "--dir", str(tmp_path)]) == 2
     err = capsys.readouterr().err
     assert err.startswith("tesserae: made the project, but its virtual environment failed (ERROR: no network)")
-    assert "pip install tesserae-ui" in err and (tmp_path / "notes" / "app.py").is_file()
+    assert "pip install tess-ui" in err and (tmp_path / "notes" / "app.py").is_file()
 
 
 def test_new_with_a_window(tmp_path):

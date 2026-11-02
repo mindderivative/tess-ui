@@ -68,7 +68,7 @@ and 2 for a wrong argument (`--force` without `--write` is one). [Migrating](../
 ## Build an executable
 
 ```bash
-pip install "tesserae-ui[build]"
+pip install "tess-ui[build]"
 tesserae build --check
 ```
 

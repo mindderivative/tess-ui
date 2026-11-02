@@ -47,7 +47,7 @@ app.show("Counter")
 app.run()
 ```
 
-Tesserae is on PyPI as [`tesserae-ui`](https://pypi.org/project/tesserae-ui/), pre-alpha, and runs on
+Tesserae is on PyPI as [`tess-ui`](https://pypi.org/project/tess-ui/), pre-alpha, and runs on
 Linux, macOS and Windows.
 
 ## What you get
@@ -72,7 +72,7 @@ Linux, macOS and Windows.
 
 | | |
 | --- | --- |
-| [Installation](installation.md) | `pip install tesserae-ui` |
+| [Installation](installation.md) | `pip install tess-ui` |
 | [Getting Started](getting-started.md) | Your first window and node, declaratively and from Python |
 | [Tutorial](tutorial.md) and [the same as a project](tutorial-project.md) | A Tasks app in six steps: components, styling, screens, a custom window; in one flat folder, then as a `tesserae new` project |
 | [Guide](guide/apps-and-screens.md) | How each part works |

@@ -22,7 +22,7 @@ in a `.dmg`. `--app-version`, `--identifier`, `--publisher` and
 `--description` fill in its details, and a PNG `--icon` is made into the
 platform's own format.
 
-PyInstaller is an extra: `pip install tesserae-ui[build]`.
+PyInstaller is an extra: `pip install tess-ui[build]`.
 """
 
 from __future__ import annotations
@@ -206,7 +206,7 @@ def _pyinstaller():
     try:
         import PyInstaller.__main__ as pyinstaller
     except ImportError:
-        raise BuildError("building needs PyInstaller: pip install tesserae-ui[build]") from None
+        raise BuildError("building needs PyInstaller: pip install tess-ui[build]") from None
     return pyinstaller
 
 

@@ -16,10 +16,10 @@ window won't open).
 mkdir counter && cd counter
 python3 -m venv .venv
 source .venv/bin/activate     # fish: source .venv/bin/activate.fish
-pip install tesserae-ui
+pip install tess-ui
 ```
 
-`tesserae-ui` is the name on PyPI; you import `tesserae`. Everything below goes
+`tess-ui` is the name on PyPI; you import `tesserae`. Everything below goes
 in the `counter` folder, with the environment active.
 
 ## 1. A window
