@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://mindderivative.github.io/tesserae/schema/tesserae-yaml-schema.json",
+  "$id": "https://mindderivative.github.io/tess-ui/schema/tesserae-yaml-schema.json",
   "title": "Tesserae view",
   "description": "A Tesserae view: `*_View.yaml`. One node, with its children inside it.",
   "definitions": {

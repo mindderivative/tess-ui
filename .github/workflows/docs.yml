@@ -11,7 +11,7 @@
 # itself): GitHub Pages needs "Build and deployment: GitHub Actions"
 # enabled once in this repo's own Settings > Pages before the first
 # real run of the `deploy` job below will succeed -- confirmed via
-# `gh api repos/mindderivative/tesserae/pages` returning 404 (not yet
+# `gh api repos/mindderivative/tess-ui/pages` returning 404 (not yet
 # enabled) at the time this workflow was added.
 name: Deploy Docs
 

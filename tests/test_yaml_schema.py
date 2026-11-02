@@ -70,7 +70,7 @@ def test_each_schema_is_valid_draft_07_and_says_what_it_is(kind):
     schema = _schema(kind)
     jsonschema.Draft7Validator.check_schema(schema)
     assert schema["$schema"] == "http://json-schema.org/draft-07/schema#"
-    assert schema["$id"] == "https://mindderivative.github.io/tesserae/schema/" + NAMES[kind]
+    assert schema["$id"] == "https://mindderivative.github.io/tess-ui/schema/" + NAMES[kind]
     assert schema["title"] and schema["description"]
 
 

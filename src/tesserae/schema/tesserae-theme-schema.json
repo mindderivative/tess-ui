@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://mindderivative.github.io/tesserae/schema/tesserae-theme-schema.json",
+  "$id": "https://mindderivative.github.io/tess-ui/schema/tesserae-theme-schema.json",
   "title": "Tesserae theme or stylesheet",
   "description": "A theme or stylesheet file: `styles:` rules, and for a theme also a `seed`, `dark`, `colors`, `typography` and `components`.",
   "definitions": {

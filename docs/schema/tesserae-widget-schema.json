@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://mindderivative.github.io/tesserae/schema/tesserae-widget-schema.json",
+  "$id": "https://mindderivative.github.io/tess-ui/schema/tesserae-widget-schema.json",
   "description": "A view of the current language: `*_View.yaml`. A tree of `widget:` nodes, with a branch for each built-in widget and each view Tesserae ships; `tesserae schema --project` adds the project's own.",
   "title": "Tesserae view node (0.5.0)",
   "type": "object",

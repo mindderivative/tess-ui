@@ -23,7 +23,7 @@ Python 3.12 or newer (the developer's was 3.14). `gh auth login` once, with the 
 ## 2. The checkout and the venv
 
 ```bash
-git clone https://github.com/mindderivative/tesserae.git && cd tesserae
+git clone https://github.com/mindderivative/tess-ui.git && cd tess-ui
 git checkout 0.5.0            # the release line being built; main is the last release
 python3 -m venv .venv
 .venv/bin/pip install -e ".[dev]"

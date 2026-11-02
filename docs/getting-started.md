@@ -3,7 +3,7 @@
 Build one small app, a label and a button that counts, twice: **declaratively**
 (a YAML view and a Python ViewModel) and **imperatively** (Python calls that
 create nodes). Each step shows both, and every program here is a file in
-[`examples/getting_started/`](https://github.com/mindderivative/tesserae/tree/main/examples/getting_started)
+[`examples/getting_started/`](https://github.com/mindderivative/tess-ui/tree/main/examples/getting_started)
 that Tesserae's tests run.
 
 ## Install

@@ -4,7 +4,7 @@ Getting Started builds a counter. This tutorial builds a small **Tasks** app in 
 working program that adds one idea to the last, to show you the options you have: inline styling and
 separate files, built-in widgets and your own, one view or several, an ordinary window or your
 own frame. Every step is a folder in
-[`examples/tutorial/`](https://github.com/mindderivative/tesserae/tree/main/examples/tutorial) that
+[`examples/tutorial/`](https://github.com/mindderivative/tess-ui/tree/main/examples/tutorial) that
 Tesserae's tests run; the page shows the files a step adds or changes.
 
 The files here sit side by side. [The same app as a project](tutorial-project.md)

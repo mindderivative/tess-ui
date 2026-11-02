@@ -6,7 +6,7 @@ Tesserae finds a file by its name. Read it beside the first one, or instead of i
 behaviour are the same, and what changes is where the files are and how little code it takes to join them.
 
 Every step is a project folder in
-[`examples/tutorial_project/`](https://github.com/mindderivative/tesserae/tree/main/examples/tutorial_project)
+[`examples/tutorial_project/`](https://github.com/mindderivative/tess-ui/tree/main/examples/tutorial_project)
 that Tesserae's tests run. The page shows every file a step adds or changes, so each step can be followed on its own; the
 [flat Tutorial](tutorial.md) explains the views and ViewModels in more depth.
 

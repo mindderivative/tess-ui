@@ -34,7 +34,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIRS = (ROOT / "src" / "tesserae" / "schema", ROOT / "docs" / "schema")
-SITE = "https://mindderivative.github.io/tesserae/schema/"
+SITE = "https://mindderivative.github.io/tess-ui/schema/"
 DRAFT = "http://json-schema.org/draft-07/schema#"
 
 #: The style fields whose valid values `tre` lists in its errors.

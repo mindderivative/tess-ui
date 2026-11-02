@@ -7,8 +7,8 @@ for rendering, layout, animation and accessibility.
 Tesserae's own shape follows [pyCopper](https://github.com/mindderivative/pycopper) (an earlier, standalone framework by the same author):
 app authors write views, not Python widget-class trees, and a plain `Signal`-driven MVVM layer keeps them in step.
 
-**Status: pre-alpha.** The [documentation](https://mindderivative.github.io/tesserae/) is the reference, and the
-[changelog](https://mindderivative.github.io/tesserae/changelog/) says what each release changed.
+**Status: pre-alpha.** The [documentation](https://mindderivative.github.io/tess-ui/) is the reference, and the
+[changelog](https://mindderivative.github.io/tess-ui/changelog/) says what each release changed.
 
 ```yaml
 tesserae: 0.5
@@ -58,10 +58,10 @@ python app.py
 
 A view is a tree of `widget:` nodes. A view with `params:` is a component, called by its name; `for:` and `if:` build lists and choices from
 data; every Material Design 3 component ships as such a view. See the
-[view language](https://mindderivative.github.io/tesserae/guide/view-language/), the
-[component pages](https://mindderivative.github.io/tesserae/components/) and the
-[Getting Started](https://mindderivative.github.io/tesserae/getting-started/) walk-through, then the
-[Tasks tutorial](https://mindderivative.github.io/tesserae/tutorial/).
+[view language](https://mindderivative.github.io/tess-ui/guide/view-language/), the
+[component pages](https://mindderivative.github.io/tess-ui/components/) and the
+[Getting Started](https://mindderivative.github.io/tess-ui/getting-started/) walk-through, then the
+[Tasks tutorial](https://mindderivative.github.io/tess-ui/tutorial/).
 
 ## Files: Tesserae reads them, `tre` gets data
 
@@ -85,7 +85,7 @@ included, as prebuilt wheels. It needs **Python 3.12 or newer**, on Linux
 x86-64, macOS on Apple silicon or Windows x64 (elsewhere, pip builds `tre`
 from source, which needs Rust). The PyPI name is `tesserae-ui` (`tesserae`
 on PyPI is an unrelated project); the import name is `tesserae`. Start an
-app with `tesserae new myapp`. What's new: the [changelog](https://mindderivative.github.io/tesserae/changelog/).
+app with `tesserae new myapp`. What's new: the [changelog](https://mindderivative.github.io/tess-ui/changelog/).
 
 ## Release an app
 
@@ -99,7 +99,7 @@ users run with nothing else installed. `tesserae build --installer` makes
 each platform's installer instead: a `.dmg` on macOS, a setup `.exe` on
 Windows, and an AppImage, `.deb`, pacman package, `.rpm` and Flatpak on
 Linux. Build on each platform you release for; signing with your own
-certificates, and the rest, is in [Releasing Your App](https://mindderivative.github.io/tesserae/guide/releasing/).
+certificates, and the rest, is in [Releasing Your App](https://mindderivative.github.io/tess-ui/guide/releasing/).
 
 ## Install (development)
 
@@ -113,7 +113,7 @@ pip install -e ".[dev]"
 
 Coming from a GitHub `tre-...` wheel, run `pip uninstall tre` first: pip
 treats `tesserae-engine` as a different project, and both would own the
-`tre` package. See the [installation guide](https://mindderivative.github.io/tesserae/installation/)
+`tre` package. See the [installation guide](https://mindderivative.github.io/tess-ui/installation/)
 for testing against an unreleased `tre` checkout.
 
 ## Examples
@@ -149,21 +149,21 @@ batch(apply_discount)  # total recomputes once, not twice
 ```
 
 A `{{ }}` binding in a view can read a `Signal` or a `Computed` directly. See
-[Reactivity](https://mindderivative.github.io/tesserae/guide/reactivity/).
+[Reactivity](https://mindderivative.github.io/tess-ui/guide/reactivity/).
 
 ## Starting an app
 
 `tesserae new notes` makes a runnable app; `--window` makes the app one window view with a rail and two routed screens.
-`tesserae add screen Settings` adds a screen. See [Getting Started](https://mindderivative.github.io/tesserae/getting-started/) and the
-[CLI](https://mindderivative.github.io/tesserae/guide/cli/).
+`tesserae add screen Settings` adds a screen. See [Getting Started](https://mindderivative.github.io/tess-ui/getting-started/) and the
+[CLI](https://mindderivative.github.io/tess-ui/guide/cli/).
 
 ## Architecture
 
-See [the architecture page](https://mindderivative.github.io/tesserae/architecture/). To work on Tesserae itself, [DEVELOPING.md](DEVELOPING.md).
+See [the architecture page](https://mindderivative.github.io/tess-ui/architecture/). To work on Tesserae itself, [DEVELOPING.md](DEVELOPING.md).
 
 **Releasing:** publishing a GitHub Release runs `.github/workflows/release.yml`.
 It checks that the tag matches the version and that no dependency is PyPI's
 unrelated `tre`, tests the built wheel, and uploads it with trusted
 publishing once the `pypi` environment's reviewer approves (0.1.0, 2026-09-28).
 
-Every known gap has a scoped issue: [Tesserae's issues](https://github.com/mindderivative/tesserae/issues).
+Every known gap has a scoped issue: [Tesserae's issues](https://github.com/mindderivative/tess-ui/issues).

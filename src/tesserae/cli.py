@@ -289,7 +289,7 @@ def _schema(args: argparse.Namespace) -> int:
         print(f"{places[name]}\n    for {', '.join(g for g in globs if not g.startswith('!'))}")
     print(f"{SCHEMAS / OLDER_VIEW_SCHEMA}\n    for a view in the older syntax (`kind:`), by a comment at the top of the file")
     print("\nFor Red Hat's YAML language server, `tesserae schema --settings` prints the setting. `--project` adds the views of your own project. "
-          "See https://mindderivative.github.io/tesserae/guide/editor-support/")
+          "See https://mindderivative.github.io/tess-ui/guide/editor-support/")
     return 0
 
 

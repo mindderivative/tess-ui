@@ -39,7 +39,7 @@ dependencies = [
 tesserae = "tesserae.cli:main"  # `tesserae new`, `tesserae add screen` (M67)
 
 [project.urls]
-Repository = "https://github.com/mindderivative/tesserae"
+Repository = "https://github.com/mindderivative/tess-ui"
 
 [project.optional-dependencies]
 build = ["pyinstaller>=6.10"]

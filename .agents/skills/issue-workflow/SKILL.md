@@ -12,7 +12,7 @@ The board is the GitHub project "Tesserae UI Framework" (`python3 tools/board.py
 ## 0. Start
 
 1. `tools/status.sh`: branch, unpushed work, version, board. Read the newest `LOG.md` section.
-2. `gh issue view N -R mindderivative/tesserae`: read the whole issue, including comments. If the issue does not exist or is not on the board, say so and stop.
+2. `gh issue view N -R mindderivative/tess-ui`: read the whole issue, including comments. If the issue does not exist or is not on the board, say so and stop.
 3. Is it Ready? If it is in Backlog, ask for scope approval; do not move it yourself. When it is Ready: `python3 tools/board.py move N "In progress" --comment "Started: <plan in one line>"`.
 
 ## 1. Understand before changing

@@ -55,8 +55,8 @@ the `python` package.
 To change Tesserae itself, work from a checkout:
 
 ```bash
-git clone https://github.com/mindderivative/tesserae.git
-cd tesserae
+git clone https://github.com/mindderivative/tess-ui.git
+cd tess-ui
 python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
@@ -80,6 +80,6 @@ The last command opens a window with a `Count: 0` label and a button that counts
   (`tools/generate_api_docs.py`, `tools/generate_yaml_docs.py`,
   `tools/generate_component_docs.py`) and tests fail if they are out of date.
 - **Editor support.** `tools/generate_yaml_schema.py` writes the YAML schemas (`tools/generate_widget_schema.py` runs it); see [Editor Support](guide/editor-support.md).
-- **Everything else.** [`DEVELOPING.md`](https://github.com/mindderivative/tesserae/blob/main/DEVELOPING.md) takes a
+- **Everything else.** [`DEVELOPING.md`](https://github.com/mindderivative/tess-ui/blob/main/DEVELOPING.md) takes a
   clean machine to a working checkout (Fedora, Debian and Ubuntu, Arch and CachyOS), and says how to run
   the whole check, `tools/fullcheck.sh`.
