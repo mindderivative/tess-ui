@@ -7,7 +7,7 @@ The PyPI name is `tess-ui` (it was `tesserae-ui`), and the repository is `mindde
 ### Changed
 
 - **Install with `pip install tess-ui`.** The import name (`import tesserae`) and the `tesserae` command are the same, and so is everything in a project. `tesserae new` installs `tess-ui` into the project's virtual environment, and the messages that name the package say the new name: `pip install tess-ui[build]` for `tesserae build`, and the upgrade hint for a file written for a newer series.
-- **If `tesserae-ui` is installed, remove it first:** `pip uninstall tesserae-ui`, then `pip install tess-ui`. The two hold the same `tesserae` package, so upgrading `tesserae-ui` in place leaves no importable package (`pip install --force-reinstall tess-ui` puts it back). `tesserae-ui` gets one more release, the same code with a note at the top of its PyPI page, and no more after that.
+- **If `tesserae-ui` is installed, switch:** `pip uninstall tesserae-ui`, then `pip install tess-ui`. The two hold the same `tesserae` package, so they must not be installed together. `tesserae-ui` gets one more release, the same code with a note at the top of its PyPI page, and no more after that.
 - **The repository and the docs moved.** The repository is `https://github.com/mindderivative/tess-ui` (GitHub redirects the old addresses of the repository and its issues) and the docs are at `https://mindderivative.github.io/tess-ui/` (Pages does not redirect, so the old address is gone). The editor schemas' `$id` is an address in the docs, so `tesserae-*-schema.json` now name `https://mindderivative.github.io/tess-ui/schema/...`; a `yaml.schemas` setting that names the schema files by path is not affected.
 
 ## 0.5.1.7

@@ -7,8 +7,8 @@ Tesserae is on PyPI as [**`tess-ui`**](https://pypi.org/project/tess-ui/)
 pip install tess-ui
 ```
 
-Tesserae was first published as `tesserae-ui`, which has no new releases. If you have it installed, remove it first: `pip uninstall tesserae-ui`, then
-`pip install tess-ui`. The two hold the same `tesserae` package, and upgrading the old one in place removes the files the new one installed (`pip install --force-reinstall tess-ui` puts them back).
+Tesserae was first published as `tesserae-ui`, which gets one last release (the same code, with a note that it was renamed) and no more. Don't install both: they hold the same `tesserae` package.
+To switch, `pip uninstall tesserae-ui`, then `pip install tess-ui`.
 
 That also installs the rendering engine, `tre`, which is on PyPI as
 [`tesserae-engine`](https://pypi.org/project/tesserae-engine/) (imported as
