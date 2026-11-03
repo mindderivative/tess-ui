@@ -11,7 +11,7 @@ from types import SimpleNamespace
 import pytest
 import yaml
 
-from tesserae import App, View
+from tess_ui import App, View
 
 ROOT = Path(__file__).resolve().parent.parent
 SEED = (0x67, 0x50, 0xA4, 0xFF)
@@ -63,7 +63,7 @@ def test_a_python_example_runs(entry, tmp_path, monkeypatch):
     Image.new("RGBA", (4, 4), (255, 0, 0, 255)).save(tmp_path / "cat.png")
     monkeypatch.chdir(tmp_path)
     app = App(width=800, height=600)
-    from tesserae.widgets import button
+    from tess_ui.widgets import button
 
     names = {"app": app, "viewmodel": _Anything(), "save": button(app.window, "Save", 80, 40),
              "left": button(app.window, "L", 80, 40), "right": button(app.window, "R", 80, 40)}

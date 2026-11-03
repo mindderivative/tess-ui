@@ -22,10 +22,10 @@ plan = load()
 
 
 @pytest.mark.parametrize("path, doc", [
-    ("docs/guide/layout.md", True), ("docs/schema/tesserae-yaml-schema.json", True), ("design/yaml-language.md", True), ("LOG.md", True),
+    ("docs/guide/layout.md", True), ("docs/schema/tess-ui-yaml-schema.json", True), ("design/yaml-language.md", True), ("LOG.md", True),
     ("README.md", True), ("mkdocs.yml", True), ("AGENTS.md", True), (".agents/skills/live-check/SKILL.md", True),
-    ("src/tesserae/composed.py", False), ("tests/test_app.py", False), ("tools/check.py", False), ("pyproject.toml", False),
-    ("src/tesserae/views/Button_View.yaml", False), (".github/workflows/ci.yml", False), ("LICENSE", False), ("src/README.md", False),
+    ("src/tess_ui/composed.py", False), ("tests/test_app.py", False), ("tools/check.py", False), ("pyproject.toml", False),
+    ("src/tess_ui/views/Button_View.yaml", False), (".github/workflows/ci.yml", False), ("LICENSE", False), ("src/README.md", False),
 ])
 def test_what_counts_as_documentation(path, doc):
     assert plan.is_doc(path) is doc
@@ -45,7 +45,7 @@ def test_only_documentation_is_a_docs_run():
 
 
 def test_documentation_with_code_is_a_partial_run():
-    assert mode(["docs/index.md", "src/tesserae/composed.py"]) == "partial"
+    assert mode(["docs/index.md", "src/tess_ui/composed.py"]) == "partial"
 
 
 def test_a_change_with_no_files_is_not_called_documentation():
@@ -61,26 +61,26 @@ def test_a_full_run_is_called_for_or_comes_with_a_new_release_series(trigger):
 
 
 def test_a_point_release_in_the_same_series_is_not_a_full_run():
-    assert mode(["src/tesserae/composed.py"], base_version="0.5.1.1", head_version="0.5.1.2") == "partial"
+    assert mode(["src/tess_ui/composed.py"], base_version="0.5.1.1", head_version="0.5.1.2") == "partial"
 
 
 def test_other_labels_and_an_auto_dispatch_change_nothing():
-    assert mode(["src/tesserae/composed.py"], labels=["bug"], dispatch="auto") == "partial"
+    assert mode(["src/tess_ui/composed.py"], labels=["bug"], dispatch="auto") == "partial"
 
 
 @pytest.mark.parametrize("asked", ["docs", "partial"])
 def test_a_manual_run_may_ask_for_a_mode(asked):
-    assert mode(["src/tesserae/composed.py"], dispatch=asked) == asked
+    assert mode(["src/tess_ui/composed.py"], dispatch=asked) == asked
 
 
 def test_partial_picks_the_tests_that_cover_the_change():
-    tests, fallback = plan.partial_tests(["src/tesserae/widgets/buttons.py"])
+    tests, fallback = plan.partial_tests(["src/tess_ui/widgets/buttons.py"])
     assert "tests/test_button.py" in tests and not fallback
 
 
 def test_partial_includes_the_tests_that_import_a_core_module():
-    tests, _ = plan.partial_tests(["src/tesserae/__init__.py"])
-    assert len(tests) > 100  # nearly everything imports `tesserae`
+    tests, _ = plan.partial_tests(["src/tess_ui/__init__.py"])
+    assert len(tests) > 100  # nearly everything imports `tess_ui`
 
 
 def test_partial_with_nothing_picked_runs_the_smoke_tests():
@@ -131,8 +131,8 @@ def test_a_dependency_change_in_pyproject_is_a_packaging_change(tmp_path, monkey
 
 
 def test_a_packaging_file_is_a_packaging_change():
-    assert plan.packaging_changed(["src/tesserae/cli.py"], "HEAD", "HEAD") is True
-    assert plan.packaging_changed(["src/tesserae/composed.py"], "HEAD", "HEAD") is False
+    assert plan.packaging_changed(["src/tess_ui/cli.py"], "HEAD", "HEAD") is True
+    assert plan.packaging_changed(["src/tess_ui/composed.py"], "HEAD", "HEAD") is False
 
 
 def test_a_new_branch_is_compared_with_the_trunk(tmp_path, monkeypatch):

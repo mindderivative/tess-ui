@@ -2,9 +2,9 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel
-from tesserae.spec.compose import Virtual
-from tesserae.spec.nodes import LoadError
+from tess_ui import App, Signal, ViewModel
+from tess_ui.spec.compose import Virtual
+from tess_ui.spec.nodes import LoadError
 
 
 class VM(ViewModel):

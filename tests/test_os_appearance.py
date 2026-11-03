@@ -11,9 +11,9 @@ import textwrap
 
 import pytest
 
-from tesserae import App, Theme
-from tesserae.app import _os_dark
-from tesserae.widgets import button
+from tess_ui import App, Theme
+from tess_ui.app import _os_dark
+from tess_ui.widgets import button
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 VIEW = 'id: box\nkind: Rect\nstyle: {width: 10, height: 10, background: surface}\n'
@@ -94,11 +94,11 @@ RUN_SCRIPT = textwrap.dedent(
     '''
     import sys
 
-    import tesserae.app
-    from tesserae import App
+    import tess_ui.app
+    from tess_ui import App
 
     answers = iter([None])  # can't say at start (macOS, Windows), light once open
-    tesserae.app._os_dark = lambda window: next(answers, False)
+    tess_ui.app._os_dark = lambda window: next(answers, False)
     app = App(width=200, height=80, title="os_appearance_live", theme_seed=(0x67, 0x50, 0xA4, 0xFF))
     app.register("Home", app.build_view(sys.argv[1]), None)
     app.show("Home")

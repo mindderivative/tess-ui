@@ -51,7 +51,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import pagination
+from tess_ui.widgets import pagination
 
 pages = pagination(app.window, 10, current=0)
 ```

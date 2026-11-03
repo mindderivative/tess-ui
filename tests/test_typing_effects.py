@@ -3,9 +3,9 @@
 import pytest
 import tre
 
-from tesserae import App, Signal, ViewModel, tokens
-from tesserae.listeners import Listeners
-from tesserae.typing_effects import BLINK_MS, FADE_MS, FLASH_MS, GLIDE_MS, HOLD_MS, TypingEffects
+from tess_ui import App, Signal, ViewModel, tokens
+from tess_ui.listeners import Listeners
+from tess_ui.typing_effects import BLINK_MS, FADE_MS, FLASH_MS, GLIDE_MS, HOLD_MS, TypingEffects
 
 SCHEME = tokens.baseline_scheme()
 WHITE = (255, 255, 255, 255)
@@ -468,7 +468,7 @@ def test_a_text_field_passes_the_settings_to_its_input(tmp_path):
 
 def counting(monkeypatch):
     """Counts the `TypingEffects` made and detached."""
-    from tesserae import typing_effects
+    from tess_ui import typing_effects
 
     made, detached = [], []
     init, detach = typing_effects.TypingEffects.__init__, typing_effects.TypingEffects.detach
@@ -614,7 +614,7 @@ def test_a_setting_out_of_range_is_a_load_error_naming_it_and_where(tmp_path, li
 
 
 def test_a_property_can_bound_a_number_and_a_view_param_can_too():
-    from tesserae.spec.widgets import Property, decl_from_params, json_schema
+    from tess_ui.spec.widgets import Property, decl_from_params, json_schema
 
     prop = Property("float", minimum=0, maximum=1)
     assert prop.coerce(0.5) == 0.5 and prop.coerce(0) == 0 and prop.coerce(1) == 1

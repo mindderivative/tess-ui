@@ -2,10 +2,10 @@
 0.3.5 (its M99) removes its controls (checkbox, radio button, switch,
 slider, spin box, progress, loading indicator, time picker dial, with
 their legacy state methods), its composed widgets and its overlays'
-`open_*`/`close_*`. Tesserae draws its own: `tesserae.controls` (M40),
-`tesserae.widgets` and `tesserae.overlays` (M41), and M42's search, date
+`open_*`/`close_*`. Tesserae draws its own: `tess_ui.controls` (M40),
+`tess_ui.widgets` and `tess_ui.overlays` (M41), and M42's search, date
 and time, media, node graph and new widgets, with `App` off the window's
-theme. This keeps any use of them from creeping back into `src/tesserae`:
+theme. This keeps any use of them from creeping back into `src/tess_ui`:
 it reads the code, not the docstrings, so a mention in prose is fine.
 The names are `tre`'s own removal list (`python/tre/_removed.py`, 0.3.5).
 """
@@ -43,7 +43,7 @@ REMOVED = REMOVED | REMOVED_M41 | REMOVED_M42
 #: M42 Phase 7: the window's theme. Tesserae's own `View`, `Widget` and
 #: controls have `set_theme`/`theme` too, so these count only on a window.
 WINDOW_ONLY = frozenset({"set_theme", "theme"})
-SRC = Path(__file__).resolve().parent.parent / "src" / "tesserae"
+SRC = Path(__file__).resolve().parent.parent / "src" / "tess_ui"
 
 
 def _on_a_window(node: ast.Attribute) -> bool:

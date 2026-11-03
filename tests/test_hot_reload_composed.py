@@ -6,8 +6,8 @@ import time
 
 import pytest
 
-from tesserae import App, Signal, ViewModel
-from tesserae.spec.watch import ComposedWatcher
+from tess_ui import App, Signal, ViewModel
+from tess_ui.spec.watch import ComposedWatcher
 
 
 class VM(ViewModel):
@@ -176,7 +176,7 @@ def test_a_view_it_calls_is_watched_and_an_edit_to_it_reloads(calling):
 
 def test_the_shipped_views_are_not_watched(opened):
     app, view, path, watcher, vm = opened  # it calls Button, which Tesserae ships
-    from tesserae.shipped import SHIPPED
+    from tess_ui.shipped import SHIPPED
 
     assert not [f for f in watcher.files if SHIPPED in f.parents]
     assert any(SHIPPED in f.parents for f in app._composed_docs(path)[1].read)  # it was read; it is just not watched

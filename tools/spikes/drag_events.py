@@ -57,7 +57,7 @@ def where(view, x, y):
 
 
 def build():
-    from tesserae import App
+    from tess_ui import App
 
     app = App(title="Drag spike", theme_seed=(0x67, 0x50, 0xA4, 0xFF))
     view, _ = app.load(HERE / "SplitDrag_View.yaml")

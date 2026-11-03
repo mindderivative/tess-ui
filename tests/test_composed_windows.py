@@ -3,7 +3,7 @@ the expansion produces are wired, and the OS window is set from the Window."""
 
 import pytest
 
-from tesserae import App, ViewModel
+from tess_ui import App, ViewModel
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 
@@ -143,7 +143,7 @@ def test_a_view_with_no_window_is_as_before(tmp_path):
 def test_a_binding_that_needs_a_viewmodel_waits_for_one(tmp_path):
     import yaml
 
-    from tesserae import Signal
+    from tess_ui import Signal
 
     page = {"id": "root", "kind": "Container", "style": {"width": 200, "height": 100},
             "children": [{"id": "shown", "kind": "Text", "text": {"content": "", "typography_role": "body_large"},

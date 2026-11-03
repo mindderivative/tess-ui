@@ -7,10 +7,10 @@ from pathlib import Path
 import pytest
 from loguru import logger
 
-from tesserae.spec import marker
-from tesserae.spec.nodes import LoadError, load_marked, parse_view
-from tesserae.spec.rules import load_rule_sheet
-from tesserae.spec.themes import load_stylesheet, load_theme
+from tess_ui.spec import marker
+from tess_ui.spec.nodes import LoadError, load_marked, parse_view
+from tess_ui.spec.rules import load_rule_sheet
+from tess_ui.spec.themes import load_stylesheet, load_theme
 
 ROOT = Path(__file__).resolve().parent.parent
 VIEW = "widget: Container\nstyle: {width: 10, height: 10}\n"
@@ -127,9 +127,9 @@ def test_a_theme_file_with_a_misplaced_marker_is_an_error_naming_the_file(tmp_pa
 
 
 def test_the_shipped_default_theme_loads_with_its_marker():
-    from tesserae.spec.build import shipped_default_theme
+    from tess_ui.spec.build import shipped_default_theme
 
-    path = ROOT / "src" / "tesserae" / "spec" / "default_theme.yaml"
+    path = ROOT / "src" / "tess_ui" / "spec" / "default_theme.yaml"
     assert path.read_text(encoding="utf-8").startswith(f"tesserae: {marker.LINE}\n")
     assert "tesserae" not in shipped_default_theme() and "styles" in shipped_default_theme()
 
@@ -163,7 +163,7 @@ def test_text_given_straight_to_the_parser_is_not_noted(notes):
 
 
 def test_the_note_is_for_a_view_read_from_disk_too(tmp_path, notes):
-    from tesserae.shipped import ViewLibrary
+    from tess_ui.shipped import ViewLibrary
 
     (tmp_path / "Z_View.yaml").write_text("name: Z\n" + VIEW, encoding="utf-8")
     ViewLibrary({"Z": tmp_path / "Z_View.yaml"}).doc("Z")
@@ -173,7 +173,7 @@ def test_the_note_is_for_a_view_read_from_disk_too(tmp_path, notes):
 # -- migrate-yaml writes the marker on what it translates
 
 def test_migrate_yaml_writes_the_marker_first_in_a_translated_view_and_stylesheet(tmp_path):
-    from tesserae.migrate import migrate_project
+    from tess_ui.migrate import migrate_project
 
     (tmp_path / "Views").mkdir()
     (tmp_path / "Views" / "Main_View.yaml").write_text("# The screen.\nid: root\nkind: Container\nstyle: {width: 100, height: 40}\n", encoding="utf-8")
@@ -191,7 +191,7 @@ def test_migrate_yaml_writes_the_marker_first_in_a_translated_view_and_styleshee
 
 
 def test_migrate_yaml_leaves_a_current_file_alone_marker_or_not(tmp_path):
-    from tesserae.migrate import migrate_project
+    from tess_ui.migrate import migrate_project
 
     (tmp_path / "Views").mkdir()
     keyed = f"tesserae: {marker.LINE}\n{VIEW}"
@@ -206,8 +206,8 @@ def test_migrate_yaml_leaves_a_current_file_alone_marker_or_not(tmp_path):
 # -- a dict a user loaded from such a file
 
 def test_a_mapping_loaded_from_a_file_with_the_marker_is_accepted_by_the_checks_and_other_keys_still_are_not():
-    from tesserae.spec.cascade import check_stylesheet, check_theme
-    from tesserae.spec.rules import RuleSheet
+    from tess_ui.spec.cascade import check_stylesheet, check_theme
+    from tess_ui.spec.rules import RuleSheet
 
     sheet = {"tesserae": marker.LINE, "styles": [{"widget": "Text", "style": {"opacity": 1}}]}
     assert len(RuleSheet.of(sheet).rules) == 1
@@ -241,7 +241,7 @@ def test_every_yaml_file_tesserae_ships_starts_with_the_marker():
 
 
 def test_the_older_syntax_fragments_have_no_marker_it_is_what_marks_them_as_older():
-    for folder in (ROOT / "src" / "tesserae" / "spec" / "components", ROOT / "tests" / "older_syntax"):
+    for folder in (ROOT / "src" / "tess_ui" / "spec" / "components", ROOT / "tests" / "older_syntax"):
         for path in folder.rglob("*.yaml"):
             assert not marker.scan(path.read_text(encoding="utf-8")).found, path
 
@@ -261,7 +261,7 @@ def test_the_stamp_tool_prepends_replaces_and_leaves_alone(tmp_path):
 
 
 def test_a_new_app_and_a_new_screen_are_written_with_the_marker(tmp_path):
-    from tesserae import cli
+    from tess_ui import cli
 
     for flags in ([], ["--window"], ["--window", "--custom-title-bar"]):
         name = "app" + "".join(f.strip("-") for f in flags).replace("window", "w").replace("custom", "c").replace("title-bar", "t")

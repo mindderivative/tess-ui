@@ -1,4 +1,4 @@
-"""Real coverage for `tesserae.widgets`'s Selection & Input category --
+"""Real coverage for `tess_ui.widgets`'s Selection & Input category --
 `checkbox`/`slider`/`radio_button`/`switch`/`spin_box`. Since M40 each
 returns a Tesserae control (P6), attached to the window's root; these
 check the factory's arguments reach it.
@@ -6,8 +6,8 @@ check the factory's arguments reach it.
 
 from tre import Window
 
-from tesserae import controls
-from tesserae.widgets import checkbox, radio_button, slider, spin_box, switch
+from tess_ui import controls
+from tess_ui.widgets import checkbox, radio_button, slider, spin_box, switch
 
 PURPLE = (0x67, 0x50, 0xA4, 0xFF)
 

@@ -8,9 +8,9 @@ import tre
 import yaml
 from PIL import Image
 
-from tesserae import App, View
-from tesserae.spec import effects
-from tesserae.spec.build import SpecBuildError
+from tess_ui import App, View
+from tess_ui.spec import effects
+from tess_ui.spec.build import SpecBuildError
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 
@@ -122,7 +122,7 @@ def test_a_cursor_from_a_picture():
 
 
 def test_a_cursor_picture_is_read_with_the_view(tmp_path):
-    from tesserae.spec.images import extract_images
+    from tess_ui.spec.images import extract_images
 
     Image.new("RGBA", (6, 6), (0, 0, 255, 255)).save(tmp_path / "c.png")
     spec = {"id": "root", "kind": "Container", "children": [
@@ -134,8 +134,8 @@ def test_a_cursor_picture_is_read_with_the_view(tmp_path):
 
 
 def test_a_cursor_picture_must_be_small_and_inside_the_view(tmp_path):
-    from tesserae.spec.expand import ComponentError
-    from tesserae.spec.images import extract_images
+    from tess_ui.spec.expand import ComponentError
+    from tess_ui.spec.images import extract_images
 
     Image.new("RGBA", (300, 10)).save(tmp_path / "big.png")
     spec = {"id": "x", "kind": "Rect", "style": {"cursor": {"src": "big.png"}}}

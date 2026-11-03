@@ -30,7 +30,7 @@ def test_every_key_has_a_description():
 
 
 def test_every_kind_the_compiler_builds_is_described():
-    from tesserae.spec import build
+    from tess_ui.spec import build
 
     page = PAGE.read_text(encoding="utf-8")
     for kind in sorted(build._KINDS | {"TitleBar"}):

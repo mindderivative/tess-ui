@@ -9,9 +9,9 @@ Tesserae draws it.
 ## A dock
 
 ```python
-from tesserae import App
-from tesserae.docking import Dock
-from tesserae.widgets import text
+from tess_ui import App
+from tess_ui.docking import Dock
+from tess_ui.widgets import text
 
 app = App(width=1100, height=700, theme_seed=(0x67, 0x50, 0xA4, 0xFF))
 window = app.window

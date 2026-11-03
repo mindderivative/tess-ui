@@ -86,13 +86,13 @@ def os_appearance(monkeypatch):
     """The OS's light/dark appearance, as `App(dark="system")` reads it
     (M53): unknown (`None`) by default, so an app starts dark whatever the
     desktop running the tests uses. A test sets `os_appearance.dark`."""
-    import tesserae.app
+    import tess_ui.app
 
     class Appearance:
         dark = None
 
     appearance = Appearance()
-    monkeypatch.setattr(tesserae.app, "_os_dark", lambda window: appearance.dark)
+    monkeypatch.setattr(tess_ui.app, "_os_dark", lambda window: appearance.dark)
     return appearance
 
 
@@ -101,7 +101,7 @@ def _the_os_does_not_ask_for_reduced_motion(monkeypatch):
     """An `App` that follows the OS (the default) would read reduced motion from the machine running the tests: GitHub's Windows and macOS
     runners ask for it, so every animation finished at once and the tests that watch one in progress failed. A test that cares passes
     `reduced_motion=True` or `False` itself; `test_os_preferences.py` drives the OS events directly."""
-    from tesserae.app import App
+    from tess_ui.app import App
 
     wanted = App._wanted
 

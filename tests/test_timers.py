@@ -2,9 +2,9 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel
-from tesserae.spec.nodes import LoadError, parse_view
-from tesserae.timers import Timers
+from tess_ui import App, Signal, ViewModel
+from tess_ui.spec.nodes import LoadError, parse_view
+from tess_ui.timers import Timers
 
 
 def window():

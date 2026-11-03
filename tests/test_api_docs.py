@@ -9,7 +9,7 @@ import importlib.util
 import re
 from pathlib import Path
 
-import tesserae
+import tess_ui
 
 ROOT = Path(__file__).resolve().parent.parent
 PAGE = ROOT / "docs" / "api" / "python.md"
@@ -41,6 +41,6 @@ def test_every_public_name_has_a_description():
 def test_every_name_the_package_exports_is_on_the_page():
     page = PAGE.read_text(encoding="utf-8")
     headings = set(re.findall(r"^### `(\w+)`", page, re.MULTILINE))
-    assert set(tesserae.__all__) <= headings | {"register_font", "configure_logging", "untrack", "batch", "instantiate"}
+    assert set(tess_ui.__all__) <= headings | {"register_font", "configure_logging", "untrack", "batch", "instantiate"}
     for name in ("batch", "untrack", "instantiate", "register_font", "configure_logging"):
         assert f"### `{name}`" in page

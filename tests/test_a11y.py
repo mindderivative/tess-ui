@@ -1,5 +1,5 @@
 """M39 Phase 3: MD3's focus ring on keyboard focus, YAML's `a11y:` field,
-and `tesserae.a11y` for Tesserae's widgets (M40).
+and `tess_ui.a11y` for Tesserae's widgets (M40).
 """
 
 import math
@@ -7,9 +7,9 @@ import math
 import pytest
 import tre
 
-import tesserae
-from tesserae import View, a11y, interaction
-from tesserae.spec.build import SpecBuildError
+import tess_ui
+from tess_ui import View, a11y, interaction
+from tess_ui.spec.build import SpecBuildError
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 
@@ -23,7 +23,7 @@ def _spec(*children):
     return {"id": "root", "kind": "Container", "style": {"gap": 20}, "children": list(children)}
 
 
-class VM(tesserae.ViewModel):
+class VM(tess_ui.ViewModel):
     def go(self):
         pass
 
@@ -180,7 +180,7 @@ def test_a_link_keeps_its_role():
         View(_spec(link))
 
 
-# -- tesserae.a11y, for widgets ------------------------------------------------------------
+# -- tess_ui.a11y, for widgets ------------------------------------------------------------
 
 def test_describe_checks_every_field_before_setting_any():
     window = tre.Window(width=100, height=100)
@@ -250,7 +250,7 @@ def test_the_counter_example_works_from_the_keyboard_alone():
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
-    app = tesserae.App(width=240, height=120, dark=True, root=directory, search=["."])
+    app = tess_ui.App(width=240, height=120, dark=True, root=directory, search=["."])
     app.bind(module.CounterViewModel)
     view = app.open_view("Counter")
     window = app.show("Counter")

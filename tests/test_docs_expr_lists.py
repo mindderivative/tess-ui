@@ -1,11 +1,11 @@
-"""The Bindings page lists every function and method an expression may use; a name added to (or dropped from) `tesserae.expr` has to reach the page."""
+"""The Bindings page lists every function and method an expression may use; a name added to (or dropped from) `tess_ui.expr` has to reach the page."""
 
 import re
 from pathlib import Path
 
 import pytest
 
-import tesserae.expr as expr
+import tess_ui.expr as expr
 
 PAGE = (Path(__file__).resolve().parent.parent / "docs" / "guide" / "bindings.md").read_text(encoding="utf-8")
 WORDS = set(re.findall(r"[a-z_]+", PAGE))

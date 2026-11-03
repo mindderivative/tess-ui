@@ -63,7 +63,7 @@ def test_main_writes_the_json_and_keeps_what_was_there(tmp_path, capsys):
 
 
 def test_bundled_icons_join_the_set_but_never_replace_a_built_in_one(tmp_path):
-    import tesserae.icons as icons
+    import tess_ui.icons as icons
 
     (tmp_path / "material_symbols.json").write_text(json.dumps({"alarm": "M0 0Z", "home": "M9 9Z"}))
     bundled = icons._bundled(tmp_path)

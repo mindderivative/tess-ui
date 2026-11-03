@@ -2,11 +2,11 @@
 
 import pytest
 
-from tesserae import App
-from tesserae.shipped import ViewLibrary, shipped_rules
-from tesserae.spec.nodes import LoadError, load_marked
-from tesserae.spec.rules import RuleSheet, load_rule_sheet
-from tesserae.spec import widgets as W
+from tess_ui import App
+from tess_ui.shipped import ViewLibrary, shipped_rules
+from tess_ui.spec.nodes import LoadError, load_marked
+from tess_ui.spec.rules import RuleSheet, load_rule_sheet
+from tess_ui.spec import widgets as W
 
 LIBRARY = ViewLibrary()
 
@@ -61,7 +61,7 @@ def test_a_built_in_widget_has_no_parts_and_a_rule_for_one_is_an_error():
         sheet(rule(name, "label"))
 
 
-@pytest.mark.parametrize("path", sorted(p for p in __import__("pathlib").Path(__file__).resolve().parent.parent.glob("src/tesserae/views/*_Stylesheet.yaml")),
+@pytest.mark.parametrize("path", sorted(p for p in __import__("pathlib").Path(__file__).resolve().parent.parent.glob("src/tess_ui/views/*_Stylesheet.yaml")),
                          ids=lambda p: p.name)
 def test_every_shipped_stylesheet_still_loads_against_the_shipped_views(path):
     load_rule_sheet(path, parts_of=LIBRARY.parts_of)

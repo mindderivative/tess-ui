@@ -2,13 +2,13 @@
 
 import pytest
 
-from tesserae import View, motion
-from tesserae.composed import open_composed
-from tesserae.spec.build import SpecBuildError
-from tesserae.spec.nodes import parse_view
-from tesserae.spec.rules import RuleSheet
-from tesserae.spec.transition import EASINGS, TRANSITIONABLE, plan
-from tesserae.viewmodel import Bindings
+from tess_ui import View, motion
+from tess_ui.composed import open_composed
+from tess_ui.spec.build import SpecBuildError
+from tess_ui.spec.nodes import parse_view
+from tess_ui.spec.rules import RuleSheet
+from tess_ui.spec.transition import EASINGS, TRANSITIONABLE, plan
+from tess_ui.viewmodel import Bindings
 
 SEED = (103, 80, 164, 255)
 RED, BLUE = (255, 0, 0, 255), (0, 0, 255, 255)

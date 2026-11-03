@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from tesserae import App
+from tess_ui import App
 
 from Counter_ViewModel import CounterViewModel
 

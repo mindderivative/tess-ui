@@ -18,11 +18,11 @@ import pytest
 
 from helpers import elevation
 
-import tesserae.app as app_module
-import tesserae.fonts as fonts
-from tesserae import App
-from tesserae.fonts import FontFallbackWarning
-from tesserae.spec import load_view
+import tess_ui.app as app_module
+import tess_ui.fonts as fonts
+from tess_ui import App
+from tess_ui.fonts import FontFallbackWarning
+from tess_ui.spec import load_view
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 RECT = 'id: box\nkind: Rect\nstyle: {width: 10, height: 10, background: "#112233"}\n'
@@ -50,7 +50,7 @@ def _pair(tmp_path: Path, prefix: str):
     view = _write(tmp_path / f"{prefix}_View.yaml", RECT)
     vm_path = _write(
         tmp_path / f"{prefix}_ViewModel.py",
-        f"from tesserae import ViewModel\n\n\nclass {prefix}ViewModel(ViewModel):\n    pass\n",
+        f"from tess_ui import ViewModel\n\n\nclass {prefix}ViewModel(ViewModel):\n    pass\n",
     )
     spec = importlib.util.spec_from_file_location(vm_path.stem, vm_path)
     module = importlib.util.module_from_spec(spec)
@@ -122,7 +122,7 @@ def test_screens_are_tesserae_views_built_in_the_apps_window(tmp_path: Path):
     """M37: `App` builds its screens itself, with Tesserae's `View`, in its
     own window, from the theme and stylesheet it read; `tre` gets nodes,
     never files or dicts."""
-    from tesserae.view import View as TesseraeView
+    from tess_ui.view import View as TesseraeView
 
     theme = _write(tmp_path / "brand.yaml", _rule(elevation=3))
     sheet = _write(tmp_path / "default.yaml", _rule(corner_radius=8))

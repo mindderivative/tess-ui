@@ -16,8 +16,8 @@ import pytest
 from helpers import elevation, view_from
 from tre import Window
 
-from tesserae.spec import ComponentError, expand_components
-from tesserae.widgets import date_picker_day, period_selector, search_bar, search_view, time_picker_dial
+from tess_ui.spec import ComponentError, expand_components
+from tess_ui.widgets import date_picker_day, period_selector, search_bar, search_view, time_picker_dial
 
 FIXTURES_VIEW_PATH = str(Path(__file__).parent / "View.yaml")
 
@@ -86,8 +86,8 @@ children:
 """
     import yaml
 
-    from tesserae import View
-    from tesserae.spec.images import extract_images
+    from tess_ui import View
+    from tess_ui.spec.images import extract_images
 
     spec, frames = extract_images(yaml.safe_load(expand_components(yaml_text)), Path(FIXTURES_VIEW_PATH).parent)
     view = View(spec, frames={node_id: (rgba, w, h) for node_id, rgba, w, h in frames})

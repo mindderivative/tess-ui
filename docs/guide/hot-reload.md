@@ -73,7 +73,7 @@ reload that works is logged at `INFO`. See [Logging](logging.md).
 For a view in the older syntax that you load yourself:
 
 ```python
-from tesserae.spec import ViewWatcher, load_view
+from tess_ui.spec import ViewWatcher, load_view
 
 view = load_view("Home_View.yaml")
 watcher = ViewWatcher(view, "Home_View.yaml")
@@ -106,7 +106,7 @@ reload, so a newly added include, fragment or image is picked up.
 
 ## Components added at run time
 
-In the older syntax, a component built with `tesserae.instantiate` (a `Repeater`'s rows, say)
+In the older syntax, a component built with `tess_ui.instantiate` (a `Repeater`'s rows, say)
 comes from its own `*_View.yaml`, and that file is watched too.
 Editing it reloads every live instance in place. Each keeps its nodes,
 its own ViewModel and its bound values, and a list of rows keeps its

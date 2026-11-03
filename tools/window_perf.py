@@ -31,7 +31,7 @@ PHASES = {"1": "resize", "2": "drag", "0": "idle"}
 
 
 def build(mode: str):
-    from tesserae import App, Signal
+    from tess_ui import App, Signal
 
     class AppState:
         def __init__(self):

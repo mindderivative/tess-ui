@@ -65,7 +65,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import video
+from tess_ui.widgets import video
 
 clip = video(app.window, 320, 180, fit="contain")
 ```

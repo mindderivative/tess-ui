@@ -29,25 +29,25 @@ THEME_MARKS = ("<!-- api:begin (written by tools/generate_api_docs.py) -->", "<!
 
 #: (module, heading, one line on what it is[, the names to list, if not the module's `__all__`]), in page order.
 SECTIONS = (
-    ("tesserae.app", "App", "The entry point: screens, one window, the loop.", ("App",)),
-    ("tesserae.reactive", "Reactivity", "Signals, computed values, effects and the ViewModel base class."),
-    ("tesserae.view", "Views and components", "A loaded `*_View.yaml`, and an embedded instance of one."),
-    ("tesserae.component", "Embedding", "A component with a ViewModel of its own, inside a view.", ("instantiate",)),
-    ("tesserae.repeater", "Repeater", "A list signal kept in step with a list of components.", ("Repeater",)),
-    ("tesserae.project", "Projects", "A project's files, found by name.", ("Project", "ProjectError")),
-    ("tesserae.theme", "Themes", "A resolved MD3 theme, read from code."),
-    ("tesserae.tokens", "Tokens", "MD3's colour, type, shape and motion tokens."),
-    ("tesserae.widgets", "Widgets", "One function per MD3 widget, called against a window."),
-    ("tesserae.controls", "Controls", "MD3's stateful controls."),
-    ("tesserae.overlays", "Overlays", "Dialogs, menus, snackbars, tooltips, sheets, drawers."),
-    ("tesserae.docking", "Docking", "Panels the user can drag between zones."),
-    ("tesserae.interaction", "Interaction", "State layer, ripple and focus ring."),
-    ("tesserae.a11y", "Accessibility", "What a node tells assistive technology."),
-    ("tesserae.binding", "Bindings", "The `{{ expression }}` language."),
-    ("tesserae.fonts", "Fonts", "Registering font files.", ("register_font",)),
-    ("tesserae.icons", "Icons", "The built-in icon set."),
-    ("tesserae.log", "Logging", "Tesserae's log format."),
-    ("tesserae.spec", "Spec loading", "Reading, expanding and watching view files."),
+    ("tess_ui.app", "App", "The entry point: screens, one window, the loop.", ("App",)),
+    ("tess_ui.reactive", "Reactivity", "Signals, computed values, effects and the ViewModel base class."),
+    ("tess_ui.view", "Views and components", "A loaded `*_View.yaml`, and an embedded instance of one."),
+    ("tess_ui.component", "Embedding", "A component with a ViewModel of its own, inside a view.", ("instantiate",)),
+    ("tess_ui.repeater", "Repeater", "A list signal kept in step with a list of components.", ("Repeater",)),
+    ("tess_ui.project", "Projects", "A project's files, found by name.", ("Project", "ProjectError")),
+    ("tess_ui.theme", "Themes", "A resolved MD3 theme, read from code."),
+    ("tess_ui.tokens", "Tokens", "MD3's colour, type, shape and motion tokens."),
+    ("tess_ui.widgets", "Widgets", "One function per MD3 widget, called against a window."),
+    ("tess_ui.controls", "Controls", "MD3's stateful controls."),
+    ("tess_ui.overlays", "Overlays", "Dialogs, menus, snackbars, tooltips, sheets, drawers."),
+    ("tess_ui.docking", "Docking", "Panels the user can drag between zones."),
+    ("tess_ui.interaction", "Interaction", "State layer, ripple and focus ring."),
+    ("tess_ui.a11y", "Accessibility", "What a node tells assistive technology."),
+    ("tess_ui.binding", "Bindings", "The `{{ expression }}` language."),
+    ("tess_ui.fonts", "Fonts", "Registering font files.", ("register_font",)),
+    ("tess_ui.icons", "Icons", "The built-in icon set."),
+    ("tess_ui.log", "Logging", "Tesserae's log format."),
+    ("tess_ui.spec", "Spec loading", "Reading, expanding and watching view files."),
 )
 
 def _paragraph(doc: str | None, sentences: int = 1) -> str:
@@ -128,7 +128,7 @@ def _wrap(signature: str) -> str:
 
 
 def _own(cls: type) -> bool:
-    return cls.__module__.split(".")[0] == "tesserae"
+    return cls.__module__.split(".")[0] == "tess_ui"
 
 
 def _public_members(cls: type) -> list[tuple[str, Any]]:
@@ -251,30 +251,30 @@ def _members(cls: type, names: tuple[str, ...], missing: list[str]) -> list[str]
 
 def theme_block() -> tuple[str, list[str]]:
     """The theme API, for the end of the Themes page: what reads and changes a theme."""
-    from tesserae import fonts, tokens
-    from tesserae.app import App
-    from tesserae.spec import load_stylesheet, load_theme
-    from tesserae.theme import Theme
-    from tesserae.view import View
+    from tess_ui import fonts, tokens
+    from tess_ui.app import App
+    from tess_ui.spec import load_stylesheet, load_theme
+    from tess_ui.theme import Theme
+    from tess_ui.view import View
 
     missing: list[str] = []
     out = ["### On the app", ""]
     out += _members(App, ("theme", "dark", "dark_mode", "set_dark", "set_theme_specs", "set_stylesheet_spec", "build_view"), missing)
     out += ["", "### On a view", ""] + _members(View, ("theme", "set_theme", "set_stylesheet"), missing) + [""]
-    out += _describe_class(Theme, "tesserae.Theme", missing)
+    out += _describe_class(Theme, "tess_ui.Theme", missing)
     out += ["### Loading files", ""]
     for fn, name in ((load_theme, "load_theme"), (load_stylesheet, "load_stylesheet")):
         doc = _paragraph(fn.__doc__)
         if not doc:
-            missing.append(f"tesserae.spec.{name}")
+            missing.append(f"tess_ui.spec.{name}")
         out.append(f"- `{_signature(fn, name)}`: {doc}")
     out.append("")
-    out += ["### Tokens", "", "`tesserae.tokens`: Material Design 3's tokens as Python values.", ""]
+    out += ["### Tokens", "", "`tess_ui.tokens`: Material Design 3's tokens as Python values.", ""]
     for name in ("shape", "elevation", "type_style", "color_scheme", "baseline_scheme", "resolve_scheme", "parse_color", "elevation_shadows"):
         fn = getattr(tokens, name)
         doc = _paragraph(fn.__doc__)
         if not doc:
-            missing.append(f"tesserae.tokens.{name}")
+            missing.append(f"tess_ui.tokens.{name}")
         out.append(f"- `{_signature(fn, name)}`: {doc}")
     out += [""] + [_describe_constant(getattr(tokens, name), f"tokens.{name}") + "" for name in ("ROLES", "SHAPES", "ELEVATION_LEVELS", "TYPE_SCALE", "BASELINE")]
     out += ["### Fonts", ""]
@@ -282,7 +282,7 @@ def theme_block() -> tuple[str, list[str]]:
         fn = getattr(fonts, name)
         doc = _paragraph(fn.__doc__)
         if not doc:
-            missing.append(f"tesserae.fonts.{name}")
+            missing.append(f"tess_ui.fonts.{name}")
         out.append(f"- `{_signature(fn, name)}`: {doc}")
     out.append(f"- `FontFallbackWarning`: {_paragraph(fonts.FontFallbackWarning.__doc__)}")
     out.append(f"- `BUNDLED_FAMILIES` = `{sorted(fonts.BUNDLED_FAMILIES)!r}`")

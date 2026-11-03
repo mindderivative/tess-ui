@@ -1,4 +1,4 @@
-"""The old-syntax component fragments (`src/tesserae/spec/components/*_Component.yaml`), read for the sweeps in tests that still cover the
+"""The old-syntax component fragments (`src/tess_ui/spec/components/*_Component.yaml`), read for the sweeps in tests that still cover the
 compatibility loader. (The docs generator now documents the shipped views; this is the part of its old reader that the tests used.)"""
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from typing import Any
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
-FRAGMENTS = ROOT / "src" / "tesserae" / "spec" / "components"
+FRAGMENTS = ROOT / "src" / "tess_ui" / "spec" / "components"
 
 #: Example values for a fragment's parameters, to show what its stylesheet expands to.
 SAMPLE = {"label": "Go", "title": "Title", "text": "Hello", "headline": "Headline", "width": 120, "height": 40,
@@ -73,7 +73,7 @@ class Fragment:
 
     def expanded_styles(self) -> dict[str, Any]:
         """Each part's style once the stylesheet is applied, for the example parameters."""
-        from tesserae.spec.expand import expand_components_to_spec
+        from tess_ui.spec.expand import expand_components_to_spec
 
         spec = expand_components_to_spec(yaml.safe_dump({"id": "x", "component": self.name, "with": self.sample()}))
         out: dict[str, Any] = {}

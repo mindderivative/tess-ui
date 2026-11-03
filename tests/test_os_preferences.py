@@ -2,7 +2,7 @@
 
 import pytest
 
-from tesserae import App, motion, tokens
+from tess_ui import App, motion, tokens
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 
@@ -74,7 +74,7 @@ def test_the_contrast_level_changes_the_scheme():
 
 
 def test_an_indeterminate_progress_does_not_sweep_when_motion_is_reduced():
-    from tesserae import controls
+    from tess_ui import controls
 
     app = _app(reduced_motion=True)
     bar = controls.LinearProgress(app.window, value=None)
@@ -83,7 +83,7 @@ def test_an_indeterminate_progress_does_not_sweep_when_motion_is_reduced():
 
 
 def test_an_indeterminate_progress_sweeps_otherwise():
-    from tesserae import controls
+    from tess_ui import controls
 
     app = _app(reduced_motion=False)
     bar = controls.LinearProgress(app.window, value=None)
@@ -130,7 +130,7 @@ def test_the_stats_overlay_shows_and_goes():
 
 
 def test_the_environment_turns_the_overlay_on(monkeypatch):
-    monkeypatch.setenv("TESSERAE_STATS", "1")
+    monkeypatch.setenv("TESS_UI_STATS", "1")
     assert _app().stats_overlay is True
 
 

@@ -32,7 +32,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import tooltip
+from tess_ui.widgets import tooltip
 
 tip = tooltip(app.window, "Save the file", anchor=save.node)
 ```

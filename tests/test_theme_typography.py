@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from tesserae import App, View, instantiate
+from tess_ui import App, View, instantiate
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 MONO = "Hack Nerd Font Mono"
@@ -71,7 +71,7 @@ def test_a_component_follows_its_hosts_theme_typography(tmp_path):
     card = tmp_path / "Card_View.yaml"
     card.write_text('id: card\nkind: Text\ntext: {content: hi, typography_role: body_large}\nstyle: {foreground: "#000000"}\n')
     vm_file = tmp_path / "Card_ViewModel.py"
-    vm_file.write_text("from tesserae import ViewModel\n\n\nclass CardViewModel(ViewModel):\n    pass\n")
+    vm_file.write_text("from tess_ui import ViewModel\n\n\nclass CardViewModel(ViewModel):\n    pass\n")
     spec = importlib.util.spec_from_file_location(vm_file.stem, vm_file)
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
@@ -85,7 +85,7 @@ def test_an_apps_theme_typography_reaches_its_screens(tmp_path):
     view_file = tmp_path / "Home_View.yaml"
     view_file.write_text('id: root\nkind: Container\nchildren:\n  - {id: t, kind: Text, text: {content: x, typography_role: body_large}, style: {foreground: "#000000"}}\n')
     vm_file = tmp_path / "Home_ViewModel.py"
-    vm_file.write_text("from tesserae import ViewModel\n\n\nclass HomeViewModel(ViewModel):\n    pass\n")
+    vm_file.write_text("from tess_ui import ViewModel\n\n\nclass HomeViewModel(ViewModel):\n    pass\n")
     spec = importlib.util.spec_from_file_location(vm_file.stem, vm_file)
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module

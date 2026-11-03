@@ -1,4 +1,4 @@
-"""Real coverage for `tesserae.spec.expand_components` -- Part 3's
+"""Real coverage for `tess_ui.spec.expand_components` -- Part 3's
 macro-expansion engine. Exercises the real `Button_Component.yaml`
 fragment end to end (parsed by `yaml.safe_load`, constructed as a real
 `tre.View`), plus every real guard the engine states in its own module
@@ -17,10 +17,10 @@ from helpers import elevation, view_from
 import yaml
 from tre import Window
 
-from tesserae.spec import ComponentError, expand_components
-from tesserae.spec.expand import MAX_DEPTH
-from tesserae.widgets import button as imperative_button
-from tesserae.widgets import list_item as imperative_list_item
+from tess_ui.spec import ComponentError, expand_components
+from tess_ui.spec.expand import MAX_DEPTH
+from tess_ui.widgets import button as imperative_button
+from tess_ui.widgets import list_item as imperative_list_item
 
 BUTTON_WITH = {"label": "Save", "width": 120, "height": 40, "corner_radius": 20}
 
@@ -301,7 +301,7 @@ def test_nested_repeat_namespaces_correctly_under_the_outer_call(tmp_path: Path)
     # `component:` node, and that the outer call site's own id still
     # prefixes every inner repeated instance, exactly once, matching
     # ordinary nested-component namespacing.
-    from tesserae.spec import expand as expand_module
+    from tess_ui.spec import expand as expand_module
 
     real_components_dir = Path(expand_module.__file__).parent / "components"
     (tmp_path / "Section_Component.yaml").write_text(

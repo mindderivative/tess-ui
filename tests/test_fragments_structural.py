@@ -11,8 +11,8 @@ import pytest
 from helpers import elevation, view_from
 from tre import Window
 
-from tesserae.spec import ComponentError, expand_components
-from tesserae.widgets import accordion_header, badge, card, chip, divider, link, list_item, tree_node
+from tess_ui.spec import ComponentError, expand_components
+from tess_ui.widgets import accordion_header, badge, card, chip, divider, link, list_item, tree_node
 
 THEME_SEED = (0x67, 0x50, 0xA4, 0xFF)
 

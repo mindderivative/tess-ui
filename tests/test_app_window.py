@@ -6,7 +6,7 @@ They're the window's own properties, so each is read back from `tre`.
 import pytest
 from PIL import Image
 
-from tesserae import App
+from tess_ui import App
 
 
 def test_the_defaults_are_a_native_window():
@@ -113,7 +113,7 @@ def test_maximized_and_active_follow_the_window():
 
 
 def test_a_binding_follows_maximized():
-    from tesserae import View, ViewModel
+    from tess_ui import View, ViewModel
 
     app = App()
     view = View({"id": "root", "kind": "Text", "text": {"content": "", "font_family": "Roboto", "font_size": 12},

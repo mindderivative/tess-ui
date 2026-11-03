@@ -8,7 +8,7 @@ scroll_offset`. These check the outcomes, whoever does the scrolling.
 
 import pytest
 
-from tesserae import Signal, Theme, View, ViewModel
+from tess_ui import Signal, Theme, View, ViewModel
 
 LINE = 40.0  # an arrow key's scroll (tre's)
 

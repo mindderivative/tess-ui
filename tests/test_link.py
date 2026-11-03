@@ -2,7 +2,7 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel, tokens, urls
+from tess_ui import App, Signal, ViewModel, tokens, urls
 
 
 class VM(ViewModel):
@@ -153,7 +153,7 @@ def test_the_underline_survives_a_re_sync_while_the_pointer_is_over_it(tmp_path)
 
 
 def test_a_wrong_underline_is_a_load_error(tmp_path):
-    from tesserae.spec.nodes import LoadError
+    from tess_ui.spec.nodes import LoadError
 
     with pytest.raises(LoadError, match="underline"):
         opened(tmp_path, "  - {widget: Link, name: l, text: Docs, underline: wavy}\n")

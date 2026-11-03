@@ -17,8 +17,8 @@ from pathlib import Path
 
 
 def main() -> int:
-    import tesserae
-    from tesserae import cli
+    import tess_ui
+    from tess_ui import cli
 
     engine = importlib.metadata.version("tesserae-engine")
     print(f"tesserae {importlib.metadata.version('tesserae-ui')} on tre {engine}, Python {sys.version.split()[0]}, "
@@ -38,7 +38,7 @@ def main() -> int:
             report.update(current=app.current, greeting=home.node("root.greeting").get("text"),
                           count=home.node("root.count").get("text"))
 
-        tesserae.App.run = run
+        tess_ui.App.run = run
         sys.path.insert(0, str(project))
         os.chdir(project)
         sys.argv = ["app.py"]

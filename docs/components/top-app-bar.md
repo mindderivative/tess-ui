@@ -67,7 +67,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import top_app_bar
+from tess_ui.widgets import top_app_bar
 
 bar = top_app_bar(app.window, "Notes", leading_icon="menu", trailing_icons=["settings"])
 ```

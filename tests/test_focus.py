@@ -2,10 +2,10 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel
-from tesserae.composed import open_composed
-from tesserae.spec.nodes import LoadError, parse_view
-from tesserae.viewmodel import Bindings, check_view
+from tess_ui import App, Signal, ViewModel
+from tess_ui.composed import open_composed
+from tess_ui.spec.nodes import LoadError, parse_view
+from tess_ui.viewmodel import Bindings, check_view
 
 SEED = (103, 80, 164, 255)
 BOX = "style: {width: 60, height: 30, background: '#6750A4'}"
@@ -67,7 +67,7 @@ def test_focus_names_a_node_in_the_view_the_handler_was_written_in():
     pair = ("params:\n  text: {type: str, default: '', model: true}\nwidget: Container\nstyle: {flex_direction: vertical}\nchildren:\n"
             f"  - {{widget: Rect, name: go, {BOX}, handlers: {{on_click: \"focus('input')\"}}}}\n"
             "  - widget: TextInput\n    name: input\n    text: '{{ text }}'\n    " + FIELD)
-    from tesserae.shipped import ViewLibrary
+    from tess_ui.shipped import ViewLibrary
     import tempfile, pathlib
     folder = pathlib.Path(tempfile.mkdtemp())
     (folder / "Pair_View.yaml").write_text(pair)
@@ -210,7 +210,7 @@ def test_a_disabled_item_is_skipped():
 
 
 def test_typing_the_start_of_a_name_jumps_to_it_and_a_pause_starts_over(monkeypatch):
-    import tesserae.composed as composed
+    import tess_ui.composed as composed
 
     view, _ = render(group("vertical", labels=("Apple", "Banana", "Blueberry", "Cherry")))
     seen = watch(view, *ids(4))
@@ -276,7 +276,7 @@ def test_focus_group_is_checked_and_focus_is_a_known_action():
 def test_the_widget_schema_knows_focus_group():
     import jsonschema
 
-    from tesserae.spec import widgets
+    from tess_ui.spec import widgets
 
     validator = jsonschema.Draft7Validator(widgets.json_schema())
     assert not list(validator.iter_errors({"widget": "Container", "focus_group": "both", "children": []}))

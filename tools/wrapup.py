@@ -9,7 +9,7 @@ a milestone, step or feature is finished. This reads git, LOG.md and the board a
 behind, so nothing is left to remembering:
 
   * commits since LOG.md last changed, and the issue numbers they mention that LOG.md does not;
-  * code changes under src/tesserae/ with no docs/ change since the same point;
+  * code changes under src/tess_ui/ with no docs/ change since the same point;
   * cards In progress / In review whose issue LOG.md never mentions;
   * uncommitted work, unpushed work, a stale version, a stale code graph.
 
@@ -68,7 +68,7 @@ def main():
     # code that users see changed, docs did not
     changed = set(sh("git", "diff", "--name-only", f"{trunk}...HEAD").splitlines())
     changed |= set(sh("git", "diff", "--name-only", "HEAD").splitlines())
-    api = sorted(f for f in changed if f.startswith("src/tesserae/") and f.endswith(".py"))
+    api = sorted(f for f in changed if f.startswith("src/tess_ui/") and f.endswith(".py"))
     docs = sorted(f for f in changed if f.startswith("docs/") or f in ("README.md", "CHANGELOG.md"))
     check(not api or docs, "no Python-facing code changed without docs",
           f"{len(api)} Python-facing file(s) changed and no docs/ file did (e.g. {api[0] if api else ''})")

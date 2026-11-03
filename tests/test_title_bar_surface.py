@@ -6,9 +6,9 @@ import sys
 import pytest
 import yaml
 
-from tesserae import App, View
-from tesserae.overlays import Dialog, ViewDialog, dismiss_surface
-from tesserae.spec.title_bar import TitleBarError, expand_title_bars
+from tess_ui import App, View
+from tess_ui.overlays import Dialog, ViewDialog, dismiss_surface
+from tess_ui.spec.title_bar import TitleBarError, expand_title_bars
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 SETTINGS = """
@@ -28,7 +28,7 @@ children:
   - {id: name, kind: Text, text: {content: "", typography_role: body_large}, style: {foreground: on_surface}, bindings: {text: "{{ shown.get() }}"}}
 """
 FORM_VM = """
-from tesserae import Signal, ViewModel
+from tess_ui import Signal, ViewModel
 
 
 class {name}ViewModel(ViewModel):
@@ -182,7 +182,7 @@ children:
 
 
 def test_an_unknown_surface_action_is_one_line_when_a_viewmodel_attaches():
-    from tesserae import ViewModel
+    from tess_ui import ViewModel
 
     view = View(yaml.safe_load("""
 id: root

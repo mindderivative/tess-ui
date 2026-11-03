@@ -8,7 +8,7 @@ and Alt+Right go back and forward.
 
 import pytest
 
-from tesserae import App, Signal, View, ViewModel
+from tess_ui import App, Signal, View, ViewModel
 
 
 def _screen(label="screen"):
@@ -156,7 +156,7 @@ def test_an_unknown_screen_is_named():
 
 
 def test_can_go_back_and_forward_are_signals_to_follow():
-    from tesserae import Effect
+    from tess_ui import Effect
 
     app, _ = _app("Home", "Notes")
     seen = []

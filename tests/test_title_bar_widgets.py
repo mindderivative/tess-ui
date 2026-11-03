@@ -2,7 +2,7 @@
 
 import pytest
 
-from tesserae import App, ViewModel
+from tess_ui import App, ViewModel
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 

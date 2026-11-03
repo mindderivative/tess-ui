@@ -2,9 +2,9 @@
 
 import pytest
 
-from tesserae import App, Signal, View, ViewModel, a11y
-from tesserae.spec.build import SpecBuildError
-from tesserae.spec.nodes import LoadError, parse_view
+from tess_ui import App, Signal, View, ViewModel, a11y
+from tess_ui.spec.build import SpecBuildError
+from tess_ui.spec.nodes import LoadError, parse_view
 
 SEED = (103, 80, 164, 255)
 

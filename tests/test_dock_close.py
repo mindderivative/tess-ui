@@ -2,7 +2,7 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel
+from tess_ui import App, Signal, ViewModel
 
 WINDOW = """name: main
 widget: Window

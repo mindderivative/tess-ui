@@ -2,7 +2,7 @@
 
 import pytest
 
-from tesserae import App, tokens
+from tess_ui import App, tokens
 
 ITEMS = "[{value: a, label: Alpha, icon: home}, {value: b, label: Beta, icon: search}]"
 ROWS = "[{value: a, label: Alpha}, {value: b, label: Beta}]"

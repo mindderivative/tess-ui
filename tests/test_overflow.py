@@ -2,7 +2,7 @@
 
 import pytest
 
-from tesserae import App, ViewModel
+from tess_ui import App, ViewModel
 
 
 class VM(ViewModel):
@@ -58,7 +58,7 @@ def test_it_is_the_same_as_clip_children(tmp_path):
 
 
 def test_the_engine_style_has_clip_children_and_not_our_name_for_it():
-    from tesserae.spec.layout import engine_style
+    from tess_ui.spec.layout import engine_style
 
     engine = engine_style("n", {"overflow": "hidden"})
     assert engine["clip_children"] is True and "overflow" not in engine

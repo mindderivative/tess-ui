@@ -3,11 +3,11 @@ a stylesheet rule and a handler -- with the line, and the names that are near.""
 
 import pytest
 
-from tesserae import Signal
-from tesserae.expr import BUILTIN_FUNCTIONS, ExprError, compile_expr, compile_statements, compile_template
-from tesserae.spec.compose import Composer
-from tesserae.spec.nodes import LoadError, load_marked, parse_view
-from tesserae.spec.rules import RuleSheet
+from tess_ui import Signal
+from tess_ui.expr import BUILTIN_FUNCTIONS, ExprError, compile_expr, compile_statements, compile_template
+from tess_ui.spec.compose import Composer
+from tess_ui.spec.nodes import LoadError, load_marked, parse_view
+from tess_ui.spec.rules import RuleSheet
 
 
 class VM:

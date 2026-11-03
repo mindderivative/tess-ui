@@ -28,7 +28,7 @@ The board is the GitHub project "Tesserae UI Framework" (`python3 tools/board.py
 
 ## 3. Change the code
 
-- Small edits. The omp hooks (`.omp/hooks/post/`, AGENTS.md "Hooks") run a pyflakes check and `tools/tests_for.py` after each edit under `src/tesserae/` or `tests/`; a failure comes back after the tool's own result. Read it, do not retry blindly. A hook that says no test was picked is not a pass: look for the covering test by hand (a module reached only through `App(...)` options is the usual case).
+- Small edits. The omp hooks (`.omp/hooks/post/`, AGENTS.md "Hooks") run a pyflakes check and `tools/tests_for.py` after each edit under `src/tess_ui/` or `tests/`; a failure comes back after the tool's own result. Read it, do not retry blindly. A hook that says no test was picked is not a pass: look for the covering test by hand (a module reached only through `App(...)` options is the usual case).
 - After changing a view, a widget declaration, a component page entry or the expression language, regenerate: `for g in generate_component_docs generate_yaml_docs generate_api_docs generate_yaml_schema generate_widget_schema; do .venv/bin/python tools/$g.py; done`. Never edit `docs/components/*.md` by hand (`tools/component_docs.yaml` is the source). A new spec-generated node key goes in three places (DEVELOPING.md section 4).
 
 ## 4. Check

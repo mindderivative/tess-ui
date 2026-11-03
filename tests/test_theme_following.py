@@ -1,4 +1,4 @@
-"""M50 Phases 2-3: `tesserae.widgets` widgets and controls, views, the
+"""M50 Phases 2-3: `tess_ui.widgets` widgets and controls, views, the
 shell and dock, and overlays follow the app's theme (M50 Q1-Q3). Made with no `theme=` on an `App`'s window, they take
 the app's theme and are re-coloured with its views by `set_dark`, the OS
 switching light and dark, and `set_theme_specs`; an explicit `theme=`
@@ -10,12 +10,12 @@ import gc
 import pytest
 import tre
 
-from tesserae import App, Theme, View, tokens
-from tesserae.controls import Checkbox, SpinBox
-from tesserae.docking import Dock
-from tesserae.follow import app_of, initial_theme
-from tesserae.overlays import NavigationDrawer
-from tesserae.widgets import button, dialog, linear_progress
+from tess_ui import App, Theme, View, tokens
+from tess_ui.controls import Checkbox, SpinBox
+from tess_ui.docking import Dock
+from tess_ui.follow import app_of, initial_theme
+from tess_ui.overlays import NavigationDrawer
+from tess_ui.widgets import button, dialog, linear_progress
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 OTHER = (0x00, 0x66, 0x88, 0xFF)

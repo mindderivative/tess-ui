@@ -66,7 +66,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import card
+from tess_ui.widgets import card
 
 summary = card(app.window, 240, 120, variant="elevated")
 ```

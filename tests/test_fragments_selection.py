@@ -1,7 +1,7 @@
 """Real coverage for the Selection & Input component fragments
 (`Checkbox`/`Slider`/`SpinBox`/`RadioButton`/`Switch`). Since M40 the
 kinds they expand to are Tesserae's MD3 controls, so each is checked
-against the `tesserae.widgets` factory's control by state.
+against the `tess_ui.widgets` factory's control by state.
 """
 
 import pytest
@@ -9,8 +9,8 @@ import pytest
 from helpers import elevation, view_from
 from tre import Window
 
-from tesserae.spec import ComponentError, expand_components
-from tesserae.widgets import radio_button, spin_box, switch
+from tess_ui.spec import ComponentError, expand_components
+from tess_ui.widgets import radio_button, spin_box, switch
 
 THEME_SEED = (0x67, 0x50, 0xA4, 0xFF)
 

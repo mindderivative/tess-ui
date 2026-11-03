@@ -1,5 +1,5 @@
-"""Real, repeatable coverage for `tesserae.Repeater` -- automatic, keyed
-add/remove diffing over a list `Signal`, built on top of `tesserae
+"""Real, repeatable coverage for `tess_ui.Repeater` -- automatic, keyed
+add/remove diffing over a list `Signal`, built on top of `tess_ui
 .instantiate`/`Component.remove()` (TRE M43).
 """
 
@@ -8,7 +8,7 @@ import sys
 
 import pytest
 
-from tesserae import Repeater, Signal, View
+from tess_ui import Repeater, Signal, View
 
 PARENT_VIEW = """
 id: root
@@ -38,7 +38,7 @@ def load_viewmodel_class(tmp_path, filename, class_name, extra_params=()):
     extra_args = "".join(f", {name}" for name in extra_params)
     path = tmp_path / filename
     path.write_text(
-        f"from tesserae import Signal, ViewModel\n\n\n"
+        f"from tess_ui import Signal, ViewModel\n\n\n"
         f"class {class_name}(ViewModel):\n"
         f"    def __init__(self, view{extra_args}):\n"
         f"        self.value = Signal(0)\n"

@@ -163,7 +163,7 @@ app doesn't unpack itself each time it starts.
   `/VERYSILENT /CURRENTUSER`.
 
   Tesserae uses the Inno Setup it finds (the PATH, or where Inno Setup 6
-  or 7 installs; `TESSERAE_ISCC` names one exactly). If there's none, it
+  or 7 installs; `TESS_UI_ISCC` names one exactly). If there's none, it
   fetches Inno Setup 7.1.0 (14 MB, from its GitHub releases, checked
   against the release's SHA-256), once, into a cache
   (`AppData\Local\tesserae\tools`), and unpacks it there in Inno
@@ -251,9 +251,9 @@ containers), and removes the Windows and Linux ones again.
 Two environment variables, which `--check` uses, work for any Tesserae
 app, built or not, when an automated test or CI runs it:
 
-- `TESSERAE_MAX_FRAMES=n` stops `app.run()` after `n` frames, unless the
+- `TESS_UI_MAX_FRAMES=n` stops `app.run()` after `n` frames, unless the
   app passes `max_frames` itself.
-- `TESSERAE_FRAMES_REPORT=<file>` writes how many frames the run drew to
+- `TESS_UI_FRAMES_REPORT=<file>` writes how many frames the run drew to
   that file. With no display a run draws none and returns at once, so a
   clean exit alone doesn't show the app worked.
 

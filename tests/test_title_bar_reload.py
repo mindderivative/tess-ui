@@ -8,8 +8,8 @@ import os
 import pytest
 import yaml
 
-from tesserae import App, ViewModel
-from tesserae.spec.watch import ViewWatcher
+from tess_ui import App, ViewModel
+from tess_ui.spec.watch import ViewWatcher
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 

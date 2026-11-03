@@ -2,7 +2,7 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel
+from tess_ui import App, Signal, ViewModel
 
 
 class VM(ViewModel):
@@ -94,8 +94,8 @@ def test_a_signal_turns_it_on_and_off_and_dropping_it_puts_the_node_back(tmp_pat
 
 
 def test_a_patch_that_no_longer_gives_it_puts_the_property_back():
-    from tesserae.spec.build import _resets, layout_keys
-    from tesserae.spec.layout import engine_style
+    from tess_ui.spec.build import _resets, layout_keys
+    from tess_ui.spec.layout import engine_style
 
     engine = engine_style("n", {"pointer_events": "none"})
     assert engine["hit_testable"] is False and "pointer_events" not in engine  # the engine's name for it, not ours

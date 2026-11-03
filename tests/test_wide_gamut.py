@@ -12,7 +12,7 @@ import random
 import pytest
 import tre
 
-from tesserae import tokens
+from tess_ui import tokens
 
 import reference
 

@@ -17,7 +17,7 @@ that reads nothing that can change (literals, params with fixed values,
 a loop variable over a fixed list) is worked out once.
 
 An expression is a **Python subset**, run by a sandboxed
-evaluator (`tesserae.expr`): nothing in a view file can import, open a
+evaluator (`tess_ui.expr`): nothing in a view file can import, open a
 file, reach `__class__` or run code the application did not expose. The
 limits are below.
 
@@ -112,7 +112,7 @@ do not have, without a window.
 
 ## Who evaluates it
 
-Tesserae does: `tesserae.expr` is the evaluator, and `ComposedView` keeps the live nodes in step with what it reads.
+Tesserae does: `tess_ui.expr` is the evaluator, and `ComposedView` keeps the live nodes in step with what it reads.
 
 A binding that changes a value sets it; one whose value hasn't changed
 does nothing. Setting a value from a binding never counts as the user's

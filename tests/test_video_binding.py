@@ -8,10 +8,10 @@ Decoding stays the app's.
 import pytest
 import yaml
 
-import tesserae
-from tesserae import Signal, View
-from tesserae.spec import expand_components_to_spec
-from tesserae.widgets import video
+import tess_ui
+from tess_ui import Signal, View
+from tess_ui.spec import expand_components_to_spec
+from tess_ui.widgets import video
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 
@@ -20,7 +20,7 @@ def _frame(width, height, value):
     return (bytes([value, value, value, 255]) * (width * height), width, height)
 
 
-class Player(tesserae.ViewModel):
+class Player(tess_ui.ViewModel):
     def __init__(self, view):
         self.frame = Signal(_frame(2, 2, 10))
         self.label = Signal("x")

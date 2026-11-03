@@ -61,7 +61,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import status_bar
+from tess_ui.widgets import status_bar
 
 status = status_bar(app.window, "Ready", style={"height": 32})
 ```

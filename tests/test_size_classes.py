@@ -2,7 +2,7 @@
 
 import pytest
 
-from tesserae import App, ViewModel, tokens
+from tess_ui import App, ViewModel, tokens
 
 
 @pytest.mark.parametrize("width, expected", [

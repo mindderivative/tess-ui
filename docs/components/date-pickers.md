@@ -75,7 +75,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import date_picker_day
+from tess_ui.widgets import date_picker_day
 
 day = date_picker_day(app.window, 7, selected=True)
 ```

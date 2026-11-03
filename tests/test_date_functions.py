@@ -2,11 +2,11 @@
 
 import pytest
 
-from tesserae.expr import ExprError, compile_expr
+from tess_ui.expr import ExprError, compile_expr
 
 
 def run(source, **names):
-    from tesserae.expr import MapScope
+    from tess_ui.expr import MapScope
 
     return compile_expr(source).evaluate(MapScope(names))
 

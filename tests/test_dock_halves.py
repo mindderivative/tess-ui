@@ -7,8 +7,8 @@ tools/spikes/drag_events.py)."""
 import pytest
 import yaml
 
-from tesserae.docking import DRAG_THRESHOLD, HALF, HALF_EDGE, TAB_HEIGHT
-from tesserae.dockhost import HANDLE_SPAN, MIN_SPLIT
+from tess_ui.docking import DRAG_THRESHOLD, HALF, HALF_EDGE, TAB_HEIGHT
+from tess_ui.dockhost import HANDLE_SPAN, MIN_SPLIT
 from test_dock_view import DOCK, _reload, _view
 
 

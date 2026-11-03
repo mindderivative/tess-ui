@@ -8,8 +8,8 @@ window actions without a ViewModel method.
 import pytest
 import yaml
 
-from tesserae import App, View, ViewModel
-from tesserae.spec.build import SpecBuildError
+from tess_ui import App, View, ViewModel
+from tess_ui.spec.build import SpecBuildError
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 

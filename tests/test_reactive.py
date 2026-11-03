@@ -1,4 +1,4 @@
-"""M35: Tesserae's reactivity (`tesserae.reactive`) behaves exactly like
+"""M35: Tesserae's reactivity (`tess_ui.reactive`) behaves exactly like
 `tre`'s, which it replaces (`tre` D5).
 
 Every behavioural test ran against both implementations while `tre`
@@ -11,10 +11,10 @@ covered by `test_view.py`.)
 
 import pytest
 
-import tesserae
-import tesserae.reactive
+import tess_ui
+import tess_ui.reactive
 
-IMPLS = {"tesserae": tesserae.reactive}
+IMPLS = {"tesserae": tess_ui.reactive}
 
 
 @pytest.fixture(params=sorted(IMPLS))
@@ -197,5 +197,5 @@ def test_writing_a_signal_while_it_notifies_raises(rx):
 
 def test_tesserae_exports_its_own_reactivity():
     for name in ("Signal", "Computed", "Effect", "ViewModel", "batch", "untrack"):
-        assert getattr(tesserae, name) is getattr(tesserae.reactive, name)
-        assert getattr(tesserae, name).__module__ == "tesserae.reactive"  # not tre's (0.3.5 has none)
+        assert getattr(tess_ui, name) is getattr(tess_ui.reactive, name)
+        assert getattr(tess_ui, name).__module__ == "tess_ui.reactive"  # not tre's (0.3.5 has none)

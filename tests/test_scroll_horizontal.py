@@ -2,8 +2,8 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel
-from tesserae.spec.build import SpecBuildError
+from tess_ui import App, Signal, ViewModel
+from tess_ui.spec.build import SpecBuildError
 
 
 class VM(ViewModel):

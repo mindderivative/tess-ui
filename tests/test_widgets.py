@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from tesserae.spec import widgets as W
-from tesserae.spec.widgets import Property, PropertyError, WidgetDecl, decl_from_params
+from tess_ui.spec import widgets as W
+from tess_ui.spec.widgets import Property, PropertyError, WidgetDecl, decl_from_params
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -159,8 +159,8 @@ def test_the_schema_has_a_branch_per_widget_and_is_what_the_tool_writes():
     spec = importlib.util.spec_from_file_location("generate_yaml_schema", ROOT / "tools" / "generate_yaml_schema.py")
     tool = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(tool)
-    written = tool.render(tool.schemas()["tesserae-widget-schema.json"])  # built-ins and the shipped views, with the style fields
-    assert (ROOT / "src" / "tesserae" / "schema" / "tesserae-widget-schema.json").read_text(encoding="utf-8") == written, \
+    written = tool.render(tool.schemas()["tess-ui-widget-schema.json"])  # built-ins and the shipped views, with the style fields
+    assert (ROOT / "src" / "tess_ui" / "schema" / "tess-ui-widget-schema.json").read_text(encoding="utf-8") == written, \
         "run `python tools/generate_yaml_schema.py`"
     slider = next(b for b in schema["allOf"] if b["if"]["properties"]["widget"]["const"] == "Slider")["then"]
     assert "value" in slider["properties"] and "value" in slider["propertyNames"]["enum"] and "valu" not in slider["propertyNames"]["enum"]

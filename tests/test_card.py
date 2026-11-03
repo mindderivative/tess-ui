@@ -2,8 +2,8 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel, tokens
-from tesserae.shipped import shipped_views
+from tess_ui import App, Signal, ViewModel, tokens
+from tess_ui.shipped import shipped_views
 
 
 class VM(ViewModel):
@@ -151,7 +151,7 @@ def test_a_disabled_card_is_dimmed(tmp_path):
 
 
 def test_interaction_may_be_worked_out_from_params_but_not_from_a_signal(tmp_path):
-    from tesserae.spec.nodes import LoadError
+    from tess_ui.spec.nodes import LoadError
     (tmp_path / "Views").mkdir()
     (tmp_path / "Views" / "Main_View.yaml").write_text("""name: main
 widget: Container

@@ -79,7 +79,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import snackbar
+from tess_ui.widgets import snackbar
 
 bar = snackbar(app.window, "Saved", 280, action_label="Undo", on_action=viewmodel.undo)
 bar.open()

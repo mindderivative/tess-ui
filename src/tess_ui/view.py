@@ -1,0 +1,1261 @@
+"""Tesserae's `View`: a view spec built onto `tre` 0.3.4's
+building blocks by Tesserae's compiler, kept up to date by Tesserae's
+reconciler, with bindings, `handlers:` and `two_way:` wired by Tesserae --
+the job `tre`'s `View` does today and 0.3.5 removes.
+
+The surface is the one Tesserae used on `tre`'s `View`: `node(id)`,
+`reconcile(spec=...)`, `set_theme(...)`, `set_stylesheet(...)`, and
+`_attach(viewmodel)` (called by `ViewModel.__init__`), plus `root` and
+`window`.
+
+**Bindings** are evaluated with `tess_ui.binding` inside a
+`tess_ui.reactive` recording frame, so their dependencies are tracked
+by Tesserae; a change re-evaluates the expression (re-tracking what it
+reads) and sets the property. A value that hasn't changed isn't set
+again. On `tre` 0.3.4's building blocks a programmatic `set` fires no
+`change` event, so a declared `on_change` runs only for the user's own
+edits (`tre` issue #12 doesn't happen here). The eight MD3 control kinds
+are Tesserae's controls: their `checked`/
+`selected`/`value`/`hour`/`minute` and `disabled` bindings set the
+control's `Signal`s, and `on_change` and `two_way:` hear the control's
+`on_change`, which fires for the user's changes only.
+
+**Handlers** are `node.on(...)` listeners: `on_click` → `click`,
+`on_hover_enter` → `pointer_enter`, `on_hover_exit` → `pointer_leave`,
+`on_change` → `change`, `on_focus_enter` → `focus`, `on_focus_exit` →
+`unfocus`. A handler taking one argument gets the event; one taking none
+is called without it, as in `tre`. Other names are validated but not
+wired, as in `tre`.
+
+**`two_way:`** names one bound property whose user edits write back to
+its `Signal`; the binding must be exactly `{{ name.get() }}`.
+
+**Reconciling** matches children by `id`: an unchanged node is kept, a
+changed one is patched in place (keeping its identity, focus and
+animations), a changed kind is rebuilt, a missing one destroyed. Unlike
+`tre`, children also follow the new spec's order. After any update --
+reconcile, theme, stylesheet -- bindings and handlers are wired again, so
+bound nodes show their live values.
+"""
+
+from __future__ import annotations
+
+import copy
+import inspect
+import types
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Callable, Optional
+
+import tre
+
+from tess_ui import a11y, reactive, tokens
+from tess_ui.binding import BindingError, Handle, evaluate_value, parse_binding, value_debug
+from tess_ui.follow import app_of
+from tess_ui.interaction import Interaction
+from tess_ui.listeners import Listeners, handled
+from tess_ui.scrolling import Scroller
+from tess_ui.spec.images import check_frame
+from tess_ui.project import ProjectError
+from tess_ui.spec.dock import expand_docks
+from tess_ui.spec.embed import embeds_of, expand_embeds
+from tess_ui.spec.title_bar import expand_title_bars
+from tess_ui.spec.window import expand_windows
+from tess_ui.spec.build import (
+    A11Y_BINDABLE, Built, _CONTROL_KINDS, _WIDGET_KINDS, a11y_bindings, build_with, connect_edges, control_shape,
+    focus_ring_color, is_binding,
+    interaction_tint, layout_of, natural_size, patch, prepare_layers, resting_focus,
+)
+from tess_ui.spec.cascade import resolve_style
+from tess_ui.spec.cascade import check_stylesheet, check_theme
+
+if TYPE_CHECKING:
+    from tess_ui.theme import Theme
+
+__all__ = ["Component", "View"]
+
+#: The size of the window a `View` builds itself into when not given one.
+DEFAULT_SIZE = (800, 600)
+
+_EVENTS = {
+    "on_click": "click", "on_hover_enter": "pointer_enter", "on_hover_exit": "pointer_leave",
+    "on_change": "change", "on_focus_enter": "focus", "on_focus_exit": "unfocus",
+    # touch and gestures (tre 0.5.4): a `tap` has `count`, a `pan` `phase` and `delta_x/y`/`total_x/y`, a `pinch` `scale`
+    "on_tap": "tap", "on_long_press": "long_press", "on_pan": "pan", "on_pinch": "pinch",
+    "on_touch_start": "touch_start", "on_touch_move": "touch_move", "on_touch_end": "touch_end",
+    "on_touch_cancel": "touch_cancel",
+    # files dragged over the window: `file_drop` has `paths` (not on Wayland)
+    "on_file_hover": "file_hover", "on_file_hover_cancel": "file_hover_cancel", "on_file_drop": "file_drop",
+    # a link in selectable rich text was activated: `event.href`
+    "on_link": "link",
+}
+_COLOR_PROPS = {"background": "fill", "foreground": "fill", "border_color": "stroke_color"}
+#: The app's window actions a handler can name without a ViewModel method
+#: (0.3.0 M3): `on_click: window.close`, for a title bar's buttons.
+WINDOW_ACTIONS = ("minimize", "maximize", "restore", "toggle_maximized", "close")
+#: What a handler can name as `surface.<action>` (0.4.4): the surface the node is in -- a dialog or a sheet -- not the window.
+SURFACE_ACTIONS = ("dismiss",)
+#: `navigate.<Screen>` goes to a screen (a step it can go back from), `navigate.back` and `navigate.forward` move in the history.
+NAVIGATE_TARGETS = ("back", "forward")
+#: How far a disabled node fades (M70): MD3's disabled content opacity.
+DISABLED_OPACITY = 0.38
+_NUMBER_PROPS = {"width", "height", "padding", "gap", "opacity", "corner_radius", "border_width", "elevation"}
+
+
+def _props_equal(a: dict[str, Any], b: dict[str, Any]) -> bool:
+    """`tre`'s `node_props_equal`, plus the state fields Tesserae builds from."""
+    # `handlers` and `a11y` too: they change focus, role and label (M39)
+    keys = ("kind", "classes", "style", "text", "image", "icon", "svg", "canvas", "scroll", "overlay", "virtual", "track", "stop_indicator", "buffer", "value", "error", "icons", "ticks", "value_indicator", "vertical", "size", "low", "high", "thickness", "two_bar", "contained", "wavy", "checked", "selected", "value", "hour", "minute",
+            "handlers", "a11y", "component_of", "min", "max", "step", "label", "x", "y",  # M57, M58, M60
+            "disabled",  # M70: a control's is its own
+            "visible",  # #259: a node's own
+            "spin", "dial", "graph", "tooltip",  # a SpinBox's options, a dial's mode, a generated node's tooltip
+            "window_region")  # 0.3.0 M3
+    return all(a.get(k) == b.get(k) for k in keys)
+
+
+class View:
+    """A built view. `spec` is an expanded view spec (from
+    `tess_ui.spec.build_view_spec` or `expand_components_to_spec`);
+    `frames` maps an Image's id to its decoded `(rgba, width, height)`.
+    The theme and stylesheet arguments are `tre`'s `View`'s: the seed and
+    dark flag, and the three `*_spec` dicts.
+
+    `window` is the `tre.Window` to build into. Without one, the view
+    makes its own and mounts its root there. It doesn't theme that window:
+    everything a view builds takes the view's theme. Built on an
+    `App`'s window with no theme argument at all, it takes the app's theme
+    and follows it; any theme argument pins it."""
+
+    def __init__(
+        self,
+        source: Any,
+        *,
+        window: Any = None,
+        frames: Optional[dict[str, tuple[bytes, int, int]]] = None,
+        theme_seed: Optional[tuple[int, int, int, int]] = None,
+        dark: Optional[bool] = None,
+        default_theme_spec: Optional[dict[str, Any]] = None,
+        custom_theme_spec: Optional[dict[str, Any]] = None,
+        stylesheet_spec: Optional[dict[str, Any]] = None,
+        project: Any = None,
+        contrast: float = 0.0,
+    ) -> None:
+        self.path: Optional[Path] = getattr(self, "_given_path", None)  # a component is told its file (0.4.4)
+        app = None
+        if window is not None and all(arg is None for arg in (theme_seed, dark, default_theme_spec, custom_theme_spec)):
+            app = app_of(window)  # no theme given: the app's, followed (M50)
+            if app is not None:
+                given = app._view_theme()
+                theme_seed, dark, contrast = given.get("theme_seed"), given["dark"], given.get("contrast", 0.0)
+                default_theme_spec, custom_theme_spec = given.get("default_theme_spec"), given.get("custom_theme_spec")
+        dark = bool(dark)
+        if isinstance(source, (str, Path)):
+            from tess_ui.spec.load import build_view_spec
+
+            self.path = Path(source)
+            if project is None and window is not None and (found := app_of(window)) is not None:
+                project = found.project  # the app's files, found by name
+            spec, file_frames, _ = build_view_spec(self.path, project=project)
+            frames = {**{node_id: (rgba, w, h) for node_id, rgba, w, h in file_frames}, **(frames or {})}
+        else:
+            spec = source
+        for arg, value, check in (("default_theme_spec", default_theme_spec, check_theme),
+                                  ("custom_theme_spec", custom_theme_spec, check_theme),
+                                  ("stylesheet_spec", stylesheet_spec, check_stylesheet)):
+            try:
+                check(value)
+            except ValueError as exc:
+                raise ValueError(f"{arg}=: {exc}") from None
+        self._theme = dict(theme_seed=theme_seed, dark=dark, contrast=contrast, default_theme_spec=default_theme_spec,
+                           custom_theme_spec=custom_theme_spec)
+        self._stylesheet_spec = stylesheet_spec
+        self._frames = dict(frames or {})
+        self._components: list["Component"] = []
+        #: the views `view:` nodes embed, by the node's id: `(component, viewmodel or None, the request it was made for)`
+        self._embedded: dict[str, tuple["Component", Any, dict[str, Any]]] = {}
+        self._docks: dict[str, Any] = {}  # a `kind: Dock` node's id -> its `DockHost` (0.4.4)
+        self._scheme = tokens.resolve_scheme(theme_seed, dark, default_theme_spec, custom_theme_spec, contrast)
+        self._layers = prepare_layers(default_theme_spec, custom_theme_spec, stylesheet_spec)
+        self._owns_window = window is None
+        if window is None:
+            window = tre.Window(width=DEFAULT_SIZE[0], height=DEFAULT_SIZE[1])
+            window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, align_items="flex_start")
+            # no `Window.set_theme` (removed in tre 0.3.5): since M40 nothing a view builds reads the window's theme
+        self.window = window
+        spec = expand_embeds(expand_title_bars(expand_docks(expand_windows(spec))))  # `Window`, `Dock`, `TitleBar` into their nodes; `view:` into containers
+        self._spec = spec
+        self._built = Built(root=None)
+        self._events = Listeners()
+        try:
+            self._built.root = build_with(window, spec, scheme=self._scheme, layers=self._layers,
+                                          frames=self._frames, into=self._built, listen=self._events.listen)
+        except ValueError as exc:
+            if self.path is not None:
+                raise ValueError(f"{self.path}: {exc}") from exc
+            raise
+        if self._owns_window:
+            window.root.add_child(self._built.root)
+        self._viewmodel: Any = None
+        self._wiring: list[Callable[[], None]] = []  # undo steps
+        self._interactions: dict[str, Interaction] = {}
+        self._scrollers: dict[str, Scroller] = {}  # each ScrollView's write-back (M71; `tre` scrolls, M73)
+        #: M70: the nodes shown disabled now, by their `disabled:` key or binding.
+        self._disabled_on: set[str] = set()
+        self._sync_interactions()
+        self._sync_docks()
+        self._sync_embeds()
+        self._wire_actions()
+        self._extras_set: dict[str, set[str]] = {}  # the accessibility states tre may lack that each node was given, to take back one that is dropped
+        self._apply_a11y_extras()
+        if app is not None:
+            app._followers[self] = None
+
+    def _follow_theme(self, theme: Any, view_theme: dict[str, Any]) -> None:
+        """Following its app: re-themed with the app's arguments."""
+        self.set_theme(**view_theme)
+
+    def _follow_alive(self) -> bool:
+        try:
+            self.root.get("visible")
+        except ValueError:
+            return False
+        return True
+
+    # -- lookup ---------------------------------------------------------------
+
+    @property
+    def root(self) -> Any:
+        """The root node of this view's tree."""
+        return self._built.root
+
+    @property
+    def spec(self) -> dict[str, Any]:
+        """The expanded spec the view was built from: every `component:` and `include:` resolved."""
+        return self._spec
+
+    @property
+    def theme(self) -> "Theme":
+        """This view's resolved theme (`tess_ui.Theme`)."""
+        from tess_ui.theme import Theme
+
+        return Theme.resolve(**self._theme)
+
+    def node(self, widget_id: str) -> Any:
+        """The node `widget_id` names (a TextField's `text_input`; a Link's
+        box, which holds its text)."""
+        try:
+            if self._built.specs[widget_id].get("kind") == "Link":
+                return self._built.outer[widget_id]
+            return self._built.nodes[widget_id]
+        except KeyError:
+            raise ValueError(f"no widget with id {widget_id!r} in this view") from None
+
+    def control(self, widget_id: str) -> Any:
+        """The MD3 control (`tess_ui.controls`) behind `widget_id`, one of
+        the eight control kinds; its `.node` is `node(widget_id)`."""
+        self.node(widget_id)
+        try:
+            return self._built.controls[widget_id]
+        except KeyError:
+            raise ValueError(f"widget {widget_id!r} isn't a control kind") from None
+
+    def interaction(self, widget_id: str) -> Optional[Interaction]:
+        """The state layer and ripple on `widget_id`'s node, or `None`
+        when it has none."""
+        self.node(widget_id)
+        return self._interactions.get(widget_id)
+
+    def click(self, node: Any) -> None:
+        """A synthetic click on `node`, for tests: `window.simulate`."""
+        self.window.simulate("click", node=node)
+
+    # -- updates ----------------------------------------------------------------
+
+    def reconcile(self, spec: dict[str, Any], frames: Optional[dict[str, tuple[bytes, int, int]]] = None) -> None:
+        """Brings the live tree in line with `spec`, in place."""
+        spec = expand_embeds(expand_title_bars(expand_docks(expand_windows(spec))))  # as in `__init__`
+        self._new_frames: set[str] = set()  # the pictures that are not the ones the nodes show: a changed `src`, which the spec no longer names
+        if frames is not None:
+            self._new_frames = {node_id for node_id, frame in frames.items() if self._frames.get(node_id) != frame}
+            self._frames = dict(frames)
+        # All or nothing: build the new spec on the side first, so an error
+        # (a bad kind, colour or token) leaves the live tree as it was.
+        trial = Built(root=None)
+        trial.root = build_with(self.window, spec, scheme=self._scheme, layers=self._layers, frames=self._frames,
+                                into=trial, listen=Listeners().listen)
+        for control in trial.controls.values():
+            control.dispose()
+        trial.root.destroy()
+        old = self._spec
+        if spec.get("id") != old.get("id") or not self._same_shape(old, spec):
+            parent = self._built.root.parent()
+            # where it was, so a rebuilt component stays in place among its siblings (M51)
+            index = parent.children().index(self._built.root) if parent is not None else None
+            self._forget(old)
+            self._built.root.destroy()
+            self._built.root = build_with(self.window, spec, scheme=self._scheme, layers=self._layers,
+                                          frames=self._frames, into=self._built, listen=self._events.listen)
+            if parent is not None:
+                parent.insert_child(index, self._built.root)
+        else:
+            self._reconcile_node(old, spec)
+        self._spec = spec
+        self._sync_interactions()
+        self._rewire()
+        self._prune_components()
+        self._sync_docks()
+        self._sync_embeds()
+        self._window_changed()
+
+    def _window_changed(self) -> None:
+        """A window view that was edited while the app runs sets the OS window again (its title, borderless, sizes)."""
+        app = app_of(self.window)
+        frame = getattr(app, "_frame", None)
+        if frame is not None and frame.view is self:
+            app._apply_window(self._spec.get("window") or {}, resize=False)
+
+    def dock_host(self, node_id: str) -> Any:
+        """The `DockHost` of the `kind: Dock` node `node_id`: its `dock`, `size`, `set_size`, `layout` and `restore`."""
+        try:
+            return self._docks[node_id]
+        except KeyError:
+            raise ValueError(f"no Dock with id {node_id!r} in this view") from None
+
+    def _sync_docks(self) -> None:
+        """Makes the docks the view's `kind: Dock` nodes ask for: one into each that has none yet, and takes away one whose node
+        is gone. A dock that is there keeps its panels where the user put them."""
+        from tess_ui.dockhost import DockHost
+
+        wanted = {node["id"]: node["dock"] for node in _walk(self._spec) if isinstance(node.get("dock"), dict)}
+        for node_id, host in list(self._docks.items()):
+            if node_id not in wanted or not _alive(host.node):
+                del self._docks[node_id]
+                host.dispose()
+        for node_id, dock in wanted.items():
+            if node_id in self._docks:
+                self._docks[node_id].sync_splits()
+            else:
+                self._docks[node_id] = DockHost(self, node_id, dock)
+                if dock.get("closed"):
+                    self._docks[node_id].sync_closed(dock["closed"])
+
+    def embedded(self, node_id: str) -> "Component":
+        """The view the `view:` node `node_id` embeds. Its ViewModel is `.viewmodel`, `None` for a view with none."""
+        try:
+            return self._embedded[node_id][0]
+        except KeyError:
+            raise ValueError(f"no view: node with id {node_id!r} in this view") from None
+
+    @property
+    def viewmodel(self) -> Any:
+        """The ViewModel attached to this view, or `None`."""
+        return self._viewmodel
+
+    def _sync_embeds(self) -> None:
+        """Makes the views the `view:` nodes ask for: builds one into each placeholder that has none, and takes away one
+        whose node is gone, whose request changed, or whose nodes a reload destroyed."""
+        from tess_ui.component import embed
+
+        wanted = embeds_of(self._spec)
+        for node_id, (component, _, request) in list(self._embedded.items()):
+            if node_id not in wanted or wanted[node_id] != request or not component._follow_alive():
+                del self._embedded[node_id]
+                component.remove()
+        for node_id, request in wanted.items():
+            if node_id in self._embedded:
+                continue
+            try:
+                component, viewmodel = embed(self, request["view"], self._built.nodes[node_id], request["with"],
+                                              base=self.path.parent if self.path is not None else None)
+            except (ValueError, ProjectError, OSError) as exc:
+                if isinstance(exc, FileNotFoundError):
+                    raise
+                raise ValueError(f'widget "{node_id}": {exc}') from exc
+            if "route" in request:  # a screen: shown only while its route is current
+                if self._spec.get("window") is None:
+                    component.remove()
+                    raise ValueError(f'widget "{node_id}": a `route:` is for a view in the window view (`kind: Window`)')
+                self._built.nodes[node_id].set(visible=False)  # until its route is current
+            self._embedded[node_id] = (component, viewmodel, copy.deepcopy(request))
+        frame = getattr(app_of(self.window), "_frame", None)
+        if frame is not None and frame.view is self:
+            frame.sync()
+
+    def _prune_components(self) -> None:
+        """Forgets the components whose nodes a reload destroyed (their
+        `into` node, say): unwired, so their bindings stop."""
+        for component in list(self._components):
+            if not component._follow_alive():
+                component._forget_dead()
+                self._components.remove(component)
+            else:
+                component._prune_components()
+
+    def set_theme(
+        self,
+        theme_seed: Optional[tuple[int, int, int, int]] = None,
+        dark: bool = False,
+        default_theme_spec: Optional[dict[str, Any]] = None,
+        custom_theme_spec: Optional[dict[str, Any]] = None,
+        contrast: float = 0.0,
+    ) -> None:
+        """Re-themes every node in place. Each call is a complete
+        selection, as in `tre`: an omitted argument means its default."""
+        scheme = tokens.resolve_scheme(theme_seed, dark, default_theme_spec, custom_theme_spec, contrast)
+        layers = prepare_layers(default_theme_spec, custom_theme_spec, self._stylesheet_spec)
+        self._repatch(scheme, layers)
+        self._scheme, self._layers = scheme, layers
+        self._theme = dict(theme_seed=theme_seed, dark=dark, contrast=contrast, default_theme_spec=default_theme_spec,
+                           custom_theme_spec=custom_theme_spec)
+        self._rewire()
+        for component in list(self._components):
+            component._host_restyled(self)
+
+    def set_stylesheet(self, stylesheet_spec: Optional[dict[str, Any]] = None) -> None:
+        """Replaces the stylesheet and re-styles every node in place;
+        `None` clears it. Embedded components follow."""
+        layers = prepare_layers(self._theme["default_theme_spec"], self._theme["custom_theme_spec"], stylesheet_spec)
+        self._repatch(self._scheme, layers)
+        self._layers, self._stylesheet_spec = layers, stylesheet_spec
+        self._rewire()
+        for component in list(self._components):
+            component._host_restyled(self)
+
+    # -- components and windows -----------------------------------------------------
+
+    def instantiate(self, path: Any, into: Any, spec: Optional[dict[str, Any]] = None,
+                    frames: Optional[dict[str, tuple[bytes, int, int]]] = None) -> "Component":
+        """Builds a component -- a view of its own, with its own ViewModel
+        -- under `into`, a node of this view, in this view's window. It gets
+        this view's theme and stylesheet, and follows them when they change.
+        `spec` is the expanded spec; without it, `path` is read (the same
+        call shape as `tre`'s `View.instantiate`)."""
+        component = Component(self, spec if spec is not None else path, frames=frames,
+                              path=Path(path) if spec is not None and path else None)
+        if spec is not None and path:
+            component.path = Path(path)  # the file it came from, for hot reload (M51)
+        into.add_child(component.root)
+        self._components.append(component)
+        return component
+
+    def move_to(self, window: Any) -> None:
+        """Rebuilds this view in `window`, keeping its spec, theme and
+        ViewModel: bindings and handlers are wired again on the new nodes.
+        For a view built on its own being shown by an `App`. Nodes looked up
+        before the move belong to the old tree."""
+        if window is self.window:
+            return
+        self._unwire()
+        self._drop_interactions()
+        old_root, old_window = self._built.root, self.window
+        self.window = window
+        self._dispose_controls()
+        self._built = Built(root=None)
+        self._events = Listeners()
+        self._built.root = build_with(window, self._spec, scheme=self._scheme, layers=self._layers,
+                                      frames=self._frames, into=self._built, listen=self._events.listen)
+        old_root.destroy()
+        self._owns_window = False
+        del old_window
+        self._sync_interactions()
+        for node_id, (component, _, _) in list(self._embedded.items()):  # their nodes went with the old tree
+            del self._embedded[node_id]
+            component.remove()
+        self._sync_embeds()
+        if self._viewmodel is not None:
+            self._wire(self._spec)
+        else:
+            self._wire_actions()
+
+    def _use_scheme(self, scheme: Any) -> None:
+        """Re-colours every node from `scheme` (a resolved `Theme`'s roles),
+        for a composed widget given a `tess_ui.Theme`."""
+        self._repatch(scheme, self._layers)
+        self._scheme = scheme
+        for component in list(self._components):  # an embedded view takes the colours too (0.4.4)
+            component._host_restyled(self)
+
+    def _repatch(self, scheme: Any, layers: Any) -> None:
+        for node_id, node_spec in self._built.specs.items():
+            self._built.layout_keys[node_id] = patch(
+                self.window, node_spec, self._built.outer[node_id], self._built.nodes[node_id],
+                scheme=scheme, layers=layers, frames=self._frames, state=False,
+                control=self._built.controls.get(node_id), before=self._built.layout_keys.get(node_id, frozenset()),
+                parent=self._parent_layout(node_id, layers))
+        self._sync_interactions(scheme)
+
+    def _parent_layout(self, node_id: str, layers: Any) -> tuple[str, str]:
+        """The `(flex_direction, display)` of a node's parent: what the node's own `flex` and `align_self` mean."""
+        parent = self._built.specs.get(self._built.parent_ids.get(node_id) or "")
+        return layout_of(parent, layers) if parent is not None else ("horizontal", "flex")
+
+    def _sync_interactions(self, scheme: Any = None) -> None:
+        """Gives every node that should have a state layer and ripple one,
+        in its current tint, and removes the rest."""
+        scheme = self._scheme if scheme is None else scheme
+        wanted: dict[str, Any] = {}
+        for node_id, node_spec in self._built.specs.items():
+            tint = interaction_tint(node_spec, scheme)
+            if tint is not None:
+                wanted[node_id] = tint
+        for node_id, current in list(self._interactions.items()):
+            if node_id not in wanted or current.node is not self._built.outer.get(node_id):
+                current.detach()
+                del self._interactions[node_id]
+        ring = focus_ring_color(scheme)
+        roles = scheme or tokens.BASELINE
+        primary = roles.get("primary", ring)
+        glow = (primary, roles.get("tertiary", roles.get("tertiary_container", primary)))  # a turning focus ring (`tess_ui.focusring`)
+        for node_id, tint in wanted.items():
+            current = self._interactions.get(node_id)
+            if current is None:
+                self._interactions[node_id] = Interaction(self.window, self._built.outer[node_id], tint,
+                                                          self._listen, ring, glow=glow)
+                continue
+            if (current.tint, current.ring_color, current.glow) != (tint, ring, glow if glow is not None else current.glow):
+                current.retint(tint, ring, glow)
+            current.refresh()
+        self._sync_scrolls()
+        self._sync_disabled()
+
+    def _sync_disabled(self) -> None:
+        """Shows every node disabled that its `disabled:` key says is,
+        and enabled again those that no longer are -- after each build and
+        patch, which would otherwise make them focusable and opaque again.
+        A `disabled` binding is applied again right after, as every binding
+        is. A control keeps its own `disabled`."""
+        for node_id, spec in self._built.specs.items():
+            if node_id in self._built.controls:
+                continue
+            off = bool(spec.get("disabled") or False)
+            if off or node_id in self._disabled_on:
+                self._show_disabled(node_id, off)
+
+    def _show_disabled(self, node_id: str, off: bool) -> None:
+        spec = self._built.specs[node_id]
+        outer = self._built.outer[node_id]
+        target = self._built.nodes[node_id] if spec.get("kind") == "TextField" else outer
+        target.set(disabled=off, focusable=False if off else resting_focus(spec))
+        opacity = float(resolve_style(spec, self._layers).get("opacity", 1.0))
+        outer.set(opacity=opacity * DISABLED_OPACITY if off else opacity)
+        interaction = self._interactions.get(node_id)
+        if interaction is not None:
+            interaction.enabled = not off
+        if off:
+            self._disabled_on.add(node_id)
+        else:
+            self._disabled_on.discard(node_id)
+
+    def _sync_scrolls(self) -> None:
+        """Gives every ScrollView its `Scroller`, and stops those whose
+        node is gone or was rebuilt."""
+        for node_id, current in list(self._scrollers.items()):
+            spec = self._built.specs.get(node_id) or {}
+            if spec.get("kind") != "ScrollView" or current.node != self._built.outer.get(node_id):
+                current.detach()
+                del self._scrollers[node_id]
+        for node_id, spec in self._built.specs.items():
+            if spec.get("kind") == "ScrollView" and node_id not in self._scrollers:
+                self._scrollers[node_id] = Scroller(self._built.outer[node_id], self._listen)
+
+    def _drop_interactions(self) -> None:
+        for current in self._interactions.values():
+            current.detach()
+        self._interactions = {}
+        for scroller in self._scrollers.values():
+            scroller.detach()
+        self._scrollers = {}
+
+    def _reconcile_node(self, old: dict[str, Any], new: dict[str, Any]) -> None:
+        node_id = new["id"]
+        outer = self._built.outer[node_id]
+        if not _props_equal(old, new) or node_id in self._new_frames:
+            self._built.layout_keys[node_id] = patch(
+                self.window, new, outer, self._built.nodes[node_id], scheme=self._scheme, layers=self._layers,
+                frames=self._frames, control=self._built.controls.get(node_id),
+                before=self._built.layout_keys.get(node_id, frozenset()), parent=self._parent_layout(node_id, self._layers))
+        self._built.specs[node_id] = new
+        if new.get("dock") is not None and node_id in self._docks:
+            self._reconcile_dock(old, new)
+            return
+        if new.get("kind") == "NodeGraph":
+            self._reconcile_graph(old, new)
+            return
+        if new.get("kind") in ("GraphNode", "ScrollView", "Overlay"):
+            outer = self._built.nodes[node_id]  # its children live in its body, or its content box (M71)
+        old_children = {c["id"]: c for c in old.get("children") or []}
+        kept: set[str] = set()
+        for index, child in enumerate(new.get("children") or []):
+            previous = old_children.get(child["id"])
+            if previous is not None and self._same_shape(previous, child):
+                kept.add(child["id"])
+                self._reconcile_node(previous, child)
+                child_node = self._built.outer[child["id"]]
+            else:
+                if previous is not None:
+                    kept.add(child["id"])
+                    self._destroy_child(child["id"], outer)
+                    self._forget(previous)
+                child_node = build_with(self.window, child, scheme=self._scheme, layers=self._layers,
+                                        frames=self._frames, into=self._built, listen=self._events.listen,
+                                        parent=node_id)
+            child_node = self._placed(child["id"], child_node, outer)
+            # a tre Node is a fresh handle on each call, so compare with ==, not `is`
+            if child_node.parent() != outer or _child_index(outer, child_node) != index:
+                outer.insert_child(index, child_node)
+        for child_id, child in old_children.items():
+            if child_id not in kept:
+                self._destroy_child(child_id, outer)
+                self._forget(child)
+
+    def _placed(self, node_id: str, node: Any, outer: Any) -> Any:
+        """The node to keep in `outer`'s child list for the child `node_id`: `node`, unless a dock has put it in a column of its own
+        (a half of a split) or a split container, in which case that, the thing `outer` holds in its place."""
+        if not any(host.relocated(node_id) for host in self._docks.values()):
+            return node
+        while node is not None and node.parent() != outer:
+            node = node.parent()
+        return node if node is not None else self._built.outer[node_id]
+
+    def _destroy_child(self, node_id: str, outer: Any) -> None:
+        """Destroys the built node `node_id` and what a dock put around it, after the panels docked in halves inside it have gone
+        back to their zones."""
+        node = self._built.outer.get(node_id)
+        if node is None:
+            return
+        for host in self._docks.values():
+            host.release(node_id, self._placed(node_id, node, outer))  # panels dropped in its halves go home (a made half may collapse)
+        self._placed(node_id, node, outer).destroy()  # again: releasing can have collapsed the split it was in
+
+    def _reconcile_dock(self, old: dict[str, Any], new: dict[str, Any]) -> None:
+        """A `Dock`'s panels, matched by id: a kept one is patched where the user left it (a panel moved to another zone
+        stays there unless the file moves it), a new one is built and docked, a gone one is undocked and destroyed."""
+        node_id = new["id"]
+        host = self._docks[node_id]
+        old_children = {c["id"]: c for c in old.get("children") or []}
+        new_info = {p["id"]: p for p in new["dock"]["panels"]}
+        old_info = {p["id"]: p for p in old["dock"]["panels"]}
+        kept: set[str] = set()
+        for child in new.get("children") or []:
+            panel_id, previous = child["id"], old_children.get(child["id"])
+            info = new_info[panel_id]
+            if previous is not None and self._same_shape(previous, child):
+                kept.add(panel_id)
+                self._reconcile_node(previous, child)
+                shut = panel_id in host._closed
+                if info["title"] != old_info[panel_id]["title"] and not shut:
+                    host.retitle(panel_id, info["title"])
+                if info["zone"] != old_info[panel_id]["zone"] and not shut:  # the file moved it
+                    host.move(panel_id, info["zone"])
+                continue
+            if previous is not None:
+                kept.add(panel_id)
+                host.remove_panel(panel_id)
+                self._forget(previous)
+            built = build_with(self.window, child, scheme=self._scheme, layers=self._layers, frames=self._frames,
+                               into=self._built, listen=self._events.listen, parent=node_id)
+            del built
+            host.add_panel(panel_id, info["zone"], info["title"])
+        for panel_id, child in old_children.items():
+            if panel_id not in kept:
+                node = self._built.outer.get(panel_id)
+                host.remove_panel(panel_id)
+                self._forget(child)
+                if node is not None:
+                    node.destroy()
+        if new["dock"].get("closed", []) != old["dock"].get("closed", []):  # a bound `closed` list changed
+            host.sync_closed(new["dock"].get("closed", []))
+        for zone, size in new["dock"].get("sizes", {}).items():
+            if zone in host.sizes and size != old["dock"].get("sizes", {}).get(zone):
+                host.set_size(zone, size)  # the file changed it
+        # the splits and halves are synced by `_sync_docks`, once `self._spec` is the new spec
+
+    def _reconcile_graph(self, old: dict[str, Any], new: dict[str, Any]) -> None:
+        """A NodeGraph's GraphNodes, matched by id: a kept one is
+        patched in place (so a place the user dragged it to stays, unless
+        the file moves it), a new one is built into the graph, a gone one
+        is removed; then the edges are drawn again."""
+        graph = self._built.controls[new["id"]]
+        old_children = {c["id"]: c for c in old.get("children") or []}
+        kept: set[str] = set()
+        for child in new.get("children") or []:
+            previous = old_children.get(child["id"])
+            if previous is not None and self._same_shape(previous, child):
+                kept.add(child["id"])
+                self._reconcile_node(previous, child)
+                continue
+            if previous is not None:
+                kept.add(child["id"])
+                self._forget_graph_node(graph, previous)
+            if child.get("kind") != "GraphNode":
+                raise ValueError(f'widget "{new["id"]}": a NodeGraph\'s children are GraphNodes, '
+                                 f"got {child.get('kind')!r} ({child.get('id')!r})")
+            build_with(self.window, child, scheme=self._scheme, layers=self._layers, frames=self._frames,
+                       into=self._built, listen=self._events.listen, graph=graph)
+        for child_id, child in old_children.items():
+            if child_id not in kept:
+                self._forget_graph_node(graph, child)
+        connect_edges(graph, new, self._built)
+
+    def _forget_graph_node(self, graph: Any, spec: dict[str, Any]) -> None:
+        widget = self._built.controls.get(spec["id"])
+        self._forget(spec)
+        if widget is not None:
+            if widget in graph.graph_nodes:
+                graph.graph_nodes.remove(widget)
+            widget.node.destroy()
+
+    def _same_shape(self, old: dict[str, Any], new: dict[str, Any]) -> bool:
+        """Whether `old`'s node can be patched into `new` rather than
+        rebuilt: the same kind, and for a control or a graph's widget, the
+        same size."""
+        if old.get("kind") != new.get("kind"):
+            return False
+        if (old.get("dock") is None) != (new.get("dock") is None):
+            return False
+        if new.get("dock") is not None and ({p["zone"] for p in old["dock"]["panels"]} != {p["zone"] for p in new["dock"]["panels"]}):
+            return False  # a zone came or went: the dock is made again
+        if new.get("kind") in _CONTROL_KINDS or new.get("kind") in _WIDGET_KINDS:
+            return control_shape(old, self._layers) == control_shape(new, self._layers)
+        return True
+
+    def _dispose_controls(self) -> None:
+        for host in self._docks.values():
+            host.dispose()
+        self._docks.clear()
+        for control in self._built.controls.values():
+            control.dispose()
+        self._built.controls.clear()
+
+    def _forget(self, spec: dict[str, Any]) -> None:
+        host = self._docks.pop(spec["id"], None)
+        if host is not None:
+            host.dispose()
+        control = self._built.controls.pop(spec["id"], None)
+        if control is not None:
+            control.dispose()
+        for key in ("nodes", "outer", "specs"):
+            getattr(self._built, key).pop(spec["id"], None)
+        for child in spec.get("children") or []:
+            self._forget(child)
+
+    # -- the ViewModel ----------------------------------------------------------------
+
+    def _attach(self, viewmodel: Any) -> None:
+        """Wires every binding, handler and `two_way:` against `viewmodel`.
+        Called by `ViewModel.__init__`."""
+        self._unwire()
+        self._viewmodel = viewmodel
+        try:
+            self._wire(self._spec)
+        except Exception:
+            self._unwire()
+            raise
+
+    def _rewire(self) -> None:
+        if self._viewmodel is not None:
+            self._unwire()
+            self._wire(self._spec)
+        else:
+            self._wire_actions()
+        self._apply_a11y_extras()
+
+    def _apply_a11y_extras(self) -> None:
+        """The `a11y:` fields tre may not have a property for yet (`a11y.EXTRAS`) and the relations (`describedby`, `controls`, which name other
+        nodes of the view): set one at a time on the node that carries the node's accessibility, so one tre lacks is skipped and said once. A field
+        a node no longer gives is cleared."""
+        for node_spec in _walk(self._spec):
+            node_id = node_spec["id"]
+            fields = node_spec.get("a11y") if isinstance(node_spec.get("a11y"), dict) else {}
+            props: dict[str, Any] = {k: v for k, v in fields.items() if k in a11y.EXTRAS and not is_binding(v)}
+            for name in a11y.RELATIONS:
+                if name in fields:
+                    names = [fields[name]] if isinstance(fields[name], str) else list(fields[name])
+                    missing = [n for n in names if n not in self._built.outer]
+                    if missing:
+                        raise ValueError(f'widget "{node_id}": a11y {name} names {missing[0]!r}, which is not a node of this view')
+                    props[name] = [self._built.outer[n] for n in names]
+            before = self._extras_set.get(node_id, set())
+            props.update({k: None for k in before - set(props) - set(a11y_bindings(node_spec))})
+            if not props:
+                self._extras_set.pop(node_id, None)
+                continue
+            self._extras_set[node_id] = {k for k, v in props.items() if v is not None}
+            target = self._built.outer[node_id] if node_spec.get("kind") == "Link" else self._built.nodes[node_id]
+            a11y.apply_extras(target, props)
+
+    def _unwire(self) -> None:
+        steps, self._wiring = self._wiring, []
+        for undo in reversed(steps):
+            undo()
+
+    def _wire(self, spec: dict[str, Any]) -> None:
+        for node_spec in _walk(spec):
+            for event, method_name in (node_spec.get("handlers") or {}).items():
+                self._wire_handler(node_spec, event, method_name)
+            bindings = node_spec.get("bindings") or {}
+            for prop, raw in bindings.items():
+                self._wire_binding(node_spec, prop, raw)
+            for field_name, raw in a11y_bindings(node_spec).items():
+                self._wire_a11y(node_spec, field_name, raw)
+            two_way = node_spec.get("two_way")
+            if two_way is not None:
+                self._wire_two_way(node_spec, two_way, bindings.get(two_way))
+
+    def _node_for(self, node_spec: dict[str, Any], prop: str) -> Any:
+        node_id = node_spec["id"]
+        if node_spec.get("kind") == "ScrollView":  # its content box takes how its children lay out (M71)
+            return self._built.nodes[node_id] if prop in ("padding", "gap") else self._built.outer[node_id]
+        if node_spec.get("kind") == "Link" and prop in ("width", "height", "padding", "gap", "opacity"):
+            return self._built.outer[node_id]
+        if node_spec.get("kind") == "TextField" and prop in ("width", "height", "padding", "gap", "background",
+                                                              "corner_radius", "border_width", "border_color",
+                                                              "opacity", "elevation"):
+            return self._built.outer[node_id]
+        return self._built.nodes[node_id]
+
+    def _wire_handler(self, node_spec: dict[str, Any], event: str, method_name: str) -> None:
+        node_id = node_spec["id"]
+        if method_name.startswith("window."):
+            method = self._window_action(node_id, event, method_name)
+        elif method_name.startswith("surface."):
+            method = self._surface_action(node_id, event, method_name, node_spec)
+        elif method_name.startswith("navigate."):
+            method = self._navigate_action(node_id, event, method_name)
+        else:
+            try:
+                method = getattr(self._viewmodel, method_name)
+            except AttributeError:
+                raise ValueError(f'widget "{node_id}": handler "{event}" names "{method_name}", which has no '
+                                 "matching attribute on the ViewModel") from None
+        if not callable(method):
+            raise ValueError(f'widget "{node_id}": handler "{event}" names "{method_name}", which is not callable')
+        tre_event = _EVENTS.get(event)
+        if tre_event is None:
+            return  # validated, not wired -- as in tre
+        adapted = _arity_adapter(method)
+
+        def call(event_obj: Any) -> Any:
+            if node_id not in self._disabled_on:  # a disabled node's handlers don't run (M70)
+                return adapted(event_obj)
+            return None
+
+        # a Link's box takes the events (its text never gets any, M41)
+        node = self._built.outer[node_id] if node_spec.get("kind") == "Link" else self._built.nodes[node_id]
+        control = self._built.controls.get(node_id)
+        if tre_event == "change" and control is not None:
+            if hasattr(control, "on_change"):
+                self._wiring.append(control.on_change(lambda value: call(None)))
+            return
+        if tre_event == "click":  # the innermost clickable takes the click (tre bubbles it, M49)
+            self._add_listener(node, tre_event, handled(call))
+            return
+        self._add_listener(node, tre_event, call)
+
+    def _window_action(self, node_id: str, event: str, name: str) -> Callable[[], None]:
+        """`window.<action>`: the app's window action (0.3.0 M3), checked
+        now and looked up when it runs."""
+        action = name[len("window."):]
+        where = f'widget "{node_id}": handler "{event}" names "{name}"'
+        if action not in WINDOW_ACTIONS:
+            raise ValueError(f"{where}, which isn't a window action "
+                             f"({', '.join('window.' + a for a in WINDOW_ACTIONS)})")
+        if app_of(self.window) is None:
+            raise ValueError(f"{where}, but this view isn't on an App's window, which the action needs")
+
+        def run() -> None:
+            app = app_of(self.window)
+            if app is not None:
+                getattr(app, action)()
+        return run
+
+    def _surface_action(self, node_id: str, event: str, name: str, node_spec: dict[str, Any]) -> Callable[[], None]:
+        """`surface.<action>` (0.4.4): `dismiss` closes the dialog, sheet or other overlay the node is in."""
+        action = name[len("surface."):]
+        if action not in SURFACE_ACTIONS:
+            raise ValueError(f'widget "{node_id}": handler "{event}" names "{name}", which isn\'t a surface action '
+                             f"({', '.join('surface.' + a for a in SURFACE_ACTIONS)})")
+
+        def run() -> None:
+            from tess_ui.overlays import dismiss_surface
+
+            dismiss_surface(self._built.nodes[node_id])
+        return run
+
+    def _navigate_action(self, node_id: str, event: str, name: str) -> Callable[[], None]:
+        """`navigate.<Screen>`, `navigate.back`, `navigate.forward` (0.4.4): `app.navigate(Screen)`, `app.back()`,
+        `app.forward()`. The screen is looked up when it runs."""
+        target = name[len("navigate."):]
+        if not target:
+            raise ValueError(f'widget "{node_id}": handler "{event}" names "{name}": say where to, `navigate.Settings`, '
+                             "`navigate.back` or `navigate.forward`")
+        if app_of(self.window) is None:
+            raise ValueError(f'widget "{node_id}": handler "{event}" names "{name}", but this view isn\'t on an App\'s '
+                             "window, which navigating needs")
+
+        def run() -> None:
+            app = app_of(self.window)
+            if app is None:
+                return
+            if target == "back":
+                app.back()
+            elif target == "forward":
+                app.forward()
+            else:
+                app.navigate(target)
+        return run
+
+    def _wire_actions(self) -> None:
+        """A view with no ViewModel still has its `window.*` and `surface.*` handlers (a title bar's buttons), which need
+        none: wires just those."""
+        self._unwire()
+        has_app = app_of(self.window) is not None
+        for node_spec in _walk(self._spec):
+            for event, method_name in (node_spec.get("handlers") or {}).items():
+                if not isinstance(method_name, str):
+                    continue
+                action = method_name.partition(".")[2]
+                if (method_name.startswith("window.") and has_app and action in WINDOW_ACTIONS) or (
+                        method_name.startswith("surface.") and action in SURFACE_ACTIONS) or (
+                        method_name.startswith("navigate.") and has_app and action):
+                    self._wire_handler(node_spec, event, method_name)  # a wrong one is said when a ViewModel attaches
+            if has_app:
+                for prop, raw in (node_spec.get("bindings") or {}).items():
+                    try:
+                        names = parse_binding(raw).expr.names
+                    except BindingError:
+                        continue  # said when a ViewModel attaches
+                    if names and names <= {"app"}:  # a title bar's: follow the app (focus, maximized, the OS's inset), which needs no ViewModel
+                        self._wire_binding(node_spec, prop, raw, types.SimpleNamespace(app=app_of(self.window)))
+
+    def _add_listener(self, node: Any, event: str, fn: Callable[[Any], None]) -> None:
+        """A ViewModel's listener: removed when the view is unwired."""
+        self._wiring.append(self._listen(node, event, fn))
+
+    def _listen(self, node: Any, event: str, fn: Callable[[Any], None]) -> Callable[[], None]:
+        """`node.on` keeps one listener per event, so every callback for a
+        node and event shares one dispatcher. Returns the undo."""
+        return self._events.listen(node, event, fn)
+
+    def _wire_binding(self, node_spec: dict[str, Any], prop: str, raw: str, context: Any = None) -> None:
+        context = self._viewmodel if context is None else context  # what the expression's names are looked up on
+        node_id = node_spec["id"]
+        where = f'widget "{node_id}" binding on "{prop}" ({_quoted(raw)})'
+        try:
+            expr = parse_binding(raw)
+        except BindingError as exc:
+            raise ValueError(f"{where}: {exc}") from None
+        node = self._node_for(node_spec, prop)
+        kind = node_spec.get("kind")
+        control = self._built.controls.get(node_id)
+        style = resolve_style(node_spec, self._layers)
+        # a Text/Link without a size is sized to its content, so new text is measured again (M41)
+        measured = prop == "text" and kind in ("Text", "Link") and (style.get("width") is None
+                                                                    or style.get("height") is None)
+        subscribed: list[Any] = []
+
+        def run() -> None:
+            for dependency in subscribed:
+                dependency._unsubscribe(run)
+            reactive._begin_recording()
+            try:
+                value = evaluate_value(expr, context)
+            except BindingError as exc:
+                raise ValueError(f"{where}: {exc}") from None
+            finally:
+                subscribed[:] = reactive._end_recording()
+            for dependency in subscribed:
+                dependency._subscribe(run)
+            if control is not None and prop in _CONTROL_STATE:
+                _apply_to_control(control, kind, prop, value)
+            elif prop == "disabled":  # any other node's (M70): the View holds it
+                if not isinstance(value, bool):
+                    raise ValueError(f'widget property "disabled" expects a boolean binding, got {value_debug(value)}')
+                self._show_disabled(node_id, value)
+            elif prop == "frame":  # M59: a video's frames, from the ViewModel
+                if kind != "Image":
+                    raise ValueError(f"{where}: only an Image takes a frame")
+                frame = value.obj if isinstance(value, Handle) else value
+                if frame is not None:
+                    try:
+                        self._show_frame(node_id, node, frame)
+                    except (TypeError, ValueError) as exc:
+                        raise ValueError(f"{where}: a frame is (rgba bytes, width, height): {exc}") from None
+            else:
+                _apply(node, kind, prop, value, self._scheme)
+                if measured:
+                    _remeasure(self.window, node, style, kind)
+                if kind == "Link" and prop == "text" and "label" not in (node_spec.get("a11y") or {}):
+                    self._built.outer[node_id].set(label=value)  # its name is its text, unless `a11y:` names it
+
+        run()
+
+        def undo() -> None:
+            for dependency in subscribed:
+                dependency._unsubscribe(run)
+            subscribed.clear()
+        self._wiring.append(undo)
+
+    def _show_frame(self, node_id: str, node: Any, frame: Any) -> None:
+        """Shows `frame`, `(rgba, width, height)`, on an Image node, and
+        keeps it as the node's frame so a re-theme or reconcile shows the
+        latest (M59; the `video` widget uses it too)."""
+        rgba, width, height = frame
+        data, width, height = check_frame(rgba, width, height)
+        node.set(rgba=data, pixel_width=width, pixel_height=height)
+        self._frames[node_id] = (data, width, height)
+
+    def _wire_a11y(self, node_spec: dict[str, Any], field_name: str, raw: str) -> None:
+        """A bound `a11y:` field: `label`, `hidden` or `level`, set on
+        the node that carries the widget's accessibility (a Link's box, a
+        TextField's input, a control's target) and kept up to date."""
+        node_id = node_spec["id"]
+        where = f'widget "{node_id}" a11y binding on "{field_name}" ({_quoted(raw)})'
+        try:
+            expr = parse_binding(raw)
+        except BindingError as exc:
+            raise ValueError(f"{where}: {exc}") from None
+        node = self._built.outer[node_id] if node_spec.get("kind") == "Link" else self._built.nodes[node_id]
+        prop = A11Y_BINDABLE[field_name]
+        subscribed: list[Any] = []
+
+        def run() -> None:
+            for dependency in subscribed:
+                dependency._unsubscribe(run)
+            reactive._begin_recording()
+            try:
+                value = evaluate_value(expr, self._viewmodel)
+            except BindingError as exc:
+                raise ValueError(f"{where}: {exc}") from None
+            finally:
+                subscribed[:] = reactive._end_recording()
+            for dependency in subscribed:
+                dependency._subscribe(run)
+            value = _a11y_value(field_name, value, where)
+            if field_name in a11y.EXTRAS:
+                a11y.apply_extras(node, {prop: value})
+            elif node.get(prop) != value:
+                node.set(**{prop: value})
+
+        run()
+
+        def undo() -> None:
+            for dependency in subscribed:
+                dependency._unsubscribe(run)
+            subscribed.clear()
+        self._wiring.append(undo)
+
+    def _wire_two_way(self, node_spec: dict[str, Any], prop: str, raw: Optional[str]) -> None:
+        node_id = node_spec["id"]
+        rule = (f'widget "{node_id}": two_way binding on "{prop}" ({_quoted(raw or "")}) must be a plain Signal\'s '
+                'own .get() call (e.g. "{{ username.get() }}"), not a computed expression -- there\'s no way to '
+                "reverse it back into a Signal")
+        if raw is None:
+            raise ValueError(rule)
+        expr = parse_binding(raw)
+        if not (expr.kind == "Call" and expr.value == "get" and expr.left.kind == "Ident"):
+            raise ValueError(rule)
+        name = expr.left.value
+        signal = getattr(self._viewmodel, name, None)
+        if signal is None:
+            raise ValueError(f'widget "{node_id}": two_way binding names "{name}", which has no matching attribute '
+                             "on the ViewModel")
+        node = self._node_for(node_spec, prop)
+        if node_spec.get("kind") == "ScrollView":  # its Scroller follows `tre`'s `scroll` event (M71, M73)
+            if prop != "scroll_offset":
+                raise ValueError(f'widget "{node_id}": a ScrollView\'s only user-editable property is "scroll_offset"')
+            self._wiring.append(self._scrollers[node_id].on_scroll(signal.set))
+            return
+        control = self._built.controls.get(node_id)
+        if control is not None:
+            state = getattr(control, prop, None)
+            if not isinstance(state, reactive.Signal) or not hasattr(control, "on_change"):
+                raise ValueError(f'widget "{node_id}": a {node_spec.get("kind")} has no user-editable "{prop}" '
+                                 "for two_way")
+            self._wiring.append(control.on_change(lambda value: signal.set(state.get())))
+            return
+        self._add_listener(node, "change", lambda event_obj: signal.set(node.get(prop)))
+
+
+class Component(View):
+    """An embedded view with its own ViewModel, built by
+    `View.instantiate`/`Component.instantiate` (or `tess_ui.instantiate`)
+    in its host's window, with its host's theme and stylesheet. It follows
+    them when the host is re-themed or re-styled. `remove()` unwires it
+    and frees its nodes."""
+
+    def __init__(self, host: View, source: Any, frames: Optional[dict[str, tuple[bytes, int, int]]] = None,
+                 path: Optional[Path] = None) -> None:
+        self._host = host
+        self._given_path = path  # before the build, so a `view:` inside it finds files beside this one
+        super().__init__(
+            source, window=host.window, frames=frames, stylesheet_spec=host._stylesheet_spec, **host._theme,
+        )
+        self._scheme, self._layers = host._scheme, host._layers
+
+    def _host_restyled(self, host: View) -> None:
+        self._theme = dict(host._theme)
+        self._stylesheet_spec = host._stylesheet_spec
+        self._repatch(host._scheme, host._layers)
+        self._scheme, self._layers = host._scheme, host._layers
+        self._rewire()
+        for component in list(self._components):
+            component._host_restyled(self)
+
+    def _forget_dead(self) -> None:
+        """Unwires a component whose nodes are already gone, and the
+        components inside it; its `Signal`s stop reaching it. (`tre`'s
+        `off` on a destroyed node is harmless, so unwiring is safe.)"""
+        for component in list(self._components):
+            component._forget_dead()
+        self._components = []
+        self._unwire()
+        self._viewmodel = None
+
+    def remove(self) -> None:
+        """Unwires this component (its `Signal`s stop reaching it) and frees
+        its nodes, and any components inside it. A component a host's
+        reload already destroyed is simply forgotten."""
+        if not self._follow_alive():
+            self._forget_dead()
+            if self in self._host._components:
+                self._host._components.remove(self)
+            return
+        for component in list(self._components):
+            component.remove()
+        self._unwire()
+        self._drop_interactions()
+        self._dispose_controls()
+        self._viewmodel = None
+        if self in self._host._components:
+            self._host._components.remove(self)
+        self._built.root.destroy()
+
+
+def _alive(node: Any) -> bool:
+    """Whether a node still exists (a destroyed one's handle raises on any read)."""
+    try:
+        node.get("visible")
+    except ValueError:
+        return False
+    return True
+
+
+def _walk(spec: dict[str, Any]):
+    yield spec
+    for child in spec.get("children") or []:
+        yield from _walk(child)
+
+
+def _child_index(parent: Any, child: Any) -> int:
+    for index, node in enumerate(parent.children()):
+        if node == child:
+            return index
+    return -1
+
+
+def _a11y_value(field_name: str, value: Any, where: str) -> Any:
+    """A bound `a11y:` value, checked by `tess_ui.a11y`'s rules: a label is
+    a string (or `None`, no label), `hidden` true or false, `level` a
+    positive whole number (or `None`)."""
+    if isinstance(value, Handle):
+        if value.obj is not None:  # the evaluator hands `None` back as a handle: it clears the field
+            raise ValueError(f"{where}: a11y {field_name} can't be {value_debug(value)}")
+        value = None
+    try:
+        return a11y.check({field_name: value})[A11Y_BINDABLE[field_name]]
+    except ValueError as exc:
+        raise ValueError(f"{where}: {exc}") from None
+
+
+def _quoted(raw: str) -> str:
+    return '"' + raw.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def _arity_adapter(method: Callable[..., Any]) -> Callable[[Any], Any]:
+    """Calls `method` with the event if it takes an argument, else
+    without -- `tre`'s handler convention."""
+    try:
+        params = [p for p in inspect.signature(method).parameters.values()
+                  if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD, p.VAR_POSITIONAL)]
+    except (TypeError, ValueError):
+        params = []
+    if params:
+        return lambda event_obj: method(event_obj)
+    return lambda event_obj: method()
+
+
+def _remeasure(window: Any, node: Any, style: dict[str, Any], kind: str) -> None:
+    props = {name: node.get(name) for name in ("text", "font_family", "font_size", "font_weight", "line_height")}
+    size = natural_size(window, props, style)
+    if size and "width" in size and kind == "Text" and node.get("width") == "100%":
+        size["min_width"] = size.pop("width")  # a centred or right aligned Text fills its parent: this is its least
+    if size:
+        node.set(**size)
+
+
+#: A control's state a binding sets on the control (M40), and the type each takes.
+_CONTROL_STATE = {"checked": bool, "selected": bool, "disabled": bool, "value": float, "low": float, "high": float, "hour": int, "minute": int}
+
+
+def _apply_to_control(control: Any, kind: Optional[str], prop: str, value: Any) -> None:
+    """Sets a bound value on a control's `Signal`, with `tre`'s type rules
+    and messages."""
+    expected = _CONTROL_STATE[prop]
+    if expected is bool:
+        if not isinstance(value, bool):
+            raise ValueError(f'widget property "{prop}" expects a boolean binding, got {value_debug(value)}')
+    elif isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f'widget property "{prop}" expects a numeric binding, got {value_debug(value)}')
+    state = getattr(control, prop, None)
+    if not isinstance(state, reactive.Signal):
+        raise ValueError(f'a {kind} has no "{prop}" to bind')
+    fit = getattr(control, "_fit", None) if prop == "value" else None  # a SpinBox keeps to its bounds (M58)
+    state.set(fit(expected(value)) if fit is not None else expected(value))
+
+
+def _apply(node: Any, kind: Optional[str], prop: str, value: Any, scheme: Optional[dict[str, Any]] = None) -> None:
+    """Sets one bound value, with `tre`'s type rules and messages; an
+    unchanged value isn't set again."""
+    if prop in ("checked", "selected", "visible"):  # visible: out of layout and hit-testing (0.3.0 M3)
+        if not isinstance(value, bool):
+            raise ValueError(f'widget property "{prop}" expects a boolean binding, got {value_debug(value)}')
+        if node.get(prop) != value:
+            node.set(**{prop: value})
+        return
+    if prop == "text":
+        if not isinstance(value, str) or isinstance(value, Handle):
+            raise ValueError(f'widget property "text" expects a string binding, got {value_debug(value)}')
+        if node.get("text") != value:
+            node.set(text=value)
+        return
+    if prop in ("width", "height", "padding", "gap"):
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ValueError(f'widget property "{prop}" expects a numeric binding, got {value_debug(value)}')
+        props = ({f"padding_{s}": float(value) for s in ("top", "right", "bottom", "left")} if prop == "padding"
+                 else {prop: float(value)})
+        node.set(**props)
+        return
+    target = _COLOR_PROPS.get(prop, "shadows" if prop == "elevation" else
+                              "stroke_width" if prop == "border_width" else prop)
+    if isinstance(value, str) and not isinstance(value, Handle) and prop in _COLOR_PROPS:
+        try:
+            rgba = tokens.resolve_color(value, scheme)  # a theme role, or a CSS colour, with an optional @N% alpha
+        except ValueError as exc:
+            raise ValueError(f'binding for property "{prop}" resolved to {exc}') from None
+        if node.get(target) != rgba:
+            node.set(**{target: rgba})
+        return
+    if isinstance(value, Handle):
+        raw = value.obj
+        node.set(**{target: tokens.elevation_shadows(raw) if prop == "elevation" else raw})
+        return
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        new = tokens.elevation_shadows(float(value)) if prop == "elevation" else float(value)
+        if node.get(target) != new:
+            node.set(**{target: new})
+        return
+    raise ValueError(
+        f'binding for property "{prop}" resolved to {value_debug(value)} -- only numeric, boolean (checked), '
+        "string (text), and background-color bindings are supported today"
+    )

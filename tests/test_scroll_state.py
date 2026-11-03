@@ -3,9 +3,9 @@ readable in expressions through the Signals or state names it is bound to."""
 
 import pytest
 
-from tesserae import App, Signal, ViewModel
-from tesserae.composed import scroll_direction, scroll_edges
-from tesserae.spec.build import SpecBuildError
+from tess_ui import App, Signal, ViewModel
+from tess_ui.composed import scroll_direction, scroll_edges
+from tess_ui.spec.build import SpecBuildError
 
 
 class VM(ViewModel):

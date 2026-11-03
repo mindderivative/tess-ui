@@ -1,4 +1,4 @@
-"""M37 Phase 1: Tesserae's MD3 tokens (`tesserae.tokens`) match `tre`'s,
+"""M37 Phase 1: Tesserae's MD3 tokens (`tess_ui.tokens`) match `tre`'s,
 checked against `tre` 0.3.4's answers, recorded (M43, `tests/reference.py`)
 since 0.3.5 removes them (`tre` D7)."""
 
@@ -8,7 +8,7 @@ import pytest
 import tre
 
 import reference
-from tesserae import tokens
+from tess_ui import tokens
 
 SEEDS = [(0x67, 0x50, 0xA4), (0xB3, 0x26, 0x1E), (0x00, 0x6A, 0x60), (0xFF, 0xB0, 0x00),
          (0x21, 0x96, 0xF3), (0x00, 0x00, 0x00), (0xFF, 0xFF, 0xFF), (0x7D, 0x52, 0x60)]

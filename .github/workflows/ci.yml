@@ -269,7 +269,7 @@ jobs:
           mkdir -p ~/Applications && cp -R /tmp/demo-dmg/demo.app ~/Applications/
           hdiutil detach /tmp/demo-dmg
           cd "$RUNNER_TEMP"
-          TESSERAE_MAX_FRAMES=30 TESSERAE_FRAMES_REPORT=frames.txt ~/Applications/demo.app/Contents/MacOS/demo
+          TESS_UI_MAX_FRAMES=30 TESS_UI_FRAMES_REPORT=frames.txt ~/Applications/demo.app/Contents/MacOS/demo
           echo "installed app drew $(cat frames.txt) frames"
           test "$(cat frames.txt)" = 30
 
@@ -292,12 +292,12 @@ jobs:
           $link = Join-Path $env:APPDATA "Microsoft/Windows/Start Menu/Programs/demo.lnk"
           if (-not (Test-Path $link)) { throw "no Start-menu entry at $link" }
           $report = Join-Path $env:RUNNER_TEMP "frames.txt"
-          $env:TESSERAE_MAX_FRAMES = "30"; $env:TESSERAE_FRAMES_REPORT = $report
+          $env:TESS_UI_MAX_FRAMES = "30"; $env:TESS_UI_FRAMES_REPORT = $report
           Start-Process -Wait -NoNewWindow -WorkingDirectory $env:RUNNER_TEMP -FilePath (Join-Path $app "demo.exe")
           $frames = Get-Content $report
           Write-Output "installed app drew $frames frames"
           if ($frames -ne "30") { throw "the installed app drew $frames frames" }
-          Remove-Item Env:TESSERAE_MAX_FRAMES, Env:TESSERAE_FRAMES_REPORT
+          Remove-Item Env:TESS_UI_MAX_FRAMES, Env:TESS_UI_FRAMES_REPORT
           Start-Process -Wait -FilePath (Join-Path $app "unins000.exe") -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES"
           Start-Sleep -Seconds 3
           if (Test-Path (Join-Path $app "demo.exe")) { throw "the uninstaller left demo.exe" }
@@ -312,10 +312,10 @@ jobs:
           $ErrorActionPreference = "Stop"
           $bin = Join-Path $env:GITHUB_WORKSPACE "fresh/Scripts"  # BIN is Git Bash's /d/a/... form
           # fetch_iscc says what it's fetching first; its path is the last line
-          $iscc = & "$bin/python.exe" -c "from tesserae import build; print(build.fetch_iscc())" | Select-Object -Last 1
+          $iscc = & "$bin/python.exe" -c "from tess_ui import build; print(build.fetch_iscc())" | Select-Object -Last 1
           if ($LASTEXITCODE -ne 0) { exit 1 }
           Write-Output "fetched $iscc"
-          $env:TESSERAE_ISCC = $iscc
+          $env:TESS_UI_ISCC = $iscc
           & "$bin/tesserae.exe" build --installer --app-version 1.2.1 --identifier com.example.demo
           if ($LASTEXITCODE -ne 0) { exit 1 }
           if (-not (Test-Path "dist/demo-1.2.1-setup.exe")) { throw "no installer from the fetched Inno Setup" }
@@ -336,7 +336,7 @@ jobs:
           xvfb-run -a "$BIN/tesserae" build --installer --check --app-version 1.2.0 --identifier com.example.demo --publisher "Tesserae CI <ci@example.com>"
           ls -l dist
           frames() { cat "$RUNNER_TEMP/frames.txt"; }
-          run() { (cd "$RUNNER_TEMP" && TESSERAE_MAX_FRAMES=30 TESSERAE_FRAMES_REPORT="$RUNNER_TEMP/frames.txt" xvfb-run -a "$@"); }
+          run() { (cd "$RUNNER_TEMP" && TESS_UI_MAX_FRAMES=30 TESS_UI_FRAMES_REPORT="$RUNNER_TEMP/frames.txt" xvfb-run -a "$@"); }
 
           sudo apt-get install -y ./dist/demo_1.2.0_amd64.deb
           test -L /usr/bin/demo && test -x /opt/demo/demo
@@ -353,7 +353,7 @@ jobs:
             pacman -Qi demo | head -3
             pacman -Qk demo
             desktop-file-validate /usr/share/applications/com.example.demo.desktop 2>/dev/null || true
-            cd /tmp && TESSERAE_MAX_FRAMES=30 TESSERAE_FRAMES_REPORT=/tmp/frames.txt xvfb-run -a demo
+            cd /tmp && TESS_UI_MAX_FRAMES=30 TESS_UI_FRAMES_REPORT=/tmp/frames.txt xvfb-run -a demo
             echo "pacman: the installed app drew $(cat /tmp/frames.txt) frames"
             test "$(cat /tmp/frames.txt)" = 30
             pacman -R --noconfirm demo && test ! -e /opt/demo'
@@ -365,7 +365,7 @@ jobs:
             dnf install -y -q xorg-x11-server-Xvfb xorg-x11-xauth mesa-vulkan-drivers > /dev/null
             dnf install -y /pkg/demo-1.2.0-1.x86_64.rpm | grep -E "^ (demo|lib|vulkan)" || true
             rpm -V demo && echo "rpm -V: clean"
-            cd /tmp && TESSERAE_MAX_FRAMES=30 TESSERAE_FRAMES_REPORT=/tmp/frames.txt xvfb-run -a demo
+            cd /tmp && TESS_UI_MAX_FRAMES=30 TESS_UI_FRAMES_REPORT=/tmp/frames.txt xvfb-run -a demo
             echo ".rpm: the installed app drew $(cat /tmp/frames.txt) frames"
             test "$(cat /tmp/frames.txt)" = 30
             dnf remove -y -q demo && test ! -e /opt/demo'
@@ -373,7 +373,7 @@ jobs:
           flatpak install --user -y --noninteractive dist/demo-1.2.0-x86_64.flatpak
           flatpak info --user com.example.demo
           (cd "$RUNNER_TEMP" && xvfb-run -a flatpak run --filesystem="$RUNNER_TEMP" \
-            --env=TESSERAE_MAX_FRAMES=30 --env=TESSERAE_FRAMES_REPORT="$RUNNER_TEMP/frames.txt" com.example.demo)
+            --env=TESS_UI_MAX_FRAMES=30 --env=TESS_UI_FRAMES_REPORT="$RUNNER_TEMP/frames.txt" com.example.demo)
           echo "Flatpak: the installed app drew $(frames) frames" && test "$(frames)" = 30
           flatpak uninstall --user -y --noninteractive com.example.demo
 

@@ -12,11 +12,11 @@ from types import SimpleNamespace
 
 import pytest
 
-from tesserae import reactive
-from tesserae.expr import (
+from tess_ui import reactive
+from tess_ui.expr import (
     BUILTIN_FUNCTIONS, ExprError, Limits, MapScope, Origin, compile_expr, compile_statements, compile_template, is_action_name,
 )
-from tesserae.reactive import Computed, Signal
+from tess_ui.reactive import Computed, Signal
 
 
 def run(source, **values):

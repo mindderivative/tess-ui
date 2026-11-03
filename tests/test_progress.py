@@ -2,7 +2,7 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel, a11y, tokens
+from tess_ui import App, Signal, ViewModel, a11y, tokens
 
 
 class VM(ViewModel):
@@ -166,7 +166,7 @@ def test_a_wait_stands_still_for_an_app_that_reduces_motion(tmp_path):
 
 
 def test_the_old_syntax_without_a_value_is_still_a_bar_at_zero(tmp_path):
-    from tesserae import View
+    from tess_ui import View
 
     spec = {"id": "root", "kind": "Container", "style": {"width": 300, "height": 100},
             "children": [{"id": "p", "kind": "LinearProgress", "style": {"width": 200}}]}
@@ -304,7 +304,7 @@ def test_a_value_ends_a_two_bar_wait_and_hides_the_second_bar(tmp_path):
 
 
 def test_a_two_bar_wait_stands_still_for_an_app_that_reduces_motion(tmp_path, monkeypatch):
-    from tesserae import motion
+    from tess_ui import motion
 
     monkeypatch.setattr(motion, "reduced", lambda window: True)
     view, _ = opened(tmp_path, "  - {widget: LinearProgress, name: p, two_bar: true, style: {width: 200}}\n")
@@ -376,7 +376,7 @@ def test_a_wavy_wait_sweeps_with_the_wave_inside_each_bar(tmp_path):
 
 
 def test_a_wavy_bar_stands_still_for_an_app_that_reduces_motion(tmp_path, monkeypatch):
-    from tesserae import motion
+    from tess_ui import motion
 
     monkeypatch.setattr(motion, "reduced", lambda window: True)
     view, _ = opened(tmp_path, "  - {widget: LinearProgress, name: p, value: 1, wavy: true, style: {width: 200}}\n")
@@ -422,7 +422,7 @@ def test_a_wavy_ring_stops_flowing_when_it_is_disposed_and_stands_still_for_redu
     frozen = c.arc.get("data")
     run(view, 300)
     assert c.arc.get("data") == frozen and c._ticker is None
-    from tesserae import motion
+    from tess_ui import motion
 
     monkeypatch.setattr(motion, "reduced", lambda window: True)
     (tmp_path / "again").mkdir()

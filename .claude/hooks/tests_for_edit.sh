@@ -4,7 +4,7 @@
 cd "$CLAUDE_PROJECT_DIR" || exit 0
 f=$(python3 -c 'import json,sys; print(json.load(sys.stdin).get("tool_input",{}).get("file_path",""))')
 case "$f" in
-  */src/tesserae/*.py|*/src/tesserae/*.yaml|*/tests/test_*.py) ;;
+  */src/tess_ui/*.py|*/src/tess_ui/*.yaml|*/tests/test_*.py) ;;
   *) exit 0 ;;
 esac
 py=.venv/bin/python; [ -x "$py" ] || exit 0

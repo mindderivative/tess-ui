@@ -2,9 +2,9 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel
-from tesserae.spec.mask import Mask
-from tesserae.spec.nodes import LoadError, parse_view
+from tess_ui import App, Signal, ViewModel
+from tess_ui.spec.mask import Mask
+from tess_ui.spec.nodes import LoadError, parse_view
 
 PHONE = "(###) ###-####"
 

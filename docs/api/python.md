@@ -26,7 +26,7 @@ Every public class, function and constant, with its signature and what it does. 
 
 ## App
 
-`tesserae.app`: The entry point: screens, one window, the loop.
+`tess_ui.app`: The entry point: screens, one window, the loop.
 
 ### `App`
 
@@ -113,7 +113,7 @@ class App(
 - `reduced_motion` *(property)*: Whether the app is to reduce motion: the user asked the OS for it (or the app says so).
 - `reduced_motion_mode` *(property)*: `"system"` (following the OS), or the app's fixed `True` or `False`.
 - `register(name: str, view: Any, viewmodel: Any) -> None`: Registers `view` (already loaded) and its already-`_attach`ed `viewmodel` (e.g. `FooViewModel(view)`) under `name`, for a later `show(name)` to display.
-- `remember_window(key: str) -> None`: Puts the window back as it was left under `key` (see `tesserae.windowstate`) and keeps the file up to date as it changes: its size and, where the platform gives one, its place, while it is not maximized or fullscreen, and whether it is maximized.
+- `remember_window(key: str) -> None`: Puts the window back as it was left under `key` (see `tess_ui.windowstate`) and keeps the file up to date as it changes: its size and, where the platform gives one, its place, while it is not maximized or fullscreen, and whether it is maximized.
 - `resize_border` *(property)*: How many pixels along each edge resize a borderless window (`tre` turns it off while maximized or fullscreen, and on macOS).
 - `restore() -> None`: Restores the window from maximized or minimized.
 - `route(pattern: str, name: str) -> None`: Adds a route: a pattern like `"notes/{id}"` for the screen registered (now or later) under `name`.
@@ -132,13 +132,13 @@ class App(
 - `stats_overlay` *(property)*: Whether a small readout of the frame rate and what a frame costs shows in the window's top right corner.
 - `stop_trace() -> int`: Ends the trace `start_trace` began and returns how many frames it holds.
 - `system_menu` *(property)*: Whether a secondary press on the title bar opens the OS's window menu (Windows, and Wayland compositors with one).
-- `theme` *(property)*: The app's resolved theme (`tesserae.Theme`): roles, component shape and elevation, typography, and motion tokens.
+- `theme` *(property)*: The app's resolved theme (`tess_ui.Theme`): roles, component shape and elevation, typography, and motion tokens.
 - `thread_handle() -> Any`: `tre`'s thread-safe `LoopHandle` for this app: the one object that may cross threads.
 - `toggle_maximized() -> None`: Maximizes the window, or restores it if it's maximized: a title bar's maximize button.
-- `transition` *(property)*: How `navigate`, `back` and `forward` change screens: `none` (the default, a swap), `fade_through`, `shared_axis_x`, `shared_axis_y`, `shared_axis_z` or `container_transform` (see `tesserae.screen_transition`).
+- `transition` *(property)*: How `navigate`, `back` and `forward` change screens: `none` (the default, a swap), `fade_through`, `shared_axis_x`, `shared_axis_y`, `shared_axis_z` or `container_transform` (see `tess_ui.screen_transition`).
 - `transparent` *(property)*: Whether the window was made see-through (`App(transparent=True)`); `transparent_active` says whether it took.
 - `transparent_active` *(property)*: Whether the window really is see-through (the platform may not allow it); `None` until it opens.
-- `watch_component(path: str | Path) -> None`: While `run(hot_reload=True)` runs, watches a component file and reloads every live instance of it on change; `tesserae.instantiate` calls it, so a component first added while the app runs is watched too.
+- `watch_component(path: str | Path) -> None`: While `run(hot_reload=True)` runs, watches a component file and reloads every live instance of it on change; `tess_ui.instantiate` calls it, so a component first added while the app runs is watched too.
 - `window` *(property)*: The app's one window (it exists from the start).
 - `window_border` *(property)*: Whether a borderless window gets its 1 px border (on by default): around the window, in the theme's `outline_variant`, a node of class `window_border` a theme or stylesheet can restyle.
 - `window_of(name: str) -> Any`: The `AppWindow` named `name`.
@@ -146,7 +146,7 @@ class App(
 
 ## Reactivity
 
-`tesserae.reactive`: Signals, computed values, effects and the ViewModel base class.
+`tess_ui.reactive`: Signals, computed values, effects and the ViewModel base class.
 
 ### `Computed`
 
@@ -214,7 +214,7 @@ Runs `fn()` and returns its result, without its reads being recorded by the encl
 
 ## Views and components
 
-`tesserae.view`: A loaded `*_View.yaml`, and an embedded instance of one.
+`tess_ui.view`: A loaded `*_View.yaml`, and an embedded instance of one.
 
 ### `Component`
 
@@ -227,7 +227,7 @@ class Component(
 ) -> None  # extends View
 ```
 
-An embedded view with its own ViewModel, built by `View.instantiate`/`Component.instantiate` (or `tesserae.instantiate`) in its host's window, with its host's theme and stylesheet. It follows them when the host is re-themed or re-styled.
+An embedded view with its own ViewModel, built by `View.instantiate`/`Component.instantiate` (or `tess_ui.instantiate`) in its host's window, with its host's theme and stylesheet. It follows them when the host is re-themed or re-styled.
 
 Also has everything `View` has.
 
@@ -251,10 +251,10 @@ class View(
 ) -> None
 ```
 
-A built view. `spec` is an expanded view spec (from `tesserae.spec.build_view_spec` or `expand_components_to_spec`); `frames` maps an Image's id to its decoded `(rgba, width, height)`.
+A built view. `spec` is an expanded view spec (from `tess_ui.spec.build_view_spec` or `expand_components_to_spec`); `frames` maps an Image's id to its decoded `(rgba, width, height)`.
 
 - `click(node: Any) -> None`: A synthetic click on `node`, for tests: `window.simulate`.
-- `control(widget_id: str) -> Any`: The MD3 control (`tesserae.controls`) behind `widget_id`, one of the eight control kinds; its `.node` is `node(widget_id)`.
+- `control(widget_id: str) -> Any`: The MD3 control (`tess_ui.controls`) behind `widget_id`, one of the eight control kinds; its `.node` is `node(widget_id)`.
 - `dock_host(node_id: str) -> Any`: The `DockHost` of the `kind: Dock` node `node_id`: its `dock`, `size`, `set_size`, `layout` and `restore`.
 - `embedded(node_id: str) -> 'Component'`: The view the `view:` node `node_id` embeds.
 - `instantiate(path: Any, into: Any, spec: Optional[dict[str, Any]] = None, frames: Optional[dict[str, tuple[bytes, int, int]]] = None) -> 'Component'`: Builds a component -- a view of its own, with its own ViewModel -- under `into`, a node of this view, in this view's window.
@@ -266,12 +266,12 @@ A built view. `spec` is an expanded view spec (from `tesserae.spec.build_view_sp
 - `set_stylesheet(stylesheet_spec: Optional[dict[str, Any]] = None) -> None`: Replaces the stylesheet and re-styles every node in place; `None` clears it.
 - `set_theme(theme_seed: Optional[tuple[int, int, int, int]] = None, dark: bool = False, default_theme_spec: Optional[dict[str, Any]] = None, custom_theme_spec: Optional[dict[str, Any]] = None, contrast: float = 0.0) -> None`: Re-themes every node in place.
 - `spec` *(property)*: The expanded spec the view was built from: every `component:` and `include:` resolved.
-- `theme` *(property)*: This view's resolved theme (`tesserae.Theme`).
+- `theme` *(property)*: This view's resolved theme (`tess_ui.Theme`).
 - `viewmodel` *(property)*: The ViewModel attached to this view, or `None`.
 
 ## Embedding
 
-`tesserae.component`: A component with a ViewModel of its own, inside a view.
+`tess_ui.component`: A component with a ViewModel of its own, inside a view.
 
 ### `instantiate`
 
@@ -290,7 +290,7 @@ Instantiates the component at `path` into `into` (a `Node`, e.g. from `parent.no
 
 ## Repeater
 
-`tesserae.repeater`: A list signal kept in step with a list of components.
+`tess_ui.repeater`: A list signal kept in step with a list of components.
 
 ### `Repeater`
 
@@ -312,7 +312,7 @@ Keeps one component and ViewModel alive for each item of a list `Signal`, adding
 
 ## Projects
 
-`tesserae.project`: A project's files, found by name.
+`tess_ui.project`: A project's files, found by name.
 
 ### `Project`
 
@@ -344,7 +344,7 @@ A name that is nowhere, or in two places.
 
 ## Themes
 
-`tesserae.theme`: A resolved MD3 theme, read from code.
+`tess_ui.theme`: A resolved MD3 theme, read from code.
 
 ### `Theme`
 
@@ -378,7 +378,7 @@ A resolved theme. Build one with `Theme.resolve(...)`.
 
 ## Tokens
 
-`tesserae.tokens`: MD3's colour, type, shape and motion tokens.
+`tess_ui.tokens`: MD3's colour, type, shape and motion tokens.
 
 ### `TypeStyle`
 
@@ -503,7 +503,7 @@ The font size, weight, line height and tracking of the MD3 type role `role`, or 
 
 ## Widgets
 
-`tesserae.widgets`: One function per MD3 widget, called against a window.
+`tess_ui.widgets`: One function per MD3 widget, called against a window.
 
 ### `accordion_header`
 
@@ -717,7 +717,7 @@ dialog(
 ) -> overlays.Dialog
 ```
 
-MD3's dialog (`tesserae.overlays.Dialog`). `open()` it; Escape or an action closes it.
+MD3's dialog (`tess_ui.overlays.Dialog`). `open()` it; Escape or an action closes it.
 
 ### `divider`
 
@@ -815,7 +815,7 @@ icon(
 ) -> 'Widget'
 ```
 
-One of Tesserae's icons (`tesserae.icons`: home, search, menu, close, check, arrow_back, add, settings, expand_more, remove, arrow_forward, chevron_right), `size` square in `foreground`. It is Tesserae's own Icon.
+One of Tesserae's icons (`tess_ui.icons`: home, search, menu, close, check, arrow_back, add, settings, expand_more, remove, arrow_forward, chevron_right), `size` square in `foreground`. It is Tesserae's own Icon.
 
 ### `icon_button`
 
@@ -974,7 +974,7 @@ menu(
 ) -> overlays.Menu
 ```
 
-MD3's menu (`tesserae.overlays.Menu`) of `menu_item(...)`s or `(label, fn)` pairs. `open(anchor)` below a node, `open_at(x, y)`, or `attach_context(node)` for a right-click.
+MD3's menu (`tess_ui.overlays.Menu`) of `menu_item(...)`s or `(label, fn)` pairs. `open(anchor)` below a node, `open_at(x, y)`, or `attach_context(node)` for a right-click.
 
 ### `menu_item`
 
@@ -1017,7 +1017,7 @@ navigation_drawer(
 ) -> Widget
 ```
 
-MD3's navigation drawer: `surface_container_low`, 12 px in, each item 56 px with a 24 px icon and a `label_large` label; the selected one a full-width `secondary_container` pill. `modal=True` is the modal drawer's look (rounded on its end side); open it as an overlay with `tesserae.overlays.NavigationDrawer`.
+MD3's navigation drawer: `surface_container_low`, 12 px in, each item 56 px with a 24 px icon and a `label_large` label; the selected one a full-width `secondary_container` pill. `modal=True` is the modal drawer's look (rounded on its end side); open it as an overlay with `tess_ui.overlays.NavigationDrawer`.
 
 ### `navigation_rail`
 
@@ -1106,7 +1106,7 @@ popover(
 ) -> overlays.Popover
 ```
 
-MD3's rich tooltip, `tre`'s popover (`tesserae.overlays.Popover`). `open(anchor)` it, or `attach(anchor)` (or `anchor=`) to open and close it on the anchor's click; an outside press, Escape or an action closes it.
+MD3's rich tooltip, `tre`'s popover (`tess_ui.overlays.Popover`). `open(anchor)` it, or `attach(anchor)` (or `anchor=`) to open and close it on the anchor's click; an outside press, Escape or an action closes it.
 
 ### `radio_button`
 
@@ -1162,7 +1162,7 @@ search_view(
 ) -> 'SearchView'
 ```
 
-MD3's docked search view (`tesserae.overlays.SearchView`): the results panel under a `search_bar`, `height` its most. Give it the `bar` and it opens and closes with it; `set_results([(text, fn)])`.
+MD3's docked search view (`tess_ui.overlays.SearchView`): the results panel under a `search_bar`, `height` its most. Give it the `bar` and it opens and closes with it; `set_results([(text, fn)])`.
 
 ### `segmented_button`
 
@@ -1200,7 +1200,7 @@ side_sheet(
 ) -> 'Widget | overlays.SideSheet'
 ```
 
-MD3's side sheet. `modal=True` is `tesserae.overlays.SideSheet` (an overlay: `open()` it); otherwise a standard sheet, a `surface` panel in the layout.
+MD3's side sheet. `modal=True` is `tess_ui.overlays.SideSheet` (an overlay: `open()` it); otherwise a standard sheet, a `surface` panel in the layout.
 
 ### `slider`
 
@@ -1237,7 +1237,7 @@ snackbar(
 ) -> overlays.Snackbar
 ```
 
-MD3's snackbar (`tesserae.overlays.Snackbar`). `open()` it; it hides itself after `duration` ms (`None` keeps it).
+MD3's snackbar (`tess_ui.overlays.Snackbar`). `open()` it; it hides itself after `duration` ms (`None` keeps it).
 
 ### `spin_box`
 
@@ -1438,7 +1438,7 @@ tooltip(
 ) -> overlays.Tooltip
 ```
 
-MD3's plain tooltip (`tesserae.overlays.Tooltip`). `attach(anchor)` (or `anchor=`) shows it on hover and keyboard focus.
+MD3's plain tooltip (`tess_ui.overlays.Tooltip`). `attach(anchor)` (or `anchor=`) shows it on hover and keyboard focus.
 
 ### `top_app_bar`
 
@@ -1502,7 +1502,7 @@ A surface for video frames (an `image` node Tesserae builds). `video.frame(rgba,
 
 ## Controls
 
-`tesserae.controls`: MD3's stateful controls.
+`tess_ui.controls`: MD3's stateful controls.
 
 ### `Checkbox`
 
@@ -1770,7 +1770,7 @@ Also has everything `Control` has.
 
 ## Overlays
 
-`tesserae.overlays`: Dialogs, menus, snackbars, tooltips, sheets, drawers.
+`tess_ui.overlays`: Dialogs, menus, snackbars, tooltips, sheets, drawers.
 
 ### `Dialog`
 
@@ -1824,7 +1824,7 @@ class NavigationDrawer(
 ) -> None  # extends _EdgeSheet
 ```
 
-MD3's modal navigation drawer: `tesserae.widgets.navigation_drawer`'s drawer, `modal=True`, over a scrim at the window's start; it slides in, and Escape closes it. Choosing an item closes it.
+MD3's modal navigation drawer: `tess_ui.widgets.navigation_drawer`'s drawer, `modal=True`, over a scrim at the window's start; it slides in, and Escape closes it. Choosing an item closes it.
 
 Also has everything `_EdgeSheet` has.
 
@@ -1972,7 +1972,7 @@ Closes the overlay (a dialog, a sheet, a menu, ...) that `node` is in, the neare
 
 ## Docking
 
-`tesserae.docking`: Panels the user can drag between zones.
+`tess_ui.docking`: Panels the user can drag between zones.
 
 ### `Dock`
 
@@ -2016,7 +2016,7 @@ The docking of one window (see the module doc). `add_zone(side, size)` returns t
 
 ## Interaction
 
-`tesserae.interaction`: State layer, ripple and focus ring.
+`tess_ui.interaction`: State layer, ripple and focus ring.
 
 ### `Interaction`
 
@@ -2054,7 +2054,7 @@ The state layer, ripple and focus ring on one `box` node: the layer and ripple t
 
 ## Accessibility
 
-`tesserae.a11y`: What a node tells assistive technology.
+`tess_ui.a11y`: What a node tells assistive technology.
 
 ### `apply_extras`
 
@@ -2112,7 +2112,7 @@ Routes `node`'s `a11y_action` events to `handlers[action]`, each given the event
 
 ## Bindings
 
-`tesserae.binding`: The `{{ expression }}` language.
+`tess_ui.binding`: The `{{ expression }}` language.
 
 ### `BindingError`
 
@@ -2152,7 +2152,7 @@ Evaluates `expr` against `viewmodel` and returns the Python value.
 evaluate_value(expr: Expression, viewmodel: Any) -> Value
 ```
 
-Evaluates `expr` against `viewmodel`: a primitive or a `Handle`. Signal reads are recorded on `tesserae.reactive`'s stack.
+Evaluates `expr` against `viewmodel`: a primitive or a `Handle`. Signal reads are recorded on `tess_ui.reactive`'s stack.
 
 ### `parse_binding`
 
@@ -2172,7 +2172,7 @@ A value as `tre` prints it (`Int(3)`, `Str("a")`, `Handle(0)`).
 
 ## Fonts
 
-`tesserae.fonts`: Registering font files.
+`tess_ui.fonts`: Registering font files.
 
 ### `register_font`
 
@@ -2184,7 +2184,7 @@ Reads the font file at `path` and registers it with `tre`, process-wide. Returns
 
 ## Icons
 
-`tesserae.icons`: The built-in icon set.
+`tess_ui.icons`: The built-in icon set.
 
 ### `icon_path`
 
@@ -2210,7 +2210,7 @@ The view box `name`'s path is drawn in: MDI's 24 x 24 for an MDI icon, Material 
 
 ## Logging
 
-`tesserae.log`: Tesserae's log format.
+`tess_ui.log`: Tesserae's log format.
 
 ### `configure_logging`
 
@@ -2232,7 +2232,7 @@ Sends log messages at `level` and above to `sink` (stderr by default) in Tessera
 
 ## Spec loading
 
-`tesserae.spec`: Reading, expanding and watching view files.
+`tess_ui.spec`: Reading, expanding and watching view files.
 
 ### `ComponentError`
 
@@ -2287,7 +2287,7 @@ expand_components_to_spec(
 ) -> Any
 ```
 
-Resolves every `include:` and expands every `component:` entry in `yaml_text`, returning the finished `WidgetSpec`-shaped dict with no `include:`/`component:`/`with:`/`params:`/`repeat:` keys remaining -- ready for `tesserae.View(spec)`, with no YAML-text round-trip.
+Resolves every `include:` and expands every `component:` entry in `yaml_text`, returning the finished `WidgetSpec`-shaped dict with no `include:`/`component:`/`with:`/`params:`/`repeat:` keys remaining -- ready for `tess_ui.View(spec)`, with no YAML-text round-trip.
 
 ### `load_stylesheet`
 

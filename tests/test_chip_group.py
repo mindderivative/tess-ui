@@ -2,8 +2,8 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel, tokens
-from tesserae.shipped import shipped_views
+from tess_ui import App, Signal, ViewModel, tokens
+from tess_ui.shipped import shipped_views
 
 CHIPS = "[{value: a, label: Alpha}, {value: b, label: Beta, icon: home}, {value: c, label: Gamma}]"
 

@@ -2,11 +2,11 @@
 
 import pytest
 
-from tesserae import View
-from tesserae.composed import open_composed
-from tesserae.spec.build import SpecBuildError
-from tesserae.spec.nodes import LoadError, parse_view
-from tesserae.viewmodel import Bindings
+from tess_ui import View
+from tess_ui.composed import open_composed
+from tess_ui.spec.build import SpecBuildError
+from tess_ui.spec.nodes import LoadError, parse_view
+from tess_ui.viewmodel import Bindings
 
 SEED = (103, 80, 164, 255)
 LONG = "one two three four five six seven eight nine ten eleven twelve"

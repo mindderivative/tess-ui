@@ -85,7 +85,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import chip
+from tess_ui.widgets import chip
 
 shipped = chip(app.window, "Shipped", 96, variant="filter", selected=True)
 ```

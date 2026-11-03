@@ -55,7 +55,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import splitter
+from tess_ui.widgets import splitter
 
 panes = splitter(app.window, left.node, right.node, 640, 400, orientation="horizontal", position=0.3)
 ```

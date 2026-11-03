@@ -8,7 +8,7 @@ everything above that.
 ## The layers
 
 ```
- your code      app.py (App)   *_View.yaml   *_ViewModel.py   tesserae.widgets
+ your code      app.py (App)   *_View.yaml   *_ViewModel.py   tess_ui.widgets
                     |               |               |               |
  Tesserae       registry,  ---> parse -> compose -> lower     controls, composed
                 routing,        (nodes)  (instances) (spec)   widgets, overlays,
@@ -22,21 +22,21 @@ everything above that.
 ```
 
 **App code.** [`App`](api/python.md) owns one window and a registry of named screens. A
-`*_ViewModel.py` holds state in `Signal`s and `Computed`s (`tesserae.reactive`: `Signal`,
+`*_ViewModel.py` holds state in `Signal`s and `Computed`s (`tess_ui.reactive`: `Signal`,
 `Computed`, `Effect`, `batch`, `untrack`, `ViewModel`) and the methods a view's handlers call. A
 ViewModel serves the views that name it: `views = "Counter"` in the class, `name: Counter` at the top of
 the view, `app.bind(CounterViewModel)` and `app.open_view("Counter")` to join and open them. One instance
 serves every view that names it. See [Apps and screens](guide/apps-and-screens.md), the
 [naming convention](guide/naming-convention.md) and [Reactivity](guide/reactivity.md).
 
-**The spec pipeline** (`tesserae.spec`) turns a view file into live nodes in four steps:
+**The spec pipeline** (`tess_ui.spec`) turns a view file into live nodes in four steps:
 
 1. **Parse** (`spec/nodes.py`). A `*_View.yaml` is read with its line and column kept. Every key of every
    node is checked against the node's widget, every property against its declaration, and every `{{ }}`
-   expression and handler is compiled by `tesserae.expr`. The first mistake is an error that names the
+   expression and handler is compiled by `tess_ui.expr`. The first mistake is an error that names the
    file, line and column. A widget is a built-in (`spec/builtin_widgets.py`), or a view: one with `params:`
    is declared from them, and found by name in the project or among the views Tesserae ships
-   (`tesserae/views`, with a `*_Stylesheet.yaml` of rules beside each).
+   (`tess_ui/views`, with a `*_Stylesheet.yaml` of rules beside each).
 2. **Compose** (`spec/compose.py`). The parsed views become a tree of instances: a view call is replaced
    by the called view's root with the call's keys as its params, slots are filled, `for:` and `if:` make
    or drop instances, and `state:` makes a Signal for each name. An expression written at a call is
@@ -57,20 +57,20 @@ the app's stylesheet (`styles:` rules that name a `widget`, and may narrow it by
 in a layer wins, and a later rule wins a tie; a value in a rule may be an expression over the widget's
 properties. See [Themes](themes/index.md) and [Stylesheets](stylesheets/index.md).
 
-**Tokens and `Theme`.** `tesserae.tokens` holds the MD3 values: the 49 colour roles from a seed
+**Tokens and `Theme`.** `tess_ui.tokens` holds the MD3 values: the 49 colour roles from a seed
 (light and dark, via `materialyoucolor`) with `colors:` overrides, the shape scale, elevation
-(as key and ambient shadows), the 15 type roles, and colour-string parsing. `tesserae.Theme` is
+(as key and ambient shadows), the 15 type roles, and colour-string parsing. `tess_ui.Theme` is
 one resolved theme, which style values like `primary`, `extra_large`, `level_3` or
 `typography_role` resolve through. Widgets and views follow their app's theme: `App.set_dark`,
 the OS light/dark switch and `App.set_theme_specs` re-colour them in place. See
 [Themes](themes/index.md) and [Stylesheets](stylesheets/index.md).
 
-**Widgets.** `tesserae.controls` are the stateful MD3 controls (`Checkbox`, `Switch`, `Slider`,
+**Widgets.** `tess_ui.controls` are the stateful MD3 controls (`Checkbox`, `Switch`, `Slider`,
 `SpinBox`, progress indicators, the time dial); each keeps its state in `Signal`s and fires
-`on_change` for the user's edits only. `tesserae.widgets` has one function per MD3 widget, for code that
-makes nodes at run time, each returning a control, a `Widget` (with `.node` and its parts) or an overlay. `tesserae.interaction` draws what the
-engine does not: state layers, the ripple and focus rings. `tesserae.a11y` sets roles and states.
-`tesserae.overlays` (`Dialog`, `Menu`, `Snackbar`, `Tooltip`, `Popover`, `SearchView`,
+`on_change` for the user's edits only. `tess_ui.widgets` has one function per MD3 widget, for code that
+makes nodes at run time, each returning a control, a `Widget` (with `.node` and its parts) or an overlay. `tess_ui.interaction` draws what the
+engine does not: state layers, the ripple and focus rings. `tess_ui.a11y` sets roles and states.
+`tess_ui.overlays` (`Dialog`, `Menu`, `Snackbar`, `Tooltip`, `Popover`, `SearchView`,
 `NavigationDrawer`) show nodes with `window.show_layer`. A `widget: Window` view frames the screens with a title
 bar, a rail and docked panels, and `Dock` manages the panels in its zones.
 See the [widget catalog](guide/widget-catalog.md), [controls](guide/controls.md),
@@ -104,8 +104,8 @@ given a path.
 ## A signal change
 
 A binding such as `text: "{{ count }}"` is an expression in a restricted subset of Python
-(`tesserae.expr`: arithmetic, comparisons, comprehensions, a short list of functions; never `eval`).
-While it is evaluated, `tesserae.reactive` notes every `Signal` or `Computed` it reads. When one changes
+(`tess_ui.expr`: arithmetic, comparisons, comprehensions, a short list of functions; never `eval`).
+While it is evaluated, `tess_ui.reactive` notes every `Signal` or `Computed` it reads. When one changes
 (`vm.count.set(5)`), `ComposedView` lowers its instances again and `View.reconcile` patches the live nodes:
 a node whose id is unchanged keeps its identity, focus and running animations, and only the fields that
 differ are set. `batch` defers notifications so each subscriber runs once. Going the other way, a

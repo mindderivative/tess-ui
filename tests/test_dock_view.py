@@ -5,8 +5,8 @@ import copy
 import pytest
 import yaml
 
-from tesserae import App, View
-from tesserae.spec.dock import DockError, expand_docks
+from tess_ui import App, View
+from tess_ui.spec.dock import DockError, expand_docks
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 DOCK = """

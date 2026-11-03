@@ -5,11 +5,11 @@ The hint comes from the root keys alone and always says "looks like". A file tha
 
 import pytest
 
-from tesserae.project import kind_of_keys
-from tesserae.spec.cascade import check_stylesheet, check_theme
-from tesserae.spec.nodes import LoadError, load_marked, parse_view
-from tesserae.spec.rules import RuleSheet
-from tesserae.spec.themes import load_stylesheet, load_theme
+from tess_ui.project import kind_of_keys
+from tess_ui.spec.cascade import check_stylesheet, check_theme
+from tess_ui.spec.nodes import LoadError, load_marked, parse_view
+from tess_ui.spec.rules import RuleSheet
+from tess_ui.spec.themes import load_stylesheet, load_theme
 
 
 @pytest.mark.parametrize("keys, kind", [

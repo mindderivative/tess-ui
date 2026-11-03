@@ -185,7 +185,7 @@ styles:
 Shapes are `none`, `extra_small`, `small`, `medium`, `large`, `extra_large` and `full` (a pill or a circle: half the node's
 shorter side), or a number; an elevation is a level from 0 to 5.
 
-A theme's `components:` sets the corner radius and elevation of a widget made in Python with `tesserae.widgets`,
+A theme's `components:` sets the corner radius and elevation of a widget made in Python with `tess_ui.widgets`,
 by MD3 component and variant. It is not read by a view written in YAML, which takes its shape from its rules.
 
 ```yaml
@@ -196,7 +196,7 @@ components:
 ```
 
 ```python
-from tesserae.widgets import card
+from tess_ui.widgets import card
 
 card(app.window, 200, 120, variant="elevated")     # corner radius 4, from the theme
 ```
@@ -228,14 +228,14 @@ installed fonts for scripts the bundled ones lack, such as CJK and colour emoji)
 machine. To use any other family, register its file first:
 
 ```python
-import tesserae
+import tess_ui
 
-tesserae.register_font("fonts/Inter-Regular.ttf")  # -> ["Inter"]
+tess_ui.register_font("fonts/Inter-Regular.ttf")  # -> ["Inter"]
 ```
 
 The return value is the family name to use as `font_family`. Naming a family that is neither bundled nor
 registered draws a bundled face in its place, and Tesserae warns, naming the file and the family
-(`tesserae.fonts.FontFallbackWarning`; turn it into an error with `warnings.filterwarnings("error", ...)`).
+(`tess_ui.fonts.FontFallbackWarning`; turn it into an error with `warnings.filterwarnings("error", ...)`).
 
 ## Making a change
 
@@ -261,7 +261,7 @@ appearance stay as they are. With `run(hot_reload=True)`, saving a theme file do
 and a sheet that is wrong leaves every view as it was. With `run(hot_reload=True)`, saving the stylesheet file does this for you.
 
 ```python
-from tesserae.spec import load_theme
+from tess_ui.spec import load_theme
 
 app.set_theme_specs(None, load_theme("themes/Dark_Theme.yaml"))
 ```
@@ -269,7 +269,7 @@ app.set_theme_specs(None, load_theme("themes/Dark_Theme.yaml"))
 ### Reading the theme from code
 
 ```python
-theme = app.theme                      # a tesserae.Theme
+theme = app.theme                      # a tess_ui.Theme
 theme.role("primary")                  # (r, g, b, a)
 theme.shape("card", "elevated")        # components: card.elevated, then card
 theme.elevation("dialog")              # an MD3 elevation level, or None
@@ -304,7 +304,7 @@ form or the other. An unknown key in a theme file is found when the file is read
 - **Applying.** A view is built by Tesserae's own compiler: for each node it merges the layers
   (above), resolves colour roles against the scheme, and sets the result on the node. `view.set_theme`
   runs the same pass again over the nodes already built, in place, so a theme change never rebuilds a view.
-- **Following.** `tesserae.follow` keeps the widgets, controls and overlays made on an app's window
+- **Following.** `tess_ui.follow` keeps the widgets, controls and overlays made on an app's window
   without a `theme=`. When the app's theme or appearance changes (including the OS switching) it re-themes
   them with the app's views.
 - **Files.** Tesserae reads theme and stylesheet files itself and hands the engine only data, as for views
@@ -317,7 +317,7 @@ form or the other. An unknown key in a theme file is found when the file is read
 
 ### On the app
 
-- `App.theme` *(property)*: The app's resolved theme (`tesserae.Theme`): roles, component shape and elevation, typography, and motion tokens.
+- `App.theme` *(property)*: The app's resolved theme (`tess_ui.Theme`): roles, component shape and elevation, typography, and motion tokens.
 - `App.dark` *(property)*: Whether the app is showing its dark scheme right now.
 - `App.dark_mode` *(property)*: `"system"` (following the OS), or the app's fixed `True`/`False`.
 - `App.set_dark(dark: bool | str) -> None`: `True`/`False` fixes the app dark or light, re-theming every screen in place; `"system"` goes back to following the OS from its next switch.
@@ -327,7 +327,7 @@ form or the other. An unknown key in a theme file is found when the file is read
 
 ### On a view
 
-- `View.theme` *(property)*: This view's resolved theme (`tesserae.Theme`).
+- `View.theme` *(property)*: This view's resolved theme (`tess_ui.Theme`).
 - `View.set_theme(theme_seed: Optional[tuple[int, int, int, int]] = None, dark: bool = False, default_theme_spec: Optional[dict[str, Any]] = None, custom_theme_spec: Optional[dict[str, Any]] = None, contrast: float = 0.0) -> None`: Re-themes every node in place.
 - `View.set_stylesheet(stylesheet_spec: Optional[dict[str, Any]] = None) -> None`: Replaces the stylesheet and re-styles every node in place; `None` clears it.
 
@@ -363,7 +363,7 @@ A resolved theme. Build one with `Theme.resolve(...)`.
 
 ### Tokens
 
-`tesserae.tokens`: Material Design 3's tokens as Python values.
+`tess_ui.tokens`: Material Design 3's tokens as Python values.
 
 - `shape(name: str) -> Optional[float]`: The corner radius of the MD3 shape token `name` (`"small"`, `"medium"`, ...
 - `elevation(name: str) -> Optional[float]`: The level (0 to 5) of the MD3 elevation token `name`, or `None` if it isn't one.

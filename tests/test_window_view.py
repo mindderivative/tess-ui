@@ -5,9 +5,9 @@ import sys
 import pytest
 import yaml
 
-from tesserae import App, View
-from tesserae.spec.window import WindowError, expand_windows, window_of
-from tesserae.window_view import WindowViewModel
+from tess_ui import App, View
+from tess_ui.spec.window import WindowError, expand_windows, window_of
+from tess_ui.window_view import WindowViewModel
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 WINDOW = """
@@ -116,7 +116,7 @@ def test_the_window_view_can_have_a_viewmodel_of_its_own(tmp_path):
     _project(tmp_path, WINDOW.replace("children:", "children:\n  - {id: shown, kind: Text, text: {content: '', typography_role: body_large}, style: {foreground: on_surface}, bindings: {text: \"{{ label.get() }}\"}}"), name)
     (tmp_path / "ViewModels").mkdir()
     (tmp_path / "ViewModels" / f"{name}_ViewModel.py").write_text(
-        f"from tesserae import Signal, ViewModel\n\n\nclass {name}ViewModel(ViewModel):\n    def __init__(self, view):\n"
+        f"from tess_ui import Signal, ViewModel\n\n\nclass {name}ViewModel(ViewModel):\n    def __init__(self, view):\n"
         "        self.label = Signal('mine')\n        super().__init__(view)\n")
     sys.path.insert(0, str(tmp_path / "ViewModels"))
     try:
@@ -158,7 +158,7 @@ def test_another_screen_has_no_place_in_a_window_view_yet(tmp_path):
     (tmp_path / "Views" / f"{name}_View.yaml").write_text("id: root\nkind: Container\n")
     (tmp_path / "ViewModels").mkdir()
     (tmp_path / "ViewModels" / f"{name}_ViewModel.py").write_text(
-        f"from tesserae import ViewModel\n\n\nclass {name}ViewModel(ViewModel):\n    pass\n")
+        f"from tess_ui import ViewModel\n\n\nclass {name}ViewModel(ViewModel):\n    pass\n")
     app = _app(tmp_path)
     app.load("Window")
     try:
@@ -240,11 +240,11 @@ def test_a_window_view_in_the_new_syntax_takes_the_flags(tmp_path):
 
 import json  # noqa: E402
 
-from tesserae import windowstate  # noqa: E402
+from tess_ui import windowstate  # noqa: E402
 
 
 def _remembering(tmp_path, monkeypatch, value="true"):
-    monkeypatch.setenv("TESSERAE_STATE_DIR", str(tmp_path / "state"))
+    monkeypatch.setenv("TESS_UI_STATE_DIR", str(tmp_path / "state"))
     return _app(_project(tmp_path, WINDOW + f"remember: {value}\n"))
 
 
@@ -264,7 +264,7 @@ def test_the_size_is_written_a_moment_after_it_changes(tmp_path, monkeypatch):
 
 
 def test_the_next_run_opens_at_the_saved_size(tmp_path, monkeypatch):
-    monkeypatch.setenv("TESSERAE_STATE_DIR", str(tmp_path / "state"))
+    monkeypatch.setenv("TESS_UI_STATE_DIR", str(tmp_path / "state"))
     windowstate.save("Tasks", {"width": 777.0, "height": 333.0, "maximized": False})
     app = _app(_project(tmp_path, WINDOW + "remember: true\n"))
     app.load("Window")
@@ -294,7 +294,7 @@ def test_a_maximized_window_is_remembered_and_keeps_the_size_it_had_before(tmp_p
 
 
 def test_a_damaged_or_wild_file_gives_less_not_an_error(tmp_path, monkeypatch):
-    monkeypatch.setenv("TESSERAE_STATE_DIR", str(tmp_path / "state"))
+    monkeypatch.setenv("TESS_UI_STATE_DIR", str(tmp_path / "state"))
     (tmp_path / "state").mkdir()
     (tmp_path / "state" / "tasks.window.json").write_text("{not json")
     assert windowstate.load("Tasks") == {}
@@ -305,7 +305,7 @@ def test_a_damaged_or_wild_file_gives_less_not_an_error(tmp_path, monkeypatch):
 
 
 def test_a_window_that_does_not_ask_leaves_no_file(tmp_path, monkeypatch):
-    monkeypatch.setenv("TESSERAE_STATE_DIR", str(tmp_path / "state"))
+    monkeypatch.setenv("TESS_UI_STATE_DIR", str(tmp_path / "state"))
     app = _app(_project(tmp_path))
     app.load("Window")
     app.window.simulate("resize", width=500, height=300)

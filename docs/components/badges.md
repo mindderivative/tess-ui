@@ -61,7 +61,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import badge
+from tess_ui.widgets import badge
 
 unread = badge(app.window, "3")
 ```

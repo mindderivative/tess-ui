@@ -4,7 +4,7 @@ with the file, line and column), once for the place in the file. Anything that i
 import pytest
 from loguru import logger
 
-from tesserae import Computed, Signal
+from tess_ui import Computed, Signal
 
 from test_compose import VM, make
 

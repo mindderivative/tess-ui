@@ -9,7 +9,7 @@ It needs node and the server, so CI doesn't run it; run it after regenerating
 the schemas (`tools/generate_yaml_schema.py`) or changing a file format.
 
     mkdir /tmp/yls && cd /tmp/yls && npm init -y && npm install --ignore-scripts yaml-language-server
-    python tools/check_schema_in_language_server.py /tmp/yls . src/tesserae/spec/default_theme.yaml
+    python tools/check_schema_in_language_server.py /tmp/yls . src/tess_ui/spec/default_theme.yaml
 
 Arguments: the folder holding `node_modules/.bin/yaml-language-server`, the
 repository root, and the theme files to map to the theme schema.
@@ -23,23 +23,23 @@ import threading
 import time
 from pathlib import Path
 
-L = Path(sys.argv[1]); REPO = Path(sys.argv[2]).resolve(); S = REPO / "src/tesserae/schema"
+L = Path(sys.argv[1]); REPO = Path(sys.argv[2]).resolve(); S = REPO / "src/tess_ui/schema"
 THEMES = sys.argv[3:]
 sys.path.insert(0, str(REPO / "src"))
-from tesserae import cli  # noqa: E402
+from tess_ui import cli  # noqa: E402
 
 TMP = Path(tempfile.mkdtemp(prefix="tesserae-schemas."))
 # One schema per file: the server applies every schema whose glob matches, so the packaged one is mapped only to the views Tesserae ships and to the scratch
 # files below, and each example project has its own.
-SCHEMAS = {(S / "tesserae-widget-schema.json").as_uri(): [(REPO / "src/tesserae/views").as_posix() + "/*_View.yaml", "**/Scn*_View.yaml"],
-           (S / "tesserae-stylesheet-schema.json").as_uri(): [(REPO / "src/tesserae/views").as_posix() + "/*_Stylesheet.yaml", "**/Scn*_Stylesheet.yaml"],
-           (S / "tesserae-theme-schema.json").as_uri(): [(REPO / t).as_posix() for t in THEMES] or ["**/__none__.yaml"]}
+SCHEMAS = {(S / "tess-ui-widget-schema.json").as_uri(): [(REPO / "src/tess_ui/views").as_posix() + "/*_View.yaml", "**/Scn*_View.yaml"],
+           (S / "tess-ui-stylesheet-schema.json").as_uri(): [(REPO / "src/tess_ui/views").as_posix() + "/*_Stylesheet.yaml", "**/Scn*_Stylesheet.yaml"],
+           (S / "tess-ui-theme-schema.json").as_uri(): [(REPO / t).as_posix() for t in THEMES] or ["**/__none__.yaml"]}
 EXAMPLES = sorted(p.parent for p in (REPO / "examples").rglob("app.py"))
 for number, example in enumerate(EXAMPLES):  # each example project has its own views, so its own widget schema
     schema = TMP / f"example{number}.json"
     schema.write_text(json.dumps(cli.project_schema_data(example)), encoding="utf-8")
     SCHEMAS[schema.as_uri()] = [example.as_posix() + "/**/*_View.yaml"]
-    SCHEMAS[(S / "tesserae-stylesheet-schema.json").as_uri()].append(example.as_posix() + "/**/*_Stylesheet.yaml")
+    SCHEMAS[(S / "tess-ui-stylesheet-schema.json").as_uri()].append(example.as_posix() + "/**/*_Stylesheet.yaml")
 YAML_SETTINGS = {"schemas": SCHEMAS, "validate": True, "completion": True, "hover": True, "schemaStore": {"enable": False}}
 class Client:
     def __init__(self):
@@ -173,7 +173,7 @@ u = open_doc("Scn32_Stylesheet.yaml", "tesserae: 0.5\nstyles:\n  - widget: Text\
 check("the first-line marker is accepted in a stylesheet", not messages(u), messages(u))
 u = open_doc("Scn33_View.yaml", "tesserae: 0.5\nwidget: Button\nlabell: Save\n")
 check("a mistake under the marker is still flagged", bool(messages(u)), messages(u))
-widget_schema = (S / "tesserae-widget-schema.json").as_uri()
+widget_schema = (S / "tess-ui-widget-schema.json").as_uri()
 modeline = f"# yaml-language-server: $schema={widget_schema}"
 u = open_doc("Elsewhere_line1.yaml", f"{modeline}\nwidget: Button\nlabell: Save\n")  # a name no glob maps: only a modeline can name the schema
 check("a schema modeline on line 1 applies", bool(messages(u)), messages(u)[:1])

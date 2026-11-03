@@ -2,8 +2,8 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel, a11y, tokens
-from tesserae.spec.nodes import LoadError, parse_view
+from tess_ui import App, Signal, ViewModel, a11y, tokens
+from tess_ui.spec.nodes import LoadError, parse_view
 
 
 class VM(ViewModel):

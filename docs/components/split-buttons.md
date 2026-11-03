@@ -59,7 +59,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import split_button
+from tess_ui.widgets import split_button
 
 send = split_button(app.window, "Send", 160, 40, variant="filled")
 ```

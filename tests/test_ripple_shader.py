@@ -1,8 +1,8 @@
-"""The press ripple drawn by one shader (tesserae.ripple): presses become uniform slots that grow and fade with Material Web's timing."""
+"""The press ripple drawn by one shader (tess_ui.ripple): presses become uniform slots that grow and fade with Material Web's timing."""
 
 import pytest
 
-from tesserae import App, ripple, tokens
+from tess_ui import App, ripple, tokens
 
 
 def opened(tmp_path, shader=True, width=200):

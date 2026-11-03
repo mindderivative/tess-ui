@@ -62,7 +62,7 @@ children:
 ## From Python
 
 ```python
-from tesserae import controls
+from tess_ui import controls
 
 cb = controls.Checkbox(app.window, checked=True, label="Remember me")  # follows the app's theme
 app.window.root.add_child(cb.node)
@@ -76,9 +76,9 @@ Every control has `.node` (a `tre` node to put in a tree), its state as
 `on_change(fn)` (which returns a function that stops it). On an `App`'s window, a
 control made without `theme=` takes the app's theme and follows it
 through `set_dark`, the OS switching light and dark, and
-`set_theme_specs`. Give `theme=` a `tesserae.Theme` to pin it to
+`set_theme_specs`. Give `theme=` a `tess_ui.Theme` to pin it to
 that theme instead. On a window no `App` owns, a control without one uses
-MD3's baseline colours. `tesserae.widgets`' `checkbox`, `slider` and
+MD3's baseline colours. `tess_ui.widgets`' `checkbox`, `slider` and
 so on build these too, attached to the window's root.
 
 | Control | State | Input |

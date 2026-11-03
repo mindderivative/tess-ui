@@ -1,4 +1,4 @@
-"""Tesserae's logging through loguru (`tesserae.log`).
+"""Tesserae's logging through loguru (`tess_ui.log`).
 
 Tesserae logs with loguru's shared `logger` and adds no output of its
 own; `configure_logging()` is an app's one-call console setup.
@@ -14,10 +14,10 @@ from pathlib import Path
 import pytest
 from loguru import logger
 
-import tesserae.fonts as fonts
-from tesserae import App, configure_logging
-from tesserae.fonts import FontFallbackWarning, check_font_families
-from tesserae.spec import ViewWatcher, load_view
+import tess_ui.fonts as fonts
+from tess_ui import App, configure_logging
+from tess_ui.fonts import FontFallbackWarning, check_font_families
+from tess_ui.spec import ViewWatcher, load_view
 
 RECT = 'id: box\nkind: Rect\nstyle: {width: 10, height: 10, background: "#112233"}\n'
 
@@ -53,7 +53,7 @@ def test_configure_logging_writes_tesserae_messages_in_its_format(tmp_path: Path
     buffer = configured()
     path = _reload_once(tmp_path)
     line = next(l for l in buffer.getvalue().splitlines() if "reloaded" in l)
-    assert f"| INFO     | tesserae.spec.watch - reloaded {path}" in line
+    assert f"| INFO     | tess_ui.spec.watch - reloaded {path}" in line
 
 
 def test_the_level_filters(tmp_path: Path, configured):
@@ -64,11 +64,11 @@ def test_the_level_filters(tmp_path: Path, configured):
 
 def test_an_app_can_silence_tesserae(tmp_path: Path, configured):
     buffer = configured()
-    logger.disable("tesserae")
+    logger.disable("tess_ui")
     try:
         _reload_once(tmp_path)
     finally:
-        logger.enable("tesserae")
+        logger.enable("tess_ui")
     assert "reloaded" not in buffer.getvalue()
 
 
@@ -96,7 +96,7 @@ def test_capture_warnings_can_be_turned_off(configured):
 def test_run_with_hot_reload_says_what_it_watches(tmp_path: Path, logs):
     (tmp_path / "Home_View.yaml").write_text(RECT)
     vm = tmp_path / "Home_ViewModel.py"
-    vm.write_text("from tesserae import ViewModel\n\n\nclass HomeViewModel(ViewModel):\n    pass\n")
+    vm.write_text("from tess_ui import ViewModel\n\n\nclass HomeViewModel(ViewModel):\n    pass\n")
     spec = importlib.util.spec_from_file_location(vm.stem, vm)
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module

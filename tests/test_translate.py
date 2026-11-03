@@ -6,10 +6,10 @@ from pathlib import Path
 import pytest
 import yaml
 
-from tesserae.spec import marker
-from tesserae.spec.nodes import LoadError, parse_view
-from tesserae.spec.translate import Translator, to_yaml
-from tesserae.spec.widgets import WidgetDecl, decl_from_params
+from tess_ui.spec import marker
+from tess_ui.spec.nodes import LoadError, parse_view
+from tess_ui.spec.translate import Translator, to_yaml
+from tess_ui.spec.widgets import WidgetDecl, decl_from_params
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -186,7 +186,7 @@ def test_the_known_gaps_are_still_gaps():
 
 
 def test_a_translated_file_loads_back_to_the_same_names():
-    path = ROOT / "src" / "tesserae" / "spec" / "components" / "ListItem_Component.yaml"
+    path = ROOT / "src" / "tess_ui" / "spec" / "components" / "ListItem_Component.yaml"
     old = yaml.safe_load(path.read_text(encoding="utf-8"))
     old_ids = set()
 

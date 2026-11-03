@@ -1,7 +1,7 @@
 # Installation
 
 Tesserae is on PyPI as [**`tesserae-ui`**](https://pypi.org/project/tesserae-ui/)
-(you import `tesserae`; `tesserae` on PyPI is an unrelated project):
+(you import `tess_ui`; `tesserae` on PyPI is an unrelated project):
 
 ```bash
 pip install tesserae-ui
@@ -16,7 +16,7 @@ it tidy:
 python3 -m venv .venv
 source .venv/bin/activate     # Windows: .venv\Scripts\activate
 pip install tesserae-ui
-python -c "import tesserae; print('Tesserae is ready')"
+python -c "import tess_ui; print('Tesserae is ready')"
 ```
 
 Tesserae was for a short time also published on PyPI as `tess-ui`, with the same package in it. If you installed that, run `pip uninstall tess-ui`, then `pip install tesserae-ui`:

@@ -3,7 +3,7 @@
 import pytest
 from PIL import Image
 
-from tesserae import App, Signal, ViewModel
+from tess_ui import App, Signal, ViewModel
 
 
 class VM(ViewModel):
@@ -69,7 +69,7 @@ def test_fit_is_passed_to_the_picture(tmp_path, fit):
 
 
 def test_a_fit_that_is_not_one_is_a_load_error(tmp_path):
-    from tesserae.spec.nodes import LoadError
+    from tess_ui.spec.nodes import LoadError
 
     with pytest.raises(LoadError, match=r"Main_View.yaml:\d+:\d+.*fit.*cover, contain, fill"):
         opened(tmp_path, "  - {widget: Image, name: i, src: red.png, fit: stretch}\n")
@@ -109,7 +109,7 @@ def test_a_missing_file_says_which_widget_and_which_file(tmp_path):
 
 
 def test_it_matches_the_python_widgets_picture(tmp_path):
-    from tesserae.widgets import image
+    from tess_ui.widgets import image
 
     view, _ = opened(tmp_path, "  - {widget: Image, name: i, src: red.png, fit: contain, style: {width: 30, height: 20}}\n")
     py_app = App(width=100, height=100)

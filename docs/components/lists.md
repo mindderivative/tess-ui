@@ -67,7 +67,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import list_, list_item
+from tess_ui.widgets import list_, list_item
 
 rows = list_(app.window, [list_item(app.window, name) for name in ("Inbox", "Sent", "Drafts")], width=320)
 ```

@@ -1,4 +1,4 @@
-"""Real, repeatable coverage for `tesserae.App` -- registration,
+"""Real, repeatable coverage for `tess_ui.App` -- registration,
 name-collision handling, `show()`'s own real "first call opens, later
 calls switch" behavior, and `load()`'s own real `*_View.yaml`/
 `*_ViewModel.py` naming-convention enforcement -- mirroring `tre`'s own
@@ -14,7 +14,7 @@ import sys
 
 import pytest
 
-from tesserae import App, Signal, View, ViewModel
+from tess_ui import App, Signal, View, ViewModel
 
 
 def write_view(tmp_path, yaml, name="view.yaml"):
@@ -33,7 +33,7 @@ def load_viewmodel_class(tmp_path, filename, class_name):
     """
     path = tmp_path / filename
     path.write_text(
-        f"from tesserae import Signal, ViewModel\n\n\n"
+        f"from tess_ui import Signal, ViewModel\n\n\n"
         f"class {class_name}(ViewModel):\n"
         f"    def __init__(self, view):\n"
         f"        self.value = Signal(0)\n"
@@ -155,7 +155,7 @@ class _FakeTre:
 
 @pytest.fixture
 def fake_tre(monkeypatch):
-    monkeypatch.setattr("tesserae.app._TreApp", _FakeTre)
+    monkeypatch.setattr("tess_ui.app._TreApp", _FakeTre)
     _FakeTre.ran.clear()
     _FakeTre.queued.clear()
     _FakeTre.on_run = None
@@ -197,7 +197,7 @@ def test_a_code_only_app_draws_frames_in_a_real_window(tmp_path, with_a_node):
     script = tmp_path / "code_only.py"
     script.write_text(textwrap.dedent("""
         import sys
-        from tesserae import App
+        from tess_ui import App
 
         app = App(width=200, height=100, title="code only")
         if sys.argv[1] == "node":
@@ -206,7 +206,7 @@ def test_a_code_only_app_draws_frames_in_a_real_window(tmp_path, with_a_node):
         app.run()
     """))
     report = tmp_path / "frames.txt"
-    env = {**os.environ, "TESSERAE_MAX_FRAMES": "5", "TESSERAE_FRAMES_REPORT": str(report)}
+    env = {**os.environ, "TESS_UI_MAX_FRAMES": "5", "TESS_UI_FRAMES_REPORT": str(report)}
     result = subprocess.run([sys.executable, str(script), "node" if with_a_node else "empty"], env=env,
                             capture_output=True, text=True, timeout=60)
     assert result.returncode == 0, result.stderr
@@ -266,7 +266,7 @@ def test_load_rejects_mismatched_view_and_viewmodel_prefixes(tmp_path):
 
 
 def test_load_with_no_component_usage_still_works_unchanged(tmp_path):
-    """Real regression proof: `App.load()` now constructs via `tesserae.
+    """Real regression proof: `App.load()` now constructs via `tess_ui.
     spec.load_view` instead of `tre.View` directly -- a view with zero
     `component:` usage must still load exactly as it always did
     (`load_view`'s own real "true no-op" design)."""
@@ -347,7 +347,7 @@ def test_a_wrong_keepalive_is_a_one_line_error(fake_tre, bad):
 
 def test_a_tick_sleeps_queues_the_next_and_stops_when_the_run_ends(fake_tre, monkeypatch):
     slept = []
-    monkeypatch.setattr("tesserae.app.time.sleep", slept.append)
+    monkeypatch.setattr("tess_ui.app.time.sleep", slept.append)
     fake_tre.on_run = lambda: _ticks(fake_tre)[0]()  # the loop runs the first tick
     App().run(keepalive=0.25)
     assert slept == [0.25]  # it slept (letting other threads run) ...
@@ -360,7 +360,7 @@ def test_a_tick_sleeps_queues_the_next_and_stops_when_the_run_ends(fake_tre, mon
 
 
 def test_the_interval_rules():
-    from tesserae.app import KEEPALIVE_INTERVAL, _keepalive_interval
+    from tess_ui.app import KEEPALIVE_INTERVAL, _keepalive_interval
 
     assert KEEPALIVE_INTERVAL == 0.02
     assert _keepalive_interval(None) is None and _keepalive_interval(False) is None

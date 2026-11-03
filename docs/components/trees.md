@@ -94,7 +94,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import tree_node
+from tess_ui.widgets import tree_node
 
 folder = tree_node(app.window, "src", depth=0, expanded=True)
 file = tree_node(app.window, "app.py", depth=1, leaf=True)

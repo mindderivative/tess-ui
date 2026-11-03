@@ -10,7 +10,7 @@ shape-morphing one, for short waits.
 
 ## In Tesserae
 
-Each is a Tesserae control (`tesserae.controls`), not a drawing of `tre`'s: `widget: LinearProgress`, `widget: CircularProgress` and
+Each is a Tesserae control (`tess_ui.controls`), not a drawing of `tre`'s: `widget: LinearProgress`, `widget: CircularProgress` and
 `widget: LoadingIndicator`. Leave `value` out, or let an expression give nothing, for a wait with no end; a number from 0 to 1 is determinate and
 eases to each new value.
 
@@ -82,7 +82,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import linear_progress
+from tess_ui.widgets import linear_progress
 
 upload = linear_progress(app.window, 240, value=0.4)
 upload.value.set(0.8)

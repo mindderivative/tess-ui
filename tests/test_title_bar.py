@@ -8,9 +8,9 @@ import sys
 import pytest
 import yaml
 
-from tesserae import App, ViewModel
-from tesserae.icons import icon_path
-from tesserae.spec.title_bar import BUTTONS, TitleBarError, expand_title_bars
+from tess_ui import App, ViewModel
+from tess_ui.icons import icon_path
+from tess_ui.spec.title_bar import BUTTONS, TitleBarError, expand_title_bars
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 

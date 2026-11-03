@@ -10,8 +10,8 @@ re-theme. And `tre`'s layout errors name the widget.
 import pytest
 import tre
 
-from tesserae import View, ViewModel
-from tesserae.spec.build import SpecBuildError
+from tess_ui import View, ViewModel
+from tess_ui.spec.build import SpecBuildError
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 BOX = ("layout_x", "layout_y", "layout_width", "layout_height")
@@ -19,7 +19,7 @@ BOX = ("layout_x", "layout_y", "layout_width", "layout_height")
 @pytest.fixture(autouse=True)
 def _the_engines_own_names(monkeypatch):
     """These tests compare Tesserae with answers recorded from the engine, in the engine's own layout names."""
-    from tesserae.spec import layout
+    from tess_ui.spec import layout
 
     monkeypatch.setattr(layout, "LEGACY_ENGINE_NAMES", True)
 

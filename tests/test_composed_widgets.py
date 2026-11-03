@@ -1,5 +1,5 @@
-"""M41: `tesserae.widgets`' composed widgets, built from their fragments
-by Tesserae's compiler (`tesserae.widgets._composed.Widget`). Phase 1:
+"""M41: `tess_ui.widgets`' composed widgets, built from their fragments
+by Tesserae's compiler (`tess_ui.widgets._composed.Widget`). Phase 1:
 the base, proved on `button`.
 """
 
@@ -8,10 +8,10 @@ import math
 import pytest
 import tre
 
-from tesserae import Theme, interaction, tokens
-from tesserae.spec import expand_components
-from tesserae.widgets import button
-from tesserae.widgets._composed import Widget
+from tess_ui import Theme, interaction, tokens
+from tess_ui.spec import expand_components
+from tess_ui.widgets import button
+from tess_ui.widgets._composed import Widget
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 BASE = tokens.baseline_scheme()
@@ -121,7 +121,7 @@ def test_arguments_reach_the_button():
 
 def test_the_python_and_yaml_paths_are_one_definition():
     """`button()` expands the same fragment a `component: ButtonFilled` does."""
-    from tesserae import View
+    from tess_ui import View
 
     window = _window()
     b = button(window, "Save", 120, 40)
@@ -158,8 +158,8 @@ def test_without_a_theme_every_role_has_a_colour():
 
 # == M41 Phase 2: icon buttons, FABs, split buttons, button groups ==========================
 
-from tesserae.widgets import button_group, extended_fab, fab, icon_button, split_button  # noqa: E402
-from tesserae.widgets.buttons import GROUP_GROWTH, SPLIT_TIGHTENED  # noqa: E402
+from tess_ui.widgets import button_group, extended_fab, fab, icon_button, split_button  # noqa: E402
+from tess_ui.widgets.buttons import GROUP_GROWTH, SPLIT_TIGHTENED  # noqa: E402
 
 
 def _frames(window, ms):
@@ -290,7 +290,7 @@ def test_repeated_presses_dont_compound():
 
 # == M41 Phase 3: containment and lists ======================================================
 
-from tesserae.widgets import (  # noqa: E402
+from tess_ui.widgets import (  # noqa: E402
     accordion_header, badge, card, chip, divider, icon, link, list_, list_item, tree_node,
 )
 
@@ -458,7 +458,7 @@ def test_icon_is_tesseraes_own():
 
 # == M41 Phase 4: navigation ===================================================================
 
-from tesserae.widgets import navigation_drawer, navigation_rail, status_bar, tabs, toolbar, top_app_bar  # noqa: E402
+from tess_ui.widgets import navigation_drawer, navigation_rail, status_bar, tabs, toolbar, top_app_bar  # noqa: E402
 
 
 def test_tabs_are_md3s_primary_tabs():

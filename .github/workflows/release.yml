@@ -74,7 +74,7 @@ jobs:
         env:
           TRE_SOURCE_DIR: ${{ github.workspace }}/tre
         run: |
-          python -c "import tesserae; assert 'site-packages' in tesserae.__file__, tesserae.__file__; print(tesserae.__file__)"
+          python -c "import tess_ui; assert 'site-packages' in tess_ui.__file__, tess_ui.__file__; print(tess_ui.__file__)"
           pytest tests/
           for example in counter multi_screen todo_list window_dock; do
             python examples/$example/app.py

@@ -289,6 +289,6 @@ call itself, which is how a tree is written, to a depth of 64.
 
 ## Looking at the shipped ones
 
-The views Tesserae ships are in the `tesserae/views` folder of the package: `Button_View.yaml` with `Button_Stylesheet.yaml` beside it.
+The views Tesserae ships are in the `tess_ui/views` folder of the package: `Button_View.yaml` with `Button_Stylesheet.yaml` beside it.
 They are written in exactly this language and are the best examples of it: `Card` (slots), `ButtonGroup` (a list param and a
 `for:`), `Tabs` (a model param), `Dialog` (an `Overlay`).

@@ -131,7 +131,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import navigation_drawer
+from tess_ui.widgets import navigation_drawer
 
 drawer = navigation_drawer(app.window, ["Inbox", "Search"], ["home", "search"], selected=0)
 ```

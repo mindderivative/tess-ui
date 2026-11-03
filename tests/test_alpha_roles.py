@@ -2,13 +2,13 @@
 
 import pytest
 
-from tesserae import Signal, View, ViewModel, tokens
-from tesserae.composed import open_composed
-from tesserae.spec.build import SpecBuildError
-from tesserae.spec.nodes import parse_view
-from tesserae.spec.rules import RuleSheet
-from tesserae.spec.widgets import Property, PropertyError
-from tesserae.viewmodel import Bindings
+from tess_ui import Signal, View, ViewModel, tokens
+from tess_ui.composed import open_composed
+from tess_ui.spec.build import SpecBuildError
+from tess_ui.spec.nodes import parse_view
+from tess_ui.spec.rules import RuleSheet
+from tess_ui.spec.widgets import Property, PropertyError
+from tess_ui.viewmodel import Bindings
 
 SEED = (103, 80, 164, 255)
 
@@ -100,7 +100,7 @@ def test_full_is_a_pill_and_a_circle():
 
 
 def test_full_works_in_a_themes_components_and_the_schema_lists_it():
-    from tesserae.theme import Theme
+    from tess_ui.theme import Theme
 
     theme = Theme.resolve(theme_seed=SEED, dark=False, default_theme_spec=None, custom_theme_spec={"components": {"chip": {"corner_radius": "full"}}})
     assert theme.shape("chip") == tokens.FULL_RADIUS

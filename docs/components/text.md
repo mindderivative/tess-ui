@@ -64,7 +64,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import text
+from tess_ui.widgets import text
 
 heading = text(app.window, "Notes", typography_role="headline_medium")
 ```

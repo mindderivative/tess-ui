@@ -8,9 +8,9 @@ an ellipsis). At or under it nothing changes.
 import pytest
 import tre
 
-from tesserae import Theme, tokens
-from tesserae.widgets import pagination
-from tesserae.widgets.navigation import _pages_shown
+from tess_ui import Theme, tokens
+from tess_ui.widgets import pagination
+from tess_ui.widgets.navigation import _pages_shown
 
 BASE = tokens.baseline_scheme()
 CLEAR = (0, 0, 0, 0)

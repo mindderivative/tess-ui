@@ -1,6 +1,6 @@
 """`Home_ViewModel.py`'s counterpart: it serves `Settings_View.yaml`. See its docstring."""
 
-from tesserae import ViewModel
+from tess_ui import ViewModel
 
 
 class SettingsViewModel(ViewModel):

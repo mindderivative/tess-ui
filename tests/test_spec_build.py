@@ -1,5 +1,5 @@
-"""M37 Phase 2: Tesserae's spec compiler (`tesserae.spec.build`) and
-cascade (`tesserae.spec.cascade`).
+"""M37 Phase 2: Tesserae's spec compiler (`tess_ui.spec.build`) and
+cascade (`tess_ui.spec.cascade`).
 
 The cascade and the compiler's errors are checked against `tre` 0.3.4's
 own builder, a `tre` `View`, on the same spec. Whole-tree comparison of
@@ -13,8 +13,8 @@ import pytest
 import tre
 
 import reference
-from tesserae import tokens
-from tesserae.spec.build import SpecBuildError, build
+from tess_ui import tokens
+from tess_ui.spec.build import SpecBuildError, build
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 SCHEME = tokens.color_scheme(SEED)
@@ -123,7 +123,7 @@ def test_text_takes_its_type_role_and_explicit_fields_win():
 
 
 def test_icons_are_paths_from_tesseraes_icon_set():
-    from tesserae.icons import ICON_VIEW_BOX, icon_path
+    from tess_ui.icons import ICON_VIEW_BOX, icon_path
 
     spec = {"id": "i", "kind": "Icon", "icon": {"name": "check"}, "style": {"width": 24, "height": 24, "foreground": "primary"}}
     window = _window()

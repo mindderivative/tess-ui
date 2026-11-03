@@ -77,7 +77,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import spin_box
+from tess_ui.widgets import spin_box
 
 quantity = spin_box(app.window, 1, min=0, max=10)
 ```

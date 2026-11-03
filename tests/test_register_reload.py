@@ -14,9 +14,9 @@ from pathlib import Path
 
 import pytest
 
-import tesserae
-from tesserae import App, Signal, ViewModel
-from tesserae.spec import ViewWatcher
+import tess_ui
+from tess_ui import App, Signal, ViewModel
+from tess_ui.spec import ViewWatcher
 
 VIEW = ('id: root\nkind: Container\nchildren:\n'
         '  - id: title\n    kind: Text\n    text: {{content: "", font_family: Roboto, font_size: 14}}\n'
@@ -94,7 +94,7 @@ def test_a_view_built_on_its_own_from_a_file_and_registered_is_watched_too(tmp_p
     """`register()` rebuilds it in the app's window; it keeps its file."""
     app = App()
     path = _write(tmp_path / "Home_View.yaml")
-    view = tesserae.View(path)
+    view = tess_ui.View(path)
     app.register("Home", view, HomeViewModel(view, app))
     watchers = app._start_watchers(FakeHandle())
     try:
@@ -106,7 +106,7 @@ def test_a_view_built_on_its_own_from_a_file_and_registered_is_watched_too(tmp_p
 
 def _loaded_viewmodel(tmp_path: Path):
     (tmp_path / "Loaded_ViewModel.py").write_text(
-        "from tesserae import Signal, ViewModel\n\n\nclass LoadedViewModel(ViewModel):\n"
+        "from tess_ui import Signal, ViewModel\n\n\nclass LoadedViewModel(ViewModel):\n"
         "    def __init__(self, view):\n        self.title = Signal('x')\n        super().__init__(view)\n")
     spec = importlib.util.spec_from_file_location("Loaded_ViewModel", tmp_path / "Loaded_ViewModel.py")
     module = importlib.util.module_from_spec(spec)
@@ -120,7 +120,7 @@ def test_loaded_and_registered_screens_are_counted_and_a_spec_built_one_is_named
     app.load(_write(tmp_path / "Loaded_View.yaml"), _loaded_viewmodel(tmp_path))
     registered = app.build_view(_write(tmp_path / "Home_View.yaml"))
     app.register("Home", registered, HomeViewModel(registered, app))
-    app.register("Scratch", tesserae.View({"id": "root", "kind": "Container"}), None)
+    app.register("Scratch", tess_ui.View({"id": "root", "kind": "Container"}), None)
     watchers = app._start_watchers(FakeHandle())
     try:
         watched = sorted(f.name for w in watchers for f in w.files if f.name.endswith("_View.yaml"))

@@ -1,4 +1,4 @@
-"""Writes the widget schema (`tesserae-widget-schema.json`), with the others: see `tools/generate_yaml_schema.py`, which this runs."""
+"""Writes the widget schema (`tess-ui-widget-schema.json`), with the others: see `tools/generate_yaml_schema.py`, which this runs."""
 
 import sys
 

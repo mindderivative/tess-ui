@@ -2,8 +2,8 @@
 
 import pytest
 
-from tesserae import App
-from tesserae.spec.nodes import LoadError
+from tess_ui import App
+from tess_ui.spec.nodes import LoadError
 
 SHELL = """name: shell
 widget: Window

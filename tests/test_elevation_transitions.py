@@ -2,7 +2,7 @@
 
 import pytest
 
-from tesserae import App, ViewModel, tokens
+from tess_ui import App, ViewModel, tokens
 
 
 class VM(ViewModel):
@@ -143,7 +143,7 @@ class DragVM(ViewModel):
     views = "main"
 
     def __init__(self):
-        from tesserae import Signal
+        from tess_ui import Signal
 
         super().__init__()
         self.dragging = Signal(False)

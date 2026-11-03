@@ -12,7 +12,7 @@ that's loguru's default output on stderr, so you see them straight away.
 ```python
 from loguru import logger
 
-from tesserae import App, configure_logging
+from tess_ui import App, configure_logging
 
 configure_logging()          # INFO and above, Tesserae's format
 # configure_logging("DEBUG") # also shows loads, screen switches, tracebacks
@@ -23,13 +23,13 @@ logger.info("starting")      # your own messages use the same logger
 The output looks like:
 
 ```
-12:48:27.553 | INFO     | tesserae.spec.watch - reloaded /path/to/Home_View.yaml
+12:48:27.553 | INFO     | tess_ui.spec.watch - reloaded /path/to/Home_View.yaml
 ```
 
 `configure_logging` replaces loguru's default stderr handler and leaves
 any handler you added yourself. Call it once: each call adds a handler, so a second call prints every message twice (`logger.remove(handler_id)` removes one). It takes `level`, `sink` (anything
 `logger.add` accepts: a stream, a file path, a function) and `format`
-(`tesserae.log.DEFAULT_FORMAT` by default), and returns the handler id.
+(`tess_ui.log.DEFAULT_FORMAT` by default), and returns the handler id.
 
 ## What Tesserae logs
 
@@ -40,8 +40,8 @@ any handler you added yourself. Call it once: each call adds a handler, so a sec
 | `WARNING` | a view file in the older syntax, once per file (it still loads: `tesserae migrate-yaml` moves it); a `Link` whose `href` is refused (only `http`, `https`, `mailto` and `tel` are opened); a property the user edits given one bare name that cannot be written back (`Main_View.yaml:5:42: Checkbox checked is given 'flag', which is a ViewModel attribute that is not a Signal: the user's edit is not written back (one-way)`), once for each place in a file; Python warnings such as `FontFallbackWarning`, when `configure_logging` captures them (below) |
 | `ERROR` | a hot reload that failed, naming the file and the error; a hot-reload watcher that stopped |
 
-Each message carries the Tesserae module it came from (`tesserae.app`,
-`tesserae.spec.watch`), which loguru shows as `{name}`. A mistake in a view, such as an unknown property or a name
+Each message carries the Tesserae module it came from (`tess_ui.app`,
+`tess_ui.spec.watch`), which loguru shows as `{name}`. A mistake in a view, such as an unknown property or a name
 no ViewModel has, is an exception that names the file, line and column; the one mistake that is logged instead is the one-way property above.
 
 ## Failed hot reloads
@@ -55,7 +55,7 @@ your own loop calls, still raises instead.
 
 ## Warnings
 
-`FontFallbackWarning` (`from tesserae.fonts import FontFallbackWarning`) is a real Python warning, so
+`FontFallbackWarning` (`from tess_ui.fonts import FontFallbackWarning`) is a real Python warning, so
 `warnings.filterwarnings("error", category=FontFallbackWarning)` still
 turns it into an exception. By default, `configure_logging` also shows
 warnings through loguru, so they appear in the same format as
@@ -67,8 +67,8 @@ warning output alone.
 ```python
 from loguru import logger
 
-logger.disable("tesserae")                 # everything from Tesserae
-logger.disable("tesserae.spec.watch")      # just hot reload
+logger.disable("tess_ui")                 # everything from Tesserae
+logger.disable("tess_ui.spec.watch")      # just hot reload
 ```
 
-`logger.enable("tesserae")` turns them back on.
+`logger.enable("tess_ui")` turns them back on.

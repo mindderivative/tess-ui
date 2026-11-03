@@ -1,0 +1,2127 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://mindderivative.github.io/tess-ui/schema/tess-ui-style-schema.json",
+  "title": "Tesserae style file",
+  "description": "A style file, `*_Style.yaml`: one node's style, shared by the views and rules that name it (`style: row_Style.yaml`).",
+  "definitions": {
+    "color": {
+      "anyOf": [
+        {
+          "enum": [
+            "background",
+            "error",
+            "error_container",
+            "inverse_on_surface",
+            "inverse_primary",
+            "inverse_surface",
+            "on_background",
+            "on_error",
+            "on_error_container",
+            "on_primary",
+            "on_primary_container",
+            "on_primary_fixed",
+            "on_primary_fixed_variant",
+            "on_secondary",
+            "on_secondary_container",
+            "on_secondary_fixed",
+            "on_secondary_fixed_variant",
+            "on_surface",
+            "on_surface_variant",
+            "on_tertiary",
+            "on_tertiary_container",
+            "on_tertiary_fixed",
+            "on_tertiary_fixed_variant",
+            "outline",
+            "outline_variant",
+            "primary",
+            "primary_container",
+            "primary_fixed",
+            "primary_fixed_dim",
+            "scrim",
+            "secondary",
+            "secondary_container",
+            "secondary_fixed",
+            "secondary_fixed_dim",
+            "shadow",
+            "surface",
+            "surface_bright",
+            "surface_container",
+            "surface_container_high",
+            "surface_container_highest",
+            "surface_container_low",
+            "surface_container_lowest",
+            "surface_dim",
+            "surface_tint",
+            "surface_variant",
+            "tertiary",
+            "tertiary_container",
+            "tertiary_fixed",
+            "tertiary_fixed_dim"
+          ]
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "description": "A theme role (such as `surface` or `on_primary`), `#RGB`, `#RRGGBB`, `#RRGGBBAA`, `transparent`, a CSS colour name, or a CSS function such as `rgb(...)` or `oklch(...)`. End any of them with `@N%` to scale its alpha: `primary@12%`."
+    },
+    "fill": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/color"
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\s*(linear|radial|conic)-gradient\\("
+            },
+            {
+              "type": "object",
+              "required": [
+                "gradient",
+                "stops"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "gradient": {
+                  "enum": [
+                    "linear",
+                    "radial",
+                    "sweep"
+                  ]
+                },
+                "stops": {
+                  "type": "array",
+                  "minItems": 2,
+                  "description": "Colours, or `[place, colour]` pairs with places from 0 to 1."
+                },
+                "angle": {
+                  "type": "number",
+                  "description": "Degrees: 0 up, 90 right, 180 down."
+                },
+                "center": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "description": "`[x, y]`, as fractions of the box."
+                },
+                "radius": {
+                  "type": "number"
+                },
+                "start": {
+                  "type": "number"
+                }
+              }
+            }
+          ],
+          "description": "A CSS-like `linear-gradient(...)`, `radial-gradient(...)` or `conic-gradient(...)` whose stops are theme roles or colours, or a mapping with `gradient: linear|radial|sweep` and `stops`."
+        }
+      ],
+      "description": "A colour (a theme role, a hex or a CSS colour) or a gradient."
+    },
+    "style": {
+      "type": "object",
+      "description": "How a node looks and lays out its children.",
+      "properties": {
+        "align_cells": {
+          "enum": [
+            "top_left",
+            "top",
+            "top_right",
+            "left",
+            "center",
+            "right",
+            "bottom_left",
+            "bottom",
+            "bottom_right"
+          ],
+          "description": "In a grid: where each item sits in its cell. (Grid.)",
+          "x-group": "Grid"
+        },
+        "align_content": {
+          "enum": [
+            "top_left",
+            "top",
+            "top_right",
+            "left",
+            "center",
+            "right",
+            "bottom_left",
+            "bottom",
+            "bottom_right"
+          ],
+          "description": "Where its children sit: `top_left`, `top`, `top_right`, `left`, `center`, `right`, `bottom_left`, `bottom` or `bottom_right`. Not set, they fill the space across the layout. (Alignment.)",
+          "x-group": "Alignment"
+        },
+        "align_self": {
+          "enum": [
+            "top_left",
+            "top",
+            "top_right",
+            "left",
+            "center",
+            "right",
+            "bottom_left",
+            "bottom",
+            "bottom_right"
+          ],
+          "description": "Its own place in its parent, over the parent's `align_content`. (Alignment.)",
+          "x-group": "Alignment"
+        },
+        "align_tracks": {
+          "enum": [
+            "start",
+            "center",
+            "end",
+            "stretch",
+            "between",
+            "around",
+            "evenly"
+          ],
+          "description": "In a grid: how the tracks share the room left over. (Grid.)",
+          "x-group": "Grid"
+        },
+        "align_wrapped": {
+          "enum": [
+            "start",
+            "center",
+            "end",
+            "stretch",
+            "between",
+            "around",
+            "evenly"
+          ],
+          "description": "With `flex_wrap: wrap`: how the lines share the room left over. (Alignment.)",
+          "x-group": "Alignment"
+        },
+        "anchor": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The name of another node in this view to sit against, or `parent` for the node it is inside. The node leaves the flow and follows the anchor with no lag; it stays in the tree, clipped and ordered as a child of its parent is. (Position.)",
+          "x-group": "Position"
+        },
+        "aspect_ratio": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Width over height: gives the missing side from the one set. (Size and spacing.)",
+          "x-group": "Size and spacing"
+        },
+        "backdrop_blur": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Blurs what is behind it, by this many pixels: with a translucent `background`, a frosted surface. (Paint and effects.)",
+          "x-group": "Paint and effects"
+        },
+        "background": {
+          "$ref": "#/definitions/fill",
+          "description": "Its fill: a theme role such as `surface`, `#RRGGBB`, any CSS colour, or a gradient such as `linear-gradient(90deg, primary, tertiary)`. (Paint and effects.)",
+          "x-group": "Paint and effects"
+        },
+        "blend_mode": {
+          "enum": [
+            "normal",
+            "multiply",
+            "screen",
+            "overlay",
+            "darken",
+            "lighten",
+            "color_dodge",
+            "color_burn",
+            "hard_light",
+            "soft_light",
+            "difference",
+            "exclusion",
+            "hue",
+            "saturation",
+            "color",
+            "luminosity"
+          ],
+          "description": "How it is drawn over what is behind it, as CSS `mix-blend-mode`. (Paint and effects.)",
+          "x-group": "Paint and effects"
+        },
+        "blur": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Blurs the node and what it draws, by this many pixels. (Paint and effects.)",
+          "x-group": "Paint and effects"
+        },
+        "border_color": {
+          "$ref": "#/definitions/fill",
+          "description": "The colour of its border: a colour or a gradient. (Paint and effects.)",
+          "x-group": "Paint and effects"
+        },
+        "border_width": {
+          "type": "number",
+          "minimum": 0,
+          "description": "The width of its border, in pixels. (Paint and effects.)",
+          "x-group": "Paint and effects"
+        },
+        "bottom": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "enum": [
+                "auto"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^\\d+(\\.\\d+)?%$"
+            }
+          ],
+          "description": "How far an `absolute` node is from its parent's bottom edge; with `top` it is stretched between the two. (Position.)",
+          "x-group": "Position"
+        },
+        "clip_children": {
+          "type": "boolean",
+          "description": "Whether children are cut off at its edge. (Paint and effects.)",
+          "x-group": "Paint and effects"
+        },
+        "column_gap": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Space between columns (defaults to `gap`). (Grid.)",
+          "x-group": "Grid"
+        },
+        "corner_radius": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "enum": [
+                    "extra_large",
+                    "extra_small",
+                    "large",
+                    "medium",
+                    "none",
+                    "small",
+                    "full"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "enum": [
+                      "extra_large",
+                      "extra_small",
+                      "large",
+                      "medium",
+                      "none",
+                      "small",
+                      "full"
+                    ]
+                  }
+                ]
+              },
+              "minItems": 4,
+              "maxItems": 4
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "top_left": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "enum": [
+                        "extra_large",
+                        "extra_small",
+                        "large",
+                        "medium",
+                        "none",
+                        "small",
+                        "full"
+                      ]
+                    }
+                  ],
+                  "description": "The radius of the top left corner."
+                },
+                "top_right": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "enum": [
+                        "extra_large",
+                        "extra_small",
+                        "large",
+                        "medium",
+                        "none",
+                        "small",
+                        "full"
+                      ]
+                    }
+                  ],
+                  "description": "The radius of the top right corner."
+                },
+                "bottom_right": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "enum": [
+                        "extra_large",
+                        "extra_small",
+                        "large",
+                        "medium",
+                        "none",
+                        "small",
+                        "full"
+                      ]
+                    }
+                  ],
+                  "description": "The radius of the bottom right corner."
+                },
+                "bottom_left": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "enum": [
+                        "extra_large",
+                        "extra_small",
+                        "large",
+                        "medium",
+                        "none",
+                        "small",
+                        "full"
+                      ]
+                    }
+                  ],
+                  "description": "The radius of the bottom left corner."
+                },
+                "top": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "enum": [
+                        "extra_large",
+                        "extra_small",
+                        "large",
+                        "medium",
+                        "none",
+                        "small",
+                        "full"
+                      ]
+                    }
+                  ],
+                  "description": "The radius of both top corners."
+                },
+                "right": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "enum": [
+                        "extra_large",
+                        "extra_small",
+                        "large",
+                        "medium",
+                        "none",
+                        "small",
+                        "full"
+                      ]
+                    }
+                  ],
+                  "description": "The radius of both right corners."
+                },
+                "bottom": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "enum": [
+                        "extra_large",
+                        "extra_small",
+                        "large",
+                        "medium",
+                        "none",
+                        "small",
+                        "full"
+                      ]
+                    }
+                  ],
+                  "description": "The radius of both bottom corners."
+                },
+                "left": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "enum": [
+                        "extra_large",
+                        "extra_small",
+                        "large",
+                        "medium",
+                        "none",
+                        "small",
+                        "full"
+                      ]
+                    }
+                  ],
+                  "description": "The radius of both left corners."
+                }
+              }
+            }
+          ],
+          "description": "Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`top`, `right`, `bottom`, `left`) with the rest square. (Paint and effects.)",
+          "x-group": "Paint and effects"
+        },
+        "cursor": {
+          "anyOf": [
+            {
+              "enum": [
+                "default",
+                "pointer",
+                "text",
+                "grab",
+                "grabbing",
+                "move",
+                "not_allowed",
+                "wait",
+                "progress",
+                "crosshair",
+                "help",
+                "col_resize",
+                "row_resize",
+                "ew_resize",
+                "ns_resize",
+                "nesw_resize",
+                "nwse_resize",
+                "copy",
+                "cell",
+                "context_menu",
+                "zoom_in",
+                "zoom_out",
+                "all_scroll"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "src"
+              ],
+              "properties": {
+                "src": {
+                  "type": "string",
+                  "description": "A PNG (or any picture Pillow reads) next to the view."
+                },
+                "hotspot": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  },
+                  "description": "`[x, y]`: the pixel that is the pointer's place."
+                }
+              }
+            }
+          ],
+          "description": "The pointer over it: a name, or `{src: cursor.png, hotspot: [x, y]}` (a picture next to the view, at most 256 pixels a side; only in a node's own `style:`). (Paint and effects.)",
+          "x-group": "Paint and effects"
+        },
+        "display": {
+          "enum": [
+            "flex",
+            "grid"
+          ],
+          "description": "`flex` (the default) or `grid`. (Grid.)",
+          "x-group": "Grid"
+        },
+        "elevation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "enum": [
+                "level_0",
+                "level_1",
+                "level_2",
+                "level_3",
+                "level_4",
+                "level_5"
+              ]
+            }
+          ],
+          "description": "A shadow level, 0 to 5. (Paint and effects.)",
+          "x-group": "Paint and effects"
+        },
+        "filter": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "saturate": {
+              "type": "number",
+              "description": "1 is unchanged, 0 grey, above 1 more vivid."
+            },
+            "brightness": {
+              "type": "number",
+              "description": "1 is unchanged, 0 black, above 1 brighter."
+            },
+            "contrast": {
+              "type": "number",
+              "description": "1 is unchanged, 0 flat grey, above 1 harder."
+            },
+            "grayscale": {
+              "type": "number",
+              "description": "0 is unchanged, 1 fully grey."
+            },
+            "hue_rotate": {
+              "type": "number",
+              "description": "Turns the hues, in degrees."
+            },
+            "invert": {
+              "type": "number",
+              "description": "0 is unchanged, 1 inverted."
+            },
+            "sepia": {
+              "type": "number",
+              "description": "0 is unchanged, 1 fully sepia."
+            }
+          },
+          "description": "Colour filters over it and its children, as in CSS: `{grayscale: 1}`, `{saturate: 0.4, brightness: 0.9}` (`hue_rotate` is in degrees). (Paint and effects.)",
+          "x-group": "Paint and effects"
+        },
+        "flex": {
+          "enum": [
+            "none",
+            "expand_horizontal",
+            "expand_vertical",
+            "fill"
+          ],
+          "description": "How it takes room in its parent: `none` (the default) is as big as its content and never squeezed, `expand_horizontal` and `expand_vertical` take the room left over in that direction, `fill` both. (Flex.)",
+          "x-group": "Flex"
+        },
+        "flex_direction": {
+          "enum": [
+            "horizontal",
+            "vertical"
+          ],
+          "description": "How its children are laid out: `horizontal` (the default) or `vertical`. (Flex.)",
+          "x-group": "Flex"
+        },
+        "flex_wrap": {
+          "enum": [
+            "no_wrap",
+            "wrap"
+          ],
+          "description": "`wrap` lets children flow onto more lines; `no_wrap` keeps one. (Flex.)",
+          "x-group": "Flex"
+        },
+        "foreground": {
+          "$ref": "#/definitions/fill",
+          "description": "Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. (Paint and effects.)",
+          "x-group": "Paint and effects"
+        },
+        "gap": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Space between its children. (Flex.)",
+          "x-group": "Flex"
+        },
+        "grid_auto_columns": {
+          "type": "string",
+          "description": "The size of columns the template doesn't name. (Grid.)",
+          "x-group": "Grid"
+        },
+        "grid_auto_flow": {
+          "enum": [
+            "row",
+            "column",
+            "row dense",
+            "column dense",
+            "dense"
+          ],
+          "description": "How grid children fill the cells. (Grid.)",
+          "x-group": "Grid"
+        },
+        "grid_auto_rows": {
+          "type": "string",
+          "description": "The size of rows the template doesn't name. (Grid.)",
+          "x-group": "Grid"
+        },
+        "grid_column": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "description": "Which grid column it takes: `2`, or `1 / 3`. (Grid.)",
+          "x-group": "Grid"
+        },
+        "grid_row": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "description": "Which grid row it takes: `2`, or `1 / 3`. (Grid.)",
+          "x-group": "Grid"
+        },
+        "grid_template_columns": {
+          "type": "string",
+          "description": "The grid's columns, as in CSS: `1fr 2fr 100px`. (Grid.)",
+          "x-group": "Grid"
+        },
+        "grid_template_rows": {
+          "type": "string",
+          "description": "The grid's rows, as in CSS. (Grid.)",
+          "x-group": "Grid"
+        },
+        "height": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "enum": [
+                "auto",
+                "fit-content"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^\\d+(\\.\\d+)?%$"
+            },
+            {
+              "type": "string",
+              "pattern": "^(?:calc\\(\\s*\\d+(?:\\.\\d+)?(?:%|px)?(?: [+-] \\d+(?:\\.\\d+)?(?:%|px)?)*\\s*\\)|\\d+(?:\\.\\d+)?(?:%|px)?(?: [+-] \\d+(?:\\.\\d+)?(?:%|px)?)+)$"
+            }
+          ],
+          "description": "Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). (Size and spacing.)",
+          "x-group": "Size and spacing"
+        },
+        "inset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "enum": [
+                "auto"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^\\d+(\\.\\d+)?%$"
+            }
+          ],
+          "description": "All four insets at once: an `absolute` node with `inset: 8` fills its parent less 8 pixels each side. (Position.)",
+          "x-group": "Position"
+        },
+        "left": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "enum": [
+                "auto"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^\\d+(\\.\\d+)?%$"
+            }
+          ],
+          "description": "How far an `absolute` node is from its parent's left edge; with `right` it is stretched between the two. A node in the flow is moved by it. (Position.)",
+          "x-group": "Position"
+        },
+        "margin": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "top": {
+                  "type": "number"
+                },
+                "right": {
+                  "type": "number"
+                },
+                "bottom": {
+                  "type": "number"
+                },
+                "left": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": false
+            }
+          ],
+          "description": "Space outside it: one number, or `{left, right, top, bottom}`. (Size and spacing.)",
+          "x-group": "Size and spacing"
+        },
+        "max_height": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "enum": [
+                "auto"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^\\d+(\\.\\d+)?%$"
+            }
+          ],
+          "description": "The most height it can take. (Size and spacing.)",
+          "x-group": "Size and spacing"
+        },
+        "max_width": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "enum": [
+                "auto"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^\\d+(\\.\\d+)?%$"
+            }
+          ],
+          "description": "The most width it can take. (Size and spacing.)",
+          "x-group": "Size and spacing"
+        },
+        "min_height": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "enum": [
+                "auto"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^\\d+(\\.\\d+)?%$"
+            }
+          ],
+          "description": "The least height it can take. (Size and spacing.)",
+          "x-group": "Size and spacing"
+        },
+        "min_width": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "enum": [
+                "auto"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^\\d+(\\.\\d+)?%$"
+            }
+          ],
+          "description": "The least width it can take. (Size and spacing.)",
+          "x-group": "Size and spacing"
+        },
+        "offset": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "With `anchor`: `[dx, dy]` pixels added to the point it sits on. (Position.)",
+          "x-group": "Position"
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "From 0 (clear) to 1 (opaque). (Paint and effects.)",
+          "x-group": "Paint and effects"
+        },
+        "overflow": {
+          "enum": [
+            "hidden",
+            "visible"
+          ],
+          "description": "`hidden` cuts what is inside to the node's own box, `visible` lets it spill out: the same as `clip_children: true` and `false`, which it is another way to write (a node that says both must agree). It does not scroll: use a ScrollView for that. (Paint and effects.)",
+          "x-group": "Paint and effects"
+        },
+        "padding": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "top": {
+                  "type": "number"
+                },
+                "right": {
+                  "type": "number"
+                },
+                "bottom": {
+                  "type": "number"
+                },
+                "left": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": false
+            }
+          ],
+          "description": "Space inside it: one number, or `{left, right, top, bottom}`. (Size and spacing.)",
+          "x-group": "Size and spacing"
+        },
+        "placement": {
+          "enum": [
+            "below",
+            "above",
+            "start",
+            "end",
+            "top_start",
+            "top_end",
+            "bottom_start",
+            "bottom_end",
+            "center"
+          ],
+          "description": "With `anchor`: which side of the anchor (`below`, `above`, `start`, `end`) or which of its corners, or its centre, the node's centre sits on. (Position.)",
+          "x-group": "Position"
+        },
+        "pointer_events": {
+          "enum": [
+            "auto",
+            "none"
+          ],
+          "description": "`none` lets the pointer through the node itself: a click on it goes to whatever is under it, and it is not hovered or pressed. What is inside it keeps its own (a child with `auto` is still hit). `auto`, the default, is the usual. (Paint and effects.)",
+          "x-group": "Paint and effects"
+        },
+        "position": {
+          "enum": [
+            "relative",
+            "absolute"
+          ],
+          "description": "`absolute` takes it out of the flow and places it at `x` and `y`. (Position.)",
+          "x-group": "Position"
+        },
+        "right": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "enum": [
+                "auto"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^\\d+(\\.\\d+)?%$"
+            }
+          ],
+          "description": "How far an `absolute` node is from its parent's right edge; with `left` it is stretched between the two. (Position.)",
+          "x-group": "Position"
+        },
+        "rotation_deg": {
+          "type": "number",
+          "description": "Turns the node by this many degrees, clockwise, about its centre. (Motion.)",
+          "x-group": "Motion"
+        },
+        "row_gap": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Space between rows (defaults to `gap`). (Grid.)",
+          "x-group": "Grid"
+        },
+        "scale": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Draws the node and what is in it at this multiple of its size (1 is unchanged), about its centre. (Motion.)",
+          "x-group": "Motion"
+        },
+        "snap_align": {
+          "enum": [
+            "none",
+            "start",
+            "center",
+            "end"
+          ],
+          "description": "In a scroll view that has `snap`, this node is a place it settles on, with this edge of the node at the same edge of the view. (Position.)",
+          "x-group": "Position"
+        },
+        "spread": {
+          "enum": [
+            "none",
+            "between",
+            "around",
+            "evenly"
+          ],
+          "description": "Spreads its children along the layout: `between` (the space goes between them), `around` or `evenly`. (Alignment.)",
+          "x-group": "Alignment"
+        },
+        "sticky": {
+          "type": "number",
+          "description": "In a scroll view, it sticks this many pixels from the top edge as its siblings scroll past. (Position.)",
+          "x-group": "Position"
+        },
+        "top": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "enum": [
+                "auto"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^\\d+(\\.\\d+)?%$"
+            }
+          ],
+          "description": "How far an `absolute` node is from its parent's top edge; with `bottom` it is stretched between the two. A node in the flow is moved by it. (Position.)",
+          "x-group": "Position"
+        },
+        "transition": {
+          "type": "object",
+          "description": "Which style changes ease to their new value: a duration in milliseconds, or `{duration, easing, bounce}`. `all` covers every one that can. A node is where it says when first drawn; only a change eases. (Motion.)",
+          "properties": {
+            "all": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "easing": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "linear",
+                            "standard",
+                            "standard_accelerate",
+                            "standard_decelerate",
+                            "emphasized",
+                            "emphasized_accelerate",
+                            "emphasized_decelerate",
+                            "spring"
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      ]
+                    },
+                    "bounce": {
+                      "type": "number",
+                      "exclusiveMinimum": -1,
+                      "exclusiveMaximum": 1
+                    }
+                  }
+                }
+              ]
+            },
+            "background": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "easing": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "linear",
+                            "standard",
+                            "standard_accelerate",
+                            "standard_decelerate",
+                            "emphasized",
+                            "emphasized_accelerate",
+                            "emphasized_decelerate",
+                            "spring"
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      ]
+                    },
+                    "bounce": {
+                      "type": "number",
+                      "exclusiveMinimum": -1,
+                      "exclusiveMaximum": 1
+                    }
+                  }
+                }
+              ]
+            },
+            "foreground": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "easing": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "linear",
+                            "standard",
+                            "standard_accelerate",
+                            "standard_decelerate",
+                            "emphasized",
+                            "emphasized_accelerate",
+                            "emphasized_decelerate",
+                            "spring"
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      ]
+                    },
+                    "bounce": {
+                      "type": "number",
+                      "exclusiveMinimum": -1,
+                      "exclusiveMaximum": 1
+                    }
+                  }
+                }
+              ]
+            },
+            "border_color": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "easing": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "linear",
+                            "standard",
+                            "standard_accelerate",
+                            "standard_decelerate",
+                            "emphasized",
+                            "emphasized_accelerate",
+                            "emphasized_decelerate",
+                            "spring"
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      ]
+                    },
+                    "bounce": {
+                      "type": "number",
+                      "exclusiveMinimum": -1,
+                      "exclusiveMaximum": 1
+                    }
+                  }
+                }
+              ]
+            },
+            "border_width": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "easing": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "linear",
+                            "standard",
+                            "standard_accelerate",
+                            "standard_decelerate",
+                            "emphasized",
+                            "emphasized_accelerate",
+                            "emphasized_decelerate",
+                            "spring"
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      ]
+                    },
+                    "bounce": {
+                      "type": "number",
+                      "exclusiveMinimum": -1,
+                      "exclusiveMaximum": 1
+                    }
+                  }
+                }
+              ]
+            },
+            "corner_radius": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "easing": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "linear",
+                            "standard",
+                            "standard_accelerate",
+                            "standard_decelerate",
+                            "emphasized",
+                            "emphasized_accelerate",
+                            "emphasized_decelerate",
+                            "spring"
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      ]
+                    },
+                    "bounce": {
+                      "type": "number",
+                      "exclusiveMinimum": -1,
+                      "exclusiveMaximum": 1
+                    }
+                  }
+                }
+              ]
+            },
+            "elevation": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "easing": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "linear",
+                            "standard",
+                            "standard_accelerate",
+                            "standard_decelerate",
+                            "emphasized",
+                            "emphasized_accelerate",
+                            "emphasized_decelerate",
+                            "spring"
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      ]
+                    },
+                    "bounce": {
+                      "type": "number",
+                      "exclusiveMinimum": -1,
+                      "exclusiveMaximum": 1
+                    }
+                  }
+                }
+              ]
+            },
+            "opacity": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "easing": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "linear",
+                            "standard",
+                            "standard_accelerate",
+                            "standard_decelerate",
+                            "emphasized",
+                            "emphasized_accelerate",
+                            "emphasized_decelerate",
+                            "spring"
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      ]
+                    },
+                    "bounce": {
+                      "type": "number",
+                      "exclusiveMinimum": -1,
+                      "exclusiveMaximum": 1
+                    }
+                  }
+                }
+              ]
+            },
+            "blur": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "easing": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "linear",
+                            "standard",
+                            "standard_accelerate",
+                            "standard_decelerate",
+                            "emphasized",
+                            "emphasized_accelerate",
+                            "emphasized_decelerate",
+                            "spring"
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      ]
+                    },
+                    "bounce": {
+                      "type": "number",
+                      "exclusiveMinimum": -1,
+                      "exclusiveMaximum": 1
+                    }
+                  }
+                }
+              ]
+            },
+            "backdrop_blur": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "easing": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "linear",
+                            "standard",
+                            "standard_accelerate",
+                            "standard_decelerate",
+                            "emphasized",
+                            "emphasized_accelerate",
+                            "emphasized_decelerate",
+                            "spring"
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      ]
+                    },
+                    "bounce": {
+                      "type": "number",
+                      "exclusiveMinimum": -1,
+                      "exclusiveMaximum": 1
+                    }
+                  }
+                }
+              ]
+            },
+            "scale": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "easing": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "linear",
+                            "standard",
+                            "standard_accelerate",
+                            "standard_decelerate",
+                            "emphasized",
+                            "emphasized_accelerate",
+                            "emphasized_decelerate",
+                            "spring"
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      ]
+                    },
+                    "bounce": {
+                      "type": "number",
+                      "exclusiveMinimum": -1,
+                      "exclusiveMaximum": 1
+                    }
+                  }
+                }
+              ]
+            },
+            "translate_x": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "easing": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "linear",
+                            "standard",
+                            "standard_accelerate",
+                            "standard_decelerate",
+                            "emphasized",
+                            "emphasized_accelerate",
+                            "emphasized_decelerate",
+                            "spring"
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      ]
+                    },
+                    "bounce": {
+                      "type": "number",
+                      "exclusiveMinimum": -1,
+                      "exclusiveMaximum": 1
+                    }
+                  }
+                }
+              ]
+            },
+            "translate_y": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "easing": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "linear",
+                            "standard",
+                            "standard_accelerate",
+                            "standard_decelerate",
+                            "emphasized",
+                            "emphasized_accelerate",
+                            "emphasized_decelerate",
+                            "spring"
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      ]
+                    },
+                    "bounce": {
+                      "type": "number",
+                      "exclusiveMinimum": -1,
+                      "exclusiveMaximum": 1
+                    }
+                  }
+                }
+              ]
+            },
+            "rotation_deg": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "easing": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "linear",
+                            "standard",
+                            "standard_accelerate",
+                            "standard_decelerate",
+                            "emphasized",
+                            "emphasized_accelerate",
+                            "emphasized_decelerate",
+                            "spring"
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      ]
+                    },
+                    "bounce": {
+                      "type": "number",
+                      "exclusiveMinimum": -1,
+                      "exclusiveMaximum": 1
+                    }
+                  }
+                }
+              ]
+            },
+            "width": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "easing": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "linear",
+                            "standard",
+                            "standard_accelerate",
+                            "standard_decelerate",
+                            "emphasized",
+                            "emphasized_accelerate",
+                            "emphasized_decelerate",
+                            "spring"
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      ]
+                    },
+                    "bounce": {
+                      "type": "number",
+                      "exclusiveMinimum": -1,
+                      "exclusiveMaximum": 1
+                    }
+                  }
+                }
+              ]
+            },
+            "height": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "easing": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "linear",
+                            "standard",
+                            "standard_accelerate",
+                            "standard_decelerate",
+                            "emphasized",
+                            "emphasized_accelerate",
+                            "emphasized_decelerate",
+                            "spring"
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      ]
+                    },
+                    "bounce": {
+                      "type": "number",
+                      "exclusiveMinimum": -1,
+                      "exclusiveMaximum": 1
+                    }
+                  }
+                }
+              ]
+            },
+            "x": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "easing": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "linear",
+                            "standard",
+                            "standard_accelerate",
+                            "standard_decelerate",
+                            "emphasized",
+                            "emphasized_accelerate",
+                            "emphasized_decelerate",
+                            "spring"
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      ]
+                    },
+                    "bounce": {
+                      "type": "number",
+                      "exclusiveMinimum": -1,
+                      "exclusiveMaximum": 1
+                    }
+                  }
+                }
+              ]
+            },
+            "y": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "easing": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "linear",
+                            "standard",
+                            "standard_accelerate",
+                            "standard_decelerate",
+                            "emphasized",
+                            "emphasized_accelerate",
+                            "emphasized_decelerate",
+                            "spring"
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      ]
+                    },
+                    "bounce": {
+                      "type": "number",
+                      "exclusiveMinimum": -1,
+                      "exclusiveMaximum": 1
+                    }
+                  }
+                }
+              ]
+            },
+            "gap": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "easing": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "linear",
+                            "standard",
+                            "standard_accelerate",
+                            "standard_decelerate",
+                            "emphasized",
+                            "emphasized_accelerate",
+                            "emphasized_decelerate",
+                            "spring"
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      ]
+                    },
+                    "bounce": {
+                      "type": "number",
+                      "exclusiveMinimum": -1,
+                      "exclusiveMaximum": 1
+                    }
+                  }
+                }
+              ]
+            },
+            "padding": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "easing": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "linear",
+                            "standard",
+                            "standard_accelerate",
+                            "standard_decelerate",
+                            "emphasized",
+                            "emphasized_accelerate",
+                            "emphasized_decelerate",
+                            "spring"
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      ]
+                    },
+                    "bounce": {
+                      "type": "number",
+                      "exclusiveMinimum": -1,
+                      "exclusiveMaximum": 1
+                    }
+                  }
+                }
+              ]
+            },
+            "margin": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "easing": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "linear",
+                            "standard",
+                            "standard_accelerate",
+                            "standard_decelerate",
+                            "emphasized",
+                            "emphasized_accelerate",
+                            "emphasized_decelerate",
+                            "spring"
+                          ]
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      ]
+                    },
+                    "bounce": {
+                      "type": "number",
+                      "exclusiveMinimum": -1,
+                      "exclusiveMaximum": 1
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "x-group": "Motion"
+        },
+        "translate_x": {
+          "type": "number",
+          "description": "Draws the node this many pixels to the right of where it is laid out. (Motion.)",
+          "x-group": "Motion"
+        },
+        "translate_y": {
+          "type": "number",
+          "description": "Draws the node this many pixels lower than where it is laid out. (Motion.)",
+          "x-group": "Motion"
+        },
+        "width": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "enum": [
+                "auto",
+                "fit-content"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^\\d+(\\.\\d+)?%$"
+            },
+            {
+              "type": "string",
+              "pattern": "^(?:calc\\(\\s*\\d+(?:\\.\\d+)?(?:%|px)?(?: [+-] \\d+(?:\\.\\d+)?(?:%|px)?)*\\s*\\)|\\d+(?:\\.\\d+)?(?:%|px)?(?: [+-] \\d+(?:\\.\\d+)?(?:%|px)?)+)$"
+            }
+          ],
+          "description": "Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). (Size and spacing.)",
+          "x-group": "Size and spacing"
+        },
+        "x": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "enum": [
+                "auto"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^\\d+(\\.\\d+)?%$"
+            }
+          ],
+          "description": "Where an `absolute` node sits from the left; the same as `left` (say one of them). (Position.)",
+          "x-group": "Position"
+        },
+        "y": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "enum": [
+                "auto"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^\\d+(\\.\\d+)?%$"
+            }
+          ],
+          "description": "Where an `absolute` node sits from the top; the same as `top` (say one of them). (Position.)",
+          "x-group": "Position"
+        },
+        "z_index": {
+          "type": "integer",
+          "description": "Stacking order: higher is in front. (Position.)",
+          "x-group": "Position"
+        },
+        "zone": {
+          "enum": [
+            "left",
+            "right",
+            "top",
+            "bottom",
+            "center"
+          ],
+          "description": "A DockPanel's zone in its Dock: where it docks. Only a DockPanel directly in a Dock has one; anywhere else it is an error. (Docking.)",
+          "x-group": "Docking"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "required": [
+    "style"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "A name for the style, such as `row_style`. It is for the reader."
+    },
+    "style": {
+      "$ref": "#/definitions/style",
+      "description": "The style fields, as in a node's `style:`."
+    }
+  }
+}

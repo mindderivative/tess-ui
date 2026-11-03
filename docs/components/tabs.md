@@ -55,7 +55,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import tabs
+from tess_ui.widgets import tabs
 
 bar = tabs(app.window, ["Videos", "Photos"], selected=0)
 ```

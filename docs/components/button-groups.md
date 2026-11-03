@@ -61,7 +61,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import button_group
+from tess_ui.widgets import button_group
 
 group = button_group(app.window, ["Day", "Week", "Month"], 90, 40, on_click=viewmodel.pick)
 ```

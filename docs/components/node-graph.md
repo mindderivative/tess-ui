@@ -66,7 +66,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import graph_node, node_graph
+from tess_ui.widgets import graph_node, node_graph
 
 graph = node_graph(app.window, 480, 320)
 source = graph_node(app.window, graph, "Source", 40, 40, 120, 60)

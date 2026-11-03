@@ -3,9 +3,9 @@ refused where it is written."""
 
 import pytest
 
-from tesserae import App, Signal, ViewModel
-from tesserae.spec.nodes import LoadError
-from tesserae.spec.build import SpecBuildError
+from tess_ui import App, Signal, ViewModel
+from tess_ui.spec.nodes import LoadError
+from tess_ui.spec.build import SpecBuildError
 
 
 class VM(ViewModel):
@@ -123,8 +123,8 @@ def test_a_size_or_inset_tre_would_refuse_is_found_at_load_with_its_position(tmp
 
 
 def test_a_stylesheet_rule_is_checked_where_it_is_written(tmp_path):
-    from tesserae.spec.rules import RuleSheet
-    from tesserae.spec.nodes import load_marked
+    from tess_ui.spec.rules import RuleSheet
+    from tess_ui.spec.nodes import load_marked
 
     text = "styles:\n  - widget: Rect\n    style: {width: 40px}\n"
     with pytest.raises(LoadError) as caught:
@@ -157,7 +157,7 @@ def test_a_control_is_placed_by_insets(tmp_path):
 
 
 def test_a_box_made_in_python_takes_the_insets_in_its_style():
-    from tesserae.spec.build import style_props
+    from tess_ui.spec.build import style_props
 
     assert style_props({"left": 4, "top": 2, "right": 6, "bottom": 8, "inset": 1}, None) == {"left": 4, "top": 2, "right": 6, "bottom": 8, "inset": 1}
 
@@ -177,8 +177,8 @@ def test_an_edge_beats_inset_whichever_of_them_the_rule_gave(tmp_path):
 
 
 def test_a_rule_that_gives_an_edge_twice_is_refused_where_it_is_written():
-    from tesserae.spec.rules import RuleSheet
-    from tesserae.spec.nodes import load_marked
+    from tess_ui.spec.rules import RuleSheet
+    from tess_ui.spec.nodes import load_marked
 
     text = "styles:\n  - widget: Rect\n    style: {x: 4, inset: 2}\n"
     with pytest.raises(LoadError, match="App_Stylesheet.yaml:3:.*style.x and style.inset both place the node"):

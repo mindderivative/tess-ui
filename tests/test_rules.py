@@ -3,14 +3,14 @@
 import pytest
 import yaml
 
-from tesserae import App, Signal, ViewModel
-from tesserae.composed import open_composed
-from tesserae.spec import widgets as W
-from tesserae.spec.compose import Composer
-from tesserae.spec.nodes import LoadError, load_marked, parse_view
-from tesserae.spec.rules import Rule, RuleSheet, STATES, is_rule_sheet, load_rule_sheet, ordered
-from tesserae.spec.widgets import Property, WidgetDecl, decl_from_params
-from tesserae.viewmodel import Bindings
+from tess_ui import App, Signal, ViewModel
+from tess_ui.composed import open_composed
+from tess_ui.spec import widgets as W
+from tess_ui.spec.compose import Composer
+from tess_ui.spec.nodes import LoadError, load_marked, parse_view
+from tess_ui.spec.rules import Rule, RuleSheet, STATES, is_rule_sheet, load_rule_sheet, ordered
+from tess_ui.spec.widgets import Property, WidgetDecl, decl_from_params
+from tess_ui.viewmodel import Bindings
 
 
 def sheet(text):
@@ -44,7 +44,7 @@ def compose(main, rules, views=None, vm=None):
 
 def accepting_foreground():
     """The widgets that declare `foreground` among their style extras, as the error names them."""
-    from tesserae.spec import widgets as registry
+    from tess_ui.spec import widgets as registry
 
     registry._load_builtins()
     return ", ".join(sorted(name for name, decl in registry._REGISTRY.items() if "foreground" in decl.extras))

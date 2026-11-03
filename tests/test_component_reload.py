@@ -16,8 +16,8 @@ import sys
 
 import pytest
 
-from tesserae import App, View, instantiate
-from tesserae.spec.watch import ComponentWatcher
+from tess_ui import App, View, instantiate
+from tess_ui.spec.watch import ComponentWatcher
 
 HOST = """
 id: root
@@ -42,7 +42,7 @@ children:
 """
 
 ROW_VM = '''
-from tesserae import Signal, ViewModel
+from tess_ui import Signal, ViewModel
 
 
 class {name}ViewModel(ViewModel):

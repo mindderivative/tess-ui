@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from tesserae import App
+from tess_ui import App
 
 HERE = Path(__file__).parent
 

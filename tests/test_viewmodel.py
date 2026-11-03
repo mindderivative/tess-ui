@@ -2,9 +2,9 @@
 
 import pytest
 
-from tesserae import Signal, ViewModel
-from tesserae.spec.nodes import parse_view
-from tesserae.viewmodel import BindingError, Bindings, check_view, declared_views, open_view
+from tess_ui import Signal, ViewModel
+from tess_ui.spec.nodes import parse_view
+from tess_ui.viewmodel import BindingError, Bindings, check_view, declared_views, open_view
 
 PIE = "name: data_pie\nwidget: Container\nchildren:\n  - {widget: Text, name: total, text: '{{ len(rows) }} slices'}\n"
 LIST = ("name: data_list\nwidget: Container\nstate: {open: false}\nchildren:\n  - for: r in rows\n    key: r.id\n    widget: Text\n    name: row\n"

@@ -2,8 +2,8 @@
 
 import pytest
 
-from tesserae import View, tokens
-from tesserae.spec.build import SpecBuildError
+from tess_ui import View, tokens
+from tess_ui.spec.build import SpecBuildError
 
 SEED = (103, 80, 164, 255)
 
@@ -74,7 +74,7 @@ def test_a_radius_changes_on_a_patch_between_one_and_four_values():
 
 
 def test_a_view_and_a_stylesheet_rule_can_give_per_corner_radii(tmp_path):
-    from tesserae import App, ViewModel
+    from tess_ui import App, ViewModel
 
     class VM(ViewModel):
         views = "main"

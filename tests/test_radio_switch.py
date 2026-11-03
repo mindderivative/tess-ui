@@ -2,7 +2,7 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel, tokens
+from tess_ui import App, Signal, ViewModel, tokens
 
 
 class VM(ViewModel):

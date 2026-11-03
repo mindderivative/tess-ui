@@ -92,7 +92,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import slider
+from tess_ui.widgets import slider
 
 volume = slider(app.window, (0xFF, 0xFF, 0xFF, 0xFF), 240, 44, value=0.5)
 volume.on_change(print)

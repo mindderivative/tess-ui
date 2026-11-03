@@ -3,8 +3,8 @@ front with what to write instead (a modal `widget: Overlay` in a view), by path 
 
 import pytest
 
-from tesserae import App
-from tesserae.overlays import ViewDialog
+from tess_ui import App
+from tess_ui.overlays import ViewDialog
 
 CURRENT = "name: Settings\nwidget: Container\nchildren:\n  - {widget: Text, name: t, text: hi, typography_role: body_large, style: {foreground: on_surface}}\n"
 OLDER = "id: root\nkind: Container\nchildren:\n  - id: body\n    kind: Text\n    text: {content: Hello, typography_role: body_large}\n    style: {foreground: on_surface}\n"
@@ -53,7 +53,7 @@ def test_a_file_that_is_missing_or_broken_still_gets_the_older_loaders_own_messa
 
 def test_the_replacement_the_message_names_works(tmp_path):
     """A modal `widget: Overlay` bound to `open`, closed by `surface.dismiss`, is the dialog the message points to."""
-    from tesserae import Signal, ViewModel
+    from tess_ui import Signal, ViewModel
 
     class VM(ViewModel):
         views = "main"

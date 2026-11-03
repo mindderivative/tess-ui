@@ -13,8 +13,8 @@ tint resolution directly at the Rust level.
 
 from tre import Node, Window
 
-from tesserae.spec import expand_components
-from tesserae.widgets import circular_progress, linear_progress, loading_indicator
+from tess_ui.spec import expand_components
+from tess_ui.widgets import circular_progress, linear_progress, loading_indicator
 
 THEME_SEED = (0x67, 0x50, 0xA4, 0xFF)
 

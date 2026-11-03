@@ -2,8 +2,8 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel, tokens
-from tesserae.shipped import shipped_views
+from tess_ui import App, Signal, ViewModel, tokens
+from tess_ui.shipped import shipped_views
 
 ITEMS = """[{value: cut, label: Cut, shortcut: Ctrl+X}, {value: copy, label: Copy, icon: content_copy}, {divider: true}, {heading: Share},
           {value: paste, label: Paste, disabled: true}, {value: share, label: Share, submenu: [{value: mail, label: Mail}, {value: link, label: Link}]}]"""

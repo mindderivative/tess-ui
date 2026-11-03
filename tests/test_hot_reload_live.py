@@ -44,7 +44,7 @@ SCRIPT = textwrap.dedent(
     work = Path(sys.argv[1])
     sys.path.insert(0, str(work))
     from Home_ViewModel import HomeViewModel
-    from tesserae import App
+    from tess_ui import App
 
     def view_text(content):
         return (
@@ -89,7 +89,7 @@ SCRIPT = textwrap.dedent(
 def test_app_run_hot_reload_updates_the_live_view(tmp_path: Path, how):
     """M48: a screen given to `register()` reloads too, not just `load()`'s."""
     (tmp_path / "Home_ViewModel.py").write_text(
-        "from tesserae import ViewModel\n\n\nclass HomeViewModel(ViewModel):\n    pass\n"
+        "from tess_ui import ViewModel\n\n\nclass HomeViewModel(ViewModel):\n    pass\n"
     )
     script = tmp_path / "run_app.py"
     script.write_text(SCRIPT)
@@ -125,8 +125,8 @@ STYLE_SCRIPT = textwrap.dedent(
     work = Path(sys.argv[1])
     sys.path.insert(0, str(work))
     from Home_ViewModel import HomeViewModel
-    from tesserae import App
-    from tesserae.tokens import elevation_shadows
+    from tess_ui import App
+    from tess_ui.tokens import elevation_shadows
 
     def rule(prop, value):
         return "styles:\\n  - kind: Rect\\n    style: {" + prop + ": " + str(value) + "}\\n"
@@ -174,7 +174,7 @@ def test_app_run_hot_reload_restyles_on_theme_and_stylesheet_edits(tmp_path: Pat
     """M31: editing the theme file and the default stylesheet file while
     the app runs re-styles the live screen and re-themes the app."""
     (tmp_path / "Home_ViewModel.py").write_text(
-        "from tesserae import ViewModel\n\n\nclass HomeViewModel(ViewModel):\n    pass\n"
+        "from tess_ui import ViewModel\n\n\nclass HomeViewModel(ViewModel):\n    pass\n"
     )
     script = tmp_path / "run_app.py"
     script.write_text(STYLE_SCRIPT)
@@ -211,7 +211,7 @@ COMPONENT_SCRIPT = textwrap.dedent(
     sys.path.insert(0, str(work))
     from Home_ViewModel import HomeViewModel
     from Row_ViewModel import RowViewModel
-    from tesserae import App, instantiate
+    from tess_ui import App, instantiate
 
     def row_text(content):
         return ("id: row\\nkind: Text\\ntext: {content: " + content + ", font_family: Roboto, font_size: 16}\\n"
@@ -258,10 +258,10 @@ def test_app_run_hot_reload_updates_components_added_before_and_during_the_run(t
     """M51: a component file is watched, and every live row reloads --
     one added before `run()` and one added while it runs."""
     (tmp_path / "Home_ViewModel.py").write_text(
-        "from tesserae import ViewModel\n\n\nclass HomeViewModel(ViewModel):\n    pass\n"
+        "from tess_ui import ViewModel\n\n\nclass HomeViewModel(ViewModel):\n    pass\n"
     )
     (tmp_path / "Row_ViewModel.py").write_text(
-        "from tesserae import ViewModel\n\n\nclass RowViewModel(ViewModel):\n    pass\n"
+        "from tess_ui import ViewModel\n\n\nclass RowViewModel(ViewModel):\n    pass\n"
     )
     script = tmp_path / "run_app.py"
     script.write_text(COMPONENT_SCRIPT)

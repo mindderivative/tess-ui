@@ -4,7 +4,7 @@ import os
 
 import pytest
 
-from tesserae import App
+from tess_ui import App
 from test_anchor_style import VM, opened, where  # noqa: F401  (the fixture builders)
 
 
@@ -100,7 +100,7 @@ def test_a_file_that_moves_a_labelled_control_moves_its_row(tmp_path):
     (tmp_path / "Views" / "Main_View.yaml").write_text(
         "name: main\nwidget: Container\nstyle: {width: 400, height: 300, background: surface}\nchildren:\n"
         "  - {widget: Checkbox, name: cb, label: ok, style: {position: absolute, x: 70, y: 80}}\n")
-    from tesserae.spec.watch import ComposedWatcher
+    from tess_ui.spec.watch import ComposedWatcher
     watcher = ComposedWatcher(view, view.source, app._composed_docs, lambda library, doc: app._composed_rules(library, doc=doc)[0])
     stat = view.source.stat()
     os.utime(view.source, ns=(stat.st_atime_ns, stat.st_mtime_ns + 5_000_000_000))

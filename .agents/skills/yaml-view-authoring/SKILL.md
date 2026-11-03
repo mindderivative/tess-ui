@@ -5,7 +5,7 @@ description: Use when writing or changing a Tesserae view, stylesheet, theme or 
 
 # Writing views, stylesheets and themes
 
-The language is documented in `docs/guide/view-language.md` (the whole language), `docs/guide/naming-convention.md`, `docs/guide/layout.md`, `docs/guide/bindings.md` (expressions) and `design/yaml-language.md` (why each component needed what it did). Read the page for what you touch; this skill is the checklist and the traps. Do not write from memory: check a property against the widget's declaration (`docs/schema/tesserae-widget-schema.json`, or `docs/api/yaml.md`).
+The language is documented in `docs/guide/view-language.md` (the whole language), `docs/guide/naming-convention.md`, `docs/guide/layout.md`, `docs/guide/bindings.md` (expressions) and `design/yaml-language.md` (why each component needed what it did). Read the page for what you touch; this skill is the checklist and the traps. Do not write from memory: check a property against the widget's declaration (`docs/schema/tess-ui-widget-schema.json`, or `docs/api/yaml.md`).
 
 ## Files and names
 

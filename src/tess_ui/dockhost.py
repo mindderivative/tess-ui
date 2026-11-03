@@ -1,0 +1,688 @@
+"""A `kind: Dock` in a view (0.4.4): the zones around the middle, their resize handles, the splits of a panel, built on
+`tess_ui.docking.Dock` (the tabs and the drag between zones) once the view's nodes exist.
+
+The view built the `Dock` as a container holding its `DockPanel`s as containers. `DockHost` lays the dock out in it:
+
+    left zone | handle | top zone              | handle | right zone
+                         handle
+                         center zone (or room)
+                         handle
+                         bottom zone
+
+and docks each panel in its zone, so panels sharing a zone are its tabs and a panel can be dragged to another zone. A zone's size
+is what its panel's `style:` said (`width` for left and right, `height` for top and bottom); the handle between a zone and the
+middle resizes it (drag it, or focus it and use the arrow keys, Home and End).
+
+A panel's own splits (`DockPanel`s inside a `DockPanel`) have handle nodes between them, made by the spec (`split_handle:`); the
+host gives them their behaviour: dragging one resizes the half before it.
+
+Each half of a split is a mini zone of the `Dock` (0.5.0, #106): a column of a tab strip over the half, which stands in the half's
+place in its parent (`relocated`; a reload leaves it there). The half's own content is its first tab, titled by the `DockPanel`.
+A dragged panel can be dropped onto a half (`tess_ui.docking.Dock` finds the half and the band under the pointer): on its middle
+it joins the half as another tab (`halves()`, `show_in_half`), on an edge it splits the half there, the panel taking the new half
+beside it with a handle of its own. A half a split made that loses its last panel collapses into its neighbour.
+
+Nothing here uses the app shell or the shell file.
+"""
+
+from __future__ import annotations
+
+from typing import Any, Callable, Optional
+
+from tess_ui import a11y, tokens
+from tess_ui.docking import HALF, Dock
+from tess_ui.follow import initial_theme
+from tess_ui.interaction import Interaction
+from tess_ui.listeners import Listeners
+from tess_ui.theme import Theme
+
+__all__ = ["DockHost", "MIN_SPLIT", "MIN_ZONE"]
+
+#: A resize handle: a 16 px target holding a 4x48 grip (MD3's drag handle).
+HANDLE_SPAN = 16.0
+GRIP = (4.0, 48.0)
+#: A zone's smallest size and the share of the room it may take; a split half's smallest size; an arrow key's step.
+MIN_ZONE = 120.0
+MAX_SHARE = 0.7
+MIN_SPLIT = 48.0
+STEP = 16.0
+DEFAULT_SIZE = {"left": 240.0, "right": 240.0, "top": 180.0, "bottom": 180.0}
+_EDGE = ("left", "right", "top", "bottom")
+
+
+class _Handle:
+    """A resize handle: pointer capture while dragging, the arrow keys, Home and End. `get`/`put` read and set the size it
+    resizes, `bounds` says how far, `grows` is +1 when moving right or down makes it bigger."""
+
+    def __init__(self, host: "DockHost", node: Any, axis: str, label: str, grows: float, get: Callable[[], float],
+                 put: Callable[[float], None], bounds: Callable[[], tuple[float, float]]) -> None:
+        self.host, self.node, self.axis, self.grows = host, node, axis, grows
+        self.get, self.put, self.bounds = get, put, bounds
+        horizontal = axis == "x"
+        node.set(focusable=True, cursor="col_resize" if horizontal else "row_resize", align_items="center",
+                 justify_content="center")
+        grip_w, grip_h = GRIP if horizontal else GRIP[::-1]
+        self.grip = host.window.create("box", width=grip_w, height=grip_h, corner_radius=2.0, hit_testable=False, a11y_hidden=True)
+        node.add_child(self.grip)
+        a11y.describe(node, role="slider", label=label, value_step=STEP)
+        self.interaction = Interaction(host.window, node, host._color("on_surface"), host._events.listen, host._color("secondary"))
+        self._drag: Optional[tuple[float, float]] = None
+        for event, fn in (("pointer_down", self._down), ("pointer_move", self._move), ("pointer_up", self._up),
+                          ("pointer_cancel", self._up), ("key_down", self._key)):
+            host._events.listen(node, event, fn)
+
+    def _at(self, event: Any) -> Optional[float]:
+        return event.window_x if self.axis == "x" else event.window_y
+
+    def _down(self, event: Any) -> None:
+        at = self._at(event)
+        if at is None:
+            return
+        self._drag = (at, self.get())
+        self.node.capture_pointer()
+        self.interaction.set_dragged(True)
+
+    def _move(self, event: Any) -> None:
+        at = self._at(event)
+        if self._drag is None or at is None:
+            return
+        start, size = self._drag
+        self.set(size + self.grows * (at - start))
+
+    def _up(self, event: Any) -> None:
+        if self._drag is not None:
+            self._drag = None
+            self.node.release_pointer()
+            self.interaction.set_dragged(False)
+
+    def _key(self, event: Any) -> None:
+        size = self.get()
+        low, high = self.bounds()
+        grow, shrink = ("arrow_right", "arrow_left") if self.axis == "x" else ("arrow_down", "arrow_up")
+        if self.grows < 0:
+            grow, shrink = shrink, grow
+        moves = {grow: size + STEP, shrink: size - STEP, "home": low, "end": high}
+        if event.key in moves:
+            self.set(moves[event.key])
+
+    def set(self, size: float) -> float:
+        low, high = self.bounds()
+        size = min(max(float(size), low), high)
+        self.put(size)
+        self.node.set(value=size, value_min=low, value_max=high)
+        return size
+
+    def paint(self) -> None:
+        self.grip.set(fill=self.host._color("outline"))
+        self.interaction.retint(self.host._color("on_surface"), self.host._color("secondary"))
+
+
+class DockHost:
+    """The dock a `kind: Dock` node is. `dock` is its `tess_ui.docking.Dock`; `size(side)`, `set_size(side, size)`,
+    `layout()` and `restore(layout)` read and set where the panels are and how big the zones are, as plain data."""
+
+    def __init__(self, view: Any, node_id: str, spec: dict[str, Any]) -> None:
+        self.view = view
+        self.window = view.window
+        self.node_id = node_id
+        self.node = view.node(node_id)
+        self.theme = initial_theme(self.window, None, self)  # the app's, followed (M50)
+        self._events = Listeners()
+        self.sizes: dict[str, float] = {}
+        self._zones: dict[str, Any] = {}
+        self._handles: dict[str, _Handle] = {}
+        self._splits: dict[str, _Handle] = {}
+        self._split_sizes: dict[str, float] = {}
+        self._halves: dict[str, Any] = {}  # a half's name -> its body node: the view's leaf halves, and the ones a split made
+        self._made_halves: set[str] = set()  # the names of those a drop's split made
+        self._made_splits: list[_Handle] = []  # the handles of the splits a drop made
+        self._made = 0
+        self.panels: dict[str, dict[str, Any]] = {}  # a panel's id -> {title, zone, closable}
+        self._closed: dict[str, dict[str, Any]] = {}  # the closable panels that are shut: id -> what they were (to open them again)
+        self._close_listeners: list[Callable[[list[str]], Any]] = []
+        self.dock = Dock(self.window, theme=self.theme)
+        self.dock.on_close(self._shut)
+        self.dock.on_half_drop(self._drop_on_half)
+        self.dock.on_half_empty(self._collapse)
+        self._build(spec)
+
+    # -- laying out ------------------------------------------------------------------
+
+    def _build(self, spec: dict[str, Any]) -> None:
+        panels = spec["panels"]
+        sides = [side for side in (*_EDGE, "center") if any(p["zone"] == side for p in panels)]
+        create = self.window.create
+        nodes = {p["id"]: self.view.node(p["id"]) for p in panels}
+        for node in nodes.values():
+            if node.parent() is not None:
+                node.remove()  # the panels go into their zones
+        self.node.set(flex_direction="vertical")
+        self.middle = create("box", flex_grow=1.0, flex_direction="horizontal", align_items="stretch", width="100%", height="100%")
+        self.centre = create("box", flex_grow=1.0, flex_direction="vertical", align_items="stretch")
+        self.node.add_child(self.middle)
+        for side in _EDGE:
+            if side in sides:
+                size = float((spec.get("sizes") or {}).get(side) or DEFAULT_SIZE[side])
+                self.sizes[side] = size
+                self._zones[side] = self.dock.add_zone(side, size)
+                self._handles[side] = self._zone_handle(side)
+        if "center" in sides:
+            self._zones["center"] = self.dock.add_zone("center", 0.0)
+        else:
+            self._zones["center"] = create("box", flex_grow=1.0)  # the room the zones around it leave
+        self._place("left", self.middle)
+        self.middle.add_child(self.centre)
+        self._place("right", self.middle)
+        self._place("top", self.centre)
+        self.centre.add_child(self._zones["center"])
+        self._place("bottom", self.centre)
+        for panel in panels:
+            self.dock.add_panel(panel["zone"], nodes[panel["id"]], panel["title"], bool(panel.get("closable")))
+            self.panels[panel["id"]] = {"title": panel["title"], "zone": panel["zone"], "closable": bool(panel.get("closable"))}
+        for side in self.dock._zones:  # the first panel of each zone shows, as the file lists them
+            first = next((p for p in panels if p["zone"] == side), None)
+            if first is not None:
+                self.dock.show(nodes[first["id"]])
+        self.sync_splits()
+        self.paint()
+
+    def _place(self, side: str, parent: Any) -> None:
+        if side not in self._handles:
+            return
+        zone, handle = self._zones[side], self._handles[side].node
+        first, second = (zone, handle) if side in ("left", "top") else (handle, zone)
+        parent.add_child(first)
+        parent.add_child(second)
+
+    def _zone_handle(self, side: str) -> _Handle:
+        horizontal = side in ("left", "right")
+        node = self.window.create("box", flex_shrink=0.0, **({"width": HANDLE_SPAN} if horizontal else {"height": HANDLE_SPAN}))
+        return _Handle(self, node, "x" if horizontal else "y", f"Resize the {side} panels",
+                       1.0 if side in ("left", "top") else -1.0, lambda: self.size(side), lambda v: self._put(side, v),
+                       lambda: self._bounds(side))
+
+    def _put(self, side: str, size: float) -> None:
+        self.sizes[side] = size
+        self.dock._zones[side].node.set(**{"width" if side in ("left", "right") else "height": size})
+
+    def _bounds(self, side: str) -> tuple[float, float]:
+        area = self.middle if side in ("left", "right") else self.centre
+        extent = area.get("layout_width" if side in ("left", "right") else "layout_height") or 0.0
+        return MIN_ZONE, max(MIN_ZONE, extent * MAX_SHARE)
+
+    # -- sizes and layouts -----------------------------------------------------------
+
+    def size(self, side: str) -> float:
+        """`side`'s zone size in pixels (its width, or its height for top and bottom)."""
+        if side not in self.sizes:
+            raise ValueError(f"the dock has no {side} zone")
+        return self.sizes[side]
+
+    def set_size(self, side: str, size: float) -> float:
+        """Sets `side`'s zone size, clamped between 120 px and 70% of the room; returns the size it got."""
+        self.size(side)
+        return self._handles[side].set(size)
+
+    def layout(self) -> dict[str, Any]:
+        """Where each panel is (by title), which one shows, each zone's size (`None` for the center), the sizes of the view's splits, and
+        the halves, as plain data. `halves` has, for each half, the titles of the panels dropped in it and the one it shows (`None`: its own
+        content); `made` has, for each half of the view that the user split by a drop, the tree of the splits: `{"half": name}` for a half,
+        `{"axis": "x" or "y", "size": px, "first": ..., "second": ...}` for a split (`size` is the first part's)."""
+        sides = [*self._handles, *(["center"] if "center" in self.dock._zones else [])]
+        halves = {}
+        for name in self._halves:
+            panels, shown = self.dock.half_state(name)
+            halves[name] = {"panels": [self._title_of(n) for n in panels], "shown": self._title_of(shown) if shown is not None else None}
+        trees = {name: self._tree(name) for name in self._halves if name not in self._made_halves}
+        return {"zones": {side: {"panels": self.dock.titles(side), "shown": self.dock.shown_title(side),
+                                 "size": self.sizes.get(side)} for side in sides},
+                "splits": {k: v for k, v in self._split_sizes.items() if k not in self._made_halves},
+                "halves": halves, "made": {name: tree for name, tree in trees.items() if tree is not None}}
+
+    def restore(self, layout: dict[str, Any]) -> None:
+        """Puts back a `layout()`: moves each titled panel into its zone or half, makes the splits the user made, shows the tab that was
+        shown, sizes the zones and the splits. Titles no panel has, and zones and halves this dock hasn't, are skipped. A layout from before
+        halves were recorded (no `halves` or `made`) leaves the halves as they are."""
+        layout = layout or {}
+        zones = layout.get("zones") or {}
+        known = [*self._handles, *(["center"] if "center" in self.dock._zones else [])]
+        has_halves = "halves" in layout or "made" in layout
+        if has_halves:
+            self._dissolve()
+        for side, saved in zones.items():
+            if side not in known:
+                continue
+            for title in saved.get("panels") or []:
+                panel = self.dock.panel(title)
+                if panel is not None and self.dock.side_of(panel) != side:
+                    self.dock.move(panel, side)
+        if has_halves:
+            for name, tree in (layout.get("made") or {}).items():
+                if name in self._halves and name not in self._made_halves:
+                    self._grow(name, tree)
+            halves = layout.get("halves") or {}
+            for name, saved in halves.items():
+                if name not in self._halves:
+                    continue
+                for title in saved.get("panels") or []:
+                    panel = self.dock.panel(title)
+                    if panel is not None and self.dock.side_of(panel) != HALF + name:
+                        self.dock.move(panel, HALF + name)
+            for name in [n for n in self._made_halves if not self.dock.half_state(n)[0]]:
+                self._collapse(name)  # a half the layout made that none of its panels came back to
+            for name, saved in halves.items():
+                if name not in self._halves:
+                    continue
+                panel = self.dock.panel(saved["shown"]) if saved.get("shown") is not None else None
+                if panel is not None and self.dock.side_of(panel) == HALF + name:
+                    self.dock.show(panel)
+                elif saved.get("shown") is None and name not in self._made_halves:
+                    self.dock.show(self._halves[name])
+        for side, saved in zones.items():
+            if side not in known:
+                continue
+            shown = self.dock.panel(saved["shown"]) if saved.get("shown") is not None else None
+            if shown is not None and self.dock.side_of(shown) == side:
+                self.dock.show(shown)
+            if saved.get("size") is not None and side in self.sizes:
+                self.set_size(side, saved["size"])
+        for node_id, size in (layout.get("splits") or {}).items():
+            handle = next((h for h in self._splits.values() if h.before == node_id), None)
+            if handle is not None:
+                handle.set(size)
+
+    def _title_of(self, node: Any) -> Optional[str]:
+        panel_id = self._id_of(node)
+        return self.panels[panel_id]["title"] if panel_id in self.panels else None
+
+    def _made_handle(self, container: Any) -> Optional[_Handle]:
+        """The handle of the split container `container` that a drop made, or `None` if it is not one."""
+        return next((h for h in self._made_splits if h.node.parent() == container), None) if container is not None else None
+
+    def _tree(self, name: str) -> Optional[dict[str, Any]]:
+        """The splits a drop made round the view's half `name`, as a tree (see `layout`), or `None` if there are none."""
+        top = start = self.dock.half_slot(name)
+        while self._made_handle(top.parent()) is not None:
+            top = top.parent()
+        return None if top == start else self._describe(top)
+
+    def _describe(self, node: Any) -> dict[str, Any]:
+        handle = self._made_handle(node)
+        if handle is None:
+            return {"half": next(n for n in self._halves if self.dock.half_slot(n) == node)}
+        first, _, second = node.children()
+        return {"axis": handle.axis, "size": round(handle.get(), 1), "first": self._describe(first), "second": self._describe(second)}
+
+    def _dissolve(self) -> None:
+        """Takes every split a drop made apart: the panels in the halves it made go back to their zones, and the halves collapse."""
+        for name in reversed(list(self._made_halves)):
+            if name not in self._made_halves:
+                continue  # collapsed when the last panel left the one before it
+            for node in self.dock.half_state(name)[0]:
+                panel_id = self._id_of(node)
+                if panel_id is not None:
+                    self.move(panel_id, self._home(panel_id))
+            if name in self._made_halves:
+                self._collapse(name)
+
+    def _home(self, panel_id: str) -> str:
+        """The zone a panel goes back to when the half it is in goes: the one it came from."""
+        return self.panels[panel_id]["zone"]
+
+    def _grow(self, name: str, tree: dict[str, Any]) -> None:
+        """Makes the splits of `tree` (see `layout`) round the view's half `name`, with the halves it names, empty and at the sizes it gives.
+        A tree that is not one, does not have `name` in it, or names a half this dock already has, is skipped."""
+        def leaves(part: dict[str, Any]) -> list[str]:
+            return [part["half"]] if "half" in part else [*leaves(part["first"]), *leaves(part["second"])]
+
+        def build(part: dict[str, Any], anchor: str) -> None:
+            if "half" in part:
+                return
+            in_first = anchor in leaves(part["first"])
+            kept, other = (part["first"], part["second"]) if in_first else (part["second"], part["first"])
+            horizontal = part["axis"] == "x"
+            band = ("right" if horizontal else "bottom") if in_first else ("left" if horizontal else "top")
+            new = leaves(other)[0]
+            self._make_half(anchor, band, name=new, size=float(part["size"]))
+            build(kept, anchor)
+            build(other, new)
+
+        try:
+            names = leaves(tree)
+            if name not in names or any(n != name and n in self._halves for n in names) or len(set(names)) != len(names):
+                return
+            if any(t["axis"] not in ("x", "y") for t in self._splits_of(tree)):
+                return
+            build(tree, name)
+        except (KeyError, TypeError, ValueError, IndexError):
+            return
+
+    @staticmethod
+    def _splits_of(tree: dict[str, Any]) -> list[dict[str, Any]]:
+        return [] if "half" in tree else [tree, *DockHost._splits_of(tree["first"]), *DockHost._splits_of(tree["second"])]
+
+    # -- splits ------------------------------------------------------------------------
+
+    def sync_splits(self) -> None:
+        """Gives each split handle node of the view its behaviour (once), and takes it from the ones the view no longer has."""
+        self._sync_halves()
+        wanted = {n["id"]: n["split_handle"] for n in self._walk(self.view.spec) if isinstance(n.get("split_handle"), dict)}
+        for node_id in [i for i in self._splits if i not in wanted]:
+            del self._splits[node_id]
+        for node_id, info in wanted.items():
+            if node_id in self._splits:
+                continue
+            node = self.view.node(node_id)
+            before_id = info["before"]
+            handle = self._split_handle(node, info["axis"], f"Resize {before_id}", lambda before_id=before_id: self._top(self._slot(before_id)),
+                                        node.parent(), before_id)
+            self._splits[node_id] = handle
+            if before_id in self._split_sizes:
+                handle.set(self._split_sizes[before_id])
+
+    def _top(self, node: Any) -> Any:
+        """`node`, or the split container a drop has put round it (and round that) in its place: what its parent holds."""
+        while self._made_handle(node.parent()) is not None:
+            node = node.parent()
+        return node
+
+    def _split_handle(self, node: Any, axis: str, label: str, before: Callable[[], Any], parent: Any, key: str) -> _Handle:
+        """A handle on `node` that resizes what `before()` gives, the part in front of it, within `parent`; its size is kept under `key`.
+        (`before` is asked each time: splitting a half puts a container where it stood.)"""
+        extent = "layout_width" if axis == "x" else "layout_height"
+        across = "width" if axis == "x" else "height"
+
+        def get() -> float:
+            return float(before().get(extent) or 0.0)
+
+        def put(size: float) -> None:
+            before().set(**{across: size, "flex_grow": 0.0, "flex_shrink": 0.0})
+            self._split_sizes[key] = size
+
+        def bounds() -> tuple[float, float]:
+            room = float(parent.get(extent) or 0.0)
+            return MIN_SPLIT, max(MIN_SPLIT, room - MIN_SPLIT - HANDLE_SPAN)
+
+        handle = _Handle(self, node, axis, label, 1.0, get, put, bounds)
+        handle.before = key  # type: ignore[attr-defined]
+        return handle
+
+    @staticmethod
+    def _walk(spec: dict[str, Any]):
+        yield spec
+        for child in spec.get("children") or []:
+            if isinstance(child, dict):
+                yield from DockHost._walk(child)
+
+    # -- halves: mini zones, and dropping a panel onto one ---------------------------------
+
+    def _sync_halves(self) -> None:
+        """Makes each leaf half of the view (one that holds content, not one that is itself split) a zone of the dock, and lets go of
+        the ones the view no longer has; the halves a drop made are kept."""
+        leaves = {n["id"]: (n.get("dock_panel") or {}).get("title", n["id"]) for n in self._walk(self.view.spec)
+                  if (n.get("dock_panel") or {}).get("split")
+                  and not any((c.get("dock_panel") or {}).get("split") for c in n.get("children") or [] if isinstance(c, dict))}
+        for name in [n for n in self._halves if n not in self._made_halves and n not in leaves]:
+            self.dock.remove_half(name)
+            del self._halves[name]
+        for name, title in leaves.items():
+            if name not in self._halves:
+                body = self.view.node(name)
+                self.dock.add_half(name, body, title)
+                self._halves[name] = body
+
+    def _slot(self, node_id: str) -> Any:
+        """The node that stands in `node_id`'s place in its parent: the half's column if it is a half, else the node."""
+        return self.dock.half_slot(node_id) if node_id in self._halves else self.view.node(node_id)
+
+    def relocated(self, node_id: str) -> bool:
+        """Whether the view's node `node_id` is a half the dock has put in a column (so the view must not move it back out)."""
+        return node_id in self._halves and node_id not in self._made_halves
+
+    def halves(self) -> dict[str, dict[str, Any]]:
+        """Each half's panels (the ids of those docked in it, in tab order) and the one it shows (`None`: its own content)."""
+        out = {}
+        for name in self._halves:
+            panels, shown = self.dock.half_state(name)
+            out[name] = {"panels": [self._id_of(n) for n in panels], "shown": self._id_of(shown) if shown is not None else None}
+        return out
+
+    def half_of(self, panel_id: str) -> Optional[str]:
+        """The half `panel_id` is docked in, or `None` if it is in a zone (or shut)."""
+        side = self.dock.side_of(self.view.node(panel_id))
+        return side[len(HALF):] if side is not None and side.startswith(HALF) else None
+
+    def show_in_half(self, half: str, panel_id: Optional[str]) -> None:
+        """Shows `panel_id` in `half` (`None`: the half's own content, if it has any); the rest of what it holds is hidden."""
+        if half not in self._halves:
+            raise ValueError(f"the dock has no half {half!r} (it has {', '.join(self._halves) or 'none'})")
+        panels, _ = self.dock.half_state(half)
+        if panel_id is None:
+            if half in self._made_halves:
+                raise ValueError(f"{half!r} has no content of its own; show one of its panels")
+            self.dock.show(self._halves[half])
+        elif self.view.node(panel_id) not in panels:
+            raise ValueError(f"{panel_id!r} isn't in {half!r}")
+        else:
+            self.dock.show(self.view.node(panel_id))
+
+    def _id_of(self, node: Any) -> Optional[str]:
+        return next((i for i in [*self.panels, *self._closed] if self.view.node(i) == node), None)
+
+    def _drop_on_half(self, node: Any, half: str, band: str) -> None:
+        """A dragged panel (already out of its zone or half) was dropped on `half`'s `band`: on the middle it joins the half as
+        a tab, on an edge it splits it there."""
+        panel_id = self._id_of(node)
+        if panel_id is None or half not in self._halves:
+            return
+        info = self.panels[panel_id]
+        if band == "middle":
+            self.dock.add_panel(HALF + half, node, info["title"], bool(info.get("closable")))
+        else:
+            self._split_half(half, band, panel_id)
+
+    def _split_half(self, half: str, band: str, panel_id: str) -> None:
+        """Splits `half` on `band`'s side with a new half holding the panel (see `_make_half`)."""
+        name = self._make_half(half, band)
+        info = self.panels[panel_id]
+        self.dock.add_panel(HALF + name, self.view.node(panel_id), info["title"], bool(info.get("closable")))
+
+    def _make_half(self, half: str, band: str, name: Optional[str] = None, size: Optional[float] = None) -> str:
+        """Replaces `half`'s column in its parent with a container holding it and a new, empty half beside it (on `band`'s side), with
+        a handle between. They share the room the half had, or the first of them is `size` px along the split. Returns the new half's name."""
+        old = self.dock.half_slot(half)
+        parent, window = old.parent(), self.window
+        horizontal = band in ("left", "right")
+        index = [child == old for child in parent.children()].index(True)
+        extent = old.get("layout_width" if horizontal else "layout_height") or 0.0
+        sizing = {k: old.get(k) for k in ("width", "height", "flex_grow", "flex_shrink", "flex_basis")}
+        both = window.create("box", flex_direction="horizontal" if horizontal else "vertical", clip_children=True, **sizing)
+        old.remove()
+        parent.insert_child(index, both)
+        old.set(width="auto", height="auto", flex_grow=1.0, flex_shrink=1.0, flex_basis="auto")
+        if name is None:
+            self._made += 1
+            name = f"{half}.split{self._made}"
+        else:  # a name from a saved layout: the ones made after it must not be called the same
+            tail = name.rsplit(".split", 1)[-1]
+            if tail.isdigit():
+                self._made = max(self._made, int(tail))
+        body = window.create("box", flex_grow=1.0, flex_shrink=1.0, clip_children=True)
+        both.add_child(body)  # add_half takes it from here into a column of its own
+        self._halves[name] = body
+        self._made_halves.add(name)
+        new = self.dock.add_half(name, body)
+        grip = window.create("box", flex_shrink=0.0, **{"width" if horizontal else "height": HANDLE_SPAN})
+        first, second = (new, old) if band in ("left", "top") else (old, new)
+        for child in (first, grip, second):
+            both.add_child(child)
+        handle = self._split_handle(grip, "x" if horizontal else "y", f"Resize {name}", lambda both=both: both.children()[0], both, name)
+        self._made_splits.append(handle)
+        if size is not None:
+            handle.set(size)
+        elif extent:
+            handle.set((float(extent) - HANDLE_SPAN) / 2)
+        handle.paint()
+        return name
+
+    def _collapse(self, name: str) -> None:
+        """The half a split made, `name`, has no panel left: it and its handle go, and its neighbour takes the room the pair had."""
+        if name not in self._made_halves:
+            return
+        slot = self.dock.half_slot(name)
+        both = slot.parent()
+        self.dock.remove_half(name)
+        self._halves.pop(name)
+        self._made_halves.discard(name)
+        self._split_sizes.pop(name, None)
+        grip = next((h for h in self._made_splits if h.node.parent() == both), None)
+        if grip is not None:
+            grip.interaction.detach()
+            self._made_splits.remove(grip)
+        neighbour = next((c for c in both.children() if c != slot and (grip is None or c != grip.node)), None)
+        grandparent = both.parent()
+        if neighbour is None or grandparent is None:
+            return
+        index = [child == both for child in grandparent.children()].index(True)
+        sizing = {k: both.get(k) for k in ("width", "height", "flex_grow", "flex_shrink", "flex_basis")}
+        neighbour.remove()
+        both.remove()
+        grandparent.insert_child(index, neighbour)
+        neighbour.set(**sizing)
+        both.destroy()
+
+    def release(self, node_id: str, within: Any = None) -> None:
+        """The view is about to destroy the node `node_id` and what is in it -- `within`, if given, is what the dock put round it, a
+        half's column or a split's container -- so the panels docked in halves in that go back to the zones they came from, and those
+        halves stop being zones. (Each half in it, one the view has or one a drop made.)"""
+        node = within if within is not None else self.view.node(node_id)
+        for name in [n for n in self._halves if _is_below(self.dock.half_slot(n), node)]:
+            panels, _ = self.dock.half_state(name)
+            for panel in panels:
+                pid = self._id_of(panel)
+                if pid is not None:
+                    self.move(pid, self._home(pid))
+            self.dock.remove_half(name)
+            self._halves.pop(name, None)
+            if name in self._made_halves:
+                self._made_halves.discard(name)
+                self._split_sizes.pop(name, None)
+        self._made_splits[:] = [h for h in self._made_splits if h.node.parent() is not None and not _is_below(h.node, node)]
+
+    # -- the host's panels, for a reload -----------------------------------------------
+
+    def add_panel(self, panel_id: str, zone: str, title: str, closable: bool = False) -> None:
+        """Docks the view's node `panel_id` in `zone`, titled `title`."""
+        if zone not in self.dock._zones:
+            raise ValueError(f"the dock has no {zone} zone")
+        node = self.view.node(panel_id)
+        if node.parent() is not None:
+            node.remove()
+        self.dock.add_panel(zone, node, title, closable)
+        self.panels[panel_id] = {"title": title, "zone": zone, "closable": closable}
+
+    def move(self, panel_id: str, where: str) -> None:
+        """Moves the panel `panel_id` to the tabs of the zone `where` (`left`, ...) or of the half `where` (a half's id), from another
+        zone or half."""
+        if where in self._halves and where not in self.dock._zones:
+            self.dock.move(self.view.node(panel_id), HALF + where)
+        else:
+            self.dock.move(self.view.node(panel_id), where)
+            self.panels[panel_id]["zone"] = where
+
+    # -- closing and opening a closable panel ------------------------------------------------------------
+
+    def closed(self) -> list[str]:
+        """The ids of the closable panels that are shut."""
+        return list(self._closed)
+
+    def on_closed(self, fn: Callable[[list[str]], Any]) -> Callable[[], None]:
+        """Calls `fn(ids)`, the ids of the panels that are shut, when a close button shuts one. Returns the stopper."""
+        self._close_listeners.append(fn)
+        return lambda: self._close_listeners.remove(fn) if fn in self._close_listeners else None
+
+    def _shut(self, node: Any) -> None:
+        for panel_id, info in list(self.panels.items()):
+            if self.view.node(panel_id) == node:
+                self._closed[panel_id] = self.panels.pop(panel_id)
+        for fn in list(self._close_listeners):
+            fn(self.closed())
+
+    def close(self, panel_id: str) -> None:
+        """Shuts the closable panel `panel_id` (as its close button does), keeping its node to open it again."""
+        if panel_id in self.panels and self.panels[panel_id].get("closable"):
+            self._shut_by_id(panel_id)
+
+    def _shut_by_id(self, panel_id: str) -> None:
+        node = self.view.node(panel_id)
+        if self.dock.side_of(node) is not None:
+            self.dock.remove_panel(node)
+        self._closed[panel_id] = self.panels.pop(panel_id)
+
+    def reopen(self, panel_id: str) -> None:
+        """Docks a shut panel back in the zone it was in, as the last tab."""
+        info = self._closed.pop(panel_id, None)
+        if info is not None:
+            self.add_panel(panel_id, info["zone"], info["title"], info.get("closable", False))
+
+    def sync_closed(self, ids: list[str]) -> None:
+        """Shuts the panels in `ids` that are open and opens the shut ones that are not in it (what a bound `closed` list says)."""
+        wanted = set(ids)
+        for panel_id in list(self._closed):
+            if panel_id not in wanted:
+                self.reopen(panel_id)
+        for panel_id in list(self.panels):
+            if panel_id in wanted:
+                self.close(panel_id)
+
+    def remove_panel(self, panel_id: str) -> None:
+        """Takes the panel out of the dock (its node is the caller's to destroy)."""
+        self.release(panel_id)
+        node = self.view.node(panel_id)
+        if self.dock.side_of(node) is not None:
+            self.dock.remove_panel(node)
+        self.panels.pop(panel_id, None)
+        self._closed.pop(panel_id, None)
+
+    def retitle(self, panel_id: str, title: str) -> None:
+        if self.dock.side_of(self.view.node(panel_id)) is not None:
+            self.dock.rename(self.view.node(panel_id), title)
+        self.panels[panel_id]["title"] = title
+
+    # -- colour --------------------------------------------------------------------------
+
+    def _scheme(self) -> dict[str, Any]:
+        return self.theme.roles if self.theme.roles is not None else tokens.baseline_scheme()
+
+    def _color(self, role: str) -> tuple[int, int, int, int]:
+        return self._scheme()[role]
+
+    def paint(self) -> None:
+        for handle in (*self._handles.values(), *self._splits.values(), *self._made_splits):
+            handle.paint()
+
+    def set_theme(self, theme: Theme) -> None:
+        self.theme = theme
+        self.dock.set_theme(theme)
+        self.paint()
+
+    def _follow_theme(self, theme: Theme, view_theme: dict[str, Any]) -> None:
+        self.set_theme(theme)
+
+    def dispose(self) -> None:
+        """Stops the dock (the window's dock events, its tabs' and handles' listeners); the view destroys the nodes."""
+        self.dock.dispose()
+        for handle in (*self._handles.values(), *self._splits.values(), *self._made_splits):
+            handle.interaction.detach()
+        self._handles.clear()
+        self._splits.clear()
+        self._made_splits.clear()
+
+
+def _is_below(node: Any, ancestor: Any) -> bool:
+    """Whether `node` is `ancestor` or somewhere below it."""
+    while node is not None:
+        if node == ancestor:
+            return True
+        node = node.parent()
+    return False

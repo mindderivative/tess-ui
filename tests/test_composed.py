@@ -2,11 +2,11 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel
-from tesserae.composed import ComposedView, open_composed
-from tesserae.spec.nodes import parse_view
-from tesserae.spec.widgets import decl_from_params
-from tesserae.viewmodel import Bindings
+from tess_ui import App, Signal, ViewModel
+from tess_ui.composed import ComposedView, open_composed
+from tess_ui.spec.nodes import parse_view
+from tess_ui.spec.widgets import decl_from_params
+from tess_ui.viewmodel import Bindings
 
 SEED = (103, 80, 164, 255)
 TEXT = "typography_role: body_large\n    style: {width: 100, height: 20, foreground: '#000000'}"
@@ -283,7 +283,7 @@ def test_after_close_showing_and_hiding_the_view_no_longer_changes_its_nodes():
 
 
 def test_the_built_in_actions_resolve_for_a_view_and_nothing_else_does():
-    from tesserae.composed import builtin_actions
+    from tess_ui.composed import builtin_actions
 
     class Stub:
         window = None

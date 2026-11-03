@@ -9,13 +9,13 @@ import jsonschema
 import pytest
 import yaml
 
-from tesserae import cli
-from tesserae.spec.rules import is_rule_sheet
+from tess_ui import cli
+from tess_ui.spec.rules import is_rule_sheet
 
 ROOT = Path(__file__).resolve().parent.parent
-SCHEMAS = ROOT / "src" / "tesserae" / "schema"
-WIDGET = json.loads((SCHEMAS / "tesserae-widget-schema.json").read_text(encoding="utf-8"))
-STYLESHEET = json.loads((SCHEMAS / "tesserae-stylesheet-schema.json").read_text(encoding="utf-8"))
+SCHEMAS = ROOT / "src" / "tess_ui" / "schema"
+WIDGET = json.loads((SCHEMAS / "tess-ui-widget-schema.json").read_text(encoding="utf-8"))
+STYLESHEET = json.loads((SCHEMAS / "tess-ui-stylesheet-schema.json").read_text(encoding="utf-8"))
 
 
 def _load(path):
@@ -121,14 +121,14 @@ def test_a_view_of_a_project_that_shares_a_name_with_a_shipped_one_replaces_it(t
 def test_the_command_maps_views_to_the_widget_schema_and_the_project_one_on_request(tmp_path, capsys):
     assert cli.main(["schema", "--settings"]) == 0
     setting = json.loads(capsys.readouterr().out)["yaml.schemas"]
-    assert setting[str(cli.SCHEMAS / "tesserae-widget-schema.json")] == ["**/*_View.yaml"]
+    assert setting[str(cli.SCHEMAS / "tess-ui-widget-schema.json")] == ["**/*_View.yaml"]
     assert str(cli.SCHEMAS / cli.OLDER_VIEW_SCHEMA) not in setting  # the older syntax is for a file that names it in a comment
-    assert setting[str(cli.SCHEMAS / "tesserae-stylesheet-schema.json")][0] == "**/*_Stylesheet.yaml"
+    assert setting[str(cli.SCHEMAS / "tess-ui-stylesheet-schema.json")][0] == "**/*_Stylesheet.yaml"
     (tmp_path / "Views").mkdir()
     (tmp_path / "Views" / "Mine_View.yaml").write_text("params: {x: int}\nwidget: Container\n")
     assert cli.main(["schema", "--settings", "--project", str(tmp_path)]) == 0
     setting = json.loads(capsys.readouterr().out)["yaml.schemas"]
-    written = tmp_path / ".tesserae" / "tesserae-widget-schema.json"
+    written = tmp_path / ".tesserae" / "tess-ui-widget-schema.json"
     assert written.is_file() and setting[str(written)] == ["**/*_View.yaml"]
     assert "Mine" in json.loads(written.read_text())["properties"]["widget"]["enum"]
 
@@ -155,7 +155,7 @@ def test_a_link_where_the_project_schema_goes_is_refused_not_followed(tmp_path):
     (project / ".tesserae").mkdir()
     victim = tmp_path / "victim.json"
     victim.write_text("mine")
-    (project / ".tesserae" / "tesserae-widget-schema.json").symlink_to(victim)
+    (project / ".tesserae" / "tess-ui-widget-schema.json").symlink_to(victim)
     with pytest.raises(cli.CliError, match="symbolic link"):
         cli.project_schema(project)
     assert victim.read_text() == "mine"
@@ -174,7 +174,7 @@ def test_a_link_planted_at_the_old_temporary_name_is_not_written_through(tmp_pat
     (tmp_path / ".tesserae").mkdir()
     victim = tmp_path / "victim.json"
     victim.write_text("mine")
-    (tmp_path / ".tesserae" / "tesserae-widget-schema.json.tmp").symlink_to(victim)
+    (tmp_path / ".tesserae" / "tess-ui-widget-schema.json.tmp").symlink_to(victim)
     path = cli.project_schema(tmp_path)
     assert victim.read_text() == "mine" and json.loads(path.read_text())["title"]
     assert not path.is_symlink()

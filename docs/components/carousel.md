@@ -60,7 +60,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import carousel
+from tess_ui.widgets import carousel
 
 gallery = carousel(app.window, 480, 180, layout="multi_browse", items=[])
 ```

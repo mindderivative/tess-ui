@@ -3,6 +3,19 @@
 What to change in an existing app when you upgrade. Each section is the release you are moving to; the
 [changelog](changelog.md) has everything else that changed.
 
+## To 0.6.0
+
+**The Python package is `tess_ui` now (it was `tesserae`).** The name `tesserae` is also an unrelated project on PyPI, and the other Tesserae packages use the `tess_` prefix. Nothing is left under the old name: after the
+upgrade `import tesserae` is a `ModuleNotFoundError`. What did not change: the PyPI name (`tesserae-ui`), the `tesserae` command (`tesserae new`, `tesserae add screen`, `python -m tess_ui` is the same) and
+the `tesserae:` first line of a YAML file.
+
+- **Rewrite the imports.** `from tesserae import App` is `from tess_ui import App`, `import tesserae.spec` is `import tess_ui.spec`, and a dotted name such as `tesserae.spec.themes` is `tess_ui.spec.themes`
+  (a string given to `importlib` or to `monkeypatch.setattr` too). A search for `import tesserae` and `from tesserae` in your `*.py` files finds every place; the views and ViewModels you have need nothing else.
+- **Environment variables** that started `TESSERAE_` start `TESS_UI_`: `TESS_UI_FRAMES_REPORT`, `TESS_UI_ISCC`, `TESS_UI_MAX_FRAMES`, `TESS_UI_ONLY`, `TESS_UI_STATE_DIR` and `TESS_UI_STATS`.
+- **The editor schemas** are `tess-ui-*-schema.json` (they were `tesserae-*-schema.json`), in the package (`site-packages/tess_ui/schema/`) and on the docs site. A `yaml.schemas` setting that names them by path or address
+  needs the new names; `tesserae schema --project` writes `.tesserae/tess-ui-widget-schema.json`, and leaves the old file in `.tesserae/` for you to delete. [Editor Support](guide/editor-support.md) has the setting.
+- **The logger** is `tess_ui`: `logger.disable("tess_ui")` silences Tesserae (it was `"tesserae"`), and a filter on the module name matches `tess_ui.app`, `tess_ui.spec.watch` and the rest.
+
 ## The first line of a file
 
 Nothing has to change. A view, stylesheet or theme may start with `tesserae: 0.5` (the release series), and the files Tesserae ships and writes do: `tesserae new`,

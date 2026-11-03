@@ -1,0 +1,432 @@
+"""Tesserae's own namespace for the Media & Graphics category --
+`image`, `svg`, `video`, `icon`, `node_graph`, `graph_node` -- built by
+Tesserae (M41-M42): `image`/`video` over Tesserae's own `image` nodes,
+the node graph from a clipped viewport and `path` edges.
+`icon(foreground=)` is the glyph's own paint.
+"""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+from tess_ui.images import decode_image
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from tess_ui.theme import Theme
+    from tess_ui.widgets._composed import Widget
+    from tre import Window
+
+
+def _image_spec(node_id: str, width: float, height: float, fit: str) -> dict[str, Any]:
+    if fit not in ("cover", "contain", "fill"):
+        raise ValueError(f"an image's fit is 'cover', 'contain' or 'fill', got {fit!r}")
+    return {"id": node_id, "kind": "Image", "image": {"fit": fit}, "style": {"width": width, "height": height}}
+
+
+def image(
+    window: "Window",
+    path: str,
+    width: float,
+    height: float,
+    fit: str = "fill",
+    x: float | None = None,
+    y: float | None = None,
+    *,
+    label: str | None = None,
+) -> "Widget":
+    """An image from a file, `width`x`height`, `fit` cover, contain or
+    fill. Tesserae decodes the file (Pillow) and builds the node itself
+    (`window.create("image")` with the pixels). Raises `OSError` if the
+    file can't be read or decoded. Decorative unless given `label=`, then
+    `role="img"`."""
+    from tess_ui import a11y
+    from tess_ui.widgets._composed import Widget
+
+    rgba, pixel_width, pixel_height = decode_image(path)
+    widget = Widget(window, spec=_image_spec("image", width, height, fit), x=x, y=y, name="image",
+                    frames={"image": (rgba, pixel_width, pixel_height)})
+    a11y.describe(widget.node, **({"role": "img", "label": label} if label is not None else {"hidden": True}))
+    return widget
+
+
+def svg(
+    window: "Window",
+    source: "str | Path | bytes",
+    width: float | None = None,
+    height: float | None = None,
+    x: float | None = None,
+    y: float | None = None,
+    *,
+    color: str | None = None,
+    base: "str | Path | None" = None,
+    label: str | None = None,
+) -> "Widget":
+    """An SVG drawn by the engine: `source` is a `.svg` or `.svgz` file, or the document's text or bytes. It is scaled
+    to fit `width` by `height`, or one of them if the other is left out. `color` is a theme role that `currentColor`
+    means in the document, so a monochrome icon follows the theme. The pictures (`<image href=...>`) in the document
+    are decoded here, found next to the file (or in `base` for a document given as text). Raises `OSError` for a file
+    that can't be read and `ValueError` for a document or picture that can't be used. Decorative unless given
+    `label=`, then `role="img"`."""
+    from pathlib import Path as _Path
+
+    from tess_ui import a11y
+    from tess_ui.spec.expand import ComponentError
+    from tess_ui.spec.svg import load_svg
+    from tess_ui.widgets._composed import Widget
+
+    deps: set = set()
+    is_text = isinstance(source, bytes) or (isinstance(source, str) and source.lstrip().startswith("<"))
+    folder = _Path(base) if base is not None else (_Path.cwd() if is_text else _Path(source).resolve().parent)
+    document = source if is_text else _Path(source).read_bytes()
+    try:
+        loaded = load_svg(document, folder, "svg", deps, svg_dir=folder)
+    except ComponentError as exc:
+        raise ValueError(str(exc)) from None
+    style: dict[str, Any] = {}
+    if width is not None:
+        style["width"] = width
+    if height is not None:
+        style["height"] = height
+    if color is not None:
+        style["foreground"] = color
+    widget = Widget(window, spec={"id": "svg", "kind": "Svg", "svg": loaded, "style": style}, x=x, y=y, name="svg")
+    a11y.describe(widget.node, **({"role": "img", "label": label} if label is not None else {"hidden": True}))
+    return widget
+
+
+def video(
+    window: "Window",
+    width: float,
+    height: float,
+    fit: str = "fill",
+    x: float | None = None,
+    y: float | None = None,
+    *,
+    label: str | None = None,
+) -> "Widget":
+    """A surface for video frames (an `image` node Tesserae builds). `video.frame(rgba, width, height)` shows a
+    frame (RGBA bytes, `width*height*4` of them); frames can change size.
+    It starts blank. Decorative unless given `label=`."""
+    from tess_ui import a11y
+    from tess_ui.widgets._composed import Widget
+
+    widget = Widget(window, spec=_image_spec("video", width, height, fit), x=x, y=y, name="video",
+                    frames={"video": (bytes(4), 1, 1)})
+    a11y.describe(widget.node, **({"role": "img", "label": label} if label is not None else {"hidden": True}))
+
+    def frame(rgba: bytes, frame_width: int, frame_height: int) -> None:
+        widget.view._show_frame("video", widget.node, (rgba, frame_width, frame_height))  # as a `frame` binding does (M59)
+
+    widget.frame = frame
+    return widget
+
+
+def icon(
+    window: "Window",
+    name: str,
+    foreground: tuple[int, int, int, int],
+    size: float,
+    x: float | None = None,
+    y: float | None = None,
+    *,
+    theme: "Theme | None" = None,
+    label: str | None = None,
+) -> "Widget":
+    """One of Tesserae's icons (`tess_ui.icons`: home, search, menu,
+    close, check, arrow_back, add, settings, expand_more, remove,
+    arrow_forward, chevron_right), `size` square in `foreground`.
+    It is Tesserae's own Icon. An unknown name raises `ValueError`.
+    Decorative unless given a `label=`."""
+    from tess_ui import a11y
+    from tess_ui.icons import icon_path
+    from tess_ui.widgets._composed import Widget
+    from tess_ui.widgets.buttons import _hex
+
+    if icon_path(name) is None:
+        from tess_ui.icons import ICONS
+
+        raise ValueError(f"unknown icon {name!r}; expected one of {sorted(ICONS)}")
+    widget = Widget(window, spec={"id": "icon", "kind": "Icon", "icon": {"name": name},
+                                  "style": {"width": size, "height": size, "foreground": _hex(foreground)}},
+                    theme=theme, x=x, y=y, name="icon")
+    a11y.describe(widget.node, **({"label": label, "role": "img"} if label is not None else {"hidden": True}))
+    return widget
+
+
+#: `node_graph`'s zoom range, and how far one wheel notch zooms.
+ZOOM_RANGE = (0.25, 4.0)
+ZOOM_STEP = 1.1
+#: The coordinate space an edge's `path` spans, centred on the graph's origin.
+_EDGE_SPACE = 20000.0
+
+
+def node_graph(
+    window: "Window",
+    width: float,
+    height: float,
+    x: float | None = None,
+    y: float | None = None,
+    border_color: tuple[int, int, int, int] | None = None,
+    border_width: float | None = None,
+    *,
+    theme: "Theme | None" = None,
+) -> "Widget":
+    """A node graph's viewport: a clipped `surface_container_low` area whose
+    content pans and zooms. Drag the background to pan; the wheel zooms
+    about the pointer (`ZOOM_RANGE`). `.offset` (x, y) and `.zoom` are
+    `Signal`s. Add nodes with `graph_node(window, graph, ...)` and connect
+    them with `graph.edge(a, b)`. `.content` holds them."""
+    from tess_ui import a11y
+    from tess_ui.reactive import Effect, Signal
+    from tess_ui.widgets._composed import Widget
+    from tess_ui.widgets.buttons import _borders
+
+    widget = Widget(window, "NodeGraph", {"width": width, "height": height}, theme=theme, x=x, y=y,
+                    edit=_borders([None], border_color, border_width), name="node_graph")
+    viewport = widget.node
+    viewport.set(clip_children=True)
+    a11y.describe(viewport, role="group", label="Node graph")
+    # a 0x0 box scales about its own origin, so a graph point p shows at offset + p * zoom
+    content = window.create("box", position="absolute", x=0.0, y=0.0, width=0.0, height=0.0, hit_testable=False)
+    edges = window.create("box", position="absolute", x=0.0, y=0.0, width=0.0, height=0.0, hit_testable=False,
+                          a11y_hidden=True)
+    content.add_child(edges)
+    viewport.add_child(content)
+    widget.content, widget._edges_layer = content, edges
+    widget.offset, widget.zoom = Signal((0.0, 0.0)), Signal(1.0)
+    widget.snap = Signal(0.0)  # a node the user moves lands on a multiple of this many pixels (0 for no grid)
+    widget.arrows = Signal(False)  # an edge ends in an arrowhead
+    widget.selected = Signal(None)  # the graph node the user chose, or None
+    widget.graph_nodes: list[Any] = []
+    widget.edges: list[tuple[Any, Any, Any]] = []
+
+    def apply() -> None:
+        ox, oy = widget.offset.get()
+        content.set(translate_x=float(ox), translate_y=float(oy), scale=float(widget.zoom.get()))
+
+    effect = Effect(apply)
+    widget._undo.append(effect.dispose)
+    drag: dict[str, Any] = {}
+
+    def in_a_node(target: Any) -> bool:
+        node = target
+        while node is not None and node != viewport:
+            if any(node == n.node for n in widget.graph_nodes):
+                return True
+            node = node.parent()
+        return False
+
+    def down(event: Any) -> None:
+        if event.window_x is None or in_a_node(event.target):
+            return
+        widget.selected.set(None)  # a press on the background chooses nothing
+        drag.update(start=(event.window_x, event.window_y), offset=widget.offset.get())
+        viewport.capture_pointer()
+
+    def move(event: Any) -> None:
+        if drag and event.window_x is not None:
+            (sx, sy), (ox, oy) = drag["start"], drag["offset"]
+            widget.offset.set((ox + event.window_x - sx, oy + event.window_y - sy))
+
+    def up(event: Any) -> None:
+        if drag:
+            drag.clear()
+            viewport.release_pointer()
+
+    def wheel(event: Any) -> None:
+        if event.delta_y is None or event.x is None:
+            return
+        zoom = widget.zoom.get()
+        target = min(max(zoom * ZOOM_STEP ** (-float(event.delta_y)), ZOOM_RANGE[0]), ZOOM_RANGE[1])
+        if target == zoom:
+            return
+        # keep the graph point under the pointer where it is
+        ox, oy = widget.offset.get()
+        ratio = target / zoom
+        widget.offset.set((event.x - (event.x - ox) * ratio, event.y - (event.y - oy) * ratio))
+        widget.zoom.set(target)
+
+    listen = widget.view._listen
+    for name, fn in (("pointer_down", down), ("pointer_move", move), ("pointer_up", up), ("pointer_cancel", up),
+                     ("wheel", wheel)):
+        widget._undo.append(listen(viewport, name, fn))
+
+    def route(a: Any, b: Any, path: Any) -> None:
+        (ax, ay), (bx, by) = a.position.get(), b.position.get()
+        x1, y1 = ax + a.size[0], ay + a.size[1] / 2
+        x2, y2 = bx, by + b.size[1] / 2
+        bend = max(40.0, abs(x2 - x1) / 2)
+        data = f"M{x1:.2f},{y1:.2f} C{x1 + bend:.2f},{y1:.2f} {x2 - bend:.2f},{y2:.2f} {x2:.2f},{y2:.2f}"
+        if widget.arrows.get():  # an open arrowhead where the edge reaches the node
+            data += f" M{x2 - 9:.2f},{y2 - 5:.2f} L{x2:.2f},{y2:.2f} L{x2 - 9:.2f},{y2 + 5:.2f}"
+        path.set(data=data)
+
+    def edge(a: Any, b: Any) -> Any:
+        """A curve from `a`'s right side to `b`'s left, following them as
+        they move. Returns its `path` node."""
+        half = _EDGE_SPACE / 2
+        path = window.create("path", position="absolute", x=-half, y=-half, width=_EDGE_SPACE, height=_EDGE_SPACE,
+                             view_box=(-half, -half, _EDGE_SPACE, _EDGE_SPACE), fill=(0, 0, 0, 0),
+                             stroke_width=2.0, stroke_color=widget.color("outline"), hit_testable=False,
+                             a11y_hidden=True, data="M0,0")
+        edges.add_child(path)
+        widget.edges.append((a, b, path))
+        route(a, b, path)
+        return path
+
+    def reroute(moved: Any) -> None:
+        for a, b, path in widget.edges:
+            if moved is a or moved is b:
+                route(a, b, path)
+
+    def fit_to_view(padding: float = 24.0) -> None:
+        """Pans and zooms (never beyond actual size) so every node shows, centred, with `padding` around them."""
+        nodes = widget.graph_nodes
+        if not nodes:
+            return
+        left = min(n.position.get()[0] for n in nodes)
+        top = min(n.position.get()[1] for n in nodes)
+        right = max(n.position.get()[0] + n.size[0] for n in nodes)
+        bottom = max(n.position.get()[1] + n.size[1] for n in nodes)
+        view_w, view_h = float(viewport.get("layout_width") or 0.0), float(viewport.get("layout_height") or 0.0)
+        if view_w <= 0 or view_h <= 0:
+            return
+        zoom = min(1.0, (view_w - 2 * padding) / max(right - left, 1.0), (view_h - 2 * padding) / max(bottom - top, 1.0))
+        zoom = min(max(zoom, ZOOM_RANGE[0]), ZOOM_RANGE[1])
+        widget.zoom.set(zoom)
+        widget.offset.set(((view_w - (right - left) * zoom) / 2 - left * zoom, (view_h - (bottom - top) * zoom) / 2 - top * zoom))
+
+    widget.edge = edge
+    widget.fit_to_view = fit_to_view
+    widget._reroute = reroute
+    widget.after_theme(lambda: [p.set(stroke_color=widget.color("outline")) for _, _, p in widget.edges])
+    widget.after_theme(lambda: [n.set_theme(widget.theme) for n in widget.graph_nodes])  # its nodes follow
+    return widget
+
+
+def graph_node(
+    window: "Window",
+    graph: "Widget",
+    label: str,
+    x: float,
+    y: float,
+    width: float,
+    height: float,
+    border_color: tuple[int, int, int, int] | None = None,
+    border_width: float | None = None,
+    *,
+    theme: "Theme | None" = None,
+) -> "Widget":
+    """A node in a `node_graph`: a
+    `surface_container_high` card with 12 px corners and an
+    `outline_variant` border, a 32 px `title_small` title bar
+    (`surface_container_highest`) over its body, at `x`, `y` in the
+    graph's coordinates. Drag it to move it (its edges follow); focused,
+    the arrow keys move it 8 px. `.position` (x, y) is a `Signal`, and
+    `.on_move(fn)` hears the user's moves. Put content in `.part("body")`."""
+    from tess_ui import a11y
+    from tess_ui.reactive import Effect, Signal
+    from tess_ui.widgets._composed import Widget
+    from tess_ui.widgets.buttons import _borders
+
+    name = "graph_node"
+    spec = {"id": name, "kind": "Container",
+            "style": {"width": width, "height": height, "flex_direction": "vertical",
+                      "background": "surface_container_high", "corner_radius": "medium",
+                      "border_color": "outline_variant", "border_width": 1.0},
+            "children": [
+                {"id": f"{name}.title", "kind": "Container",
+                 "style": {"height": 32, "background": "surface_container_highest", "align_content": "left",
+                           "padding": {"left": 12, "right": 12, "top": 0, "bottom": 0}},
+                 "children": [{"id": f"{name}.label", "kind": "Text",
+                               "text": {"content": label, "typography_role": "title_small"},
+                               "style": {"foreground": "on_surface"}}]},
+                {"id": f"{name}.body", "kind": "Container", "style": {"flex": "expand_vertical"}},
+            ]}
+    widget = Widget(window, spec=spec, theme=theme if theme is not None else graph.theme, name=name, attach=False,
+                    edit=_borders([None], border_color, border_width), interactive={None: "on_surface"})
+    node = widget.node
+    # not clipped, so the focus ring can show outside it: the title bar rounds its own top corners
+    node.set(position="absolute", focusable=True, cursor="grab")
+    title = widget.part("title")
+
+    def round_title() -> None:
+        title.set(corner_radius=(12.0, 12.0, 0.0, 0.0))
+
+    round_title()
+    widget.after_theme(round_title)
+    a11y.describe(node, role="group", label=label)
+    graph.content.add_child(node)
+    graph.graph_nodes.append(widget)
+    widget.graph = graph
+    widget.size = (float(width), float(height))
+    widget.position = Signal((float(x), float(y)))
+    moves: list[Any] = []
+    widget.on_move = lambda fn: (moves.append(fn), lambda: moves.remove(fn) if fn in moves else None)[1]
+
+    def place() -> None:
+        px, py = widget.position.get()
+        node.set(x=float(px), y=float(py))
+        graph._reroute(widget)
+
+    effect = Effect(place)  # a re-colour leaves it: its place isn't in its style
+    widget._undo.append(effect.dispose)
+
+    def paint_selection() -> None:
+        on = graph.selected.get() is widget
+        node.set(stroke_width=2.0 if on else 1.0, stroke_color=widget.color("primary" if on else "outline_variant"), selected=on)
+
+    selection = Effect(paint_selection)
+    widget._undo.append(selection.dispose)
+    widget.after_theme(paint_selection)
+
+    def user_move(to: tuple[float, float]) -> None:
+        grid = graph.snap.get()
+        if grid > 0:
+            to = (round(to[0] / grid) * grid, round(to[1] / grid) * grid)
+        if widget.position.get() != to:
+            widget.position.set(to)
+            for fn in list(moves):
+                fn(to)
+
+    drag: dict[str, Any] = {}
+
+    def choose() -> None:
+        graph.selected.set(widget)
+
+    def down(event: Any) -> None:
+        if event.window_x is None:
+            return
+        choose()
+        drag.update(start=(event.window_x, event.window_y), position=widget.position.get())
+        node.capture_pointer()
+        node.set(cursor="grabbing")
+        widget.interaction().set_dragged(True)  # MD3's dragged state layer
+
+    def move(event: Any) -> None:
+        if drag and event.window_x is not None:
+            (sx, sy), (px, py) = drag["start"], drag["position"]
+            zoom = graph.zoom.get()
+            user_move((px + (event.window_x - sx) / zoom, py + (event.window_y - sy) / zoom))
+
+    def up(event: Any) -> None:
+        if drag:
+            drag.clear()
+            node.release_pointer()
+            node.set(cursor="grab")
+            widget.interaction().set_dragged(False)
+
+    def key(event: Any) -> None:
+        by = graph.snap.get() or 8  # a key steps one grid square, or 8 pixels when there is no grid
+        step = {"arrow_left": (-by, 0), "arrow_right": (by, 0), "arrow_up": (0, -by), "arrow_down": (0, by)}.get(event.key)
+        if step is not None:
+            px, py = widget.position.get()
+            user_move((px + step[0], py + step[1]))
+
+    listen = widget.view._listen
+    for event_name, fn in (("pointer_down", down), ("pointer_move", move), ("pointer_up", up),
+                           ("pointer_cancel", up), ("key_down", key)):
+        widget._undo.append(listen(node, event_name, fn))
+    return widget

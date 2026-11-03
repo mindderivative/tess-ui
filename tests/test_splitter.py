@@ -2,8 +2,8 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel
-from tesserae.spec.nodes import LoadError
+from tess_ui import App, Signal, ViewModel
+from tess_ui.spec.nodes import LoadError
 
 
 class VM(ViewModel):
@@ -202,7 +202,7 @@ def test_a_double_click_does_nothing_unless_collapsible(tmp_path):
 
 
 def test_two_clicks_far_apart_in_time_are_not_a_double_click(tmp_path, monkeypatch):
-    import tesserae.composed as composed
+    import tess_ui.composed as composed
 
     now = [100.0]
     monkeypatch.setattr(composed.time, "monotonic", lambda: now[0])

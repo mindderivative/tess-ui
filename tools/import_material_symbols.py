@@ -4,8 +4,8 @@
     python tools/import_material_symbols.py DIR [--names home,search,...]
 
 Each `DIR/<name>.svg` (or `<name>_24px.svg`, `<name>_wght400.svg`) is one icon in Google's 960-unit view box (`0 -960 960 960`) with a single
-`<path d="...">`; the file name is the icon's name. The paths are written to `src/tesserae/icon_data/material_symbols.json`, which
-`tesserae.icons` merges under the icons already built in. Material Symbols is Apache-2.0: get the files from github.com/google/material-design-icons
+`<path d="...">`; the file name is the icon's name. The paths are written to `src/tess_ui/icon_data/material_symbols.json`, which
+`tess_ui.icons` merges under the icons already built in. Material Symbols is Apache-2.0: get the files from github.com/google/material-design-icons
 (`symbols/web/<name>/materialsymbolsoutlined/<name>_24px.svg`). Names already built in are kept as they are.
 """
 
@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "src" / "tesserae" / "icon_data" / "material_symbols.json"
+OUT = ROOT / "src" / "tess_ui" / "icon_data" / "material_symbols.json"
 VIEW_BOX = "0 -960 960 960"
 _NAME = re.compile(r"^[a-z][a-z0-9_]*$")
 _SUFFIX = re.compile(r"(_\d+px|_wght\d+|_fill\d|_grad-?\d+)+$")

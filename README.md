@@ -27,7 +27,7 @@ children:
 
 ```python
 # Counter_ViewModel.py
-from tesserae import Signal, ViewModel
+from tess_ui import Signal, ViewModel
 
 class CounterViewModel(ViewModel):
     views = "Counter"             # the view it serves
@@ -42,7 +42,7 @@ class CounterViewModel(ViewModel):
 
 ```python
 # app.py
-from tesserae import App
+from tess_ui import App
 from Counter_ViewModel import CounterViewModel
 
 app = App(width=240, height=160, title="Counter", search=["."])
@@ -71,8 +71,8 @@ wrote, and the nearest name when you misspelt one.
 
 Tesserae logs through [loguru](https://loguru.readthedocs.io/): hot
 reloads, failed reloads naming the file, and warnings. Call
-`tesserae.configure_logging()` in `app.py` for its console format, or
-`logger.disable("tesserae")` to silence it.
+`tess_ui.configure_logging()` in `app.py` for its console format, or
+`logger.disable("tess_ui")` to silence it.
 
 ## Install
 
@@ -84,7 +84,7 @@ That's all: it installs Tesserae and everything it needs, `tre`'s engine
 included, as prebuilt wheels. It needs **Python 3.12 or newer**, on Linux
 x86-64, macOS on Apple silicon or Windows x64 (elsewhere, pip builds `tre`
 from source, which needs Rust). The PyPI name is `tesserae-ui` (`tesserae`
-on PyPI is an unrelated project); the import name is `tesserae`. If you installed `tess-ui`, a name it was briefly published under, run
+on PyPI is an unrelated project); the import name is `tess_ui`. If you installed `tess-ui`, a name it was briefly published under, run
 `pip uninstall tess-ui`, then `pip install tesserae-ui`. Start an
 app with `tesserae new myapp`. What's new: the [changelog](https://mindderivative.github.io/tess-ui/changelog/).
 
@@ -134,10 +134,10 @@ Each checks itself with real dispatched clicks and renders a few frames headless
 
 ## Reactivity
 
-`Signal`, `Computed`, `Effect`, `batch` and `ViewModel` are Tesserae's own (`tesserae.reactive`):
+`Signal`, `Computed`, `Effect`, `batch` and `ViewModel` are Tesserae's own (`tess_ui.reactive`):
 
 ```python
-from tesserae import Computed, Effect, batch
+from tess_ui import Computed, Effect, batch
 
 total = Computed(lambda: price.get() * quantity.get())  # derived, cached
 Effect(lambda: print(f"total is now {total.get()}"))     # side effect only

@@ -94,7 +94,7 @@ built, removed keys are gone, and the order follows the list. For a very long li
 A ViewModel serves **named** views. A view is named by its root `name:`, and the ViewModel lists the names it serves:
 
 ```python
-from tesserae import App, Signal, ViewModel
+from tess_ui import App, Signal, ViewModel
 
 
 class DataViewModel(ViewModel):
@@ -149,7 +149,7 @@ A view written with `kind:` and `id:` (the syntax before `widget:`) is loaded by
 placed under a node from Python:
 
 ```python
-from tesserae import instantiate
+from tess_ui import instantiate
 
 component, viewmodel = instantiate(view, "Card", into=container)   # Views/Card_View.yaml and CardViewModel, found by name
 component.remove()

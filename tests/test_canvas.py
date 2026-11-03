@@ -3,9 +3,9 @@
 import pytest
 import yaml
 
-from tesserae import App, Signal, ViewModel, tokens
-from tesserae.spec.canvas import plan
-from tesserae.spec.nodes import LoadError
+from tess_ui import App, Signal, ViewModel, tokens
+from tess_ui.spec.canvas import plan
+from tess_ui.spec.nodes import LoadError
 
 
 class Recorder:
@@ -101,7 +101,7 @@ def test_a_canvas_with_nothing_to_draw_draws_nothing(tmp_path):
 
 
 def test_the_view_language_rejects_a_draw_that_is_not_a_list():
-    from tesserae.spec.nodes import parse_view
+    from tess_ui.spec.nodes import parse_view
     with pytest.raises(LoadError):
         parse_view("widget: Canvas\ndraw: 3\n", "T_View.yaml")
 

@@ -3,14 +3,14 @@
 
     python3 -I tools/tests_for.py                    # uncommitted changes (staged, unstaged, new files)
     python3 -I tools/tests_for.py --base HEAD~3      # also what was committed since that ref
-    python3 -I tools/tests_for.py src/tesserae/binding.py tests/test_build.py
+    python3 -I tools/tests_for.py src/tess_ui/binding.py tests/test_build.py
     python3 -I tools/tests_for.py --list --include-core --base origin/main   # what CI runs: paths only, core importers included
     python3 -I tools/tests_for.py --run              # run the picked tests with the repo's .venv (pytest -q -x)
 
 The full suite takes about three minutes and is run only when the user calls for it (`tools/check.py --full`); this picks the tests that cover a change so a step takes seconds:
 
   * a changed test file is itself the test;
-  * a changed `src/tesserae/**.py` module gives the tests that import it (read with `ast`: `import a.b`, `from a import b`,
+  * a changed `src/tess_ui/**.py` module gives the tests that import it (read with `ast`: `import a.b`, `from a import b`,
     `from a.b import c`), and the tests whose file name matches the module's (`widgets/buttons.py` -> `test_button*.py`);
   * the tests that mention a public function, class or constant the module defines (compound names only, and not ones found in over a tenth of the tests);
   * a changed view or component file (`views/Button_View.yaml`, `spec/components/*.yaml`) gives the tests whose name matches its stem
@@ -22,7 +22,7 @@ The full suite takes about three minutes and is run only when the user calls for
   * a changed `tools/*.py` gives the tests that mention the script's name.
 
 It is a name and import match, not coverage data, so it misses a test that reaches the code only through another module. A module that
-more than a third of the tests import (`tesserae` itself, `spec.build`...) is a core module: only its name matches are listed and the
+more than a third of the tests import (`tess_ui` itself, `spec.build`...) is a core module: only its name matches are listed and the
 output says to run the full check. Read the "why" column before trusting a pick.
 """
 

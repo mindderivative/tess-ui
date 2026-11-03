@@ -11,7 +11,7 @@ import sys
 import pytest
 import yaml
 
-from tesserae import App, Signal, View, ViewModel
+from tess_ui import App, Signal, View, ViewModel
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 BAR = {"id": "bar", "kind": "TitleBar", "title": "Notes", "style": {"width": 600}}

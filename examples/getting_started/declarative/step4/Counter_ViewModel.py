@@ -1,4 +1,4 @@
-from tesserae import Signal, ViewModel
+from tess_ui import Signal, ViewModel
 
 
 class CounterViewModel(ViewModel):

@@ -1,4 +1,4 @@
-"""M45 Phase 2: `tesserae.docking.Dock`, docking's presentation on `tre`
+"""M45 Phase 2: `tess_ui.docking.Dock`, docking's presentation on `tre`
 0.3.5's bare mechanism -- MD3 secondary tabs per zone, the tab as the drag
 handle, a highlight over the target zone, and a "Move to" menu for the
 keyboard (M45 Q2). Driven headlessly with `simulate`, as `tre`'s docking
@@ -8,8 +8,8 @@ guide does.
 import pytest
 import tre
 
-from tesserae import Theme, tokens
-from tesserae.docking import DRAG_THRESHOLD, TAB_HEIGHT, Dock
+from tess_ui import Theme, tokens
+from tess_ui.docking import DRAG_THRESHOLD, TAB_HEIGHT, Dock
 
 BASE = tokens.baseline_scheme()
 

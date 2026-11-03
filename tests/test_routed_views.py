@@ -5,7 +5,7 @@ import sys
 import pytest
 import yaml
 
-from tesserae import App, View
+from tess_ui import App, View
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 WINDOW = """
@@ -39,7 +39,7 @@ children:
   - {id: bump, kind: Rect, style: {width: 20, height: 20, background: primary}, handlers: {on_click: bump}}
 """
 SETTINGS_VM = """
-from tesserae import Signal, ViewModel
+from tess_ui import Signal, ViewModel
 
 
 class {name}ViewModel(ViewModel):

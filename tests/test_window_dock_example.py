@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from tesserae import App
+from tess_ui import App
 
 ROOT = Path(__file__).resolve().parent.parent
 EXAMPLE = ROOT / "examples" / "window_dock"
@@ -104,6 +104,6 @@ def test_the_dock_zones_are_where_the_yaml_puts_them(app):
 
 @pytest.mark.parametrize("module", NEW_MODULES)
 def test_new_code_does_not_use_the_shell_file_or_the_app_shell(module):
-    text = (ROOT / "src" / "tesserae" / module).read_text(encoding="utf-8")
-    for needle in ("shell_file", "AppShell", "tesserae.shell", "from tesserae import shell", "load_shell"):
+    text = (ROOT / "src" / "tess_ui" / module).read_text(encoding="utf-8")
+    for needle in ("shell_file", "AppShell", "tess_ui.shell", "from tess_ui import shell", "load_shell"):
         assert needle not in text, f"{module} uses {needle!r}"

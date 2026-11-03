@@ -6,9 +6,9 @@ Each test writes a small project with one view that uses `widget: TextField`, op
 
 import pytest
 
-from tesserae import App, Signal, ViewModel, tokens
-from tesserae.shipped import shipped_rules, shipped_views
-from tesserae.spec.nodes import LoadError
+from tess_ui import App, Signal, ViewModel, tokens
+from tess_ui.shipped import shipped_rules, shipped_views
+from tess_ui.spec.nodes import LoadError
 
 
 class VM(ViewModel):
@@ -283,8 +283,8 @@ def test_the_shipped_view_validates_against_the_widget_schema_all_the_way_down()
     import yaml
     from pathlib import Path
 
-    from tesserae import shipped
-    from tesserae.spec import widgets
+    from tess_ui import shipped
+    from tess_ui.spec import widgets
 
     schema = widgets.json_schema()
     validator = jsonschema.Draft7Validator(schema)
@@ -310,7 +310,7 @@ def test_the_shipped_view_validates_against_the_widget_schema_all_the_way_down()
 
 
 def test_the_old_builder_draws_a_placeholder_a_password_and_a_multiline_field_too():
-    from tesserae import View
+    from tess_ui import View
 
     spec = {"id": "root", "kind": "Container", "style": {"width": 300, "height": 200}, "children": [
         {"id": "f", "kind": "TextField", "text": {"content": "", "font_family": "Roboto", "font_size": 16, "placeholder": "Name", "obscured": True,
@@ -324,7 +324,7 @@ def test_the_old_builder_draws_a_placeholder_a_password_and_a_multiline_field_to
 
 
 def test_the_old_text_field_kind_becomes_the_text_input_primitive_when_migrated():
-    from tesserae.spec.translate import Translator
+    from tess_ui.spec.translate import Translator
 
     new = Translator().translate({"id": "root", "kind": "Container", "children": [
         {"id": "f", "kind": "TextField", "text": {"content": "hi", "font_family": "Roboto", "font_size": 14}, "style": {"background": "#FFFFFF"}}]})
@@ -332,9 +332,9 @@ def test_the_old_text_field_kind_becomes_the_text_input_primitive_when_migrated(
 
 
 def test_lowering_leaves_out_what_only_the_renderer_acts_on():
-    from tesserae.spec.compose import Composer
-    from tesserae.spec.lower import lower
-    from tesserae.spec.nodes import parse_view
+    from tess_ui.spec.compose import Composer
+    from tess_ui.spec.lower import lower
+    from tess_ui.spec.nodes import parse_view
 
     node = lower(Composer({}, VM()).compose(parse_view("widget: TextInput\nmax_length: 3\nread_only: true\nplaceholder: x\n", "T_View.yaml")).root)
     assert node["kind"] == "TextField" and node["text"]["placeholder"] == "x" and "max_length" not in node and "read_only" not in node

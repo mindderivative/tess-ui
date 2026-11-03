@@ -1,4 +1,4 @@
-from tesserae import App
+from tess_ui import App
 
 app = App(width=360, height=160, title="Counter")
 window = app.window

@@ -2,7 +2,7 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel
+from tess_ui import App, Signal, ViewModel
 
 
 class VM(ViewModel):
@@ -132,7 +132,7 @@ def test_a_patch_leaves_a_node_hidden_by_other_code_alone_when_the_style_does_no
 
 
 def test_dropping_visible_from_a_node_shows_it_again():
-    from tesserae.spec.build import _resets, _with_visible
+    from tess_ui.spec.build import _resets, _with_visible
 
     assert _resets({}, frozenset({"visible"})) == {"visible": True}
     assert _with_visible({"visible": False}, {"width": 1}) == {"width": 1, "visible": False}
@@ -178,7 +178,7 @@ def test_a_control_and_a_link_can_be_hidden_too(tmp_path):
 
 
 def test_the_widget_schema_knows_the_key():
-    from tesserae.spec.widgets import json_schema
+    from tess_ui.spec.widgets import json_schema
     assert "visible" in str(json_schema())
 
 

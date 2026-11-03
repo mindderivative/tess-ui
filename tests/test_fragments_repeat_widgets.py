@@ -2,7 +2,7 @@
 because their items differ (the selected one looks different), now have
 fragments. Each item fragment takes a `selected` flag and picks its
 colours with M55's `{if:}`; each container fragment repeats it over an
-`items` list. Checked against the imperative widgets (`tesserae.widgets`),
+`items` list. Checked against the imperative widgets (`tess_ui.widgets`),
 which stay the path for live selection.
 """
 
@@ -10,10 +10,10 @@ import pytest
 import yaml
 from tre import Window
 
-from tesserae import View
-from tesserae.overlays import Menu
-from tesserae.spec import expand_components_to_spec
-from tesserae.widgets import button_group, navigation_drawer, navigation_rail, tabs
+from tess_ui import View
+from tess_ui.overlays import Menu
+from tess_ui.spec import expand_components_to_spec
+from tess_ui.widgets import button_group, navigation_drawer, navigation_rail, tabs
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 

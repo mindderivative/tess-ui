@@ -52,7 +52,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import svg
+from tess_ui.widgets import svg
 
 logo = svg(app.window, '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><circle cx="12" cy="12" r="10" fill="currentColor"/></svg>',
            width=48, height=48, color="primary", label="A dot")

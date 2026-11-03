@@ -48,7 +48,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import time_input_field
+from tess_ui.widgets import time_input_field
 
 hour = time_input_field(app.window, 9, unit="hour")
 ```

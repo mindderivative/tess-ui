@@ -6,7 +6,7 @@ hide it, so this checks the source itself)."""
 import ast
 from pathlib import Path
 
-SRC = Path(__file__).resolve().parent.parent / "src" / "tesserae"
+SRC = Path(__file__).resolve().parent.parent / "src" / "tess_ui"
 TEXT_CALLS = {"read_text", "write_text"}
 
 

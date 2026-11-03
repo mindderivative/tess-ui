@@ -75,7 +75,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import accordion_header
+from tess_ui.widgets import accordion_header
 
 details = accordion_header(app.window, "Details", expanded=False, width=320)
 ```

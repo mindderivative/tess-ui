@@ -2,8 +2,8 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel, tokens
-from tesserae.shipped import shipped_views
+from tess_ui import App, Signal, ViewModel, tokens
+from tess_ui.shipped import shipped_views
 
 ALL = [{"value": "cats", "label": "cats"}, {"value": "dogs", "label": "dogs", "supporting": "recent", "icon": "clock"}, {"value": "birds", "label": "birds"}]
 
@@ -17,7 +17,7 @@ class VM(ViewModel):
         self.active = Signal(False)
         self.chosen = Signal("")
         self.log = []
-        self.results = __import__("tesserae").Computed(lambda: [r for r in ALL if self.q.get().lower() in r["label"]])
+        self.results = __import__("tess_ui").Computed(lambda: [r for r in ALL if self.q.get().lower() in r["label"]])
 
     def found(self):
         self.log.append("found")

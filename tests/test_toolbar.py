@@ -2,8 +2,8 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel, tokens
-from tesserae.shipped import shipped_views
+from tess_ui import App, Signal, ViewModel, tokens
+from tess_ui.shipped import shipped_views
 
 ITEMS = "[{value: bold, icon: format_bold, label: Bold}, {value: italic, icon: format_italic, label: Italic}, {value: link, icon: link, label: Link, disabled: true}]"
 MORE = "[{value: print, label: Print}, {value: share, label: Share}]"

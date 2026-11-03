@@ -66,7 +66,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import button
+from tess_ui.widgets import button
 
 save = button(app.window, "Save", 120, 40, variant="filled", on_click=viewmodel.save)
 ```

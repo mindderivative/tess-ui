@@ -1,12 +1,12 @@
-"""Real coverage for `tesserae.widgets`'s Progress & Status category --
+"""Real coverage for `tess_ui.widgets`'s Progress & Status category --
 `circular_progress`/`linear_progress`/`loading_indicator`. Since M40 each
 returns a Tesserae indicator, attached to the window's root.
 """
 
 from tre import Window
 
-from tesserae import controls
-from tesserae.widgets import circular_progress, linear_progress, loading_indicator
+from tess_ui import controls
+from tess_ui.widgets import circular_progress, linear_progress, loading_indicator
 
 
 def test_circular_progress_returns_an_indicator():

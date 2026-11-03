@@ -1,4 +1,4 @@
-"""M39 Phase 2: MD3's state layer and ripple (`tesserae.interaction`), which
+"""M39 Phase 2: MD3's state layer and ripple (`tess_ui.interaction`), which
 `tre` 0.3.5 no longer draws, applied to clickable YAML nodes (M39 Q2, Q3).
 Driven headlessly with `simulate`/`advance`, as M34's checkbox spike was.
 """
@@ -7,9 +7,9 @@ import math
 
 import pytest
 
-import tesserae
-from tesserae import View, interaction
-from tesserae.spec.build import SpecBuildError
+import tess_ui
+from tess_ui import View, interaction
+from tess_ui.spec.build import SpecBuildError
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 
@@ -23,7 +23,7 @@ def _spec(*children):
     return {"id": "root", "kind": "Container", "children": list(children)}
 
 
-class VM(tesserae.ViewModel):
+class VM(tess_ui.ViewModel):
     def __init__(self, view):
         self.clicks = 0
         super().__init__(view)

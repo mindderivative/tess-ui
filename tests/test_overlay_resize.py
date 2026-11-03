@@ -6,9 +6,9 @@ shared dispatcher per window (`listeners.listen_window`), while open.
 
 import tre
 
-from tesserae import listeners
-from tesserae.listeners import listen_window
-from tesserae.overlays import Dialog, NavigationDrawer, SideSheet, Snackbar
+from tess_ui import listeners
+from tess_ui.listeners import listen_window
+from tess_ui.overlays import Dialog, NavigationDrawer, SideSheet, Snackbar
 
 
 def _window():

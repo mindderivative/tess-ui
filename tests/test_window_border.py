@@ -9,7 +9,7 @@ import sys
 import pytest
 import yaml
 
-from tesserae import App, Theme, ViewModel, tokens
+from tess_ui import App, Theme, ViewModel, tokens
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 pytestmark = pytest.mark.skipif(sys.platform == "darwin", reason="no border on macOS: the OS draws the frame")

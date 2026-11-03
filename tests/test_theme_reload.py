@@ -18,8 +18,8 @@ import pytest
 
 from helpers import elevation, window_unthemed
 
-import tesserae.fonts as fonts
-from tesserae import App, tokens
+import tess_ui.fonts as fonts
+from tess_ui import App, tokens
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 RECT = 'id: box\nkind: Rect\nstyle: {width: 10, height: 10, background: "#112233"}\n'
@@ -48,7 +48,7 @@ def _pair(tmp_path: Path, prefix: str):
     view = _write(tmp_path / f"{prefix}_View.yaml", RECT)
     vm_path = _write(
         tmp_path / f"{prefix}_ViewModel.py",
-        f"from tesserae import ViewModel\n\n\nclass {prefix}ViewModel(ViewModel):\n    pass\n",
+        f"from tess_ui import ViewModel\n\n\nclass {prefix}ViewModel(ViewModel):\n    pass\n",
     )
     spec = importlib.util.spec_from_file_location(vm_path.stem, vm_path)
     module = importlib.util.module_from_spec(spec)

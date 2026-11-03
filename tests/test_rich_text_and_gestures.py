@@ -4,9 +4,9 @@ and the spring easing."""
 import pytest
 import yaml
 
-from tesserae import App, Theme, View, ViewModel
-from tesserae.spec import richtext
-from tesserae.spec.build import SpecBuildError
+from tess_ui import App, Theme, View, ViewModel
+from tess_ui.spec import richtext
+from tess_ui.spec.build import SpecBuildError
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 RED = (255, 0, 0, 255)
@@ -216,7 +216,7 @@ def test_the_new_handlers_are_in_the_schema():
     import json
     from pathlib import Path
 
-    schema = json.loads((Path(__file__).parent.parent / "src/tesserae/schema/tesserae-yaml-schema.json").read_text())
+    schema = json.loads((Path(__file__).parent.parent / "src/tess_ui/schema/tess-ui-yaml-schema.json").read_text())
     names = set(schema["definitions"]["handlers"]["properties"])
     assert {"on_tap", "on_long_press", "on_pan", "on_pinch", "on_touch_start", "on_touch_move", "on_touch_end",
             "on_touch_cancel", "on_file_hover", "on_file_hover_cancel", "on_file_drop", "on_link"} <= names

@@ -26,7 +26,7 @@ import pytest
 PRELUDE = textwrap.dedent('''
     import sys, threading, time, traceback
     from pathlib import Path
-    from tesserae import App
+    from tess_ui import App
 
     folder = Path(sys.argv[1])
     mode = sys.argv[2]

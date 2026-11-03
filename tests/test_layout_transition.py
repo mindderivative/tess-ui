@@ -2,8 +2,8 @@
 
 import pytest
 
-from tesserae import View, motion
-from tesserae.spec.transition import EASINGS, LAYOUT_TRANSITIONABLE, plan
+from tess_ui import View, motion
+from tess_ui.spec.transition import EASINGS, LAYOUT_TRANSITIONABLE, plan
 
 SEED = (103, 80, 164, 255)
 

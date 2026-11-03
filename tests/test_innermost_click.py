@@ -3,7 +3,7 @@
 `tre`'s `click` and `secondary_click` bubble to every ancestor's
 listener; each activation listener Tesserae adds -- YAML `on_click`,
 `Widget.on_click`, controls, `SpinBox`, overlays, `Dock` tabs -- stops the
-event after it runs (`tesserae.listeners.handled`), so a clickable inside
+event after it runs (`tess_ui.listeners.handled`), so a clickable inside
 a clickable takes its click alone, as MD3 expects. A disabled control
 still takes it (Q2).
 """
@@ -11,11 +11,11 @@ still takes it (Q2).
 import pytest
 import tre
 
-import tesserae
-from tesserae import View
-from tesserae.docking import Dock
-from tesserae.listeners import handled
-from tesserae.widgets import card, checkbox, menu, popover, search_bar, search_view, spin_box
+import tess_ui
+from tess_ui import View
+from tess_ui.docking import Dock
+from tess_ui.listeners import handled
+from tess_ui.widgets import card, checkbox, menu, popover, search_bar, search_view, spin_box
 
 
 def _rect(node_id, width=200, height=80, **extra):
@@ -23,7 +23,7 @@ def _rect(node_id, width=200, height=80, **extra):
             **extra}
 
 
-class VM(tesserae.ViewModel):
+class VM(tess_ui.ViewModel):
     def __init__(self, view):
         self.clicks = []
         super().__init__(view)

@@ -3,7 +3,7 @@
 
 import pytest
 
-from tesserae import App, ViewModel
+from tess_ui import App, ViewModel
 
 
 class VM(ViewModel):

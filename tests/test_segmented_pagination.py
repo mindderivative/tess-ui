@@ -7,10 +7,10 @@ with `simulate`/`advance`.
 import pytest
 import tre
 
-from tesserae import Theme, tokens
-from tesserae.widgets import pagination, segmented_button
-from tesserae.widgets.buttons import SEGMENT_CHECK
-from tesserae.widgets.navigation import DISABLED_ALPHA
+from tess_ui import Theme, tokens
+from tess_ui.widgets import pagination, segmented_button
+from tess_ui.widgets.buttons import SEGMENT_CHECK
+from tess_ui.widgets.navigation import DISABLED_ALPHA
 
 BASE = tokens.baseline_scheme()
 CLEAR = (0, 0, 0, 0)

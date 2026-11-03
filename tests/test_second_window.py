@@ -2,7 +2,7 @@
 
 import pytest
 
-from tesserae import App
+from tess_ui import App
 
 MAIN = """name: main
 widget: Container

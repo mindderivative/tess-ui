@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import tre
 
-from tesserae import tokens
-from tesserae.spec.build import build
+from tess_ui import tokens
+from tess_ui.spec.build import build
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 SIZE = (500, 400)
@@ -22,7 +22,7 @@ PAINT = ("fill", "stroke_color", "stroke_width", "corner_radius", "opacity")
 TEXT = ("text", "font_family", "font_size", "font_weight", "line_height")
 #: Fields `tre` never had (M39): its builder rejects them, so its copy of
 #: the spec goes without; they add no layout or paint the differ reads.
-TESSERAE_ONLY = ("a11y", "interaction", "group", "component_of")  # component_of: the cascade tag (M57)
+TESS_UI_ONLY = ("a11y", "interaction", "group", "component_of")  # component_of: the cascade tag (M57)
 #: Kinds Tesserae draws as MD3's controls since M40 (Q2: MD3's look, not
 #: tre's legacy one), so they aren't compared.
 CONTROLS = frozenset({"Checkbox", "RadioButton", "Switch", "Slider", "CircularProgress", "LinearProgress",
@@ -33,7 +33,7 @@ def for_tre(spec, sizes=None):
     """`spec` without Tesserae-only fields, for `tre`'s builder. `sizes`
     (id -> width/height) gives text the content size Tesserae measures for
     it (M41), since `tre`'s text has none."""
-    out = {k: v for k, v in spec.items() if k not in TESSERAE_ONLY}
+    out = {k: v for k, v in spec.items() if k not in TESS_UI_ONLY}
     if sizes and spec.get("id") in sizes:
         out["style"] = {**sizes[spec["id"]], **(spec.get("style") or {})}
     if "children" in spec:

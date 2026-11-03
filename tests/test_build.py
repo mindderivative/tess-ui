@@ -1,6 +1,6 @@
 """M77: `tesserae build`, an app as one executable. What the scan bundles,
 PyInstaller's command line, how `App.run` behaves in a built app
-(`TESSERAE_MAX_FRAMES`, no hot reload), the command's mistakes, and one
+(`TESS_UI_MAX_FRAMES`, no hot reload), the command's mistakes, and one
 real build of a generated window app run from somewhere else.
 """
 
@@ -12,8 +12,8 @@ from pathlib import Path
 
 import pytest
 
-import tesserae.app
-from tesserae import App, View, build, cli
+import tess_ui.app
+from tess_ui import App, View, build, cli
 
 
 def _app_folder(root: Path) -> Path:
@@ -61,7 +61,7 @@ def test_pyinstaller_args(tmp_path, monkeypatch):
     assert args[0] == str(app_file) and "--onefile" in args and "--windowed" in args and "--onedir" not in args
     pairs = list(zip(args, args[1:]))
     assert ("--name", "demo") in pairs and ("--distpath", str(tmp_path / "dist")) in pairs
-    assert ("--collect-data", "tesserae") in pairs and ("--collect-submodules", "tesserae") in pairs
+    assert ("--collect-data", "tess_ui") in pairs and ("--collect-submodules", "tess_ui") in pairs
     assert ("--hidden-import", "Nav_ViewModel") in pairs and ("--paths", str(tmp_path / "panels")) in pairs
     assert ("--add-data", f"{tmp_path / 'panels' / 'Nav_View.yaml'}{os.pathsep}panels") in pairs
     assert ("--add-data", f"{tmp_path / 'Home_View.yaml'}{os.pathsep}.") in pairs
@@ -102,7 +102,7 @@ def run_app(monkeypatch):
     whether watchers started."""
     def run(**kwargs):
         fake, started = _FakeTre(), []
-        monkeypatch.setattr(tesserae.app, "_TreApp", lambda: fake)
+        monkeypatch.setattr(tess_ui.app, "_TreApp", lambda: fake)
         app = App()
         monkeypatch.setattr(app, "_start_watchers", lambda handle: started.append(True))
         app.register("Home", View({"id": "root", "kind": "Container", "style": {"width": 10, "height": 10}},
@@ -114,13 +114,13 @@ def run_app(monkeypatch):
 
 
 def test_tesserae_max_frames_bounds_a_run(run_app, monkeypatch):
-    monkeypatch.delenv("TESSERAE_MAX_FRAMES", raising=False)
+    monkeypatch.delenv("TESS_UI_MAX_FRAMES", raising=False)
     assert run_app()[0].max_frames is None
-    monkeypatch.setenv("TESSERAE_MAX_FRAMES", "20")
+    monkeypatch.setenv("TESS_UI_MAX_FRAMES", "20")
     assert run_app()[0].max_frames == 20
     assert run_app(max_frames=5)[0].max_frames == 5  # the app's own bound wins
-    monkeypatch.setenv("TESSERAE_MAX_FRAMES", "lots")
-    with pytest.raises(ValueError, match="TESSERAE_MAX_FRAMES must be a whole number.*'lots'"):
+    monkeypatch.setenv("TESS_UI_MAX_FRAMES", "lots")
+    with pytest.raises(ValueError, match="TESS_UI_MAX_FRAMES must be a whole number.*'lots'"):
         run_app()
 
 
@@ -166,7 +166,7 @@ def test_a_generated_window_app_builds_and_runs_from_elsewhere(tmp_path, capsys,
 def test_check_runs_the_executable_elsewhere_with_a_frame_bound(tmp_path, monkeypatch):
     fake = tmp_path / "fake"
     fake.write_text(f"#!{sys.executable}\nimport os, sys\n"
-                    "open(os.environ['TESSERAE_FRAMES_REPORT'], 'w').write(os.environ['TESSERAE_MAX_FRAMES'])\n"
+                    "open(os.environ['TESS_UI_FRAMES_REPORT'], 'w').write(os.environ['TESS_UI_MAX_FRAMES'])\n"
                     "print(os.getcwd(), file=sys.stderr); sys.exit(3)\n")
     fake.chmod(0o755)
     monkeypatch.chdir(tmp_path)
@@ -195,7 +195,7 @@ def test_a_run_reports_the_frames_it_drew(tmp_path, monkeypatch):
     report = tmp_path / "frames.txt"
     script = tmp_path / "run.py"
     script.write_text(
-        "from tesserae import App, View\n"
+        "from tess_ui import App, View\n"
         "app = App(width=60, height=40)\n"
         "app.register('Home', View({'id': 'root', 'kind': 'Container', 'style': {'width': 10, 'height': 10}},"
         " window=app.window), None)\n"
@@ -203,7 +203,7 @@ def test_a_run_reports_the_frames_it_drew(tmp_path, monkeypatch):
         "seen = [0]\nhandle = app.thread_handle()\n"
         "def tick():\n    seen[0] += 1\n    handle.call_soon(tick)\n"
         "handle.call_soon(tick)\napp.run()\nprint(seen[0])\n")
-    env = {**os.environ, "TESSERAE_MAX_FRAMES": "12", "TESSERAE_FRAMES_REPORT": str(report)}
+    env = {**os.environ, "TESS_UI_MAX_FRAMES": "12", "TESS_UI_FRAMES_REPORT": str(report)}
     result = subprocess.run([sys.executable, str(script)], env=env, capture_output=True, text=True, timeout=60)
     assert result.returncode == 0, result.stderr
     seen = int(result.stdout)  # the script's own count, to tell no display from no report
@@ -328,7 +328,7 @@ def test_the_inno_script():
 
 
 def test_finding_inno_setup(tmp_path, monkeypatch):
-    for var in ("TESSERAE_ISCC", "ProgramFiles(x86)", "ProgramFiles", "LOCALAPPDATA"):
+    for var in ("TESS_UI_ISCC", "ProgramFiles(x86)", "ProgramFiles", "LOCALAPPDATA"):
         monkeypatch.delenv(var, raising=False)
     monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "cache"))
     monkeypatch.setattr(build.shutil, "which", lambda name: None)
@@ -349,7 +349,7 @@ def test_finding_inno_setup(tmp_path, monkeypatch):
     assert build.find_iscc() == everyone
     monkeypatch.setattr(build.shutil, "which", lambda name: "/bin/iscc" if name == "iscc" else None)
     assert build.find_iscc() == Path("/bin/iscc")
-    monkeypatch.setenv("TESSERAE_ISCC", "/x/ISCC.exe")
+    monkeypatch.setenv("TESS_UI_ISCC", "/x/ISCC.exe")
     assert build.find_iscc() == Path("/x/ISCC.exe")
 
 

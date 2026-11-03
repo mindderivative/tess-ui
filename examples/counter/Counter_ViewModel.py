@@ -1,6 +1,6 @@
 """The counter's ViewModel: it serves `Counter_View.yaml` (`views = "Counter"`), which shows `label` and calls `increment`."""
 
-from tesserae import Computed, Signal, ViewModel
+from tess_ui import Computed, Signal, ViewModel
 
 
 class CounterViewModel(ViewModel):

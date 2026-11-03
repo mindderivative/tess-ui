@@ -1,12 +1,12 @@
 # Reactivity
 
-Tesserae's reactivity lives in `tesserae.reactive` and is exported from
-`tesserae` itself.
+Tesserae's reactivity lives in `tess_ui.reactive` and is exported from
+`tess_ui` itself.
 
 `Signal` is the basic reactive cell:
 
 ```python
-from tesserae import Signal
+from tess_ui import Signal
 
 count = Signal(0)
 count.get()          # 0 -- records a read-dependency when called during a binding's evaluation
@@ -17,7 +17,7 @@ count.update(lambda v: v + 1)
 On top of it, derived values, side effects and batched writes:
 
 ```python
-from tesserae import Computed, Effect, batch
+from tess_ui import Computed, Effect, batch
 
 price = Signal(10.0)
 quantity = Signal(2)
@@ -58,7 +58,7 @@ A ViewModel is a class whose attributes are the names a view reads. It serves th
 is made once, with no arguments, by `app.bind`:
 
 ```python
-from tesserae import Computed, Signal, ViewModel
+from tess_ui import Computed, Signal, ViewModel
 
 class CartViewModel(ViewModel):
     views = "Cart"
@@ -89,9 +89,9 @@ See [Binding Expressions](bindings.md) for what a `{{ }}` expression can contain
   other signals, you get a `RuntimeError` saying so rather than endless
   recursion. Often the fix is `untrack(...)` around a read that shouldn't
   be a dependency.
-- **Use Tesserae's classes.** `tesserae.Signal` and friends track only
+- **Use Tesserae's classes.** `tess_ui.Signal` and friends track only
   each other: a signal from another library read inside a
-  `tesserae.Computed` isn't recorded.
+  `tess_ui.Computed` isn't recorded.
 - **Bindings use them.** A bound node updates when a `Signal` or
   `Computed` its `{{ }}` expression reads changes. See
   [Binding Expressions](bindings.md).

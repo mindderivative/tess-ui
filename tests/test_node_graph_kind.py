@@ -1,5 +1,5 @@
 """M60 (#7): a declarative node graph. `NodeGraph` and `GraphNode` are
-YAML kinds the compiler builds with `tesserae.widgets`' `node_graph` and
+YAML kinds the compiler builds with `tess_ui.widgets`' `node_graph` and
 `graph_node`, so they pan, zoom, drag and draw edges as the widgets do.
 A GraphNode takes `label`, `x` and `y` (its content goes in its body);
 a NodeGraph takes `edges: [{from, to}]`. A reload patches nodes by id:
@@ -8,14 +8,14 @@ a place the user dragged a node to stays unless the file moves it.
 
 import pytest
 
-import tesserae
-from tesserae import Theme, View
-from tesserae.spec.build import SpecBuildError
+import tess_ui
+from tess_ui import Theme, View
+from tess_ui.spec.build import SpecBuildError
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 
 
-class VM(tesserae.ViewModel):
+class VM(tess_ui.ViewModel):
     def __init__(self, view):
         self.moves = []
         super().__init__(view)

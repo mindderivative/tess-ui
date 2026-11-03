@@ -206,7 +206,7 @@ handlers:
   on_hover_exit: "cancel('dismiss')"
 ```
 
-For Python, `tesserae.timers.Timers(window)` has the same `after`, `every`, `cancel` and `cancel_all`, each taking a function where the YAML form takes action text.
+For Python, `tess_ui.timers.Timers(window)` has the same `after`, `every`, `cancel` and `cancel_all`, each taking a function where the YAML form takes action text.
 
 ## Scrolling
 
@@ -294,7 +294,7 @@ handlers:
 
 `open_url(url)` hands a link to the OS (the default browser or mail program) and says whether it could. Only `http`, `https`, `mailto` and `tel` links
 are opened: a view's text can come from anywhere, and `file:`, `javascript:` or an application's own scheme would run something rather than show a page, so
-those are an error naming the call. For Python, `tesserae.urls.open_url(url)` is the same.
+those are an error naming the call. For Python, `tess_ui.urls.open_url(url)` is the same.
 
 ```yaml
 widget: Link
@@ -387,7 +387,7 @@ children:
   - {widget: Container, name: bar, if: "app.width_class == 'compact'", style: {width: 80, height: 40}}
 ```
 
-A ViewModel that has an `app` of its own keeps it. `tesserae.tokens.width_class(width)` and `height_class(height)` give the classes for a size in Python.
+A ViewModel that has an `app` of its own keeps it. `tess_ui.tokens.width_class(width)` and `height_class(height)` give the classes for a size in Python.
 
 ## Long lists
 
@@ -546,5 +546,5 @@ data in a view's header: `expects: {count: int, rows: list, add: handler}`.
 ## Tools
 
 - `tesserae migrate-yaml [PATH] [--write] [--force]` moves a project written in the older syntax to this one: [Migrating](../migration.md#to-050).
-- A JSON schema of every widget's node, with its properties and style fields, ships in the package as `schema/tesserae-widget-schema.json` (and one for a
-  stylesheet of rules, `tesserae-stylesheet-schema.json`). `tesserae schema --project` adds your own views to it: [Editor Support](editor-support.md).
+- A JSON schema of every widget's node, with its properties and style fields, ships in the package as `schema/tess-ui-widget-schema.json` (and one for a
+  stylesheet of rules, `tess-ui-stylesheet-schema.json`). `tesserae schema --project` adds your own views to it: [Editor Support](editor-support.md).

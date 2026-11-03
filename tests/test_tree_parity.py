@@ -1,6 +1,6 @@
 """M37 Phase 3: Tesserae's compiler builds the same tree as `tre`'s.
 
-Every view below is built by `tre`'s `View` and by `tesserae.spec.build`
+Every view below is built by `tre`'s `View` and by `tess_ui.spec.build`
 in same-sized windows and compared node by node (`tests/treediff.py`):
 laid-out box, fill, border, corner radius, opacity, elevation (`tre`)
 against `shadows` (Tesserae), and text and font. They must be identical.
@@ -35,11 +35,11 @@ from PIL import Image
 
 import reference
 import treediff
-from tesserae.spec.expand import expand_components_to_spec
-from tesserae.spec.load import build_view_spec
+from tess_ui.spec.expand import expand_components_to_spec
+from tess_ui.spec.load import build_view_spec
 
 ROOT = Path(__file__).resolve().parent.parent
-COMPONENTS = ROOT / "src/tesserae/spec/components"
+COMPONENTS = ROOT / "src/tess_ui/spec/components"
 FENCE = re.compile(r"^```ya?ml\n(.*?)^```", re.MULTILINE | re.DOTALL)
 VALUES = {
     "background": "#6750A4", "checked": True, "corner_radius": 12, "day": "12", "fit": "cover",
@@ -60,7 +60,7 @@ ITEMS = {
 @pytest.fixture(autouse=True)
 def _the_engines_own_names(monkeypatch):
     """These tests compare Tesserae with answers recorded from the engine, in the engine's own layout names."""
-    from tesserae.spec import layout
+    from tess_ui.spec import layout
 
     monkeypatch.setattr(layout, "LEGACY_ENGINE_NAMES", True)
 

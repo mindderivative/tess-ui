@@ -8,9 +8,9 @@ import math
 import pytest
 import tre
 
-from tesserae import Theme, tokens
-from tesserae.widgets import carousel, splitter
-from tesserae.widgets.containment import (CAROUSEL_GAP, CAROUSEL_INSET, CAROUSEL_PADDING, MEDIUM, MOVE_MS, SMALL,
+from tess_ui import Theme, tokens
+from tess_ui.widgets import carousel, splitter
+from tess_ui.widgets.containment import (CAROUSEL_GAP, CAROUSEL_INSET, CAROUSEL_PADDING, MEDIUM, MOVE_MS, SMALL,
                                           SPLIT_STEP, UNCONTAINED_WIDTH, carousel_layout)
 
 BASE = tokens.baseline_scheme()

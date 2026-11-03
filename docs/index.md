@@ -22,7 +22,7 @@ children:
 
 ```python
 # Counter_ViewModel.py
-from tesserae import Signal, ViewModel
+from tess_ui import Signal, ViewModel
 
 class CounterViewModel(ViewModel):
     views = "Counter"             # the view it serves
@@ -37,7 +37,7 @@ class CounterViewModel(ViewModel):
 
 ```python
 # app.py
-from tesserae import App
+from tess_ui import App
 from Counter_ViewModel import CounterViewModel
 
 app = App(width=240, height=160, title="Counter", search=["."])

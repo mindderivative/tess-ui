@@ -107,7 +107,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import navigation_rail
+from tess_ui.widgets import navigation_rail
 
 rail = navigation_rail(app.window, ["Home", "Search"], ["home", "search"], selected=0)
 ```

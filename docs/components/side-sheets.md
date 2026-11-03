@@ -102,7 +102,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import side_sheet
+from tess_ui.widgets import side_sheet
 
 sheet = side_sheet(app.window, 280, modal=True)
 sheet.open()

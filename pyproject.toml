@@ -3,8 +3,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "tesserae-ui"  # on PyPI; `tesserae` there is an unrelated project. The import name stays `tesserae`.
-version = "0.5.1.9"
+name = "tesserae-ui"  # on PyPI; `tesserae` there is an unrelated project, which is why the import name is `tess_ui`.
+version = "0.5.1.10"
 description = "A pyCopper-style declarative Python GUI framework, powered by the Tesserae Render Engine (tre)."
 readme = "README.md"
 license = "MIT"
@@ -36,7 +36,7 @@ dependencies = [
 ]
 
 [project.scripts]
-tesserae = "tesserae.cli:main"  # `tesserae new`, `tesserae add screen` (M67)
+tesserae = "tess_ui.cli:main"  # `tesserae new`, `tesserae add screen` (M67)
 
 [project.urls]
 Repository = "https://github.com/mindderivative/tess-ui"
@@ -46,7 +46,7 @@ build = ["pyinstaller>=6.10"]
 dev = ["pytest>=8.0", "pyinstaller>=6.10", "jsonschema>=4.17", "ruff>=0.6", "mypy>=1.10"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/tesserae"]
+packages = ["src/tess_ui"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

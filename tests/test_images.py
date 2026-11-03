@@ -16,10 +16,10 @@ import pytest
 import tre
 from PIL import Image
 
-from tesserae import View, instantiate
-from tesserae.images import decode_image
-from tesserae.spec import ComponentError, load_view
-from tesserae.spec.images import extract_images
+from tess_ui import View, instantiate
+from tess_ui.images import decode_image
+from tess_ui.spec import ComponentError, load_view
+from tess_ui.spec.images import extract_images
 
 RED_BLUE = b"\xff\x00\x00\xff" + b"\x00\x00\xff\xff"
 
@@ -182,7 +182,7 @@ def test_instantiate_decodes_a_components_images(tmp_path: Path):
     item_path = tmp_path / "Tile_View.yaml"
     item_path.write_text(IMAGE_FRAGMENT_VIEW)
     vm_path = tmp_path / "Tile_ViewModel.py"
-    vm_path.write_text("from tesserae import ViewModel\n\n\nclass TileViewModel(ViewModel):\n    pass\n")
+    vm_path.write_text("from tess_ui import ViewModel\n\n\nclass TileViewModel(ViewModel):\n    pass\n")
 
     module_spec = importlib.util.spec_from_file_location("Tile_ViewModel", vm_path)
     module = importlib.util.module_from_spec(module_spec)

@@ -10,10 +10,10 @@ from pathlib import Path
 import pytest
 import yaml
 
-from tesserae.shipped import ViewLibrary
-from tesserae.spec.nodes import load_marked, parse_view
-from tesserae.spec.rules import RuleSheet
-from tesserae.spec.widgets import WidgetDecl
+from tess_ui.shipped import ViewLibrary
+from tess_ui.spec.nodes import load_marked, parse_view
+from tess_ui.spec.rules import RuleSheet
+from tess_ui.spec.widgets import WidgetDecl
 
 DOCS = Path(__file__).resolve().parent.parent / "docs"
 FENCE = re.compile(r"^(<!-- old-syntax[^\n]*-->\n)?```ya?ml\n(.*?)^```", re.M | re.S)

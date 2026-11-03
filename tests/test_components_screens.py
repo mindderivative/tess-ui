@@ -1,6 +1,6 @@
 """M37 Phase 5: components and screens on Tesserae's builder.
 
-A component (`tesserae.instantiate`, `View.instantiate`) is built in its
+A component (`tess_ui.instantiate`, `View.instantiate`) is built in its
 host's window with the host's theme and stylesheet, and follows them when
 they change -- which closes M31's gap, where an embedded component built
 by `tre` got neither. `App` builds screens in its own window and switches
@@ -14,9 +14,9 @@ from pathlib import Path
 import pytest
 import tre
 
-import tesserae
-from tesserae import App, instantiate, tokens
-from tesserae.view import View
+import tess_ui
+from tess_ui import App, instantiate, tokens
+from tess_ui.view import View
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 HOST = 'id: root\nkind: Container\nchildren:\n  - {id: host, kind: Container}\n  - {id: own, kind: Rect, style: {width: 10, height: 10, background: primary}}\n'
@@ -30,7 +30,7 @@ def _write(path: Path, text: str) -> Path:
 
 
 def _vm_module(path: Path, class_name: str, body: str = "    pass\n"):
-    _write(path, f"from tesserae import Signal, ViewModel\n\n\nclass {class_name}(ViewModel):\n{body}")
+    _write(path, f"from tess_ui import Signal, ViewModel\n\n\nclass {class_name}(ViewModel):\n{body}")
     spec = importlib.util.spec_from_file_location(path.stem, path)
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module

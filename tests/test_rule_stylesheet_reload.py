@@ -6,8 +6,8 @@ import time
 
 import pytest
 
-from tesserae import App, Signal, ViewModel
-from tesserae.spec import load_stylesheet
+from tess_ui import App, Signal, ViewModel
+from tess_ui.spec import load_stylesheet
 
 
 class VM(ViewModel):

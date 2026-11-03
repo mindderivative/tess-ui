@@ -9,9 +9,9 @@ import textwrap
 
 import pytest
 
-from tesserae import App
-from tesserae.project import Project, ProjectError, is_name
-from tesserae.spec import ViewWatcher
+from tess_ui import App
+from tess_ui.project import Project, ProjectError, is_name
+from tess_ui.spec import ViewWatcher
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 VIEW = "id: root\nkind: Container\nchildren: []\n"
@@ -113,7 +113,7 @@ def test_a_name_that_is_found_does_not_walk_the_project(tmp_path, monkeypatch):
     _write(tmp_path, "Views/Main_View.yaml")
     walks = []
     real = os.walk
-    monkeypatch.setattr("tesserae.project.os.walk", lambda *a, **k: walks.append(a) or real(*a, **k))
+    monkeypatch.setattr("tess_ui.project.os.walk", lambda *a, **k: walks.append(a) or real(*a, **k))
     Project(tmp_path).find("view", "Main")
     assert walks == []
     with pytest.raises(ProjectError):
@@ -201,7 +201,7 @@ def _app_files(root):
             component: Stat
             with: {label: Open}
     """))
-    _write(root, "ViewModels/Main_ViewModel.py", "from tesserae import ViewModel\n\nclass MainViewModel(ViewModel):\n    pass\n")
+    _write(root, "ViewModels/Main_ViewModel.py", "from tess_ui import ViewModel\n\nclass MainViewModel(ViewModel):\n    pass\n")
     _write(root, "Components/Stat_Component.yaml", textwrap.dedent("""\
         params: [label]
         id: root
@@ -247,7 +247,7 @@ def test_a_view_given_as_a_path_still_works_and_finds_its_viewmodel_in_the_proje
 
 def test_a_viewmodel_beside_the_view_is_used_before_the_projects(tmp_path):
     _write(tmp_path, "Beside_View.yaml", VIEW)
-    _write(tmp_path, "Beside_ViewModel.py", "from tesserae import ViewModel\n\nclass BesideViewModel(ViewModel):\n    pass\n")
+    _write(tmp_path, "Beside_ViewModel.py", "from tess_ui import ViewModel\n\nclass BesideViewModel(ViewModel):\n    pass\n")
     app = App(width=300, height=200, root=tmp_path / "elsewhere")
     _, viewmodel = app.load(tmp_path / "Beside_View.yaml")
     assert type(viewmodel).__name__ == "BesideViewModel"
@@ -261,7 +261,7 @@ def test_an_unknown_name_says_where_it_looked(tmp_path):
 
 def test_search_and_recursive_reach_an_app(tmp_path):
     _write(tmp_path, "screens/Far_View.yaml", VIEW)
-    _write(tmp_path, "screens/Far_ViewModel.py", "from tesserae import ViewModel\n\nclass FarViewModel(ViewModel):\n    pass\n")
+    _write(tmp_path, "screens/Far_ViewModel.py", "from tess_ui import ViewModel\n\nclass FarViewModel(ViewModel):\n    pass\n")
     assert App(width=300, height=200, root=tmp_path, search=["screens"]).load("Far")[1] is not None
     assert App(width=300, height=200, root=tmp_path, recursive=True).project.recursive
 
@@ -284,8 +284,8 @@ def test_hot_reload_watches_the_projects_components_and_styles(tmp_path):
 
 def test_a_view_built_outside_an_app_does_not_search_a_project():
     spec = {"id": "r", "kind": "Container", "children": [{"id": "c", "component": "NoSuch"}]}
-    from tesserae.spec import expand_components_to_spec
-    from tesserae.spec.expand import ComponentError
+    from tess_ui.spec import expand_components_to_spec
+    from tess_ui.spec.expand import ComponentError
 
     with pytest.raises(ComponentError, match="unknown component 'NoSuch'"):
         expand_components_to_spec(__import__("yaml").safe_dump(spec))
@@ -295,15 +295,15 @@ def test_a_view_built_outside_an_app_does_not_search_a_project():
 
 def _list_files(root):
     _write(root, "Views/List_View.yaml", "id: root\nkind: Container\nchildren:\n  - {id: rows, kind: Container}\n")
-    _write(root, "ViewModels/List_ViewModel.py", "from tesserae import ViewModel\n\nclass ListViewModel(ViewModel):\n    pass\n")
+    _write(root, "ViewModels/List_ViewModel.py", "from tess_ui import ViewModel\n\nclass ListViewModel(ViewModel):\n    pass\n")
     _write(root, "Views/Row_View.yaml", "id: root\nkind: Text\ntext: {content: row, typography_role: body_large}\nstyle: {foreground: on_surface}\n")
     _write(root, "ViewModels/Row_ViewModel.py",
-           "from tesserae import ViewModel\n\nclass RowViewModel(ViewModel):\n    def __init__(self, view, item):\n"
+           "from tess_ui import ViewModel\n\nclass RowViewModel(ViewModel):\n    def __init__(self, view, item):\n"
            "        self.item = item\n        super().__init__(view)\n")
 
 
 def test_a_repeater_takes_a_view_name_and_finds_its_viewmodel(tmp_path):
-    from tesserae import Repeater, Signal
+    from tess_ui import Repeater, Signal
 
     _list_files(tmp_path)
     app = App(width=300, height=200, root=tmp_path)
@@ -317,7 +317,7 @@ def test_a_repeater_takes_a_view_name_and_finds_its_viewmodel(tmp_path):
 
 
 def test_a_repeater_still_takes_a_path_and_a_class(tmp_path):
-    from tesserae import Repeater, Signal
+    from tess_ui import Repeater, Signal
 
     _list_files(tmp_path)
     app = App(width=300, height=200, root=tmp_path)
@@ -328,7 +328,7 @@ def test_a_repeater_still_takes_a_path_and_a_class(tmp_path):
 
 
 def test_instantiate_takes_a_name_and_finds_its_viewmodel(tmp_path):
-    from tesserae import instantiate
+    from tess_ui import instantiate
 
     _list_files(tmp_path)
     app = App(width=300, height=200, root=tmp_path)
@@ -338,7 +338,7 @@ def test_instantiate_takes_a_name_and_finds_its_viewmodel(tmp_path):
 
 
 def test_a_name_with_no_app_is_an_error_that_says_there_is_no_project():
-    from tesserae import Repeater, Signal, View
+    from tess_ui import Repeater, Signal, View
 
     view = View({"id": "root", "kind": "Container", "children": [{"id": "rows", "kind": "Container"}]}, theme_seed=SEED)
     with pytest.raises(ProjectError, match="'Row' is a name, but there is no project to look in"):
@@ -346,7 +346,7 @@ def test_a_name_with_no_app_is_an_error_that_says_there_is_no_project():
 
 
 def test_into_is_required():
-    from tesserae import Repeater, Signal, View, instantiate
+    from tess_ui import Repeater, Signal, View, instantiate
 
     view = View({"id": "root", "kind": "Container"}, theme_seed=SEED)
     with pytest.raises(TypeError, match="needs `into`"):

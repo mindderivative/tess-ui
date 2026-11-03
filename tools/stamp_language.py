@@ -7,8 +7,8 @@
 The files are the current language's: the shipped views and stylesheets, the default theme, the project templates and the examples, and the fenced
 blocks in the docs that show a whole file (a ```yaml title="Main_View.yaml" block: a fence with a title naming a view, stylesheet or theme file, and not
 marked `<!-- old-syntax -->`; the key goes on the block's first line, indented as the fence is). Not the older-syntax
-fragments in `src/tesserae/spec/components/` and `tests/older_syntax/` (the missing key is what marks them as older), and not the tooling files
-(`tools/*.yaml`, `mkdocs.yml`, the workflows). When a new line is started, change `LINE` in `src/tesserae/spec/marker.py` and run this with `--write`.
+fragments in `src/tess_ui/spec/components/` and `tests/older_syntax/` (the missing key is what marks them as older), and not the tooling files
+(`tools/*.yaml`, `mkdocs.yml`, the workflows). When a new line is started, change `LINE` in `src/tess_ui/spec/marker.py` and run this with `--write`.
 `tests/test_language_marker.py` runs `stamped()` over the same list.
 """
 
@@ -19,10 +19,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from tesserae.spec import marker  # noqa: E402
+from tess_ui.spec import marker  # noqa: E402
 
-GLOBS = ("src/tesserae/views/*_View.yaml", "src/tesserae/views/*_Stylesheet.yaml", "src/tesserae/spec/default_theme.yaml",
-         "src/tesserae/templates/*.yaml.tmpl", "examples/**/*.yaml")
+GLOBS = ("src/tess_ui/views/*_View.yaml", "src/tess_ui/views/*_Stylesheet.yaml", "src/tess_ui/spec/default_theme.yaml",
+         "src/tess_ui/templates/*.yaml.tmpl", "examples/**/*.yaml")
 FIRST = re.compile(r"tesserae[ \t]*:[^\r\n]*")
 #: A docs fence that shows a whole file: ```yaml title="Views/Main_View.yaml"
 FENCE = re.compile(r'^(?P<indent>[ \t]*)```ya?ml[ \t]+title="[^"]*_(?:View|Stylesheet|Theme)\.yaml"[ \t]*$')

@@ -10,11 +10,11 @@ from pathlib import Path
 import pytest
 import yaml
 
-import tesserae.spec.expand as expand_module
+import tess_ui.spec.expand as expand_module
 
-from tesserae import Signal, View, ViewModel
-from tesserae.spec import expand_components_to_spec
-from tesserae.spec.expand import ComponentError
+from tess_ui import Signal, View, ViewModel
+from tess_ui.spec import expand_components_to_spec
+from tess_ui.spec.expand import ComponentError
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 SAVE = {"id": "save", "component": "ButtonFilled", "with": {"label": "Save", "width": 120, "height": 40, "corner_radius": 20}}

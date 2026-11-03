@@ -5,8 +5,8 @@
 
 `mdi.json` is the Iconify `mdi` collection (`{"icons": {name: {"body": "<path d=.../>"}}, "aliases": {...}, "width": 24, "height": 24}`).
 Only icons whose body is one `<path>` are used. Names become `snake_case` (`account-check` is `account_check`). With no `--names` a curated set of
-the icons user interfaces need is written; `--all` writes every icon (about 2 MB). The paths go to `src/tesserae/icon_data/mdi.json`, in MDI's own
-24 x 24 box, which `tesserae.icons` merges under the icons already built in.
+the icons user interfaces need is written; `--all` writes every icon (about 2 MB). The paths go to `src/tess_ui/icon_data/mdi.json`, in MDI's own
+24 x 24 box, which `tess_ui.icons` merges under the icons already built in.
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "src" / "tesserae" / "icon_data" / "mdi.json"
+OUT = ROOT / "src" / "tess_ui" / "icon_data" / "mdi.json"
 _PATH = re.compile(r'^<path\b[^>]*?\sd="([^"]+)"[^>]*/>$')
 #: The set written when no names are given: what the Material 3 components and ordinary user interfaces reach for.
 CURATED = """

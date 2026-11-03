@@ -11,7 +11,7 @@ import sys
 import pytest
 import tre
 
-from tesserae import App, Signal, View, ViewModel, instantiate
+from tess_ui import App, Signal, View, ViewModel, instantiate
 
 
 class AppState:
@@ -121,7 +121,7 @@ def test_a_component_reaches_it_too(tmp_path):
         "id: badge\nkind: Text\ntext: {content: '', font_family: Roboto, font_size: 14}\n"
         "style: {foreground: '#000000', width: 100, height: 20}\nbindings: {text: '{{ state.user.get() }}'}\n")
     vm_file = tmp_path / "Badge_ViewModel.py"
-    vm_file.write_text("from tesserae import ViewModel\nclass BadgeViewModel(ViewModel):\n    pass\n")
+    vm_file.write_text("from tess_ui import ViewModel\nclass BadgeViewModel(ViewModel):\n    pass\n")
     spec = importlib.util.spec_from_file_location(f"Badge_ViewModel_{id(tmp_path)}", vm_file)
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module

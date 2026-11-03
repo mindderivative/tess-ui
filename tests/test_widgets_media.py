@@ -1,4 +1,4 @@
-"""`tesserae.widgets`'s Media & Graphics category: `image`'s missing-file
+"""`tess_ui.widgets`'s Media & Graphics category: `image`'s missing-file
 error. `image`, `video`, `node_graph` and `graph_node` are Tesserae's
 since M42 (`tests/test_media.py`), and `icon` since M41
 (`tests/test_composed_widgets.py`).
@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 from tre import Window
 
-from tesserae.widgets import image
+from tess_ui.widgets import image
 
 PIXEL_PNG = str(Path(__file__).parent / "fixtures" / "pixel.png")
 

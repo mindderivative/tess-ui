@@ -2,9 +2,9 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel, tokens
-from tesserae.controls import RangeSlider
-from tesserae.spec.nodes import LoadError
+from tess_ui import App, Signal, ViewModel, tokens
+from tess_ui.controls import RangeSlider
+from tess_ui.spec.nodes import LoadError
 
 
 class VM(ViewModel):
@@ -237,7 +237,7 @@ def test_a_flex_expanded_range_slider_takes_its_laid_out_length(tmp_path):
 
 
 def test_the_constructor_refuses_what_a_slider_refuses_and_raises_a_high_below_low():
-    from tesserae import App
+    from tess_ui import App
 
     app = App()
     window = app._window if hasattr(app, "_window") else None

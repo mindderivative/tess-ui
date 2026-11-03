@@ -57,7 +57,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import link
+from tess_ui.widgets import link
 
 help_link = link(app.window, "Read the docs", 160, on_click=viewmodel.open_docs)
 ```

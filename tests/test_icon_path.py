@@ -2,9 +2,9 @@
 
 import pytest
 
-from tesserae import View
-from tesserae.icons import ICON_VIEW_BOX, icon_path
-from tesserae.spec.build import SpecBuildError
+from tess_ui import View
+from tess_ui.icons import ICON_VIEW_BOX, icon_path
+from tess_ui.spec.build import SpecBuildError
 
 SEED = (103, 80, 164, 255)
 SQUARE = "M2 2H22V22H2Z"

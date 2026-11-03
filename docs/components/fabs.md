@@ -62,7 +62,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import fab
+from tess_ui.widgets import fab
 
 add = fab(app.window, "add", size="default", variant="primary")
 ```

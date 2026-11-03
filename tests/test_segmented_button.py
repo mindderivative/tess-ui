@@ -2,8 +2,8 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel, tokens
-from tesserae.shipped import shipped_views
+from tess_ui import App, Signal, ViewModel, tokens
+from tess_ui.shipped import shipped_views
 
 OPTIONS = "[{value: day, label: Day}, {value: week, label: Week, icon: home}, {value: month, label: Month}, {value: year, label: Year, disabled: true}]"
 
@@ -72,7 +72,7 @@ def test_the_chosen_segment_is_a_secondary_container_with_a_check_replacing_its_
     assert seg(view, "week").get("fill") == role(view, "secondary_container") and seg(view, "day").get("fill") == (0, 0, 0, 0)
     assert has(view, "root.sb.segment[week].icon") and not has(view, "root.sb.segment[day].icon")  # an unchosen one with no icon has none
     check = view.node("root.sb.segment[week].icon").get("data")
-    from tesserae.icons import icon_path
+    from tess_ui.icons import icon_path
 
     assert check == icon_path("check") or check
     assert view.node("root.sb.segment[week].label").get("fill") == role(view, "on_secondary_container")
@@ -209,7 +209,7 @@ def test_a_line_separates_the_segments_but_none_starts_the_first(tmp_path):
 
 
 def test_a_role_from_a_signal_is_refused_because_a_role_cannot_change(tmp_path):
-    from tesserae.spec.nodes import LoadError
+    from tess_ui.spec.nodes import LoadError
 
     class Roles(ViewModel):
         views = "main"

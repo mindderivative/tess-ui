@@ -71,7 +71,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import dialog
+from tess_ui.widgets import dialog
 
 confirm = dialog(app.window, "Discard changes?", "Your edits will be lost.", 320, 200,
                  actions=[("Cancel", None), ("Discard", viewmodel.discard)])

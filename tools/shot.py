@@ -47,7 +47,7 @@ def main(argv=None):
 
     root = args.root.resolve()
     sys.path.insert(0, str(root))
-    from tesserae import App
+    from tess_ui import App
 
     seed = tuple(int(args.seed[i:i + 2], 16) for i in (0, 2, 4)) + (0xFF,)
     app = App(root=root, width=args.size[0], height=args.size[1], theme_seed=seed, dark=args.dark,

@@ -1,4 +1,4 @@
-from tesserae import Computed, Signal, ViewModel
+from tess_ui import Computed, Signal, ViewModel
 
 
 class MainViewModel(ViewModel):

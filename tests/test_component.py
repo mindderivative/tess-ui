@@ -1,4 +1,4 @@
-"""Real, repeatable coverage for `tesserae.instantiate` -- the real,
+"""Real, repeatable coverage for `tess_ui.instantiate` -- the real,
 enforced-naming counterpart to `tre.View.instantiate`/`Component
 .instantiate` (TRE M43), used by `examples/todo_list/` for a real
 dynamic list of independently-`ViewModel`'d components.
@@ -9,7 +9,7 @@ import sys
 
 import pytest
 
-from tesserae import View, instantiate
+from tess_ui import View, instantiate
 
 PARENT_VIEW = """
 id: root
@@ -39,7 +39,7 @@ def load_viewmodel_class(tmp_path, filename, class_name, extra_params=()):
     extra_args = "".join(f", {name}" for name in extra_params)
     path = tmp_path / filename
     path.write_text(
-        f"from tesserae import Signal, ViewModel\n\n\n"
+        f"from tess_ui import Signal, ViewModel\n\n\n"
         f"class {class_name}(ViewModel):\n"
         f"    def __init__(self, view{extra_args}):\n"
         f"        self.value = Signal(0)\n"
@@ -145,7 +145,7 @@ children:
 
 
 def test_instantiate_genuinely_expands_component_usage(tmp_path):
-    """Real, distinguishing proof `tesserae.instantiate()` (an embedded
+    """Real, distinguishing proof `tess_ui.instantiate()` (an embedded
     component, not a top-level `View`) genuinely applies `component:`
     macro-expansion -- the real gap `tre`'s own M73 closed
     (`Component.instantiate`/`View.instantiate` had no `source=`

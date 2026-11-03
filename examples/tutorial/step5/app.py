@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-from tesserae import App, Signal
+from tess_ui import App, Signal
 
 from Settings_ViewModel import SettingsViewModel
 from Tasks_ViewModel import TasksViewModel

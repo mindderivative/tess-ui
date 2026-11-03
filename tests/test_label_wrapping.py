@@ -11,9 +11,9 @@ from pathlib import Path
 import pytest
 import yaml
 
-from tesserae import App, View
+from tess_ui import App, View
 from fragment_reader import FRAGMENTS as FRAGMENT_DIR, Fragment
-from tesserae.spec import expand_components_to_spec
+from tess_ui.spec import expand_components_to_spec
 
 ROOT = Path(__file__).resolve().parent.parent
 SHORT = ["OK", "Save", "Add a task", "Sign in", "Continue", "Cancel", "Remove item", "Notifications"]
@@ -166,11 +166,11 @@ def test_right_aligned_text_fills_too_and_a_given_width_is_kept():
 
 
 def test_changing_centred_text_keeps_it_filling_its_parent():
-    import tesserae
+    import tess_ui
 
-    class Words(tesserae.ViewModel):
+    class Words(tess_ui.ViewModel):
         def __init__(self, view):
-            self.words = tesserae.Signal("Hi")
+            self.words = tess_ui.Signal("Hi")
             super().__init__(view)
 
     spec = _centred({"width": 300})

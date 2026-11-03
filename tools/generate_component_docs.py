@@ -2,8 +2,8 @@
 """Writes the component pages and the stylesheet pages.
 
 - `docs/components/<slug>.md`: one page for each MD3 component, from `tools/component_docs.yaml` (the MD3 text, the usage examples) and from the
-  code itself: each shipped view (`src/tesserae/views/<Name>_View.yaml`: its parameters, slots and parts) and each built-in widget it names
-  (`tesserae.spec.widgets`: its properties).
+  code itself: each shipped view (`src/tess_ui/views/<Name>_View.yaml`: its parameters, slots and parts) and each built-in widget it names
+  (`tess_ui.spec.widgets`: its properties).
 - `docs/stylesheets/<slug>/<view>.md`: one page for each shipped stylesheet (`<Name>_Stylesheet.yaml`): the file, how rules reach the view, and what
   each part's rules do.
 - the two overview pages, and the `nav:` entries for both, between markers in `mkdocs.yml`.
@@ -29,7 +29,7 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 DATA = ROOT / "tools" / "component_docs.yaml"
-VIEWS = ROOT / "src" / "tesserae" / "views"
+VIEWS = ROOT / "src" / "tess_ui" / "views"
 DOCS = ROOT / "docs"
 MKDOCS = ROOT / "mkdocs.yml"
 NAV_MARKS = ("# >>> components (written by tools/generate_component_docs.py)", "# <<< components")
@@ -129,7 +129,7 @@ def _type(spec: Any) -> str:
 
 
 def _widget(name: str) -> Any:
-    from tesserae.spec.widgets import lookup
+    from tess_ui.spec.widgets import lookup
 
     decl = lookup(name)
     if decl is None:
@@ -138,7 +138,7 @@ def _widget(name: str) -> Any:
 
 
 def _registered_widgets() -> set[str]:
-    from tesserae.spec.widgets import names
+    from tess_ui.spec.widgets import names
 
     return set(names())
 

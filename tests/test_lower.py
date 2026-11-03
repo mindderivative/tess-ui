@@ -1,11 +1,11 @@
-"""#209 phase 5: lowering instances to the builder's spec -- each widget's properties in the shape `tesserae.spec.build` reads."""
+"""#209 phase 5: lowering instances to the builder's spec -- each widget's properties in the shape `tess_ui.spec.build` reads."""
 
 import pytest
 
-from tesserae import Signal
-from tesserae.spec.compose import Composer
-from tesserae.spec.lower import lower
-from tesserae.spec.nodes import parse_view
+from tess_ui import Signal
+from tess_ui.spec.compose import Composer
+from tess_ui.spec.lower import lower
+from tess_ui.spec.nodes import parse_view
 
 
 class VM:

@@ -28,7 +28,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import extended_fab
+from tess_ui.widgets import extended_fab
 
 new = extended_fab(app.window, "New", 120, icon="add", variant="primary")
 ```

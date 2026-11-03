@@ -28,7 +28,7 @@ HEX = re.compile(r"^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]
 def _documents():
     """`(label, parsed YAML)` for every view and fragment file, and every
     `yaml` block in the docs that parses."""
-    for path in sorted([*ROOT.glob("examples/**/*.yaml"), *ROOT.glob("src/tesserae/**/*.yaml")]):
+    for path in sorted([*ROOT.glob("examples/**/*.yaml"), *ROOT.glob("src/tess_ui/**/*.yaml")]):
         yield path.relative_to(ROOT).as_posix(), yaml.safe_load(path.read_text())  # "/" on Windows too
     for path in sorted([*ROOT.glob("docs/**/*.md"), ROOT / "README.md"]):
         for i, block in enumerate(FENCE.findall(path.read_text())):
@@ -64,7 +64,7 @@ DOCS = list(_documents())
 def test_the_scan_covers_views_fragments_and_docs():
     labels = [label for label, _ in DOCS]
     assert any(label.startswith("examples/") for label in labels)
-    assert sum(label.startswith("src/tesserae/spec/components/") for label in labels) >= 60
+    assert sum(label.startswith("src/tess_ui/spec/components/") for label in labels) >= 60
     assert any("yaml block" in label for label in labels)
 
 

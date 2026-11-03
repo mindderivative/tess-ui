@@ -1,4 +1,4 @@
-"""M38 Phase 1: `tesserae.Theme` answers what `tre`'s `Window.theme` does
+"""M38 Phase 1: `tess_ui.Theme` answers what `tre`'s `Window.theme` does
 -- checked against its answers on 0.3.4, recorded (M43, `tests/reference.py`)
 since 0.3.5 removes it -- plus MD3 motion."""
 
@@ -8,8 +8,8 @@ import pytest
 import tre
 
 import reference
-from tesserae import Theme, tokens
-from tesserae.spec.build import shipped_default_theme
+from tess_ui import Theme, tokens
+from tess_ui.spec.build import shipped_default_theme
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 CUSTOM = {
@@ -109,7 +109,7 @@ def test_motion_tokens():
 
 
 def test_views_and_apps_expose_their_resolved_theme(tmp_path):
-    from tesserae import App, View
+    from tess_ui import App, View
 
     custom = {"components": {"card": {"corner_radius": 7}}}
     view = View({"id": "r", "kind": "Container"}, theme_seed=SEED, custom_theme_spec=custom)

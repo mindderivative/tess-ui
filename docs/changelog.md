@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.1.10
+
+[#295](https://github.com/mindderivative/tess-ui/issues/295): the Python package is `tess_ui`.
+
+### Changed
+
+- **The package `tesserae` is `tess_ui`.** The import name `tesserae` is also an unrelated project on PyPI, and the other Tesserae packages use the `tess_` prefix (`tess_re`, `tess_el`, `tess_dl`, `tess_shell`). `from tesserae import App` is `from tess_ui import App`, in your code, in what `tesserae new` and `tesserae add screen` write, in the examples and in every docs page. There is no `tesserae` module left, so `import tesserae` is a `ModuleNotFoundError`: [what to change](migration.md#to-060) says how to find the places.
+- **Names that followed the package:** the environment variables `TESSERAE_FRAMES_REPORT`, `TESSERAE_ISCC`, `TESSERAE_MAX_FRAMES`, `TESSERAE_ONLY`, `TESSERAE_STATE_DIR` and `TESSERAE_STATS` are `TESS_UI_*`; the editor schemas `tesserae-*-schema.json` are `tess-ui-*-schema.json` (in the package and on the docs site, `$id` included); the logger is `tess_ui`; and `PyInstaller` is told to collect `tess_ui`, so `tesserae build` finds the package under its new name.
+- **Unchanged:** the PyPI name `tesserae-ui`, the `tesserae` command and `python -m tess_ui`, the `tesserae:` first line of a YAML file, the `.tesserae/` folder `tesserae schema --project` writes to, and the repository `mindderivative/tess-ui`.
+- **Ships in 0.6.0** together with the engine's rename (`tre` is `tess_re`); this point version is not published on its own.
+
 ## 0.5.1.9
 
 The PyPI name is `tesserae-ui` again. The repository stays `mindderivative/tess-ui`.

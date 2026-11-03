@@ -3,9 +3,9 @@ calling `on_link`. They had been left behind when the older `text: {runs: ...}` 
 
 import pytest
 
-from tesserae import App, Signal, ViewModel
-from tesserae.spec.nodes import LoadError
-from tesserae.spec.build import SpecBuildError
+from tess_ui import App, Signal, ViewModel
+from tess_ui.spec.nodes import LoadError
+from tess_ui.spec.build import SpecBuildError
 
 
 class VM(ViewModel):
@@ -122,8 +122,8 @@ def test_a_name_a_run_reads_that_nothing_defines_is_named_when_the_view_opens(tm
 
 def test_the_contract_check_reads_the_names_in_runs(tmp_path):
     """`check_view` lists names the ViewModel lacks, run strings included."""
-    from tesserae.spec.nodes import parse_view
-    from tesserae.viewmodel import check_view
+    from tess_ui.spec.nodes import parse_view
+    from tess_ui.viewmodel import check_view
 
     doc = parse_view(HEAD + BASE + '    runs: ["{{ nothing_here }}"]\n', "Main_View.yaml")
     assert any("nothing_here" in p for p in check_view(doc, VM()))
@@ -133,7 +133,7 @@ def test_a_file_in_the_older_syntax_with_text_runs_migrates_and_loads(tmp_path):
     """`tesserae migrate-yaml` failed on `text: {runs: ...}` (`Text: no property 'runs'`); it carries them over now."""
     import yaml
 
-    from tesserae import cli
+    from tess_ui import cli
 
     (tmp_path / "Old_View.yaml").write_text(
         "id: root\nkind: Container\nchildren:\n  - id: msg\n    kind: Text\n    text:\n      typography_role: body_large\n      runs: ['Sale: ', {text: '$9', weight: 700, color: error}, {text: terms, link: terms}]\n"

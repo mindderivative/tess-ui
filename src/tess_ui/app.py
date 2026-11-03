@@ -1,0 +1,1880 @@
+"""`App` -- the real, single Tesserae entry point every real `app.py`
+owns exactly one of, per the user's own explicit design requirement:
+"app.py should be the entry point for the app... this allows for
+switching of current views without needing to bootstrap each
+view/viewModel."
+
+Owns a registry of named `(View, ViewModel)` pairs -- each `*_View.yaml`
++ `*_ViewModel.py` file pair a real app registers once, up front -- and
+exactly one live `tre.Window`, created with the `App`. Screens are built
+into it by Tesserae; `App.show(name)` attaches that screen's root
+to the window and detaches the one shown before. Neither a `View` nor
+its `ViewModel` is ever re-parsed,
+re-attached, or otherwise re-bootstrapped by a later `show()` call --
+each stays alive, its own `Signal` subscriptions intact, for the whole
+life of the `App`.
+"""
+
+from __future__ import annotations
+
+import os
+import re
+import sys
+import time
+import weakref
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Callable
+
+from loguru import logger
+from tre import App as _TreApp
+from tre import Window
+
+from tess_ui.follow import alive, app_of, register_app, register_window, retheme
+from tess_ui.listeners import Listeners, listen_window
+from tess_ui.naming import check_naming_convention
+from tess_ui.project import Project, is_name, resolve_embedded, resolve_view
+from tess_ui import focusring as _focusring, ripple as _ripple
+from tess_ui.spec.window import window_of
+from tess_ui.window_view import Frame, WindowViewModel
+from tess_ui import tokens
+from tess_ui.reactive import Computed, Effect, Signal, batch
+from tess_ui.spec import ViewWatcher, load_stylesheet, load_theme
+from tess_ui.view import View as TesseraeView
+from tess_ui.viewmodel import Bindings, check_view
+from tess_ui.spec.watch import ComponentWatcher, FileWatcher
+
+#: How often `run(keepalive=True)` ticks, in seconds: about 50 times a second,
+#: which costs about half a percent of one core while a window is idle.
+KEEPALIVE_INTERVAL = 0.02
+
+
+def _keepalive_interval(keepalive: bool | float | None) -> float | None:
+    """Seconds between keepalive ticks for `run(keepalive=)`, or `None` for
+    none. Off by default since 0.3.2: before `tre` 0.5.1 its idle window
+    starved other Python threads (so a hot-reload watcher couldn't hand a
+    reload over without a tick: 0.3.1 ticked by default), and Tesserae now
+    requires a `tre` that doesn't. `None` is accepted as `False`, for code
+    that passed 0.3.1's "follow hot_reload"."""
+    if keepalive is None or keepalive is False:
+        return None
+    if keepalive is True:
+        return KEEPALIVE_INTERVAL
+    if isinstance(keepalive, (int, float)) and keepalive > 0:
+        return float(keepalive)
+    raise ValueError(f"keepalive must be True, False or a positive number of seconds, got {keepalive!r}")
+
+
+@dataclass
+class _Route:
+    """A route: its pattern, the screen it names, and its segments,
+    each a literal or a `(param, converter)`."""
+
+    pattern: str
+    name: str
+    segments: list[Any]
+
+    def match(self, parts: list[str]) -> dict[str, Any] | None:
+        if len(parts) != len(self.segments):
+            return None
+        params: dict[str, Any] = {}
+        for part, segment in zip(parts, self.segments):
+            if isinstance(segment, str):
+                if part != segment:
+                    return None
+                continue
+            param, converter = segment
+            if converter == "int":
+                if not part.lstrip("-").isdigit():
+                    return None
+                params[param] = int(part)
+            else:
+                params[param] = part
+        return params
+
+
+def _route_parts(route: str) -> list[str]:
+    """A route's segments: `"notes/42"` is `["notes", "42"]`, and `""` or
+    `"/"` (the app's root) has none."""
+    route = route.strip("/")
+    return route.split("/") if route else []
+
+
+@dataclass
+class _Registered:
+    view: Any
+    viewmodel: Any
+
+
+@dataclass
+class _Built:
+    """A view `App.build_view()` made -- one a theme or stylesheet reload
+    reaches."""
+
+    view: Any
+    #: `True` if it was given its own stylesheet (file or dict) instead
+    #: of the app's default.
+    own_stylesheet: bool = False
+    #: That own stylesheet's file, resolved, if it came from one.
+    stylesheet_file: Path | None = None
+
+
+def _os_dark(window: Any) -> bool | None:
+    """The OS's appearance: `True` dark, `False` light, or `None` when it
+    can't say. On
+    Linux it answers at once; on macOS and Windows, once the window is open;
+    headless, never. One function, so tests can fix the answer."""
+    try:
+        value = window.get("dark")
+    except ValueError:  # a `tre` before 0.3.5.2
+        return None
+    return None if value is None else bool(value)
+
+
+_SAME: Any = object()  # `spec` not given: the app's current one
+
+
+def _apply_all(views: list[Any], apply: Any, undo: Any) -> None:
+    """`apply(view)` for each view; if one raises, `undo(view)` the ones
+    already done, then re-raise -- so a rejected theme or stylesheet
+    leaves every screen as it was."""
+    done: list[Any] = []
+    try:
+        for view in views:
+            apply(view)
+            done.append(view)
+    except Exception:
+        for view in done:
+            undo(view)
+        raise
+
+
+def _from_file(path: Path, what: str, fn: Any) -> Any:
+    """Wraps `fn(arg)`, a change read from `path`: a `ValueError` from
+    `tre` names the file, as a failed view reload does, and a change that
+    applies is logged."""
+
+    def apply(arg: Any) -> None:
+        try:
+            fn(arg)
+        except ValueError as exc:
+            raise ValueError(f"{path}: {exc}") from exc
+        logger.info("{} from {}", what, path)
+
+    return apply
+
+
+def _inset(value: Any) -> tuple[float, float]:
+    height, width = value
+    return (float(height), float(width))
+
+
+def _non_negative(name: str, value: Any, *, allow_none: bool = False) -> Any:
+    if value is None and allow_none:
+        return None
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0:
+        raise ValueError(f"App: {name} must be a number of pixels, 0 or more, got {value!r}")
+    return int(value)
+
+
+def _file_or_spec(owner: str, file_arg: str, file: Any, spec: Any, loader: Any) -> Any:
+    """One `*=` file path / `*_spec=` dict pair -> the dict (or `None`).
+    The file is read here, by Tesserae; `tre` only ever gets the dict."""
+    if file is not None and spec is not None:
+        raise ValueError(f"{owner}: pass {file_arg}= or {file_arg}_spec=, not both")
+    return loader(file) if file is not None else spec
+
+
+def _is_window_file(path: Any) -> bool:
+    """Whether the view file at `path` has `kind: Window` as its root (a top-level `kind:` line)."""
+    try:
+        text = Path(path).read_text(encoding="utf-8")
+    except OSError:
+        return False
+    return re.search(r"^kind:\s*Window\s*(#.*)?$", text, re.M) is not None
+
+
+def _script_folder() -> Path:
+    """The folder of the script that runs (`app.py`), or the current folder."""
+    script = getattr(sys.modules.get("__main__"), "__file__", None)
+    return Path(script).resolve().parent if script else Path.cwd()
+
+
+class App:
+    """`width`/`height`/`title` describe the one real `Window` this
+    `App` opens the first time `show()` is called -- every registered
+    view is shown inside that same window, at whatever size it already
+    is, not its own independent size (matching `Window.show_view`'s own
+    real, stated scope: only the *currently* active view's `width`/
+    `height` are kept in sync with the window).
+
+    M30: the theme is app-wide -- `theme_seed=`, `dark=`,
+    `default_theme=`/`custom_theme=` (file paths) or their `*_spec=`
+    dict forms apply to every screen `build_view()`/`load()` builds. The
+    theme is Tesserae's (`tess_ui.Theme`, `app.theme`); since M42 the
+    window's own `tre` theme is never set or read, as nothing `tre` draws
+    uses it any more.
+
+    `stylesheet=`/`stylesheet_spec=` here is the default stylesheet for
+    every screen; `load(stylesheet=...)` replaces it for one screen (a
+    stylesheet is genuinely per-`View` in `tre`).
+
+    The theme and default stylesheet files are read once, here, by
+    Tesserae (so a `FontFallbackWarning` fires once, not once per
+    screen); a screen's own `load(stylesheet=...)` file is read when it
+    loads. `tre` only ever gets the dicts.
+    """
+
+    def __init__(
+        self,
+        width: int = 480,
+        height: int = 320,
+        title: str = "Tesserae App",
+        *,
+        theme_seed: tuple[int, int, int, int] | None = None,
+        dark: bool | str = "system",
+        default_theme: str | Path | None = None,
+        default_theme_spec: dict[str, Any] | None = None,
+        custom_theme: str | Path | None = None,
+        custom_theme_spec: dict[str, Any] | None = None,
+        stylesheet: str | Path | None = None,
+        stylesheet_spec: dict[str, Any] | None = None,
+        state: Any = None,
+        root: str | Path | None = None,
+        search: Any = (),
+        recursive: bool = False,
+        borderless: bool = False,
+        window_view: str | Path | None = None,
+        resize_border: int | None = None,
+        min_width: int = 0,
+        min_height: int = 0,
+        fullscreen: bool = False,
+        system_menu: bool = False,
+        icon: str | Path | None = None,
+        window_border: bool = True,
+        dpi_scaling: bool = True,
+        present_mode: str = "vsync",
+        transparent: bool = False,
+        blur_behind: bool = False,
+        click_through: bool = False,
+        glyph_cache: bool = False,
+        system_fonts: bool = False,
+        reduced_motion: bool | str = "system",
+        high_contrast: bool | str = "system",
+        transition: str = "none",
+        ripple: str = "nodes",
+        focus_ring: str = "solid",
+    ) -> None:
+        #: The app's shared state (M65): any object, typically a class of
+        #: `Signal`s every screen reads. A ViewModel reaches it as
+        #: `self.state`, and a binding as `{{ state.<name>.get() }}`.
+        self.state = state
+        #: The project's files, found by name: `Views/`, `ViewModels/`, `Components/`, `Themes/` and `Styles/`
+        #: under `root` (the folder of the script that runs, by default), and the folders in `search`; with
+        #: `recursive`, the whole project. See `tess_ui.project`.
+        self.project = Project(root if root is not None else _script_folder(), search, recursive)
+        default_theme = self._named("theme", default_theme)
+        custom_theme = self._named("theme", custom_theme)
+        stylesheet = self._named("stylesheet", stylesheet)
+        self._width = width
+        self._height = height
+        self._title = title
+        self._theme_seed = theme_seed
+        if dark not in (True, False, "system"):
+            raise ValueError(f'App: dark must be True, False or "system", got {dark!r}')
+        #: "system" follows the OS; True/False is the app's own fixed choice (M38).
+        self._dark_mode: bool | str = dark
+        #: The appearance in use. "system" starts with the OS's, once the window
+        #: exists to ask (M53), and dark where the OS can't say yet (M38 Q3).
+        self._dark: bool = True if dark == "system" else bool(dark)
+        self._default_theme_spec = _file_or_spec("App", "default_theme", default_theme, default_theme_spec, load_theme)
+        self._custom_theme_spec = _file_or_spec("App", "custom_theme", custom_theme, custom_theme_spec, load_theme)
+        #: The theme files, for `run(hot_reload=True)` to watch (M31).
+        self._theme_files = {"default": default_theme, "custom": custom_theme}
+        #: Every view `build_view()` made -- the ones a reload reaches.
+        self._built: list[_Built] = []
+        self._stylesheet_spec = _file_or_spec("App", "stylesheet", stylesheet, stylesheet_spec, load_stylesheet)
+        #: The default stylesheet's file, for `run(hot_reload=True)`.
+        self._stylesheet_file = stylesheet
+        #: Each screen's own stylesheet file -> the dict `tre` last accepted.
+        self._own_sheets: dict[Path, Any] = {}
+        self._registered: dict[str, _Registered] = {}
+        #: The navigation history (M66): each entry a screen's name and its
+        #: params, and the index of the one showing (-1 before the first).
+        self._history: list[tuple[str, dict[str, Any]]] = []
+        self._at = -1
+        #: Whether `back()`/`forward()` would move -- for a back button's
+        #: `disabled` binding.
+        self.can_go_back = Signal(False)
+        self.can_go_forward = Signal(False)
+        #: The params the screen showing was reached with (`{}` for none): for a view to read as `app.params.get('id')`, which a route like
+        #: `notes/{id:int}` or `navigate_to('Note', {'id': 3})` fills, and back/forward restore.
+        self._route_params: Signal = Signal({})
+        self.params = Computed(self._route_params.get)
+        self._routes: list[_Route] = []
+        # M37: the app's one window exists from the start, so screens are built
+        # straight into it. Like a `Window.from_view` root: no padding, and a
+        # screen root with no size of its own is sized to its content.
+        self._window: Window = Window(width=width, height=height, title=title, decorations=not borderless)
+        self._window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0,
+                              align_items="flex_start")
+        # 0.3.0 M2: the window's own options, for a title bar the app draws
+        # (`tre` 0.5.0). A borderless window resizes from a 6 px border
+        # unless the app gives its own width (the design's Q6).
+        self._resize_border: int | None = _non_negative("resize_border", resize_border, allow_none=True)
+        self._window.set(resize_border=self._resize_for(bool(borderless)),
+                         min_width=_non_negative("min_width", min_width),
+                         min_height=_non_negative("min_height", min_height),
+                         fullscreen=bool(fullscreen), system_menu=bool(system_menu))
+        if icon is not None:
+            self.set_icon(icon)
+        #: Whether the window is maximized, and whether it has the OS's
+        #: focus (0.3.0 M2): read-only, following `tre`'s `maximized` and
+        #: `active` events, for a title bar's bindings --
+        #: `{{ app.maximized.get() }}` swaps its maximize icon.
+        self._maximized = Signal(bool(self._window.get("maximized")))
+        self._active = Signal(bool(self._window.get("active")))
+        self.maximized = Computed(self._maximized.get)
+        self.active = Computed(self._active.get)
+        listen_window(self._window, "maximized", lambda event: self._maximized.set(bool(event.maximized)))
+        self._window.on("active", lambda event: self._active.set(bool(event.active)))
+        #: The window's size in logical pixels and its MD3 size classes (#230), for a view to read as `app.window_width.get()` and so on, or
+        #: `app.width_class` (`compact`, `medium`, `expanded`, `large`, `extra_large`) and `app.height_class` (`compact`, `medium`, `expanded`).
+        self._size = Signal((float(self._window.get("width")), float(self._window.get("height"))))
+        self.window_width = Computed(lambda: self._size.get()[0])
+        self.window_height = Computed(lambda: self._size.get()[1])
+        self.width_class = Computed(lambda: tokens.width_class(self._size.get()[0]))
+        self.height_class = Computed(lambda: tokens.height_class(self._size.get()[1]))
+        listen_window(self._window, "resize", lambda event: self._size.set((float(self._window.get("width")), float(self._window.get("height")))))
+        #: macOS keeps its title bar, transparent, with the traffic lights
+        #: (0.3.0 M3): `titlebar_inset` is `(height, width)` of the space
+        #: they take -- `(0, 0)` elsewhere, decorated, and in fullscreen --
+        #: and `native_controls` whether they're showing, for a title bar
+        #: to leave room and hide its own buttons.
+        self._titlebar_inset = Signal(_inset(self._window.get("titlebar_inset")))
+        self._native_controls = Signal(bool(self._window.get("native_controls")))
+        self.titlebar_inset = Computed(self._titlebar_inset.get)
+        self.native_controls = Computed(self._native_controls.get)
+        self._window.on("titlebar_inset", self._on_titlebar_inset)
+        # what the user asked the OS for: less motion, more contrast. "system" follows it; True or False fixes it
+        for name, value in (("reduced_motion", reduced_motion), ("high_contrast", high_contrast)):
+            if value not in (True, False, "system"):
+                raise ValueError(f'App: {name} must be True, False or "system", got {value!r}')
+        self._stats_label: Any = None
+        self._stats_frames = 0
+        self._reduced_motion_mode: bool | str = reduced_motion
+        self._high_contrast_mode: bool | str = high_contrast
+        self._transition = "none"
+        self._playing: Any = None  # the screen transition in progress (#231)
+        self._one_shot: tuple[str, Any] | None = None
+        self._arrivals: dict[int, tuple[str, Any]] = {}  # history index -> the transition (and origin) that navigated to it
+        self.transition = transition
+        self._reduced_motion: bool = self._wanted("reduced_motion", reduced_motion)
+        self._high_contrast: bool = self._wanted("high_contrast", high_contrast)
+        self._window.on("reduced_motion", self._on_reduced_motion)
+        self._window.on("high_contrast", self._on_high_contrast)
+        if os.environ.get("TESS_UI_STATS") == "1":
+            self.stats_overlay = True
+        # 0.3.0 M4 (the design's Q9): a borderless window's 1 px border,
+        # built the first time it shows, and shown while borderless,
+        # neither maximized nor fullscreen, and not on macOS (its frame).
+        self._borderless = Signal(bool(borderless))
+        self._fullscreen = Signal(bool(fullscreen))
+        self._window_border = Signal(bool(window_border))
+        self._border: Any = None
+        self._border_effect = Effect(self._show_border)
+        if dark == "system":  # M53: Linux answers now; macOS and Windows once the window opens (run())
+            os_dark = _os_dark(self._window)
+            if os_dark is not None:
+                self._dark = os_dark
+        self._current: str | None = None
+        #: The window view (`kind: Window`) once one is loaded: its `Frame` (0.4.4)
+        self._frame: Any = None
+        self._windows: dict[str, Any] = {}
+        self._guards: dict[str, list[Callable[[dict[str, Any]], Any]]] = {}
+        self._frame_guards: dict[str, Callable[[dict[str, Any]], Any]] = {}
+        self._redirects = 0
+        #: The screen showing, as a value a binding can read: `{{ app.current_screen.get() == 'Main' }}`.
+        self._screen_name = Signal(None)
+        self.current_screen = Computed(self._screen_name.get)
+        self._tre_app: _TreApp | None = None
+        #: The widgets made on this window with no `theme=`, which follow
+        #: the app's theme (M50), in the order they were made (a dict as an
+        #: ordered set, so a failed re-theme's rollback is predictable).
+        self._followers: dict[Any, None] = {}
+        register_app(self)
+        #: Alt+Left and Alt+Right go back and forward (M66), and so do the
+        #: mouse's side buttons (M72, on `tre` 0.4.1). Key presses and pointer
+        #: events bubble to the window's root, wherever they happen.
+        self._keys = Listeners()
+        self._keys.listen(self._window.root, "key_down", self._history_key)
+        self._keys.listen(self._window.root, "pointer_down", self._history_button)
+        #: While `run(hot_reload=True)` runs: the loop's handle, every
+        #: watcher started, and each component file's watcher (M51).
+        self._hot_handle: Any = None
+        #: The ViewModels that serve named views (`bind`) and the views opened against them (`open_view`), by name (0.5.0).
+        self.bindings = Bindings()
+        self._opened: dict[str, Any] = {}
+        self._watchers: list[Any] = []
+        self._component_watchers: dict[Path, Any] = {}
+        #: Every component `tess_ui.instantiate` made on this window, in any
+        #: view (M61); weakly held, so removed ones drop out.
+        self._instances: weakref.WeakSet[Any] = weakref.WeakSet()
+        self._window.on("color_scheme", self._on_color_scheme)
+        # the window's display options: the engine's (`tre` 0.5.4)
+        self._set_window(dpi_scaling=bool(dpi_scaling), present_mode=present_mode, glyph_cache=bool(glyph_cache))
+        if ripple not in ("nodes", "shader"):
+            raise ValueError(f"App: ripple is 'nodes' (a circle per press) or 'shader' (one shader for them), got {ripple!r}")
+        self._ripple = ripple
+        _ripple.use_shader(self._window, ripple == "shader")
+        if focus_ring not in ("solid", "gradient"):
+            raise ValueError(f"App: focus_ring is 'solid' (the default) or 'gradient' (a turning gradient), got {focus_ring!r}")
+        self._focus_ring = focus_ring
+        _focusring.use_gradient(self._window, focus_ring == "gradient")
+        if transparent:  # before the window opens: the OS fixes it then
+            self._set_window(transparent=True)
+            self._window.root.set(fill=(0, 0, 0, 0))
+        if blur_behind:
+            self._set_window(blur_behind=True)
+        if click_through:
+            self._set_window(click_through=True)
+        if system_fonts:
+            from tess_ui.fonts import set_system_fonts
+
+            set_system_fonts(True)
+        self._transparent = bool(transparent)
+        if window_view is not None:  # the app's window, in YAML: `kind: Window` (0.4.4)
+            self.load(window_view)
+
+    def _set_window(self, **options: Any) -> None:
+        """Sets window options, naming the option and the app when the platform can't do it."""
+        for name, value in options.items():
+            try:
+                self._window.set(**{name: value})
+            except (ValueError, TypeError) as exc:
+                raise ValueError(f"App: {name}={value!r} isn't available here: {exc}") from None
+
+    def _wanted(self, name: str, mode: bool | str) -> bool:
+        """The preference `name`: the app's own choice, or, following the OS, what it says (no, where it can't)."""
+        if mode != "system":
+            return bool(mode)
+        try:
+            return bool(self._window.get(name))
+        except (ValueError, TypeError):
+            return False
+
+    # -- the window's display (tre 0.5.4) -------------------------------------------
+
+    @property
+    def scale_factor(self) -> float:
+        """The display's scale (2.0 on a 2x screen); 1.0 until the window opens."""
+        return float(self._window.get("scale_factor"))
+
+    @property
+    def dpi_scaling(self) -> bool:
+        """Whether the window lays out in logical pixels and draws at the display's scale (on by default), so it is
+        sharp on a HiDPI screen. Sizes you give are logical either way."""
+        return bool(self._window.get("dpi_scaling"))
+
+    @dpi_scaling.setter
+    def dpi_scaling(self, on: bool) -> None:
+        self._set_window(dpi_scaling=bool(on))
+
+    @property
+    def present_mode(self) -> str:
+        """How frames are paced: `"vsync"` (one a display refresh, the default: an animating window uses a few percent
+        of a core) or `"low_latency"` (the newest frame at once, and a whole core while something animates)."""
+        return str(self._window.get("present_mode"))
+
+    @present_mode.setter
+    def present_mode(self, mode: str) -> None:
+        self._set_window(present_mode=mode)
+
+    @property
+    def glyph_cache(self) -> bool:
+        """Whether text is drawn from a glyph cache: about four times cheaper a label, with slightly different
+        edge pixels. Off by default."""
+        return bool(self._window.get("glyph_cache"))
+
+    @glyph_cache.setter
+    def glyph_cache(self, on: bool) -> None:
+        self._set_window(glyph_cache=bool(on))
+
+    @property
+    def transparent(self) -> bool:
+        """Whether the window was made see-through (`App(transparent=True)`); `transparent_active` says whether it took."""
+        return self._transparent
+
+    @property
+    def transparent_active(self) -> bool | None:
+        """Whether the window really is see-through (the platform may not allow it); `None` until it opens."""
+        return self._window.get("transparent_active")
+
+    @property
+    def click_through(self) -> bool:
+        """Whether the whole window ignores the pointer, so clicks reach what is behind it. Give the app another way to
+        turn it off: the window can no longer be clicked."""
+        return bool(self._window.get("click_through"))
+
+    @click_through.setter
+    def click_through(self, on: bool) -> None:
+        self._set_window(click_through=bool(on))
+
+    @property
+    def blur_behind(self) -> bool:
+        """Whether the compositor blurs what is behind a see-through window (Wayland with KDE, macOS; ignored elsewhere)."""
+        return bool(self._window.get("blur_behind"))
+
+    @blur_behind.setter
+    def blur_behind(self, on: bool) -> None:
+        self._set_window(blur_behind=bool(on))
+
+    # -- what the frames cost ---------------------------------------------------------
+
+    def frame_stats(self, reset: bool = False) -> dict[str, Any]:
+        """What the window's frames cost: `frames`, `skipped`, `last` (the last frame's stage times in milliseconds)
+        and `recent` (the last 240 frames: `fps`, and the mean, 95th percentile and maximum of the total and the CPU
+        time). `reset=True` clears the history after reading it. Nothing is recorded before the window opens."""
+        return self._window.frame_stats(reset=reset)
+
+    @property
+    def profile_nodes(self) -> bool:
+        """Whether each node's drawing time is measured, so `frame_stats()["profile"]` says where it went."""
+        return bool(self._window.get("profile_nodes"))
+
+    @profile_nodes.setter
+    def profile_nodes(self, on: bool) -> None:
+        self._set_window(profile_nodes=bool(on))
+
+    def start_trace(self, path: str | Path) -> None:
+        """Writes every frame drawn from now on to `path`, for ui.perfetto.dev or chrome://tracing, until `stop_trace()`."""
+        self._window.start_trace(str(path))
+
+    def stop_trace(self) -> int:
+        """Ends the trace `start_trace` began and returns how many frames it holds."""
+        return int(self._window.stop_trace())
+
+    def on_file_drop(self, handler: Any) -> None:
+        """Calls `handler(event)` when files are dropped anywhere on the window (`event.paths`); `None` stops it. A
+        node's own `on_file_drop:` hears the ones dropped on it first. Not on Wayland, which gives a program no drops."""
+        if handler is None:
+            self._window.off("file_drop")
+        else:
+            self._window.on("file_drop", handler)
+
+    @property
+    def stats_overlay(self) -> bool:
+        """Whether a small readout of the frame rate and what a frame costs shows in the window's top right corner. It is
+        off unless turned on, here or by `TESS_UI_STATS=1` in the environment (for a run from a terminal)."""
+        return self._stats_label is not None
+
+    @stats_overlay.setter
+    def stats_overlay(self, on: bool) -> None:
+        if bool(on) == (self._stats_label is not None):
+            return
+        if not on:
+            self._window.off("frame")
+            try:
+                self._stats_label.destroy()
+            except ValueError:  # the window already took it down
+                pass
+            self._stats_label = None
+            return
+        label = self._window.create(
+            "text", text="-- fps", font_family="Roboto", font_size=12.0, fill=(255, 255, 255, 255),
+            position="absolute", y=6.0, padding=4.0, hit_testable=False, a11y_hidden=True, z_index=1000,
+            corner_radius=4.0)
+        self._window.root.add_child(label)
+        self._stats_label = label
+        self._stats_frames = 0
+        self._window.on("frame", self._on_frame)
+        self._place_stats()
+
+    def _place_stats(self) -> None:
+        label = self._stats_label
+        if label is None:
+            return
+        width, _ = self._window.measure_text(label.get("text"), font_size=12.0)
+        label.set(width=float(width) + 8.0, x=max(0.0, float(self._window.get("width")) - float(width) - 14.0))
+
+    def _on_frame(self, event: Any) -> None:
+        """The stats readout, rewritten about four times a second: the frame rate, then the mean and the 95th
+        percentile of the frame's total time."""
+        self._stats_frames += 1
+        if self._stats_frames % 15 or self._stats_label is None:
+            return
+        recent = self.frame_stats().get("recent") or {}
+        total = recent.get("total_ms") or {}
+        fps, mean, p95 = recent.get("fps"), total.get("mean"), total.get("p95")
+        if fps is None:
+            return
+        self._stats_label.set(text=f"{fps:.0f} fps  {mean:.1f} ms  p95 {p95:.1f}" if mean is not None else f"{fps:.0f} fps")
+        self._place_stats()
+
+    def stats_handle(self) -> Any:
+        """An object any thread can read the frame stats from: `handle.read()` is `frame_stats()` without the profile."""
+        return self._window.stats_handle()
+
+    # -- less motion, more contrast ---------------------------------------------------
+
+    @property
+    def reduced_motion(self) -> bool:
+        """Whether the app is to reduce motion: the user asked the OS for it (or the app says so). Animations then take no time."""
+        return self._reduced_motion
+
+    @property
+    def reduced_motion_mode(self) -> bool | str:
+        """`"system"` (following the OS), or the app's fixed `True` or `False`."""
+        return self._reduced_motion_mode
+
+    def set_reduced_motion(self, value: bool | str) -> None:
+        """`True` or `False` fixes the app's motion; `"system"` goes back to following the OS."""
+        if value not in (True, False, "system"):
+            raise ValueError(f'App.set_reduced_motion: must be True, False or "system", got {value!r}')
+        self._reduced_motion_mode = value
+        self._reduced_motion = self._wanted("reduced_motion", value)
+
+    def _on_reduced_motion(self, event: Any) -> None:
+        if self._reduced_motion_mode == "system":
+            self._reduced_motion = bool(event.reduced_motion)
+
+    @property
+    def high_contrast(self) -> bool:
+        """Whether the app uses MD3's highest-contrast colours: the user asked the OS for more contrast (or the app says so)."""
+        return self._high_contrast
+
+    @property
+    def high_contrast_mode(self) -> bool | str:
+        """`"system"` (following the OS), or the app's fixed `True` or `False`."""
+        return self._high_contrast_mode
+
+    def set_high_contrast(self, value: bool | str) -> None:
+        """`True` or `False` fixes the app's contrast, re-theming every screen in place; `"system"` follows the OS."""
+        if value not in (True, False, "system"):
+            raise ValueError(f'App.set_high_contrast: must be True, False or "system", got {value!r}')
+        self._high_contrast_mode = value
+        self._apply_contrast(self._wanted("high_contrast", value))
+
+    def _on_high_contrast(self, event: Any) -> None:
+        if self._high_contrast_mode == "system":
+            self._apply_contrast(bool(event.high_contrast))
+
+    def _apply_contrast(self, on: bool) -> None:
+        if on == self._high_contrast:
+            return
+        old_theme = self._view_theme()
+        self._high_contrast = on
+        try:
+            self._retheme(old_theme, self._view_theme())
+        except Exception:
+            self._high_contrast = not on
+            raise
+        logger.info("switched to {} contrast", "high" if on else "standard")
+
+    # -- light and dark (M38) ---------------------------------------------------
+
+    @property
+    def dark(self) -> bool:
+        """Whether the app is showing its dark scheme right now."""
+        return self._dark
+
+    @property
+    def dark_mode(self) -> bool | str:
+        """`"system"` (following the OS), or the app's fixed `True`/`False`."""
+        return self._dark_mode
+
+    def set_dark(self, dark: bool | str) -> None:
+        """`True`/`False` fixes the app dark or light, re-theming every
+        screen in place; `"system"` goes back to following
+        the OS from its next switch."""
+        if dark not in (True, False, "system"):
+            raise ValueError(f'App.set_dark: dark must be True, False or "system", got {dark!r}')
+        self._dark_mode = dark
+        if dark != "system":
+            self._apply_dark(bool(dark))
+
+    def _on_color_scheme(self, event: Any) -> None:
+        """The OS switched between light and dark: following the OS, the
+        whole app follows; with a fixed choice, nothing changes."""
+        if self._dark_mode == "system":
+            self._apply_dark(bool(event.dark))
+
+    def _adopt_os_appearance(self) -> None:
+        """Following the OS, asks it again once the window is open (M53
+        Q2): macOS and Windows can't say before, and the app re-themes then,
+        as a `color_scheme` event would."""
+        if self._dark_mode == "system":
+            os_dark = _os_dark(self._window)
+            if os_dark is not None:
+                self._apply_dark(os_dark)
+        if self._reduced_motion_mode == "system":
+            self._reduced_motion = self._wanted("reduced_motion", "system")
+        if self._high_contrast_mode == "system":
+            self._apply_contrast(self._wanted("high_contrast", "system"))
+
+    def _apply_dark(self, dark: bool) -> None:
+        if dark == self._dark:
+            return
+        old_theme = self._view_theme()
+        self._dark = dark
+        new_theme = self._view_theme()
+        try:
+            self._retheme(old_theme, new_theme)
+        except Exception:
+            self._dark = not dark
+            raise
+        logger.info("switched to the {} scheme", "dark" if dark else "light")
+
+    def _retheme(self, old: dict[str, Any], new: dict[str, Any]) -> None:
+        """Re-themes every view `build_view()` made, then every widget
+        following the app, from the `old` theme arguments to `new`;
+        if one fails, the ones done go back to `old` and it re-raises."""
+        from tess_ui.theme import Theme
+
+        old_theme, new_theme = Theme.resolve(**old), Theme.resolve(**new)
+        for f in [f for f in self._followers if not alive(f)]:
+            del self._followers[f]  # its node was destroyed under it
+        steps: list[tuple[Any, Any]] = [
+            (lambda view=b.view: view.set_theme(**new), lambda view=b.view: view.set_theme(**old)) for b in self._built
+        ]
+        steps += [(lambda f=f: retheme(f, new_theme, new), lambda f=f: retheme(f, old_theme, old))
+                  for f in list(self._followers)]
+        _apply_all(steps, lambda step: step[0](), lambda step: step[1]())
+
+    def _view_theme(self) -> dict[str, Any]:
+        """The app's theme as `View(...)`/`View.set_theme` arguments."""
+        theme: dict[str, Any] = {"dark": self._dark, "contrast": 1.0 if self._high_contrast else 0.0}
+        if self._theme_seed is not None:
+            theme["theme_seed"] = self._theme_seed
+        if self._default_theme_spec is not None:
+            theme["default_theme_spec"] = self._default_theme_spec
+        if self._custom_theme_spec is not None:
+            theme["custom_theme_spec"] = self._custom_theme_spec
+        return theme
+
+    @property
+    def theme(self) -> Any:
+        """The app's resolved theme (`tess_ui.Theme`): roles, component
+        shape and elevation, typography, and motion tokens."""
+        from tess_ui.theme import Theme
+
+        return Theme.resolve(**self._view_theme())
+
+    def _read_theme_files(self) -> tuple[Any, Any]:
+        """Re-reads the theme files (a watcher-thread job, M31); a theme
+        given as a `*_spec=` dict is kept as it is."""
+        files = self._theme_files
+        default = load_theme(files["default"]) if files["default"] is not None else self._default_theme_spec
+        custom = load_theme(files["custom"]) if files["custom"] is not None else self._custom_theme_spec
+        return default, custom
+
+    def set_theme_specs(self, default_theme_spec: Any, custom_theme_spec: Any) -> None:
+        """Re-themes the running app in place: every view
+        `build_view()`/`load()` made. Both theme dicts
+        are the complete new selection (`None` for none), as in `tre`,
+        where each `set_theme` call is a fresh choice, not a patch; the
+        seed and light/dark stay as they are. Bound values stay
+        live (`tre` M91). Runs `tre` code, so call it on the event-loop
+        thread -- `run(hot_reload=True)` does, for theme-file edits.
+        """
+        old_theme = self._view_theme()
+        previous = (self._default_theme_spec, self._custom_theme_spec)
+        self._default_theme_spec, self._custom_theme_spec = default_theme_spec, custom_theme_spec
+        try:
+            self._retheme(old_theme, self._view_theme())
+        except Exception:
+            self._default_theme_spec, self._custom_theme_spec = previous
+            raise
+
+    def set_stylesheet_spec(self, stylesheet_spec: dict[str, Any] | None) -> None:
+        """Replaces the app's default stylesheet in place:
+        every view `build_view()`/`load()` made with the default -- not
+        one given its own `stylesheet=` -- is re-styled, and views built
+        later use it too. `None` means no stylesheet. Bound values stay
+        live (`tre` M91). If `tre` rejects it, it raises and every screen
+        keeps its old stylesheet. Call it on the event-loop thread;
+        `run(hot_reload=True)` does, when the default stylesheet file
+        changes.
+        """
+        from tess_ui.composed import ComposedView
+        from tess_ui.spec.rules import is_rule_sheet
+
+        previous = self._stylesheet_spec
+        rules_now = is_rule_sheet(stylesheet_spec)
+        rules_before = is_rule_sheet(previous)
+        library = self._composed_docs_library()
+
+        def restyle(view: Any, spec: Any, is_rules: bool, was_rules: bool) -> None:
+            if isinstance(view, ComposedView):  # a view of `widget:` nodes: its rules are part of its composition, and an older-shape sheet is the view's own
+                view.set_stylesheet(stylesheet_spec=None if is_rules else spec)
+                if is_rules or was_rules:
+                    view.restyle(self._composed_rules(library, spec, view.handle.doc)[0])  # the stylesheets of the widgets this view uses, under the new sheet
+            elif not is_rules:  # an older view cannot take a sheet of rules
+                view.set_stylesheet(stylesheet_spec=spec)
+
+        _apply_all(
+            [b.view for b in self._built if not b.own_stylesheet or isinstance(b.view, ComposedView)],
+            lambda view: restyle(view, stylesheet_spec, rules_now, rules_before),
+            lambda view: restyle(view, previous, rules_before, rules_now),
+        )
+        self._stylesheet_spec = stylesheet_spec
+
+    def _set_own_stylesheet(self, path: Path, stylesheet_spec: dict[str, Any]) -> None:
+        """A screen's own stylesheet file changed: re-style the views
+        built with it."""
+        previous = self._own_sheets.get(path)
+        _apply_all(
+            [b.view for b in self._built if b.stylesheet_file == path],
+            lambda view: view.set_stylesheet(stylesheet_spec=stylesheet_spec),
+            lambda view: view.set_stylesheet(stylesheet_spec=previous),
+        )
+        self._own_sheets[path] = stylesheet_spec
+
+    def build_view(
+        self,
+        view_path: str | Path,
+        *,
+        stylesheet: str | Path | None = None,
+        stylesheet_spec: dict[str, Any] | None = None,
+    ) -> Any:
+        """Builds a view with this app's theme and stylesheet, without
+        registering it -- for a screen given to `register()`, e.g. one
+        whose `ViewModel` needs the `app` itself. `stylesheet=`/
+        `stylesheet_spec=` replace the app's default stylesheet for this
+        view. `load()` builds its views through this too.
+        """
+        view_path = self._named("view", view_path)
+        stylesheet = self._named("stylesheet", stylesheet)
+        sheet = _file_or_spec("App.build_view", "stylesheet", stylesheet, stylesheet_spec, load_stylesheet)
+        built = _Built(None, own_stylesheet=sheet is not None)
+        if stylesheet is not None:
+            built.stylesheet_file = Path(stylesheet).resolve()
+            self._own_sheets[built.stylesheet_file] = sheet
+        if sheet is None:
+            sheet = self._stylesheet_spec
+        kwargs = self._view_theme()
+        if sheet is not None:
+            kwargs["stylesheet_spec"] = sheet
+        try:
+            built.view = TesseraeView(Path(view_path), window=self._window, project=self.project, **kwargs)
+        except ValueError:
+            raise
+        self._built.append(built)
+        return built.view
+
+    def bind(self, target: Any = None, *, factory: Any = None, views: Any = None) -> None:
+        """Serves named views with a ViewModel: `bind(DataViewModel)` makes the one instance when its first view opens,
+        `bind(instance)` uses yours, `bind(factory=DataViewModel)` makes one per view instance. The ViewModel's `views` lists the
+        view names it serves; a view is named by its root `name:`."""
+        self.bindings.bind(target, factory=factory, views=views)
+
+    def open_view(self, view: str | Path, name: str | None = None) -> Any:
+        """Opens a view written with `widget:` nodes against the ViewModel that serves its name, and registers it under
+        `name` (default: its root `name:`, else its file's name) for `show(name)`. `view` is a path or a name found in the project;
+        the views it calls are found in the project too. Returns the `ComposedView`; its `.handle` is what the ViewModel holds."""
+        return self._open_view(view, name, self._window)
+
+    def _composed_docs(self, path: Path) -> tuple[Any, Any]:
+        """The parsed view file `path` and the library that found the views it calls (the project's, then the ones Tesserae ships). File work
+        only, so a hot reload does it off the loop."""
+        from tess_ui.shipped import ViewLibrary
+
+        library = ViewLibrary(self.project.index("view"), self.project.index("stylesheet"))
+        return library.parse(path), library
+
+    def _composed_docs_library(self) -> Any:
+        """A library of the project's views and Tesserae's, for what needs only its names."""
+        from tess_ui.shipped import ViewLibrary
+
+        return ViewLibrary(self.project.index("view"), self.project.index("stylesheet"))
+
+    def _app_sheet_file(self) -> Path | None:
+        """The file of the app's own stylesheet (`App(stylesheet=)`), which is not also a view's."""
+        return Path(self._stylesheet_file).resolve() if self._stylesheet_file is not None else None
+
+    def _composed_rules(self, library: Any, spec: Any = _SAME, doc: Any = None) -> tuple[list[Any], dict[str, Any]]:
+        """The rules under a composed view: the stylesheets of the widgets `doc` uses (the shipped ones, then the project's: a view's sheet is read only when
+        the view is used), then the app's stylesheet `spec`, by default the current one; and the theme arguments."""
+        from tess_ui.spec.rules import RuleSheet, is_rule_sheet
+
+        spec = self._stylesheet_spec if spec is _SAME else spec
+        kwargs = self._view_theme()
+        rules = library.sheets_of(library.used(doc), self._app_sheet_file())[0]
+        if spec is not None:
+            if is_rule_sheet(spec):  # the app's rules by widget, variant, part and state
+                kwargs.pop("stylesheet_spec", None)
+                rules.append(RuleSheet.of(spec, "<stylesheet>", parts_of=library.parts_of))
+            else:
+                kwargs["stylesheet_spec"] = spec
+        return rules, kwargs
+
+    def _open_view(self, view: str | Path, name: str | None, window: Any) -> Any:
+        from tess_ui.composed import open_composed
+
+        path = Path(self._named("view", view))
+        doc, library = self._composed_docs(path)
+        rules, kwargs = self._composed_rules(library, doc=doc)
+        opened = open_composed(doc, self.bindings, library.doc, base_dir=path.parent, window=window, rules=rules, **kwargs)
+        opened.source = path.resolve()  # the file a hot reload watches
+        if self._hot_handle is not None:  # opened while the app runs with hot reload on
+            watcher = self._composed_watcher(opened)
+            watcher.start(self._hot_handle)
+            self._watchers.append(watcher)
+        key = name or doc.name or path.name.removesuffix("_View.yaml")
+        if window is not self._window:  # another window's view is not a screen of the main one: it is kept, themed and checked with the rest
+            self._built.append(_Built(opened))
+            self._opened[key] = opened
+            return opened
+        self.register(key, opened, opened.handle.viewmodel)
+        self._built.append(_Built(opened))
+        self._opened[key] = opened
+        if window_of(opened.spec) is not None:  # a `widget: Window` root is the app's window, as `kind: Window` is for `load`
+            self._adopt_window_view(key, opened)
+        return opened
+
+    def open_window(self, view: str | Path, name: str | None = None, *, parent: Any = None, modal: bool = False, center: bool = True) -> Any:
+        """Opens `view` (a path or a name in the project, as `open_view` takes) in a new OS window and returns its `AppWindow`.
+
+        The view's `widget: Window` root gives the window its title, size, minimum size, `borderless` and flags; without one it is 480 by 320. `modal=True` blocks
+        the parent (the main window, or `parent`, an `AppWindow`) until it closes. `center` puts it in the middle of the screen where the system allows. Before
+        `run()` the window opens with the main one; while it runs, on the loop's next turn. Closing it leaves the app running; closing the main window closes
+        every window."""
+        from tess_ui import appwindows
+
+        win = Window(width=480, height=320, title=self._title or "")
+        register_window(self, win)
+        win.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, align_items="flex_start")
+        opened = self._open_view(view, name, win)
+        key = name or opened.handle.name or Path(str(view)).name.removesuffix("_View.yaml")
+        if key in self._windows:
+            raise ValueError(f"open_window: a window named {key!r} is already open")
+        options = window_of(opened.spec) or {}
+        self._apply_window_to(win, options)
+        if opened.root.parent() is None:
+            win.root.add_child(opened.root)
+        aw = appwindows.AppWindow(self, key, win, opened, parent=parent, modal=modal)
+        self._windows[key] = aw
+        listen_window(win, "closed", lambda event, aw=aw, key=key: (self._windows.pop(key, None), aw._closed()))
+        listen_window(win, "maximized", lambda event, aw=aw: aw._maximized.set(bool(event.maximized)))
+        if modal:
+            aw._block_parent()
+        if center:
+            win.after(50, aw.center)  # a window can be placed once it is open
+        if self._tre_app is not None:
+            self._tre_app.add_window(win)
+        return aw
+
+    def _apply_window_to(self, win: Any, options: dict[str, Any]) -> None:
+        """A second window's own options (`_apply_window` is the main window's)."""
+        if options.get("title") is not None:
+            win.set(title=options["title"])
+        if options.get("borderless"):
+            win.set(decorations=False, resize_border=self.DEFAULT_RESIZE_BORDER)
+        for key in ("min_width", "min_height"):
+            if key in options:
+                win.set(**{key: int(options[key])})
+        for name in ("transparent", "blur_behind", "click_through"):
+            if options.get(name):
+                self._set_win(win, name)
+        if options.get("size") is not None:
+            width, height = options["size"]
+            win.resize(int(width), int(height))
+        if options.get("fullscreen"):
+            win.set(fullscreen=True)
+        if options.get("maximized"):
+            win.maximize()
+
+    def _set_win(self, win: Any, name: str) -> None:
+        try:
+            win.set(**{name: True})
+        except (ValueError, TypeError) as exc:
+            raise ValueError(f"open_window: {name} isn't available here: {exc}") from None
+
+    @property
+    def windows(self) -> dict[str, Any]:
+        """The app's other windows by name (not the main one, `app.window`)."""
+        return dict(self._windows)
+
+    def window_of(self, name: str) -> Any:
+        """The `AppWindow` named `name`."""
+        try:
+            return self._windows[name]
+        except KeyError:
+            raise KeyError(f"no window named {name!r} is open (open: {', '.join(self._windows) or 'none'})") from None
+
+    def _appwindow_for(self, window: Any) -> Any:
+        """The `AppWindow` whose tre window this is, or None for the main window."""
+        return next((each for each in self._windows.values() if each.window == window), None)
+
+    def close_window(self, name: str) -> None:
+        """Closes the window `name` as the user's close would."""
+        self.window_of(name).close()
+
+    def _rule_sheet(self) -> Any:
+        from tess_ui.spec.rules import RuleSheet
+
+        return RuleSheet.of(self._stylesheet_spec, "<stylesheet>")
+
+    def check(self) -> list[str]:
+        """Problems between the views opened with `open_view` and their ViewModels (names, actions and `expects:`), and ViewModels that
+        serve a view none of them has. An empty list is a clean bill."""
+        problems: list[str] = []
+        for opened in self._opened.values():
+            problems.extend(check_view(opened.handle.doc, opened.handle.viewmodel))
+        problems.extend(self.bindings.unserved(o.handle.name for o in self._opened.values() if o.handle.name))
+        return problems
+
+    def register(self, name: str, view: Any, viewmodel: Any) -> None:
+        """Registers `view` (already loaded) and its already-`_attach`ed
+        `viewmodel` (e.g. `FooViewModel(view)`) under `name`, for a later
+        `show(name)` to display. Raises if `name` is already registered
+        -- a real, load-bearing collision a caller should know about
+        immediately, not silently overwrite.
+
+        The caller builds `view`, so the caller themes it: build it with
+        `app.build_view("Foo_View.yaml")` to give it this app's theme and
+        stylesheet. A view built any other way keeps whatever theme
+        it was built with. A view built from a file keeps it (`view.path`),
+        so `run(hot_reload=True)` watches it as it does a `load()`ed one
+.
+        """
+        if name in self._registered:
+            raise ValueError(f"a view named {name!r} is already registered")
+        if not isinstance(view, TesseraeView):
+            raise TypeError(
+                f"App.register({name!r}): the view must be a tesserae View (e.g. from app.build_view()), "
+                f"got {type(view).__name__}"
+            )
+        view.move_to(self._window)  # a view built on its own is rebuilt in this app's window
+        self._registered[name] = _Registered(view, viewmodel)
+
+    def _named(self, kind: str, ref: Any) -> Any:
+        """`ref` as a path: a bare name (`"Main"`) is found in the project, a path is left as it is."""
+        return self.project.find(kind, ref) if is_name(ref) else ref
+
+    def load(
+        self,
+        view_path: str | Path,
+        viewmodel_cls: type | None = None,
+        name: str | None = None,
+        *,
+        stylesheet: str | Path | None = None,
+        stylesheet_spec: dict[str, Any] | None = None,
+    ) -> tuple[Any, Any]:
+        """Loads a `*_View.yaml` + `*_ViewModel.py` pair and registers it.
+
+        `view_path` is a path, or a name found in the project (`app.load("Main")` is `Views/Main_View.yaml`).
+        `viewmodel_cls` is the ViewModel class; left out, it is found by the view's name (`Main_ViewModel.py`,
+        class `MainViewModel`, beside the view or in `ViewModels/`). The pair must follow the
+        [naming convention](naming-convention.md): the same prefix, checked here, so a mismatch fails at load
+        and not later when a handler name doesn't resolve.
+
+        `name` defaults to that prefix (`"Main"`); it is only needed if two pairs would share it. The view is
+        built with `build_view`, with the app's theme and its default stylesheet, or this screen's own
+        `stylesheet=` / `stylesheet_spec=` (a path or a name).
+
+        Returns the `(view, viewmodel)` pair, for code that wants a node to click in a test or a Signal to
+        read back.
+        """
+        if viewmodel_cls is None and _is_window_file(self._named("view", view_path)):  # a window view needs none (0.4.4)
+            path, found = resolve_embedded(self.project, view_path)
+            viewmodel_cls = found if found is not None else WindowViewModel
+            prefix = path.name.removesuffix("_View.yaml")
+            if found is not None:
+                check_naming_convention(path, found)
+            view_path = path
+        else:
+            view_path, viewmodel_cls = resolve_view(self.project, view_path, viewmodel_cls)
+            prefix = check_naming_convention(view_path, viewmodel_cls)
+
+        view = self.build_view(view_path, stylesheet=stylesheet, stylesheet_spec=stylesheet_spec)
+        viewmodel = viewmodel_cls(view)
+        self.register(name or prefix, view, viewmodel)
+        if window_of(view.spec) is not None:
+            self._adopt_window_view(name or prefix, view)
+        logger.debug("loaded {!r} from {}", name or prefix, view_path)
+        return view, viewmodel
+
+    def _adopt_window_view(self, name: str, view: Any) -> None:
+        """A loaded `kind: Window` view becomes the app's frame: it sets the OS window, and is mounted in it for good."""
+        if self._frame is not None:
+            raise ValueError(f"the app already has a window view ({self._frame.name!r}); {name!r} is a second: "
+                             "an app has one window")
+        self._frame = Frame(self, name, view)
+        self._apply_window(window_of(view.spec) or {})
+        if view.root.parent() is None:
+            self._window.root.add_child(view.root)
+        self._current = name
+        self._screen_name.set(name)
+        self._frame.sync()
+
+    def _register_screen(self, name: str, view: Any, viewmodel: Any, route: str) -> None:
+        """A routed view of the window view is a screen: registered under `name`, and reached by `route`."""
+        if name in self._registered:
+            raise ValueError(f"a view named {name!r} is already registered: the routed view {name!r} can't be a second")
+        self._registered[name] = _Registered(view, viewmodel)
+        self.route(route, name)
+
+    def _unregister_screen(self, name: str) -> None:
+        self._registered.pop(name, None)
+        self._routes = [r for r in self._routes if r.name != name]
+        if self._current == name:
+            self._current = self._frame.name if self._frame is not None else None
+            self._screen_name.set(self._current)
+
+    def _apply_window(self, options: dict[str, Any], *, resize: bool = True) -> None:
+        """Sets the OS window from a window view's `window:` (title, borderless, min sizes and, loading, its size)."""
+        if options.get("title") is not None:
+            self._title = options["title"]
+            self._window.set(title=options["title"])
+        self.borderless = bool(options.get("borderless", False))
+        for key in ("min_width", "min_height"):
+            if key in options:
+                setattr(self, key, int(options[key]))
+        for name in ("transparent", "blur_behind", "click_through"):  # before the window opens: the OS fixes these then
+            if name in options:
+                self._set_window(**{name: bool(options[name])})
+        if "maximized" in options:
+            self.maximize() if options["maximized"] else self.restore()
+        if "fullscreen" in options:
+            self.fullscreen = bool(options["fullscreen"])
+        if resize and options.get("size") is not None:
+            width, height = options["size"]
+            self._window.resize(int(width), int(height))
+        if resize and options.get("remember"):
+            key = options["remember"] if isinstance(options["remember"], str) else (options.get("title") or self._title or "app")
+            self.remember_window(key)
+
+    def remember_window(self, key: str) -> None:
+        """Puts the window back as it was left under `key` (see `tess_ui.windowstate`) and keeps the file up to date as it changes: its size and, where
+        the platform gives one, its place, while it is not maximized or fullscreen, and whether it is maximized."""
+        from tess_ui import windowstate
+
+        if getattr(self, "_remembered", None) == key:
+            return
+        self._remembered = key
+        saved = windowstate.load(key)
+        if "width" in saved:
+            self._window.resize(int(saved["width"]), int(saved["height"]))
+        if "x" in saved:
+            try:
+                self._window.set(x=int(saved["x"]), y=int(saved["y"]))
+            except (ValueError, TypeError):
+                pass  # a platform that cannot place a window (Wayland)
+        if saved.get("maximized"):
+            self.maximize()
+        self._remember_state: dict[str, Any] = dict(saved)
+        pending = [False]
+
+        def write() -> None:
+            pending[0] = False
+            state = self._remember_state
+            maximized = self._maximized.get()
+            if not maximized and not self._window.get("fullscreen"):
+                state["width"], state["height"] = float(self._window.get("width")), float(self._window.get("height"))
+                x, y = self._window.get("x"), self._window.get("y")
+                if x is not None and y is not None:
+                    state["x"], state["y"] = float(x), float(y)
+            state["maximized"] = maximized
+            windowstate.save(key, state)
+
+        def later(event: Any = None) -> None:
+            if not pending[0]:
+                pending[0] = True
+                self._window.after(400, write)
+
+        listen_window(self._window, "resize", later)
+        listen_window(self._window, "maximized", later)
+        self._window_write = write
+
+    def show(self, name: str) -> Window:
+        """Shows the view registered under `name` in the app's window: its
+        root is attached, and the screen shown before it is detached (kept
+        alive, with its state and bindings). Returns the window, the same one
+        every time.
+
+        A jump, not a step in the history: it pushes nothing and calls
+        no `on_navigated`, and it replaces the current history entry, so
+        `back()` leaves it for the entry before. `navigate` records a step.
+        """
+        window = self._show(name)
+        if self._at < 0:
+            self._history, self._at = [(name, {})], 0
+        else:
+            self._history[self._at] = (name, {})
+        self._sync_history()
+        return window
+
+    def navigate(self, name: str, /, **params: Any) -> Window:
+        """Shows the screen registered under `name` as a step in the history
+: `back()` returns from it. Its ViewModel's `on_navigated(params)`,
+        if it has one, is called first with `params` (a dict). Forward
+        entries are dropped, as a browser does; navigating to the entry
+        already showing (the same screen and params) does nothing. `name`
+        is positional-only, so a param can be called `name` too."""
+        entry = (name, params)
+        if 0 <= self._at and self._history[self._at] == entry:
+            return self._window
+        verdict = self._verdict(name, params)
+        if verdict is not True:  # a guard refused: stay where we are, or go where it sends us
+            if isinstance(verdict, str):
+                if self._redirects >= 8:
+                    raise ValueError(f"guards send the app round in a circle (at {name!r}, being sent to {verdict!r})")
+                self._redirects += 1
+                try:
+                    return self.navigate_to(verdict)
+                finally:
+                    self._redirects -= 1
+            return self._window
+        window = self._arrive(entry)
+        del self._history[self._at + 1:]
+        self._history.append(entry)
+        self._at = len(self._history) - 1
+        self._arrivals[self._at] = self._one_shot or (self._transition, None)  # how it got here: back() undoes that, forward() repeats it
+        for stale in [i for i in self._arrivals if i > self._at]:
+            del self._arrivals[stale]
+        self._sync_history()
+        return window
+
+    def guard(self, screen: str, check: Callable[[dict[str, Any]], Any]) -> None:
+        """`check(params)` runs before the app goes to `screen` (by `navigate`, `navigate_to`, `back` or `forward`; `show` is a jump and skips it): `True` lets it in,
+        `False` keeps the app where it is, and a route (a string) sends it there instead. A view's `route: {guard: ...}` is the same check, written in the view."""
+        self._guards.setdefault(screen, []).append(check)
+
+    def _set_guards(self, guards: dict[str, Callable[[dict[str, Any]], Any]]) -> None:
+        self._frame_guards = guards
+
+    def _verdict(self, name: str, params: dict[str, Any]) -> Any:
+        for check in (*([self._frame_guards[name]] if name in self._frame_guards else []), *self._guards.get(name, [])):
+            result = check(dict(params))
+            if result is not True:
+                return result if isinstance(result, str) else False
+        return True
+
+    def route(self, pattern: str, name: str) -> None:
+        """Adds a route: a pattern like `"notes/{id}"` for the screen
+        registered (now or later) under `name`. A `{param}` segment is a
+        string param, `{param:int}` an `int`; the others must match
+        exactly. Routes are tried in the order they were added."""
+        segments: list[Any] = []
+        seen: set[str] = set()
+        for part in _route_parts(pattern):
+            if part.startswith("{") and part.endswith("}"):
+                param, _, converter = part[1:-1].partition(":")
+                if not param.isidentifier() or converter not in ("", "int"):
+                    raise ValueError(f"route {pattern!r}: {part!r} isn't {{name}} or {{name:int}}")
+                if param in seen:
+                    raise ValueError(f"route {pattern!r}: {param!r} appears twice")
+                seen.add(param)
+                segments.append((param, converter or None))
+            elif not part or "{" in part or "}" in part:
+                raise ValueError(f"route {pattern!r}: {part!r} isn't a segment")
+            else:
+                segments.append(part)
+        self._routes.append(_Route(pattern, name, segments))
+
+    def navigate_to(self, route: str) -> Window:
+        """Navigates to the screen the first matching route names, with the
+        params it reads from `route` (a deep link, say `"notes/42"`).
+        Raises `KeyError` when no route matches."""
+        parts = _route_parts(route)
+        for candidate in self._routes:
+            params = candidate.match(parts)
+            if params is not None:
+                return self.navigate(candidate.name, **params)
+        raise KeyError(f"no route matches {route!r}")
+
+    @property
+    def location(self) -> str | None:
+        """The screen showing, as a route string (for saving where the
+        user was): from the first route of its screen that reads its
+        params back exactly, or `None` if none does."""
+        if self._at < 0:
+            return None
+        name, params = self._history[self._at]
+        for candidate in self._routes:
+            if candidate.name != name:
+                continue
+            text = "/".join(seg if isinstance(seg, str) else str(params.get(seg[0], "")) for seg in candidate.segments)
+            if candidate.match(_route_parts(text)) == params:
+                return text
+        return None
+
+    def back(self) -> bool:
+        """Shows the history's previous entry, calling its ViewModel's
+        `on_navigated` with that entry's params. Returns whether it moved."""
+        return self._step(-1)
+
+    def forward(self) -> bool:
+        """Shows the entry `back()` left, if any. Returns whether it moved."""
+        return self._step(1)
+
+    @property
+    def transition(self) -> str:
+        """How `navigate`, `back` and `forward` change screens: `none` (the default, a swap), `fade_through`, `shared_axis_x`, `shared_axis_y`,
+        `shared_axis_z` or `container_transform` (see `tess_ui.screen_transition`). `show()` is a jump and never animates."""
+        return self._transition
+
+    @transition.setter
+    def transition(self, kind: str) -> None:
+        from tess_ui.screen_transition import TRANSITIONS
+
+        if kind not in TRANSITIONS:
+            raise ValueError(f"App.transition: one of {', '.join(TRANSITIONS)}, not {kind!r}")
+        self._transition = kind
+
+    def navigate_with(self, name: str, *, transition: str, origin: Any = None, params: dict[str, Any] | None = None) -> Window:
+        """`navigate(name, **params)` with this `transition` instead of the app's. For `container_transform`, `origin` is the node the new screen
+        grows from (and, going back, shrinks into)."""
+        from tess_ui.screen_transition import TRANSITIONS
+
+        if transition not in TRANSITIONS:
+            raise ValueError(f"App.navigate_with: transition is one of {', '.join(TRANSITIONS)}, not {transition!r}")
+        self._one_shot = (transition, origin)
+        try:
+            return self.navigate(name, **(params or {}))
+        finally:
+            self._one_shot = None
+
+    def _step(self, by: int) -> bool:
+        to = self._at + by
+        if not 0 <= to < len(self._history):
+            return False
+        if self._verdict(*self._history[to]) is not True:
+            return False  # a guard now keeps that screen out
+        # going back undoes how the screen being left was reached; going forward repeats how the next one was
+        self._one_shot = self._arrivals.get(self._at if by < 0 else to)
+        try:
+            self._arrive(self._history[to], forward=by > 0, animate=True)
+        finally:
+            self._one_shot = None
+        self._at = to
+        self._sync_history()
+        return True
+
+    def _arrive(self, entry: tuple[str, dict[str, Any]], forward: bool = True, animate: bool = True) -> Window:
+        name, params = entry
+        registered = self._registered.get(name)
+        if registered is None:
+            raise KeyError(f"no view registered under {name!r} -- call register() first")
+        hook = getattr(registered.viewmodel, "on_navigated", None)
+        if hook is not None:
+            hook(dict(params))  # a copy: the history's entry stays as it was
+        kind, origin = getattr(self, "_one_shot", None) or (self._transition, None)
+        return self._show(name, kind if animate else "none", forward, origin)
+
+    def _history_key(self, event: Any) -> None:
+        if not event.alt or event.ctrl or event.meta or event.shift or event.key not in ("arrow_left", "arrow_right"):
+            return
+        target = event.target
+        if target is not None and target.get("kind") in ("text_input", "terminal"):
+            return  # there Option+Left moves by word (macOS)
+        if event.key == "arrow_left":
+            self.back()
+        else:
+            self.forward()
+
+    def _history_button(self, event: Any) -> None:
+        if event.button == "back":
+            self.back()
+        elif event.button == "forward":
+            self.forward()
+
+    def _sync_history(self) -> None:
+        def sync() -> None:  # together, so a follower never sees one updated and not the other
+            self.can_go_back.set(self._at > 0)
+            self.can_go_forward.set(self._at < len(self._history) - 1)
+            self._route_params.set(dict(self._history[self._at][1]) if self._at >= 0 else {})
+        batch(sync)
+
+    def _show(self, name: str, transition: str = "none", forward: bool = True, origin: Any = None) -> Window:
+        from tess_ui import screen_transition
+
+        registered = self._registered.get(name)
+        if registered is None:
+            raise KeyError(f"no view registered under {name!r} -- call register() first")
+        previous = self._registered[self._current].view.root if self._current not in (None, name) else None
+        root = registered.view.root
+        if self._playing is not None:
+            self._playing.finish()  # a screen change while one is playing ends that one where it was going
+            self._playing = None
+        if self._frame is not None:  # a window view: its routed views are the screens (0.4.4)
+            if name != self._frame.name:
+                came_from = self._current if self._current not in (None, name, self._frame.name) else None
+                self._frame.activate(name)
+                if (came_from in self._frame.screens and name in self._frame.screens and transition != "none"
+                        and self._frame.screens[came_from] is not None and self._frame.screens[name] is not None
+                        and self._frame.parents.get(came_from) == self._frame.parents.get(name)):
+                    outgoing = self._frame.view.node(self._frame.screens[came_from])
+                    incoming = self._frame.view.node(self._frame.screens[name])
+                    self._playing = screen_transition.play(
+                        self._window, outgoing, incoming, transition, forward=forward, origin=origin,
+                        reveal=lambda: incoming.set(visible=True), hide_outgoing=lambda: outgoing.set(visible=False))
+                else:
+                    self._frame.show_screen(name, came_from)
+        else:
+            self._playing = screen_transition.play(
+                self._window, previous, root, transition, forward=forward, origin=origin,
+                reveal=lambda: root.parent() is None and self._window.root.add_child(root),
+                hide_outgoing=lambda: previous.remove())  # detached, kept alive with its state
+        self._current = name
+        self._screen_name.set(name)
+        logger.debug("showing {!r}", name)
+        return self._window
+
+    @property
+    def window(self) -> Window:
+        """The app's one window (it exists from the start)."""
+        return self._window
+
+    def screen(self, name: str) -> tuple[Any, Any]:
+        """The `(view, viewmodel)` registered under `name` -- by `register`,
+        `load` or an embedded view; `viewmodel` is `None` for a view with none."""
+        registered = self._registered.get(name)
+        if registered is None:
+            raise KeyError(f"no view registered under {name!r} -- call register() first")
+        return registered.view, registered.viewmodel
+
+    @classmethod
+    def of(cls, view: Any) -> "App | None":
+        """The live app whose window `view` (a view, a component, or a
+        window) is on, or `None`: for a ViewModel's constructor,
+        before `super().__init__(view)` gives it `self.app`."""
+        return app_of(getattr(view, "window", view))
+
+    @property
+    def current(self) -> str | None:
+        """The name last passed to `show()`, or `None` before the first
+        real call -- lets a registered handler ask "which screen is this,
+        anyway" without the app keeping its own separate bookkeeping.
+        """
+        return self._current
+
+    # -- the window (0.3.0 M2: custom windowing, `tre` 0.5.0) ----------------
+
+    #: The resize border of a borderless window whose app gives none.
+    DEFAULT_RESIZE_BORDER = 6
+
+    def _resize_for(self, borderless: bool) -> int:
+        if self._resize_border is not None:
+            return self._resize_border
+        return self.DEFAULT_RESIZE_BORDER if borderless else 0
+
+    @property
+    def borderless(self) -> bool:
+        """Whether the OS window has no title bar and borders of its own: the app draws its own, with a `TitleBar`
+        (on macOS the title bar stays, transparent, with the traffic lights). It can change while the app runs."""
+        return self._borderless.get()
+
+    @borderless.setter
+    def borderless(self, value: bool) -> None:
+        self._window.set(decorations=not bool(value), resize_border=self._resize_for(bool(value)))
+        self._borderless.set(bool(value))
+
+    @property
+    def resize_border(self) -> int:
+        """How many pixels along each edge resize a borderless window
+        (`tre` turns it off while maximized or fullscreen, and on macOS).
+        Unless set, 6 while borderless and 0 otherwise."""
+        return int(self._window.get("resize_border"))
+
+    @resize_border.setter
+    def resize_border(self, value: int | None) -> None:
+        self._resize_border = _non_negative("resize_border", value, allow_none=True)
+        self._window.set(resize_border=self._resize_for(self.borderless))
+
+    @property
+    def min_width(self) -> int:
+        """The narrowest the user can resize the window to (0 for no limit)."""
+        return int(self._window.get("min_width"))
+
+    @min_width.setter
+    def min_width(self, value: int) -> None:
+        self._window.set(min_width=_non_negative("min_width", value))
+
+    @property
+    def min_height(self) -> int:
+        """The shortest the user can resize the window to (0 for no limit)."""
+        return int(self._window.get("min_height"))
+
+    @min_height.setter
+    def min_height(self, value: int) -> None:
+        self._window.set(min_height=_non_negative("min_height", value))
+
+    @property
+    def fullscreen(self) -> bool:
+        """Whether the window fills its monitor, borderless."""
+        return bool(self._window.get("fullscreen"))
+
+    @fullscreen.setter
+    def fullscreen(self, value: bool) -> None:
+        self._window.set(fullscreen=bool(value))
+        self._fullscreen.set(bool(value))
+
+    @property
+    def window_border(self) -> bool:
+        """Whether a borderless window gets its 1 px border (on by
+        default): around the window, in the theme's `outline_variant`, a
+        node of class `window_border` a theme or stylesheet can restyle.
+        It's hidden while maximized or fullscreen, and on macOS, where the
+        OS draws the window's frame."""
+        return self._window_border.get()
+
+    @window_border.setter
+    def window_border(self, value: bool) -> None:
+        self._window_border.set(bool(value))
+
+    def _show_border(self) -> None:
+        shown = (self._window_border.get() and self._borderless.get() and not self._maximized.get()
+                 and not self._fullscreen.get() and self.platform != "macos")
+        if shown and self._border is None:
+            self._border = self._build_border()
+        if self._border is not None:
+            self._border.root.set(visible=shown)
+
+    def _build_border(self) -> Any:
+        from tess_ui.spec.rules import is_rule_sheet
+
+        style: dict[str, Any] = {"position": "absolute", "x": 0, "y": 0, "width": "100%", "height": "100%",
+                                 "z_index": 1000}
+        theme = self._view_theme()
+        if "theme_seed" not in theme and self._default_theme_spec is None and self._custom_theme_spec is None:
+            # an unthemed app has no roles to resolve: MD3's baseline colour
+            style.update(background="transparent", border_width=1,
+                         border_color="#{:02X}{:02X}{:02X}{:02X}".format(*tokens.BASELINE["outline_variant"]))
+        spec = {"id": "window_border", "kind": "Rect", "classes": ["window_border"], "style": style}
+        if self._stylesheet_spec is not None and not is_rule_sheet(self._stylesheet_spec):
+            theme["stylesheet_spec"] = self._stylesheet_spec  # the border is a plain Rect, which no `widget:` rule reaches, and the old reader refuses one
+        view = TesseraeView(spec, window=self._window, **theme)
+        view.root.set(hit_testable=False, a11y_hidden=True)  # drawn over the app, never in its way
+        self._built.append(_Built(view))  # re-themed with the app's views
+        self._window.root.add_child(view.root)
+        return view
+
+    @property
+    def system_menu(self) -> bool:
+        """Whether a secondary press on the title bar opens the OS's window
+        menu (Windows, and Wayland compositors with one). Off by default,
+        so a right-click there is the app's."""
+        return bool(self._window.get("system_menu"))
+
+    @system_menu.setter
+    def system_menu(self, value: bool) -> None:
+        self._window.set(system_menu=bool(value))
+
+    @property
+    def platform(self) -> str:
+        """`"windows"`, `"macos"`, `"wayland"` or `"x11"`."""
+        return str(self._window.get("platform"))
+
+    def minimize(self) -> None:
+        """Minimizes the window (before `run()`, it opens minimized)."""
+        self._window.minimize()
+        self._sync_maximized()
+
+    def maximize(self) -> None:
+        """Maximizes the window (before `run()`, it opens maximized)."""
+        self._window.maximize()
+        self._sync_maximized()
+
+    def restore(self) -> None:
+        """Restores the window from maximized or minimized."""
+        self._window.restore()
+        self._sync_maximized()
+
+    def toggle_maximized(self) -> None:
+        """Maximizes the window, or restores it if it's maximized: a title
+        bar's maximize button."""
+        if self._window.get("maximized"):
+            self.restore()
+        else:
+            self.maximize()
+
+    def _on_titlebar_inset(self, event: Any) -> None:
+        self._titlebar_inset.set(_inset(event.titlebar_inset))
+        self._native_controls.set(bool(self._window.get("native_controls")))
+
+    def _sync_maximized(self) -> None:
+        # Before `run()` these set how the window opens, and no event says
+        # so; an open window's state is `tre`'s event's to report (it may
+        # still read the old state here, and the event follows).
+        self._maximized.set(bool(self._window.get("maximized")))
+
+    def close(self) -> None:
+        """Closes the window as the user's close would: `close_requested`
+        fires first, so an app's "save changes?" check still runs and can
+        cancel it. It happens on the loop's next turn."""
+        self._window.close()
+
+    def set_icon(self, icon: str | Path | None) -> None:
+        """The window's icon, from an image file (a PNG, best square), or
+        `None` for none. Shown on Windows and X11; Wayland and macOS take
+        an app's icon from its desktop entry or bundle, as `tesserae build
+        --installer` makes them."""
+        if icon is None:
+            self._window.set(icon=None)
+            return
+        from PIL import Image
+
+        path = Path(icon)
+        try:
+            with Image.open(path) as image:
+                rgba = image.convert("RGBA")
+        except (OSError, ValueError) as exc:
+            raise ValueError(f"App: icon {str(path)!r} isn't an image file ({exc})") from None
+        self._window.set(icon=(rgba.tobytes(), rgba.width, rgba.height))
+
+    def _screens_never_shown(self) -> bool:
+        """The mistake `run()` reports (0.3.1): screens were registered and
+        none was shown, with nothing else on the window. A window with no
+        screens at all runs: an app built in Python starts empty and adds
+        nodes to `app.window.root`. The window border a borderless app
+        draws is a child of the root too, and doesn't count as content."""
+        if self._current is not None or not self._registered:
+            return False
+        return len(self._window.root.children()) <= (1 if self._border is not None else 0)
+
+    def thread_handle(self) -> Any:
+        """`tre`'s thread-safe `LoopHandle` for this app: the one
+        object that may cross threads. `handle.call_soon(fn)` runs `fn`
+        (no arguments) on the event-loop thread at the next frame, waking
+        an idle loop -- the way for a background thread to touch a view,
+        since views may only be used from the thread that created them.
+        Usable before `run()`; a callable queued then runs on the first
+        frame.
+        """
+        if self._tre_app is None:
+            self._tre_app = _TreApp()
+        return self._tre_app.thread_handle()
+
+    def _start_watchers(self, handle: Any) -> list[Any]:
+        """Every hot-reload watcher `run(hot_reload=True)` needs, started
+        on `handle`."""
+        watchers: list[Any] = []
+        for opened in self._opened.values():  # views written with `widget:` nodes, opened with `open_view` or `open_window`
+            watchers.append(self._composed_watcher(opened))
+        for name, registered in self._registered.items():
+            if registered.view in self._opened.values() or hasattr(registered.view, "record"):  # watched with its view, or a routed call: a node of its window's view
+                continue
+            # M48: a screen built from a file -- by `load()` or `build_view()`,
+            # then `register()` -- keeps that file as `view.path`
+            path = getattr(registered.view, "path", None)
+            if path is not None:
+                watchers.append(ViewWatcher(registered.view, path, project=self.project))
+            else:
+                logger.info("hot reload: screen {!r} isn't watched -- it was built from a spec, not a file", name)
+        if self._stylesheet_file is not None:
+            path = Path(self._stylesheet_file).resolve()
+            watchers.append(
+                FileWatcher(
+                    [path],
+                    lambda path=path: load_stylesheet(path),
+                    _from_file(path, "re-styled the screens using the default stylesheet", self.set_stylesheet_spec),
+                    name="stylesheet",
+                )
+            )
+        for path in self._own_sheets:
+            watchers.append(
+                FileWatcher(
+                    [path],
+                    lambda path=path: load_stylesheet(path),
+                    _from_file(
+                        path,
+                        "re-styled the screens loaded with this stylesheet",
+                        lambda spec, path=path: self._set_own_stylesheet(path, spec),
+                    ),
+                    name=f"stylesheet:{path.name}",
+                )
+            )
+        theme_files = [f for f in self._theme_files.values() if f is not None]
+        if theme_files:
+            watchers.append(
+                FileWatcher(
+                    theme_files,
+                    self._read_theme_files,
+                    self._apply_theme_files,
+                    name="theme",
+                )
+            )
+        for watcher in watchers:
+            watcher.start(handle)
+        self._hot_handle, self._watchers = handle, watchers
+        for path in sorted({c.path.resolve() for c in self._live_components()}):
+            self.watch_component(path)
+        views = sum(isinstance(w, ViewWatcher) and not isinstance(w, ComponentWatcher) for w in watchers)
+        logger.info(
+            "hot reload on: watching {} screen(s) and {} theme/stylesheet file(s)",
+            views,
+            sum(len(w.files) for w in watchers if not isinstance(w, ViewWatcher)),
+        )
+        return watchers
+
+    def _composed_watcher(self, opened: Any) -> Any:
+        from tess_ui.shipped import SHIPPED
+        from tess_ui.spec.watch import ComposedWatcher
+
+        return ComposedWatcher(opened, opened.source, self._composed_docs, lambda library, doc: self._composed_rules(library, doc=doc)[0], shipped=SHIPPED,
+                                sheet_files=lambda library, used: library.sheets_of(used, self._app_sheet_file())[1])
+
+    def _stop_watchers(self) -> None:
+        """Stops every hot-reload watcher, including component watchers
+        started while the app ran; a later `instantiate` watches nothing."""
+        for watcher in self._watchers:
+            watcher.stop()
+        self._hot_handle, self._watchers, self._component_watchers = None, [], {}
+
+    def _live_components(self, path: Path | None = None) -> list[Any]:
+        """Every live component built from a file (`tess_ui.instantiate`)
+        in the app's screens and views, nested ones included -- or only
+        those built from `path` -- and, since M61, in any other view
+        on the app's window, as `instantiate` registered them."""
+        views = [r.view for r in self._registered.values() if hasattr(r.view, "_prune_components")] + [b.view for b in self._built]  # a routed call (`_Screen`) is a node of its window's view, which is in `_built`
+        views += [f for f in self._followers if isinstance(f, TesseraeView)]
+        found: list[Any] = []
+        seen: set[int] = set()
+        stack = list(views)
+        while stack:
+            view = stack.pop()
+            view._prune_components()
+            for component in view._components:
+                if id(component) in seen:
+                    continue
+                seen.add(id(component))
+                stack.append(component)
+                if component.path is not None and (path is None or component.path.resolve() == path):
+                    found.append(component)
+        for component in list(self._instances):  # M61: in a view the app doesn't otherwise know
+            if id(component) in seen or not component._follow_alive():
+                continue
+            seen.add(id(component))
+            if component.path is not None and (path is None or component.path.resolve() == path):
+                found.append(component)
+        return found
+
+    def watch_component(self, path: str | Path) -> None:
+        """While `run(hot_reload=True)` runs, watches a component file and
+        reloads every live instance of it on change;
+        `tess_ui.instantiate` calls it, so a component first added while
+        the app runs is watched too. Once per file; outside hot reload,
+        nothing happens."""
+        if self._hot_handle is None:
+            return
+        path = Path(path).resolve()
+        if path in self._component_watchers:
+            return
+        watcher = ComponentWatcher(path, lambda path=path: self._live_components(path), project=self.project)
+        watcher.start(self._hot_handle)
+        self._component_watchers[path] = watcher
+        self._watchers.append(watcher)
+        logger.info("hot reload: watching component {} ({} instance(s))", path.name, len(self._live_components(path)))
+
+    def _apply_theme_files(self, specs: tuple[Any, Any]) -> None:
+        self.set_theme_specs(*specs)
+        files = ", ".join(str(f) for f in self._theme_files.values() if f is not None)
+        logger.info("re-themed the app from {}", files)
+
+    def run(self, max_frames: int | None = None, *, hot_reload: bool = False,
+            keepalive: bool | float = False) -> None:
+        """The one blocking call -- opens the real `Window` and runs `tre`'s
+        own real render loop, showing the screen `show()` made current and
+        any nodes added to `app.window.root` by calls. Since 0.3.1 an app
+        needs no screen: an empty window runs. Registering screens and not
+        showing one is still the `RuntimeError` it was. `max_frames`
+        is the identical headless-CI-safe convention `tre`'s own examples
+        already use (TRE v1 finding #261) -- omit it for a real,
+        interactive run that exits only when the window closes. With no
+        display it returns at once; a window whose GPU can't be set up
+        raises `RuntimeError` (`tre` 0.4.0).
+
+        `hot_reload=True` watches every screen built from a file --
+        by `load()`, or by `build_view()` and given to `register()`
+        -- its view file and everything it was built from, and reloads it
+        in place while the app runs, its ViewModel and bindings kept. Each
+        screen gets a `ViewWatcher` on a background thread (`watchfiles`),
+        which hands its reloads to the event loop through `tre`'s
+        thread-safe `App.thread_handle()`. A failed reload is
+        logged; the app keeps running. A screen built from a spec
+        dict has no file, so it isn't watched, and the log says so. A
+        component built with `tess_ui.instantiate` is watched by its file
+        too, one watcher for all its live instances, including ones added
+        while the app runs.
+
+        M31: the theme files given to `App(default_theme=, custom_theme=)`
+        are watched too. An edit re-reads them on the watcher thread and
+        re-themes every screen `build_view()`/`load()` made with
+        `set_theme_specs`. So are stylesheet files: the
+        default from `App(stylesheet=)` (re-applied, with
+        `set_stylesheet_spec`, to every screen using it) and each screen's
+        own `stylesheet=` file (re-applied to the screens built with it).
+
+        `keepalive` (0.3.1, #77) keeps the window ticking about 50 times a
+        second (a number is the seconds between ticks), for code that wants
+        the loop woken regularly. It is off by default since 0.3.2:
+        `tre` 0.5.1 lets other Python threads run while the window sits
+        idle, so a hot-reload watcher, or any thread calling
+        `thread_handle().call_soon`, needs no tick (0.3.1 ticked by default
+        with `hot_reload`, for `tre` 0.5.0.x). Each tick sleeps on the loop
+        thread, so input can wait up to a tick, and an idle window costs
+        about half a percent of one core.
+
+        M77: `TESS_UI_MAX_FRAMES=n` in the environment stops a run with no
+        `max_frames` after `n` frames -- how `tesserae build --check` and CI
+        run a built executable and see it exit. A frozen app (one
+        `tesserae build` made) has no source files to edit, so
+        `hot_reload` does nothing there. `TESS_UI_FRAMES_REPORT=<file>`
+        writes how many frames the run drew to that file, so a check can
+        tell a run that drew from one that found no display and returned.
+        """
+        if self._screens_never_shown():
+            raise RuntimeError("App.run() called before show(): screens are registered but none is showing -- "
+                               "show(name) one, or add nodes to app.window.root")
+        if max_frames is None and os.environ.get("TESS_UI_MAX_FRAMES"):
+            try:
+                max_frames = int(os.environ["TESS_UI_MAX_FRAMES"])
+            except ValueError:
+                raise ValueError(f"TESS_UI_MAX_FRAMES must be a whole number of frames, "
+                                 f"got {os.environ['TESS_UI_MAX_FRAMES']!r}") from None
+        if hot_reload and getattr(sys, "frozen", False):
+            logger.info("hot reload is off in a built app: there are no source files to watch")
+            hot_reload = False
+        interval = _keepalive_interval(keepalive)
+        if self._tre_app is None:
+            self._tre_app = _TreApp()
+        tre_app = self._tre_app
+        tre_app.add_window(self._window)
+        for each in list(self._windows.values()):  # windows opened before the run open with the main one
+            tre_app.add_window(each.window)
+        listen_window(self._window, "closed", lambda event: [each.window.close() for each in list(self._windows.values())])
+        tre_app.thread_handle().call_soon(self._adopt_os_appearance)  # on the first frame (M53 Q2)
+        report = os.environ.get("TESS_UI_FRAMES_REPORT")
+        drawn = [0]
+        if report:
+            handle = tre_app.thread_handle()
+
+            def count() -> None:  # once a frame, each call queuing the next
+                drawn[0] += 1
+                handle.call_soon(count)
+
+            handle.call_soon(count)
+        ticking = [interval is not None]
+        try:
+            if interval is not None:
+                tick_handle = tre_app.thread_handle()
+
+                def tick() -> None:  # the sleep lets other threads take the GIL; each call queues the next
+                    if ticking[0]:
+                        time.sleep(interval)
+                        tick_handle.call_soon(tick)
+
+                tick_handle.call_soon(tick)
+            if hot_reload:
+                self._start_watchers(tre_app.thread_handle())
+            tre_app.run(max_frames=max_frames)
+        finally:
+            ticking[0] = False
+            self._stop_watchers()
+            if report:
+                Path(report).write_text(str(drawn[0]), encoding="utf-8")
+            # A later run() starts from a fresh tre App, as before
+            # thread_handle() existed; a handle from this run is spent.
+            self._tre_app = None

@@ -10,7 +10,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from tesserae import App, configure_logging
+from tess_ui import App, configure_logging
 
 from Counter_ViewModel import CounterViewModel
 

@@ -9,19 +9,19 @@ a mistake such as `foregorund`.
 
 | Schema | For |
 | --- | --- |
-| `tesserae-widget-schema.json` | a view in the current language, `*_View.yaml`: one node, with a branch for each built-in widget and each view Tesserae ships, and its properties |
-| `tesserae-stylesheet-schema.json` | a stylesheet of rules, `*_Stylesheet.yaml` |
-| `tesserae-theme-schema.json` | a theme, `*_Theme.yaml` |
-| `tesserae-yaml-schema.json` | a view written with `kind:` and `id:` (the older syntax); `--settings` maps no file to it: name it in a `# yaml-language-server: $schema=` comment |
-| `tesserae-component-schema.json` | a fragment written with `component:` (the older syntax), `*_Component.yaml` |
-| `tesserae-style-schema.json` | a style file (the older syntax), `*_Style.yaml` |
+| `tess-ui-widget-schema.json` | a view in the current language, `*_View.yaml`: one node, with a branch for each built-in widget and each view Tesserae ships, and its properties |
+| `tess-ui-stylesheet-schema.json` | a stylesheet of rules, `*_Stylesheet.yaml` |
+| `tess-ui-theme-schema.json` | a theme, `*_Theme.yaml` |
+| `tess-ui-yaml-schema.json` | a view written with `kind:` and `id:` (the older syntax); `--settings` maps no file to it: name it in a `# yaml-language-server: $schema=` comment |
+| `tess-ui-component-schema.json` | a fragment written with `component:` (the older syntax), `*_Component.yaml` |
+| `tess-ui-style-schema.json` | a style file (the older syntax), `*_Style.yaml` |
 
 They are JSON Schema draft-07, which Red Hat's server supports, and they
 come with Tesserae: `tesserae schema` says where.
 
 ## What the schemas cover
 
-- **A view in the current language** (`widget:`) is described by `tesserae-widget-schema.json`. It knows the keys every node has
+- **A view in the current language** (`widget:`) is described by `tess-ui-widget-schema.json`. It knows the keys every node has
   (`name`, `if`, `for`, `key`, `slot`, `state`, `style`, `classes`, `handlers`, `a11y`, `interaction`, `visible`, `route`,
   `focus_group`, `window_region`, `tooltip`, `params`, `expects`) and, for each built-in widget (`Container`, `Rect`, `Text`, `TextInput`,
   `Checkbox`, `Slider`, `Window`, ...) and each view Tesserae ships (`Button`, `Card`, ...), its properties or params with their types, choices
@@ -30,9 +30,9 @@ come with Tesserae: `tesserae schema` says where.
   project has, with its params, so an editor completes a call of one and flags a misspelt param or a missing one. A view of yours that has the name of one
   Tesserae ships replaces it, as in the loader.
 - **A stylesheet of rules** (`widget:`, `variant:`, `size:`, `shape:`, `classes:`, `name:`, `part:`, `state:` and a `style:`) is described by
-  `tesserae-stylesheet-schema.json`; the states are the real ones, and `style:` is the same fields as a node's.
-- **A theme file** (`seed`, `dark`, `colors`, `typography`, `components`, and `styles` in the older rule shape) by `tesserae-theme-schema.json`.
-- **The older syntax** keeps its schemas: `tesserae-yaml-schema.json` for a `kind:` view (never mapped by `--settings`: name it in a `$schema=` comment, below),
+  `tess-ui-stylesheet-schema.json`; the states are the real ones, and `style:` is the same fields as a node's.
+- **A theme file** (`seed`, `dark`, `colors`, `typography`, `components`, and `styles` in the older rule shape) by `tess-ui-theme-schema.json`.
+- **The older syntax** keeps its schemas: `tess-ui-yaml-schema.json` for a `kind:` view (never mapped by `--settings`: name it in a `$schema=` comment, below),
   and the component and style ones, which `--settings` maps to `*_Component.yaml` and `*_Style.yaml`. `tesserae migrate-yaml` moves such a project to the current language.
 
 ## Setting it up in VS Code
@@ -45,18 +45,18 @@ for you, with the real paths on your machine:
 tesserae schema --settings --project
 ```
 
-`--project` (here, or `--project DIR`) writes `.tesserae/tesserae-widget-schema.json` in the project, the widget schema with your views in it, and
+`--project` (here, or `--project DIR`) writes `.tesserae/tess-ui-widget-schema.json` in the project, the widget schema with your views in it, and
 maps `**/*_View.yaml` to it; without `--project` the views map to the packaged schema, which does not know your own. Paste what it prints into
 your project's `.vscode/settings.json` (or your user settings):
 
 ```json
 {
   "yaml.schemas": {
-    "/path/to/project/.tesserae/tesserae-widget-schema.json": ["**/*_View.yaml"],
-    "/path/to/site-packages/tesserae/schema/tesserae-stylesheet-schema.json": ["**/*_Stylesheet.yaml", "**/*stylesheet*.yaml"],
-    "/path/to/site-packages/tesserae/schema/tesserae-theme-schema.json": ["**/*_Theme.yaml", "**/*theme*.yaml", "!**/*_View.yaml", "!**/*_Component.yaml", "!**/*_Stylesheet.yaml", "!**/*stylesheet*.yaml"],
-    "/path/to/site-packages/tesserae/schema/tesserae-component-schema.json": ["**/*_Component.yaml"],
-    "/path/to/site-packages/tesserae/schema/tesserae-style-schema.json": ["**/*_Style.yaml"]
+    "/path/to/project/.tesserae/tess-ui-widget-schema.json": ["**/*_View.yaml"],
+    "/path/to/site-packages/tess_ui/schema/tess-ui-stylesheet-schema.json": ["**/*_Stylesheet.yaml", "**/*stylesheet*.yaml"],
+    "/path/to/site-packages/tess_ui/schema/tess-ui-theme-schema.json": ["**/*_Theme.yaml", "**/*theme*.yaml", "!**/*_View.yaml", "!**/*_Component.yaml", "!**/*_Stylesheet.yaml", "!**/*stylesheet*.yaml"],
+    "/path/to/site-packages/tess_ui/schema/tess-ui-component-schema.json": ["**/*_Component.yaml"],
+    "/path/to/site-packages/tess_ui/schema/tess-ui-style-schema.json": ["**/*_Style.yaml"]
   }
 }
 ```
@@ -73,7 +73,7 @@ The server also reads a comment at the top of a file, a *modeline*, and a path i
 
 <!-- old-syntax: a modeline for a file in the older syntax, which has no marker -->
 ```yaml
-# yaml-language-server: $schema=/path/to/site-packages/tesserae/schema/tesserae-yaml-schema.json
+# yaml-language-server: $schema=/path/to/site-packages/tess_ui/schema/tess-ui-yaml-schema.json
 kind: Container
 id: root
 ```

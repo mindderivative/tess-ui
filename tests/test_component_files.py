@@ -1,5 +1,5 @@
 """M51 Phase 2: components keep their file, so hot reload can find them
-(M51, named whatever Q1 says). `tesserae.instantiate` records the file
+(M51, named whatever Q1 says). `tess_ui.instantiate` records the file
 on the component; a reload that rebuilds a component's root keeps it in
 place among its siblings (a `Repeater`'s rows keep their order); and a
 host reload that destroys a component's nodes forgets it, unwired.
@@ -8,8 +8,8 @@ host reload that destroys a component's nodes forgets it, unwired.
 import importlib.util
 import sys
 
-from tesserae import View, instantiate
-from tesserae.spec import expand_components_to_spec
+from tess_ui import View, instantiate
+from tess_ui.spec import expand_components_to_spec
 
 HOST = """
 id: root
@@ -30,7 +30,7 @@ bindings: {width: "{{ size.get() }}"}
 
 
 ROW_VM = """
-from tesserae import Signal, ViewModel
+from tess_ui import Signal, ViewModel
 
 
 class RowViewModel(ViewModel):

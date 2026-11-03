@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from tesserae.spec import ComponentError, ViewWatcher, load_view
+from tess_ui.spec import ComponentError, ViewWatcher, load_view
 
 
 def _write(path: Path, text: str) -> Path:
@@ -165,7 +165,7 @@ def test_a_reload_that_edits_a_bound_node_keeps_its_live_value(tmp_path: Path):
     view_path = _write(tmp_path / "Live_View.yaml", _bound_view(width=100))
     vm_path = _write(
         tmp_path / "Live_ViewModel.py",
-        "from tesserae import Signal, ViewModel\n\n\nclass LiveViewModel(ViewModel):\n"
+        "from tess_ui import Signal, ViewModel\n\n\nclass LiveViewModel(ViewModel):\n"
         "    def __init__(self, view):\n        self.label = Signal('live')\n        super().__init__(view)\n",
     )
     spec = importlib.util.spec_from_file_location(vm_path.stem, vm_path)

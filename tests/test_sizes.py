@@ -3,7 +3,7 @@
 import pytest
 import tre
 
-from tesserae.spec.sizes import INSET_FIELDS, LIMIT_FIELDS, SIZE_FIELDS, size_problem
+from tess_ui.spec.sizes import INSET_FIELDS, LIMIT_FIELDS, SIZE_FIELDS, size_problem
 
 VALUES = [
     0, 40, 40.5, -3, True, None, "auto", "AUTO", "fit-content", "min-content", "stretch", "50%", "0%", "100%", "12.5%", "-50%", " 50% ", "50%%",

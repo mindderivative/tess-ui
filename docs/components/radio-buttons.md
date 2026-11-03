@@ -46,8 +46,8 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.controls import RadioGroup
-from tesserae.widgets import radio_button
+from tess_ui.controls import RadioGroup
+from tess_ui.widgets import radio_button
 
 group = RadioGroup()
 small = radio_button(app.window, 48, selected=True, group=group)

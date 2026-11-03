@@ -14,7 +14,7 @@ import sys
 import pytest
 
 from helpers import window_unthemed
-from tesserae import App, tokens
+from tess_ui import App, tokens
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 LIGHT, DARK = tokens.color_scheme(SEED, False)["primary"], tokens.color_scheme(SEED, True)["primary"]
@@ -27,7 +27,7 @@ def _load(app, tmp_path, prefix="Home"):
     view = tmp_path / f"{prefix}_View.yaml"
     view.write_text(VIEW)
     vm = tmp_path / f"{prefix}_ViewModel.py"
-    vm.write_text(f"from tesserae import Signal, ViewModel\n\n\nclass {prefix}ViewModel(ViewModel):\n"
+    vm.write_text(f"from tess_ui import Signal, ViewModel\n\n\nclass {prefix}ViewModel(ViewModel):\n"
                   f"    def __init__(self, view):\n        self.title = Signal('live')\n        super().__init__(view)\n")
     spec = importlib.util.spec_from_file_location(vm.stem, vm)
     module = importlib.util.module_from_spec(spec)

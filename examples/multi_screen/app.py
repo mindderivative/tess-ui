@@ -17,7 +17,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from tesserae import App, Signal, configure_logging
+from tess_ui import App, Signal, configure_logging
 
 from Home_ViewModel import HomeViewModel
 from Settings_ViewModel import SettingsViewModel

@@ -12,17 +12,17 @@ import textwrap
 
 import pytest
 
-from tesserae import cli
+from tess_ui import cli
 
 RUNNER = textwrap.dedent('''
     import json, re, runpy, sys
     from pathlib import Path
-    import tesserae
+    import tess_ui
 
     project = Path(sys.argv[1])
     sys.path.insert(0, str(project))
     sys.argv = ["app.py", *sys.argv[2:]]
-    real_run = tesserae.App.run
+    real_run = tess_ui.App.run
     report = {}
 
     def run(app, max_frames=None, **kwargs):
@@ -52,7 +52,7 @@ RUNNER = textwrap.dedent('''
         real_run(app, max_frames=3, **kwargs)
         report["ran"] = True
 
-    tesserae.App.run = run
+    tess_ui.App.run = run
     runpy.run_path(str(project / "app.py"), run_name="__main__")
     print("REPORT " + json.dumps(report))
 ''')
@@ -148,12 +148,12 @@ def test_routes_and_words():
 
 
 def test_the_command_and_python_m_run(tmp_path):
-    version = subprocess.run([sys.executable, "-m", "tesserae", "--version"], capture_output=True, text=True)
+    version = subprocess.run([sys.executable, "-m", "tess_ui", "--version"], capture_output=True, text=True)
     assert version.returncode == 0 and version.stdout.startswith("tesserae ")
-    made = subprocess.run([sys.executable, "-m", "tesserae", "new", "app", "--no-venv", "--dir", str(tmp_path)],
+    made = subprocess.run([sys.executable, "-m", "tess_ui", "new", "app", "--no-venv", "--dir", str(tmp_path)],
                           capture_output=True, text=True)
     assert made.returncode == 0 and (tmp_path / "app" / "app.py").is_file()
-    bad = subprocess.run([sys.executable, "-m", "tesserae", "new", "9"], capture_output=True, text=True, cwd=tmp_path)
+    bad = subprocess.run([sys.executable, "-m", "tess_ui", "new", "9"], capture_output=True, text=True, cwd=tmp_path)
     assert bad.returncode == 2 and bad.stderr.startswith("tesserae: ")
 
 
@@ -167,7 +167,7 @@ def test_schema_says_where_the_yaml_schemas_are_and_prints_the_setting(capsys):
 
     assert cli.main(["schema", "--settings"]) == 0
     setting = json.loads(capsys.readouterr().out)["yaml.schemas"]
-    assert setting[str(cli.SCHEMAS / "tesserae-widget-schema.json")] == ["**/*_View.yaml"]
+    assert setting[str(cli.SCHEMAS / "tess-ui-widget-schema.json")] == ["**/*_View.yaml"]
     assert set(setting) == {str(cli.SCHEMAS / name) for name in cli.SCHEMA_FILES}
 
 
@@ -250,10 +250,10 @@ def test_a_new_project_is_in_the_current_view_language_and_checks_clean(tmp_path
     out = subprocess.run([sys.executable, "-c", textwrap.dedent("""
         import runpy, sys
         from pathlib import Path
-        import tesserae
+        import tess_ui
         project = Path(sys.argv[1]); sys.path.insert(0, str(project)); sys.argv = ["app.py"]
         seen = {}
-        tesserae.App.run = lambda app, *a, **k: seen.setdefault("problems", app.check())
+        tess_ui.App.run = lambda app, *a, **k: seen.setdefault("problems", app.check())
         runpy.run_path(str(project / "app.py"), run_name="__main__")
         print("PROBLEMS", seen["problems"])
     """), str(project)], capture_output=True, text=True, timeout=120)

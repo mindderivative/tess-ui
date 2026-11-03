@@ -2,8 +2,8 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel, tokens
-from tesserae.shipped import shipped_views
+from tess_ui import App, Signal, ViewModel, tokens
+from tess_ui.shipped import shipped_views
 
 
 class VM(ViewModel):
@@ -23,7 +23,7 @@ class VM(ViewModel):
 @pytest.fixture(autouse=True)
 def _today_is_some_other_day(monkeypatch):
     """The picker marks today; these tests pick days around 2026-10-09 and must not depend on the day they run. A test that cares sets its own."""
-    from tesserae import expr
+    from tess_ui import expr
 
     monkeypatch.setitem(expr.BUILTIN_FUNCTIONS, "current_date", lambda: "2001-01-01")
 
@@ -120,7 +120,7 @@ def test_the_chosen_day_is_a_primary_circle_and_days_of_other_months_are_faint(t
 
 
 def test_today_is_outlined(tmp_path, monkeypatch):
-    from tesserae import expr
+    from tess_ui import expr
 
     monkeypatch.setitem(expr.BUILTIN_FUNCTIONS, "current_date", lambda: "2026-10-14")
     view, _ = opened(tmp_path)
@@ -188,7 +188,7 @@ def test_days_outside_the_limits_are_disabled_and_do_not_respond(tmp_path):
 
 
 def test_no_date_shows_none_and_starts_on_the_month_of_today(tmp_path, monkeypatch):
-    from tesserae import expr
+    from tess_ui import expr
 
     monkeypatch.setitem(expr.BUILTIN_FUNCTIONS, "current_date", lambda: "2027-02-03")
     view, _ = opened(tmp_path, date="")

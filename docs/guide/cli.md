@@ -1,6 +1,6 @@
 # The `tesserae` Command
 
-Installing Tesserae installs a `tesserae` command (`python -m tesserae` is the same).
+Installing Tesserae installs a `tesserae` command (`python -m tess_ui` is the same).
 It starts apps and screens from templates, moves a project to the current view syntax, builds an app into one executable, and
 finds the editor schemas. `tesserae --version` prints the version, and `tesserae <command> --help` lists a command's options.
 

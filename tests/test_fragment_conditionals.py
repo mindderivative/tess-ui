@@ -13,9 +13,9 @@ import yaml
 from helpers import view_from
 from tre import Window
 
-from tesserae.spec import expand_components, expand_components_to_spec
-from tesserae.spec.expand import ComponentError
-from tesserae.widgets import extended_fab
+from tess_ui.spec import expand_components, expand_components_to_spec
+from tess_ui.spec.expand import ComponentError
+from tess_ui.widgets import extended_fab
 
 THEME_SEED = (0x67, 0x50, 0xA4, 0xFF)
 

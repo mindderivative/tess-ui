@@ -10,8 +10,8 @@ already named for `button_group`/`list_`/`menu`).
 
 from tre import Window
 
-from tesserae.spec import expand_components
-from tesserae.widgets import status_bar, toolbar, top_app_bar
+from tess_ui.spec import expand_components
+from tess_ui.widgets import status_bar, toolbar, top_app_bar
 
 THEME_SEED = (0x67, 0x50, 0xA4, 0xFF)
 

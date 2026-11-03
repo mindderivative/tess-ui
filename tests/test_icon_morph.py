@@ -2,8 +2,8 @@
 
 import pytest
 
-from tesserae import App
-from tesserae.icons import ICONS, MDI_VIEW_BOX, icon_view_box
+from tess_ui import App
+from tess_ui.icons import ICONS, MDI_VIEW_BOX, icon_view_box
 
 
 def opened(tmp_path, extra=""):
@@ -97,7 +97,7 @@ def test_a_different_set_of_glyphs_cannot_morph_so_it_swaps(tmp_path):
 
 
 def test_icon_transition_is_for_icons_only(tmp_path):
-    from tesserae.spec import transition
+    from tess_ui.spec import transition
     assert list(transition.plan("x", "Icon", {"transition": {"icon": 100}})) == ["data"]
     assert transition.plan("x", "Container", {"transition": {"icon": 100}}) == {}
     assert "data" not in transition.plan("x", "Icon", {"transition": {"all": 100}})

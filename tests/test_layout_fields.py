@@ -2,14 +2,14 @@
 
 `align_content` (nine positions), `spread`, `flex`, `align_self`, `align_wrapped`, `align_tracks` and
 `align_cells` replace the engine's `align_items`, `justify_content`, `flex_grow`, `flex_shrink`, `flex_basis`,
-`justify_items` and `justify_self`; `tesserae.spec.layout` turns one into the other. These tests check the
+`justify_items` and `justify_self`; `tess_ui.spec.layout` turns one into the other. These tests check the
 translation, that the engine's names are refused with what replaces them, and the layout it makes.
 """
 
 import pytest
 
-from tesserae import App, View
-from tesserae.spec.layout import POSITIONS, LayoutError, engine_style
+from tess_ui import App, View
+from tess_ui.spec.layout import POSITIONS, LayoutError, engine_style
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 EDGE = {"left": "start", "top": "start", "center": "center", "right": "end", "bottom": "end"}
@@ -192,7 +192,7 @@ def test_a_grid_places_its_items_in_cells_and_tracks():
 
 
 def test_the_shells_parts_take_the_new_names():
-    from tesserae.spec.build import style_props
+    from tess_ui.spec.build import style_props
 
     props = style_props({"align_content": "center", "flex": "none"}, None)
     assert (props["justify_content"], props["align_items"], props["flex_grow"], props["flex_shrink"]) == ("center", "center", 0.0, 0.0)

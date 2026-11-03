@@ -10,8 +10,8 @@ import pytest
 import yaml
 
 from test_label_wrapping import FRAGMENTS, _params
-from tesserae import App, View
-from tesserae.spec import expand_components_to_spec
+from tess_ui import App, View
+from tess_ui.spec import expand_components_to_spec
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 #: The time picker's selected number sits on the dial's hand, a path the check can't see behind it.

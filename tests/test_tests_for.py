@@ -44,8 +44,8 @@ def test_an_example_no_test_names_says_so():
 
 
 def test_a_core_module_picks_its_importers_only_when_asked():
-    assert len(picked("src/tesserae/__init__.py")) < 10
-    assert len(picked("src/tesserae/__init__.py", include_core=True)) > 100
+    assert len(picked("src/tess_ui/__init__.py")) < 10
+    assert len(picked("src/tess_ui/__init__.py", include_core=True)) > 100
 
 
 def test_a_changed_docs_page_picks_the_tests_that_read_the_docs():

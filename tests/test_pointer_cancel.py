@@ -10,9 +10,9 @@ slider's drag would otherwise stay pressed. Each is released as on
 import ast
 from pathlib import Path
 
-from tesserae import View, ViewModel, interaction
+from tess_ui import View, ViewModel, interaction
 
-SRC = Path(__file__).resolve().parent.parent / "src" / "tesserae"
+SRC = Path(__file__).resolve().parent.parent / "src" / "tess_ui"
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 
 

@@ -7,13 +7,13 @@ import pytest
 import yaml
 from loguru import logger
 
-from tesserae import Signal, View, ViewModel
-from tesserae import cli
-from tesserae.composed import open_composed
-from tesserae.migrate import migrate_project
-from tesserae.spec.nodes import parse_view
-from tesserae.spec.rules import RuleSheet, is_rule_sheet
-from tesserae.viewmodel import Bindings
+from tess_ui import Signal, View, ViewModel
+from tess_ui import cli
+from tess_ui.composed import open_composed
+from tess_ui.migrate import migrate_project
+from tess_ui.spec.nodes import parse_view
+from tess_ui.spec.rules import RuleSheet, is_rule_sheet
+from tess_ui.viewmodel import Bindings
 
 ROOT = Path(__file__).resolve().parent.parent
 SEED = (103, 80, 164, 255)
@@ -59,7 +59,7 @@ OLD_APP_SHEET = """styles:
   - classes: [big]
     style: {width: 9}
 """
-VIEWMODEL = """from tesserae import Signal, ViewModel
+VIEWMODEL = """from tess_ui import Signal, ViewModel
 
 
 class CounterViewModel(ViewModel):
@@ -109,7 +109,7 @@ def test_write_moves_the_project_to_the_current_syntax(tmp_path):
     assert data["name"] == "Counter" and data["widget"] == "Container" and "id" not in data and data["children"][0]["name"] == "label"
     assert data["children"][0]["text"] == "{{ label.get() }}" and data["children"][1] == {"widget": "Pill", "name": "go", "caption": "Go"}
     assert yaml.safe_load((root / "Components" / "Pill_View.yaml").read_text())["params"] == ["caption"]
-    parse_view(view, "Counter_View.yaml", resolver={"Pill": __import__("tesserae.spec.widgets", fromlist=["x"]).decl_from_params("Pill", ["caption"])}.get)
+    parse_view(view, "Counter_View.yaml", resolver={"Pill": __import__("tess_ui.spec.widgets", fromlist=["x"]).decl_from_params("Pill", ["caption"])}.get)
     assert (root / "Themes" / "Brand_Theme.yaml").read_text() == snapshot_theme()  # themes are not touched
 
 
@@ -210,7 +210,7 @@ def test_the_command_reports_writes_and_returns_the_exit_code(tmp_path, capsys):
 
 
 def test_an_old_syntax_view_says_once_per_file_how_to_move_on(tmp_path):
-    from tesserae.spec import load
+    from tess_ui.spec import load
 
     path = tmp_path / "Old_View.yaml"
     path.write_text("id: root\nkind: Rect\nstyle: {width: 4, height: 4, background: '#112233'}\n")
@@ -234,7 +234,7 @@ def test_an_old_syntax_view_says_once_per_file_how_to_move_on(tmp_path):
 
 
 def test_the_shipped_fragments_and_their_stylesheets_migrate_except_the_known_gaps(tmp_path):
-    shutil.copytree(ROOT / "src" / "tesserae" / "spec" / "components", tmp_path / "components")
+    shutil.copytree(ROOT / "src" / "tess_ui" / "spec" / "components", tmp_path / "components")
     report = migrate_project(tmp_path)
     migrated = [r for r in report.results if r.status == "migrated"]
     assert len(migrated) >= 150

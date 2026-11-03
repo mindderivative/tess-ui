@@ -2,7 +2,7 @@
 
 import yaml
 
-from tesserae import tokens
+from tess_ui import tokens
 
 
 def window_unthemed(window) -> bool:
@@ -34,6 +34,6 @@ def elevation(node) -> float:
 def view_from(expanded_yaml: str, **kwargs):
     """A Tesserae `View` built from `expand_components`' YAML text -- what
     `tre.View("T.yaml", source=...)` did before M37."""
-    from tesserae import View
+    from tess_ui import View
 
     return View(yaml.safe_load(expanded_yaml), **kwargs)

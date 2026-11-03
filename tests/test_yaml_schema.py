@@ -1,6 +1,6 @@
 """0.3.2 (#79): the YAML schemas for Red Hat's YAML language server.
 
-`src/tesserae/schema/*.json` (and their copies on the docs site) are written by
+`src/tess_ui/schema/*.json` (and their copies on the docs site) are written by
 `tools/generate_yaml_schema.py` from Tesserae's own code. Every YAML file in
 the repository must validate against the schema for its kind, the mistakes an
 editor should flag must not, the committed files must be what the generator
@@ -17,11 +17,11 @@ import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
-SCHEMAS = ROOT / "src" / "tesserae" / "schema"
+SCHEMAS = ROOT / "src" / "tess_ui" / "schema"
 SITE = ROOT / "docs" / "schema"
-NAMES = {"view": "tesserae-yaml-schema.json",
-         "theme": "tesserae-theme-schema.json", "component": "tesserae-component-schema.json",
-         "style": "tesserae-style-schema.json", "widget": "tesserae-widget-schema.json", "stylesheet": "tesserae-stylesheet-schema.json"}
+NAMES = {"view": "tess-ui-yaml-schema.json",
+         "theme": "tess-ui-theme-schema.json", "component": "tess-ui-component-schema.json",
+         "style": "tess-ui-style-schema.json", "widget": "tess-ui-widget-schema.json", "stylesheet": "tess-ui-stylesheet-schema.json"}
 
 
 def _schema(kind: str) -> dict:
@@ -42,7 +42,7 @@ def _generator():
 def _kind_of(path: Path, data) -> str | None:
     name = path.name
     if isinstance(data, dict) and ("widget" in data or "params" in data and "kind" not in data and "component" not in data and "view" not in data):
-        return None  # the current view syntax has its own schema (tesserae-widget-schema.json, tests/test_text_field.py)
+        return None  # the current view syntax has its own schema (tess-ui-widget-schema.json, tests/test_text_field.py)
     if isinstance(data, dict) and isinstance(data.get("styles"), list) and any(isinstance(r, dict) and set(r) & {"widget", "part", "state", "variant"} for r in data["styles"]):
         return None  # a stylesheet in the rule shape
     if name.endswith("_View.yaml"):
@@ -190,13 +190,13 @@ def test_the_site_copies_are_the_shipped_ones():
 
 def test_every_style_field_is_in_exactly_one_group():
     """0.4.4 (#101): the reference and the schema show style fields in sections; a new field can't go ungrouped."""
-    from tesserae.spec import cascade
+    from tess_ui.spec import cascade
 
     listed = [name for names in cascade.STYLE_GROUPS.values() for name in names]
     assert len(listed) == len(set(listed)), "a style field is in two groups"
     assert set(listed) == cascade.STYLE_FIELDS, (
         f"ungrouped: {sorted(cascade.STYLE_FIELDS - set(listed))}, not a field: {sorted(set(listed) - cascade.STYLE_FIELDS)}")
-    schema = json.loads((ROOT / "src" / "tesserae" / "schema" / "tesserae-yaml-schema.json").read_text(encoding="utf-8"))
+    schema = json.loads((ROOT / "src" / "tess_ui" / "schema" / "tess-ui-yaml-schema.json").read_text(encoding="utf-8"))
     properties = schema["definitions"]["style"]["properties"]
     assert {name: p["x-group"] for name, p in properties.items()} == cascade.STYLE_GROUP_OF
     assert all(f"({p['x-group']}.)" in p["description"] for p in properties.values())

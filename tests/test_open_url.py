@@ -1,8 +1,8 @@
-"""#224: `open_url(url)` in a handler and `tesserae.urls`: links go to the OS opener, and only the kinds that are links."""
+"""#224: `open_url(url)` in a handler and `tess_ui.urls`: links go to the OS opener, and only the kinds that are links."""
 
 import pytest
 
-from tesserae import App, Signal, ViewModel, urls
+from tess_ui import App, Signal, ViewModel, urls
 
 
 @pytest.mark.parametrize("url", ["https://example.com", "http://example.com/a?b=c#d", "HTTPS://Example.com", "mailto:a@b.example", "tel:+15551234567",

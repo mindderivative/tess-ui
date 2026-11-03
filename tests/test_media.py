@@ -8,9 +8,9 @@ from pathlib import Path
 import pytest
 import tre
 
-from tesserae import Theme
-from tesserae.images import decode_image
-from tesserae.widgets import image, video
+from tess_ui import Theme
+from tess_ui.images import decode_image
+from tess_ui.widgets import image, video
 
 PIXEL_PNG = str(Path(__file__).parent / "fixtures" / "pixel.png")
 SEED = (0x67, 0x50, 0xA4, 0xFF)
@@ -78,9 +78,9 @@ def test_a_re_colour_keeps_the_latest_video_frame():
 
 # == M42 Phase 4: the node graph ===============================================================
 
-from tesserae import tokens  # noqa: E402
-from tesserae.widgets import graph_node, node_graph  # noqa: E402
-from tesserae.widgets.media import ZOOM_RANGE, ZOOM_STEP  # noqa: E402
+from tess_ui import tokens  # noqa: E402
+from tess_ui.widgets import graph_node, node_graph  # noqa: E402
+from tess_ui.widgets.media import ZOOM_RANGE, ZOOM_STEP  # noqa: E402
 
 BASE = tokens.baseline_scheme()
 
@@ -194,7 +194,7 @@ def test_the_graph_follows_the_theme():
 def test_a_graph_node_shows_a_focus_ring_and_the_dragged_state():
     """Found in review: a node took keyboard focus with no ring, and was
     clipped, so a ring couldn't show."""
-    from tesserae import interaction
+    from tess_ui import interaction
 
     window, g, a, b = _graph()
     assert a.node.get("clip_children") is False

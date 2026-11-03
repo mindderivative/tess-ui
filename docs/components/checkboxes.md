@@ -9,7 +9,7 @@ state layer around an 18dp box.
 
 ## In Tesserae
 
-`widget: Checkbox` is one of Tesserae's controls (`tesserae.controls.Checkbox`). Give `checked` a bare reference and a press writes it back. It has three
+`widget: Checkbox` is one of Tesserae's controls (`tess_ui.controls.Checkbox`). Give `checked` a bare reference and a press writes it back. It has three
 states: on, off, and empty (`null`), which is neither: a dash in a filled box, for a parent of some checked children. A press turns an empty one on.
 
 The `label` sits beside the box and is part of what you press: pressing the text toggles the box and gives it the focus. `error` draws it in the error colours, and a
@@ -46,7 +46,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import checkbox
+from tess_ui.widgets import checkbox
 
 agree = checkbox(app.window, (0xFF, 0xFF, 0xFF, 0xFF), 48, 48, checked=False)
 agree.checked.get()

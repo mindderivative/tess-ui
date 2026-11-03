@@ -1,13 +1,13 @@
-"""M42 Phase 1: MD3's search bar (`tesserae.widgets.search_bar`, built
-from its fragment) and docked search view (`tesserae.overlays.SearchView`).
+"""M42 Phase 1: MD3's search bar (`tess_ui.widgets.search_bar`, built
+from its fragment) and docked search view (`tess_ui.overlays.SearchView`).
 """
 
 import pytest
 import tre
 
-from tesserae import Theme, tokens
-from tesserae.overlays import SearchView
-from tesserae.widgets import search_bar, search_view
+from tess_ui import Theme, tokens
+from tess_ui.overlays import SearchView
+from tess_ui.widgets import search_bar, search_view
 
 BASE = tokens.baseline_scheme()
 SEED = (0x67, 0x50, 0xA4, 0xFF)

@@ -12,12 +12,12 @@ import io
 import pytest
 from PIL import Image
 
-from tesserae import App
-from tesserae.spec import ViewWatcher, expand_components_to_spec
-from tesserae.spec.expand import ComponentError
-from tesserae.spec.images import extract_images
-from tesserae.spec.load import build_view_spec
-from tesserae.widgets import svg as svg_widget
+from tess_ui import App
+from tess_ui.spec import ViewWatcher, expand_components_to_spec
+from tess_ui.spec.expand import ComponentError
+from tess_ui.spec.images import extract_images
+from tess_ui.spec.load import build_view_spec
+from tess_ui.widgets import svg as svg_widget
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 HEAD = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="40" height="20">'

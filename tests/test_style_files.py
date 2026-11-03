@@ -9,11 +9,11 @@ apart: `*_Style.yaml` one node's style, `*_Stylesheet.yaml` a stylesheet,
 import pytest
 import yaml
 
-from tesserae import View
-from tesserae.spec import expand_components_to_spec
-from tesserae.spec.expand import ComponentError
-from tesserae.spec.load import build_view_spec, load_view
-from tesserae.spec.themes import load_stylesheet, load_theme
+from tess_ui import View
+from tess_ui.spec import expand_components_to_spec
+from tess_ui.spec.expand import ComponentError
+from tess_ui.spec.load import build_view_spec, load_view
+from tess_ui.spec.themes import load_stylesheet, load_theme
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 COUNTER = {"flex_direction": "vertical", "width": 240, "height": 120, "gap": 12, "padding": 16}

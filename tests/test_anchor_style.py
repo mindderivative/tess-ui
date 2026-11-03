@@ -3,8 +3,8 @@ stays clipped by its parent, and is looked for, checked and cleaned up by Tesser
 
 import pytest
 
-from tesserae import App, Signal, ViewModel
-from tesserae.spec.nodes import LoadError
+from tess_ui import App, Signal, ViewModel
+from tess_ui.spec.nodes import LoadError
 
 
 class VM(ViewModel):
@@ -145,7 +145,7 @@ def test_when_the_style_stops_saying_it_the_node_goes_back_to_the_flow(tmp_path)
     (tmp_path / "Views" / "Main_View.yaml").write_text(
         "name: main\nwidget: Container\nstyle: {width: 400, height: 300, background: surface}\nchildren:\n" + TARGET +
         "  - {widget: Rect, name: dot, style: {width: 12, height: 12, background: error}}\n")
-    from tesserae.spec.watch import ComposedWatcher
+    from tess_ui.spec.watch import ComposedWatcher
     watcher = ComposedWatcher(view, view.source, app._composed_docs, lambda library, doc: app._composed_rules(library, doc=doc)[0])
     import os
     stat = view.source.stat()
@@ -258,7 +258,7 @@ def test_the_node_is_shown_again_when_its_style_stops_saying_anchor_while_the_an
     (tmp_path / "Views" / "Main_View.yaml").write_text(
         "name: main\nwidget: Container\nstyle: {width: 400, height: 300, background: surface}\nchildren:\n" + SHOWN +
         "  - {widget: Rect, name: dot, style: {width: 12, height: 12, background: error}}\n")
-    from tesserae.spec.watch import ComposedWatcher
+    from tess_ui.spec.watch import ComposedWatcher
     import os
     watcher = ComposedWatcher(view, view.source, app._composed_docs, lambda library, doc: app._composed_rules(library, doc=doc)[0])
     stat = view.source.stat()

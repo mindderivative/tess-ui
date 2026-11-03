@@ -14,10 +14,10 @@ from pathlib import Path
 import pytest
 import yaml
 
-from tesserae.spec import expand_components_to_spec, load_view
-from tesserae.spec.expand import ComponentError, _parts_of, expand_with_dependencies
+from tess_ui.spec import expand_components_to_spec, load_view
+from tess_ui.spec.expand import ComponentError, _parts_of, expand_with_dependencies
 
-BUILTIN = Path(__file__).resolve().parent.parent / "src" / "tesserae" / "spec" / "components"
+BUILTIN = Path(__file__).resolve().parent.parent / "src" / "tess_ui" / "spec" / "components"
 SHEETS = sorted(BUILTIN.glob("*_Stylesheet.yaml"))
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 

@@ -2,8 +2,8 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel, tokens
-from tesserae.shipped import shipped_views
+from tess_ui import App, Signal, ViewModel, tokens
+from tess_ui.shipped import shipped_views
 
 TABS = "[{value: flights, label: Flights, icon: home}, {value: trips, label: Trips, icon: search, badge: 3}, {value: explore, label: Explore, icon: menu}]"
 PLAIN = "[{value: a, label: One}, {value: b, label: Two}, {value: c, label: Three}]"

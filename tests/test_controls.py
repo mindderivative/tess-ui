@@ -1,4 +1,4 @@
-"""M40: Tesserae's MD3 controls (`tesserae.controls`) -- Phase 1's
+"""M40: Tesserae's MD3 controls (`tess_ui.controls`) -- Phase 1's
 foundation, proved on the checkbox; Phase 2's radio buttons (with
 `RadioGroup`) and switch; Phase 3's slider and spin box; Phase 4's
 progress and loading indicators and time picker dial. Driven headlessly
@@ -10,9 +10,9 @@ import math
 import pytest
 import tre
 
-from tesserae import Effect, Signal, Theme, interaction, tokens
-from tesserae.controls import DISABLED_CONTENT, STATE_LAYER_SIZE, TARGET_SIZE, Checkbox
-from tesserae.listeners import Listeners
+from tess_ui import Effect, Signal, Theme, interaction, tokens
+from tess_ui.controls import DISABLED_CONTENT, STATE_LAYER_SIZE, TARGET_SIZE, Checkbox
+from tess_ui.listeners import Listeners
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 
@@ -247,7 +247,7 @@ def test_signals_are_tesserae_signals():
 
 # == M40 Phase 2: radio buttons and switches =========================================
 
-from tesserae.controls import DISABLED_CONTAINER, RadioButton, RadioGroup, Switch  # noqa: E402
+from tess_ui.controls import DISABLED_CONTAINER, RadioButton, RadioGroup, Switch  # noqa: E402
 
 
 def _radios(n=3, **kwargs):
@@ -417,7 +417,7 @@ def test_switch_and_radio_follow_the_theme():
 
 # == M40 Phase 3: the slider and the spin box ===========================================
 
-from tesserae.controls import Slider, SpinBox  # noqa: E402
+from tess_ui.controls import Slider, SpinBox  # noqa: E402
 
 
 def _slider(**kwargs):
@@ -599,7 +599,7 @@ def test_the_spin_box_follows_the_theme():
 
 # == M40 Phase 4: progress, loading, the time picker dial =================================
 
-from tesserae.controls import CircularProgress, LinearProgress, LoadingIndicator, TimePickerDial  # noqa: E402
+from tess_ui.controls import CircularProgress, LinearProgress, LoadingIndicator, TimePickerDial  # noqa: E402
 
 
 def _numbers(data):

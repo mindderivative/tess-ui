@@ -2,7 +2,7 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel
+from tess_ui import App, Signal, ViewModel
 
 
 class VM(ViewModel):
@@ -192,7 +192,7 @@ children:
 
 
 def test_the_field_has_a_label_above_the_spin_box_and_names_it(tmp_path):
-    from tesserae import tokens
+    from tess_ui import tokens
     view, _ = field_app(tmp_path, "label: Quantity")
     label, box = view.node("root.f.label"), view._built.controls["root.f.box"]
     assert label.get("text") == "Quantity" and label.get("fill") == (view._scheme or tokens.BASELINE)["on_surface_variant"]
@@ -200,7 +200,7 @@ def test_the_field_has_a_label_above_the_spin_box_and_names_it(tmp_path):
 
 
 def test_the_supporting_text_is_under_it_and_an_error_replaces_it_in_the_error_colour(tmp_path):
-    from tesserae import tokens
+    from tess_ui import tokens
     view, _ = field_app(tmp_path, "label: Quantity, supporting: Between 0 and 10")
     help_ = view.node("root.f.help")
     assert help_.get("text") == "Between 0 and 10" and help_.get("layout_y") > view._built.controls["root.f.box"].node.get("layout_y")

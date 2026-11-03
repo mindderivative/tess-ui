@@ -2,8 +2,8 @@
 
 import pytest
 
-from tesserae import App, ViewModel
-from tesserae.screen_transition import DISTANCE, IN_MS, OUT_MS, TRANSITIONS
+from tess_ui import App, ViewModel
+from tess_ui.screen_transition import DISTANCE, IN_MS, OUT_MS, TRANSITIONS
 
 
 class A(ViewModel):

@@ -2,7 +2,7 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel, tokens
+from tess_ui import App, Signal, ViewModel, tokens
 
 HEAD = '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20" viewBox="0 0 40 20">'
 SQUARE = HEAD + '<rect width="40" height="20" fill="currentColor"/></svg>'
@@ -76,7 +76,7 @@ def test_the_source_follows_a_signal(tmp_path):
 
 
 def test_one_of_src_and_content_is_needed(tmp_path):
-    from tesserae.spec.nodes import LoadError
+    from tess_ui.spec.nodes import LoadError
 
     with pytest.raises(LoadError, match="give one of 'src', 'content'"):
         opened(tmp_path, "  - {widget: Svg, name: s}\n")
@@ -95,7 +95,7 @@ def test_a_document_that_is_not_svg_is_an_error_naming_the_widget(tmp_path):
 
 
 def test_it_matches_the_python_widgets_drawing(tmp_path):
-    from tesserae.widgets import svg
+    from tess_ui.widgets import svg
 
     view, _ = opened(tmp_path, "  - {widget: Svg, name: s, src: square.svg, style: {width: 40, height: 20, foreground: primary}}\n")
     py_app = App(width=100, height=100)

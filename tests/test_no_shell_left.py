@@ -11,10 +11,10 @@ from pathlib import Path
 
 import pytest
 
-from tesserae import App, cli
+from tess_ui import App, cli
 
 ROOT = Path(__file__).resolve().parent.parent
-GONE = re.compile(r"shell_file|AppShell|load_shell|use_shell|_Shell|tesserae\.shell|decorations|_removed|RemovedError")
+GONE = re.compile(r"shell_file|AppShell|load_shell|use_shell|_Shell|tess_ui\.shell|decorations|_removed|RemovedError")
 #: `decorations` is also `tre`'s own window option: the lines where `borderless` is passed to it (the main window's two, and a second window's).
 TRE_LINES = re.compile(r"Window\(width=width, height=height, title=title, decorations=not borderless\)"
                        r"|self\._window\.set\(decorations=not bool\(value\)"
@@ -23,15 +23,15 @@ TRE_LINES = re.compile(r"Window\(width=width, height=height, title=title, decora
 
 def test_nothing_of_the_old_shell_or_decorations_is_left_in_src():
     left = []
-    for path in sorted((ROOT / "src" / "tesserae").rglob("*")):
+    for path in sorted((ROOT / "src" / "tess_ui").rglob("*")):
         if path.suffix not in (".py", ".yaml", ".tmpl", ".json") or "__pycache__" in path.parts:
             continue
         for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             if GONE.search(line) and not (path.name == "app.py" and TRE_LINES.search(line)):
                 left.append(f"{path.relative_to(ROOT)}:{number}: {line.strip()[:80]}")
     assert left == []
-    assert not (ROOT / "src" / "tesserae" / "shell.py").exists()
-    assert not (ROOT / "src" / "tesserae" / "_removed.py").exists()
+    assert not (ROOT / "src" / "tess_ui" / "shell.py").exists()
+    assert not (ROOT / "src" / "tess_ui" / "_removed.py").exists()
 
 
 def test_the_repository_has_no_shell_file_example_tool_or_workflow_left():
@@ -51,11 +51,11 @@ def test_an_old_name_fails_as_any_unknown_name_does(tmp_path):
         with pytest.raises(AttributeError):
             getattr(app, name)
     with pytest.raises(ModuleNotFoundError):
-        __import__("tesserae.shell")
+        __import__("tess_ui.shell")
     with pytest.raises(SystemExit) as stopped:
         cli._parser().parse_args(["new", "x", "--shell"])
     assert stopped.value.code == 2
-    result = subprocess.run([sys.executable, "-m", "tesserae", "new", "x", "--shell", "--no-venv", "--dir", str(tmp_path)],
+    result = subprocess.run([sys.executable, "-m", "tess_ui", "new", "x", "--shell", "--no-venv", "--dir", str(tmp_path)],
                             capture_output=True, text=True)
     assert result.returncode == 2 and "unrecognized arguments: --shell" in result.stderr and not (tmp_path / "x").exists()
 

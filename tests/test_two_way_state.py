@@ -8,9 +8,9 @@
 
 import pytest
 
-from tesserae import Computed, Signal, ViewModel
-from tesserae.spec.compose import Composer
-from tesserae.spec.nodes import LoadError, parse_view
+from tess_ui import Computed, Signal, ViewModel
+from tess_ui.spec.compose import Composer
+from tess_ui.spec.nodes import LoadError, parse_view
 
 from test_compose import VM, make
 from test_composed import BASE, render

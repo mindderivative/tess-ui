@@ -13,11 +13,11 @@ from pathlib import Path
 import pytest
 import tre
 
-import tesserae
-import tesserae.fonts as fonts
-import tesserae.spec.load as load_module
-from tesserae.fonts import FontFallbackWarning, available_families
-from tesserae.spec import load_stylesheet, load_theme, load_view
+import tess_ui
+import tess_ui.fonts as fonts
+import tess_ui.spec.load as load_module
+from tess_ui.fonts import FontFallbackWarning, available_families
+from tess_ui.spec import load_stylesheet, load_theme, load_view
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 RECT_VIEW = 'id: box\nkind: Rect\nstyle: {width: 10, height: 10, background: "#112233"}\n'
@@ -131,7 +131,7 @@ def test_set_theme_takes_a_loaded_theme(tmp_path: Path):
 
 @pytest.mark.skipif(not ROBOTO.is_file(), reason="needs a real font file from tre's source tree -- set TRE_SOURCE_DIR (runs on CI)")
 def test_register_font_hands_tre_the_bytes_and_returns_families():
-    assert tesserae.register_font(ROBOTO) == ["Roboto"]
+    assert tess_ui.register_font(ROBOTO) == ["Roboto"]
 
 
 def test_register_font_records_a_new_family(tmp_path: Path, monkeypatch):
@@ -140,7 +140,7 @@ def test_register_font_records_a_new_family(tmp_path: Path, monkeypatch):
     received = []
     monkeypatch.setattr(tre, "register_font", lambda data: received.append(data) or ["Inter"])
 
-    assert tesserae.register_font(font) == ["Inter"]
+    assert tess_ui.register_font(font) == ["Inter"]
     assert received == [b"pretend font bytes"]
     assert "Inter" in available_families()
 
@@ -149,12 +149,12 @@ def test_register_font_rejects_a_file_with_no_font_faces(tmp_path: Path):
     junk = tmp_path / "junk.ttf"
     junk.write_bytes(b"definitely not a font")
     with pytest.raises(ValueError, match=r"junk\.ttf: .*no font faces"):
-        tesserae.register_font(junk)
+        tess_ui.register_font(junk)
 
 
 def test_register_font_missing_file_raises_oserror(tmp_path: Path):
     with pytest.raises(OSError):
-        tesserae.register_font(tmp_path / "nope.ttf")
+        tess_ui.register_font(tmp_path / "nope.ttf")
 
 
 def test_a_theme_naming_an_unavailable_font_warns(tmp_path: Path):
@@ -167,7 +167,7 @@ def test_a_bundled_or_registered_font_does_not_warn(tmp_path: Path, monkeypatch)
     monkeypatch.setattr(tre, "register_font", lambda data: ["Inter"])
     font = tmp_path / "Inter.ttf"
     font.write_bytes(b"x")
-    tesserae.register_font(font)
+    tess_ui.register_font(font)
     theme = _write(
         tmp_path / "Ok.yaml",
         "typography:\n  body_large: {font_family: Inter}\n  label_large: {font_family: Roboto}\n",

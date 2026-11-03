@@ -4,12 +4,12 @@ ids, hot reload, and disposal."""
 import pytest
 import yaml
 
-from tesserae import Computed, Signal
-from tesserae.spec import widgets as W
-from tesserae.expr import ExprError
-from tesserae.spec.compose import MAX_DEPTH, Composer, Scope
-from tesserae.spec.nodes import LoadError, parse_view
-from tesserae.spec.widgets import Property, WidgetDecl, decl_from_params
+from tess_ui import Computed, Signal
+from tess_ui.spec import widgets as W
+from tess_ui.expr import ExprError
+from tess_ui.spec.compose import MAX_DEPTH, Composer, Scope
+from tess_ui.spec.nodes import LoadError, parse_view
+from tess_ui.spec.widgets import Property, WidgetDecl, decl_from_params
 
 
 class VM:

@@ -1,7 +1,7 @@
 # Overlays
 
 An overlay is a layer over the window: a dialog, a menu, a snackbar, a side sheet. There are two ways to make one.
-In a view, a `widget: Overlay` shows its children while its `open` is true. From Python, `tesserae.overlays` has MD3's
+In a view, a `widget: Overlay` shows its children while its `open` is true. From Python, `tess_ui.overlays` has MD3's
 dialogs, menus, snackbars, tooltips, popovers, side sheets and modal navigation drawers, ready made, built from Tesserae's
 fragments and shown with `tre`'s layers.
 
@@ -87,10 +87,10 @@ children:
 
 ## Overlays from Python
 
-For a dialog, menu or snackbar that code opens, `tesserae.overlays` makes them:
+For a dialog, menu or snackbar that code opens, `tess_ui.overlays` makes them:
 
 ```python
-from tesserae.overlays import Dialog, Menu, Snackbar, Tooltip
+from tess_ui.overlays import Dialog, Menu, Snackbar, Tooltip
 
 confirm = Dialog(app.window, "Discard draft?", "It won't be saved.",
                  actions=[("Cancel", None), ("Discard", viewmodel.discard)])
@@ -123,7 +123,7 @@ the `arguments` that `ViewDialog` hands to a ViewModel's constructor are the Ove
 
 `surface.dismiss` closes the nearest overlay the widget is in. In a view that is the nearest `widget: Overlay` up the tree, closed as a press outside it
 would: the layer hides, a bound `open` goes false, and `on_dismiss` runs. A button in a view the Overlay calls dismisses it too, and in nested
-Overlays it is the inner one. With no `widget: Overlay` around, it closes the overlay made by `tesserae.overlays` that the view is in, as its `close()`
+Overlays it is the inner one. With no `widget: Overlay` around, it closes the overlay made by `tess_ui.overlays` that the view is in, as its `close()`
 does (`dismiss_surface(node)` is the same from Python), and does nothing if there is none. Writing `false` to `open` still closes an Overlay.
 
 ## Which closes how
@@ -152,7 +152,7 @@ modal overlay keeps Tab inside it.
   MD3's basic dialog, with text-button actions on the right. An action
   calls its `fn` and closes the dialog.
 - **`Menu(window, items, *, width=200)`:** `items` are `(label, fn)` pairs or
-  `tesserae.widgets.menu_item(...)` widgets. It opens with
+  `tess_ui.widgets.menu_item(...)` widgets. It opens with
   `open(anchor)`, `open_at(x, y)`, or on a right-click with
   `attach_context(node)`. Focus moves to the first item; the up and down
   arrows move between items; a click or Enter calls the item and closes
@@ -174,7 +174,7 @@ modal overlay keeps Tab inside it.
   and closes it on the anchor's click.
 - **`SideSheet(window, *, width=360, label=None)`:** a modal side sheet. Put
   its content in `.panel`. A standard (non-modal) side sheet isn't an
-  overlay: use `tesserae.widgets.side_sheet(modal=False)`.
+  overlay: use `tess_ui.widgets.side_sheet(modal=False)`.
 - **`NavigationDrawer(window, labels, icons, *, selected=None, width=360)`:** the modal
   navigation drawer. `.drawer` is the drawer widget (`.drawer.selected`,
   `.drawer.on_change`), and choosing an item closes it.
@@ -186,7 +186,7 @@ modal overlay keeps Tab inside it.
   `fn` and closes it. `set_results([(text, fn)])` replaces the rows, and
   `on_query(fn)` hears the bar's typing.
 
-`tesserae.widgets`' `dialog`, `snackbar`, `side_sheet(modal=True)`,
+`tess_ui.widgets`' `dialog`, `snackbar`, `side_sheet(modal=True)`,
 `menu`, `tooltip`, `popover` and `search_view` return these.
 
 ## Not yet covered

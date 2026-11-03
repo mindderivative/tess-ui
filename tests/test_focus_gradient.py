@@ -1,9 +1,9 @@
-"""The focus ring as a turning gradient (tesserae.focusring)."""
+"""The focus ring as a turning gradient (tess_ui.focusring)."""
 
 import pytest
 import tre
 
-from tesserae import App, tokens
+from tess_ui import App, tokens
 
 
 def opened(tmp_path, ring="gradient", **kw):

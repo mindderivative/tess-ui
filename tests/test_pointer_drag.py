@@ -2,7 +2,7 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel
+from tess_ui import App, Signal, ViewModel
 
 
 class VM(ViewModel):
@@ -89,7 +89,7 @@ def test_capture_outside_a_handler_says_so(tmp_path):
 
 
 def test_the_view_checks_the_new_actions_and_events(tmp_path):
-    from tesserae.spec.nodes import parse_view
+    from tess_ui.spec.nodes import parse_view
     parse_view(VIEW, "Main_View.yaml")
 
 

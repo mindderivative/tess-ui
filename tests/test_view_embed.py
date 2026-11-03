@@ -5,8 +5,8 @@ import sys
 import pytest
 import yaml
 
-from tesserae import App, View
-from tesserae.spec.embed import EmbedError, embeds_of, expand_embeds
+from tess_ui import App, View
+from tess_ui.spec.embed import EmbedError, embeds_of, expand_embeds
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 LEFT = """
@@ -25,7 +25,7 @@ children:
   - {id: bump, kind: Rect, style: {width: 20, height: 20, background: primary}, handlers: {on_click: bump}}
 """
 COUNTER_VM = """
-from tesserae import Signal, ViewModel
+from tess_ui import Signal, ViewModel
 
 
 class {name}ViewModel(ViewModel):
@@ -258,7 +258,7 @@ def test_removing_the_host_component_takes_its_embedded_views_with_it(folder):
     app = App(width=300, height=100, theme_seed=SEED)
     outer = View({"id": "root", "kind": "Container", "children": [{"id": "slot", "kind": "Container"}]}, window=app.window)
     app.window.root.add_child(outer.root)
-    from tesserae.component import embed
+    from tess_ui.component import embed
 
     component, _vm = embed(outer, path / "Host_View.yaml", outer.node("slot"))
     inner = component.embedded("left")

@@ -1,6 +1,6 @@
 # Widgets in Python
 
-`tesserae.widgets` builds MD3 (Material Design 3) widgets from Python: one
+`tess_ui.widgets` builds MD3 (Material Design 3) widgets from Python: one
 function per widget, called against a live `Window`. Use it when a widget
 is created at run time. For a widget in a view, write `widget: Button` (or
 any other [component view](component-fragments.md)) in the YAML instead.
@@ -17,7 +17,7 @@ function. A `Button_View.yaml` of your own changes the first, not the
 second.
 
 ```python
-from tesserae.widgets import button
+from tess_ui.widgets import button
 
 save = button(app.window, "Save", width=120, height=40, variant="filled")
 ```
@@ -36,7 +36,7 @@ that component, a tree of ordinary nodes with named parts. They return a
 `Widget`:
 
 ```python
-from tesserae.widgets import button
+from tess_ui.widgets import button
 
 save = button(app.window, "Save", 120, 40, variant="filled", on_click=viewmodel.save)
 save.node              # the root, attached to the window's root
@@ -61,11 +61,11 @@ which.
 
 `checkbox`, `radio_button`, `switch`, `slider`, `spin_box`,
 `circular_progress`, `linear_progress`, `loading_indicator` and
-`time_picker_dial` return a Tesserae control (`tesserae.controls`) rather
+`time_picker_dial` return a Tesserae control (`tess_ui.controls`) rather
 than a `Widget`. Its state is a `Signal`:
 
 ```python
-from tesserae.widgets import checkbox
+from tess_ui.widgets import checkbox
 
 agree = checkbox(app.window, (0x67, 0x50, 0xA4, 0xFF), 48, 48, label="I agree")
 agree.checked.get()        # its state is a Signal
@@ -84,7 +84,7 @@ width=None)` is a line of text in one of the theme's type roles and
 colours. `.content` is a `Signal`; setting it re-measures the text.
 
 ```python
-from tesserae.widgets import text
+from tess_ui.widgets import text
 
 title = text(app.window, "Notes", typography_role="title_large")
 count = text(app.window, "0 notes", color="on_surface_variant")
@@ -98,7 +98,7 @@ overlays with `open()` and `close()` (`side_sheet` without `modal` is a plain pa
 
 ## Code or YAML
 
-| | `tesserae.widgets` | [`widget: Name`](component-fragments.md) |
+| | `tess_ui.widgets` | [`widget: Name`](component-fragments.md) |
 | --- | --- | --- |
 | Called from | Python (a ViewModel, setup code) | a `*_View.yaml` |
 | Style | imperative: `button(window, ...)` | declarative: `widget: Button` |
@@ -106,7 +106,7 @@ overlays with `open()` and `close()` (`side_sheet` without `modal` is a plain pa
 
 Reach for a view first when a widget is part of a layout: it keeps the
 screen declarative, and `for:` and `if:` already make widgets from data and
-add or remove them as it changes. Reach for `tesserae.widgets` when the
+add or remove them as it changes. Reach for `tess_ui.widgets` when the
 widget has to be made by code, such as one that only some code path
 builds, or one added to a window that is not built from a view.
 

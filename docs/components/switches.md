@@ -42,7 +42,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import switch
+from tess_ui.widgets import switch
 
 dark = switch(app.window, selected=False)
 ```

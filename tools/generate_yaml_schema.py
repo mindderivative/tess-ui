@@ -3,10 +3,10 @@
 
 Four JSON Schema draft-07 files, each for one kind of file Tesserae reads:
 
-- `tesserae-yaml-schema.json`       a view, `*_View.yaml`
-- `tesserae-theme-schema.json`      a theme or a stylesheet
-- `tesserae-component-schema.json`  a component fragment, `*_Component.yaml`
-- `tesserae-style-schema.json`      one node's style, `*_Style.yaml`
+- `tess-ui-yaml-schema.json`       a view, `*_View.yaml`
+- `tess-ui-theme-schema.json`      a theme or a stylesheet
+- `tess-ui-component-schema.json`  a component fragment, `*_Component.yaml`
+- `tess-ui-style-schema.json`      one node's style, `*_Style.yaml`
 
 They are built from Tesserae's own code, so a new kind, style field or
 token can't be left out by accident: the kinds, node keys, style fields, the
@@ -17,7 +17,7 @@ for a bad value lists the good ones. `tests/test_yaml_schema.py` checks every
 YAML file in the repository against them and that the committed files match
 what this writes.
 
-    python tools/generate_yaml_schema.py          # write src/tesserae/schema and docs/schema
+    python tools/generate_yaml_schema.py          # write src/tess_ui/schema and docs/schema
     python tools/generate_yaml_schema.py --check  # exit 1 if they are out of date
 """
 
@@ -33,7 +33,7 @@ from typing import Any
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
-OUTPUT_DIRS = (ROOT / "src" / "tesserae" / "schema", ROOT / "docs" / "schema")
+OUTPUT_DIRS = (ROOT / "src" / "tess_ui" / "schema", ROOT / "docs" / "schema")
 SITE = "https://mindderivative.github.io/tess-ui/schema/"
 DRAFT = "http://json-schema.org/draft-07/schema#"
 
@@ -45,7 +45,7 @@ TRE_ENUMS = ("flex_direction", "flex_wrap", "position", "display", "grid_auto_fl
 
 def _tre_values(prop: str) -> list[str]:
     """The values `tre` accepts for a node property, from the error it gives for a bad one."""
-    from tesserae import App
+    from tess_ui import App
 
     window = App(width=10, height=10).window
     try:
@@ -60,7 +60,7 @@ def _tre_values(prop: str) -> list[str]:
 def _fragments() -> dict[str, dict[str, Any]]:
     """Every built-in fragment's name and its parameters, each with its default if it has one: an entry
     of `params:` is a name (required) or a one-key `{name: default}` (optional)."""
-    from tesserae.spec import expand
+    from tess_ui.spec import expand
 
     folder = Path(expand.__file__).parent / "components"
     out: dict[str, dict[str, Any]] = {}
@@ -82,9 +82,9 @@ def _fragments() -> dict[str, dict[str, Any]]:
 def _definitions(fragment: bool) -> dict[str, Any]:
     """The shared definitions. A fragment's numbers and names can be `{{ parameter }}`s, filled in
     when the fragment is used, so there they may also be that."""
-    from tesserae import a11y, icons, tokens
-    from tesserae import view as view_module
-    from tesserae.spec import build, cascade, expand, layout, placement, title_bar
+    from tess_ui import a11y, icons, tokens
+    from tess_ui import view as view_module
+    from tess_ui.spec import build, cascade, expand, layout, placement, title_bar
 
     roles = sorted(tokens.color_scheme((0x67, 0x50, 0xA4, 0xFF)))
     param = {"type": "string", "pattern": r"^\s*\{\{.*\}\}\s*$",
@@ -104,7 +104,7 @@ def _definitions(fragment: bool) -> dict[str, Any]:
     radius = {"anyOf": [number, {"enum": [*sorted(tokens.SHAPES), "full"]}]}
     percent = {"type": "string", "pattern": r"^\d+(\.\d+)?%$"}
     term = r"\d+(?:\.\d+)?(?:%|px)?"
-    # as `tesserae.spec.sizes` takes them (tre 0.5.7): a size is not negative; a sum has a space each side of `+` and `-`
+    # as `tess_ui.spec.sizes` takes them (tre 0.5.7): a size is not negative; a sum has a space each side of `+` and `-`
     dimension = {"anyOf": [{"type": "number", "minimum": 0}, {"enum": ["auto"]}, percent]}
     size = {"anyOf": [{"type": "number", "minimum": 0}, {"enum": ["auto", "fit-content"]}, percent,
                       {"type": "string", "pattern": rf"^(?:calc\(\s*{term}(?: [+-] {term})*\s*\)|{term}(?: [+-] {term})+)$"}]}
@@ -593,21 +593,21 @@ def _root(filename: str, title: str, description: str, definitions: dict[str, An
 
 def _view() -> dict[str, Any]:
     defs = _only(_definitions(fragment=False), "node")
-    return _root("tesserae-yaml-schema.json", "Tesserae view",
+    return _root("tess-ui-yaml-schema.json", "Tesserae view",
                  "A Tesserae view: `*_View.yaml`. One node, with its children inside it.",
                  defs, {"type": "object", "allOf": [{"$ref": "#/definitions/node"}]})
 
 
 def _component() -> dict[str, Any]:
     defs = _only(_definitions(fragment=True), "node")
-    return _root("tesserae-component-schema.json", "Tesserae component fragment",
+    return _root("tess-ui-component-schema.json", "Tesserae component fragment",
                  "A Tesserae component fragment: `*_Component.yaml`. One node, with `params:` naming the `{{ }}` it fills in.",
                  defs, {"type": "object", "allOf": [{"$ref": "#/definitions/node"}]})
 
 
 def _theme() -> dict[str, Any]:
-    from tesserae import tokens
-    from tesserae.spec import build, marker
+    from tess_ui import tokens
+    from tess_ui.spec import build, marker
 
     # A component's stylesheet (`<Name>_Stylesheet.yaml`, 0.3.4) is a stylesheet whose values may be the
     # component's `{{ parameters }}`, so a stylesheet's styles are as loose as a fragment's.
@@ -637,7 +637,7 @@ def _theme() -> dict[str, Any]:
               "properties": {role: {"$ref": "#/definitions/color", "description": f"The `{role}` colour."}
                              for role in sorted(tokens.color_scheme((0x67, 0x50, 0xA4, 0xFF)))},
               "additionalProperties": False}
-    return _root("tesserae-theme-schema.json", "Tesserae theme or stylesheet",
+    return _root("tess-ui-theme-schema.json", "Tesserae theme or stylesheet",
                  "A theme or stylesheet file: `styles:` rules, and for a theme also a `seed`, `dark`, `colors`, `typography` and `components`.",
                  defs, {"type": "object", "additionalProperties": False, "properties": {
                      marker.KEY: marker.SCHEMA,
@@ -650,7 +650,7 @@ def _theme() -> dict[str, Any]:
 
 def _style_file() -> dict[str, Any]:
     defs = _only(_definitions(fragment=False), "style", "color", "fill")
-    return _root("tesserae-style-schema.json", "Tesserae style file",
+    return _root("tess-ui-style-schema.json", "Tesserae style file",
                  "A style file, `*_Style.yaml`: one node's style, shared by the views and rules that name it "
                  "(`style: row_Style.yaml`).",
                  defs, {"type": "object", "required": ["style"], "additionalProperties": False, "properties": {
@@ -669,7 +669,7 @@ def _style_definitions() -> dict[str, Any]:
         meta = {k: spec[k] for k in ("description", "x-group") if k in spec}
         body = {k: v for k, v in spec.items() if k not in meta}
         wrapped[key] = {**meta, "anyOf": [body, expression]}
-    from tesserae.spec.transition import LAYOUT_TRANSITIONABLE, TRANSITIONABLE
+    from tess_ui.spec.transition import LAYOUT_TRANSITIONABLE, TRANSITIONABLE
 
     for option in wrapped["transition"]["anyOf"]:  # the fields that can ease are the ones the engine's planner takes
         if option.get("type") == "object" and "all" in option.get("properties", {}):
@@ -682,13 +682,13 @@ def _style_definitions() -> dict[str, Any]:
 def _widget() -> dict[str, Any]:
     """A node of the current language: a branch for each built-in widget and each view Tesserae ships. A project's own views are added by
     `tesserae schema --project`."""
-    from tesserae.shipped import ViewLibrary, shipped_views
-    from tesserae.spec.widgets import json_schema
+    from tess_ui.shipped import ViewLibrary, shipped_views
+    from tess_ui.spec.widgets import json_schema
 
     library = ViewLibrary()
     views = {name: library.decl(name) for name in shipped_views()}
     out = json_schema(views, _style_definitions())
-    return {"$schema": DRAFT, "$id": SITE + "tesserae-widget-schema.json",
+    return {"$schema": DRAFT, "$id": SITE + "tess-ui-widget-schema.json",
             "description": "A view of the current language: `*_View.yaml`. A tree of `widget:` nodes, with a branch for each built-in widget and each view "
                            "Tesserae ships; `tesserae schema --project` adds the project's own.",
             **{k: v for k, v in out.items() if k != "$schema"}}
@@ -696,8 +696,8 @@ def _widget() -> dict[str, Any]:
 
 def _stylesheet() -> dict[str, Any]:
     """A stylesheet of rules (`*_Stylesheet.yaml`): `widget:`, `variant:`, `part:`, `state:` and a `style:` of fields."""
-    from tesserae.spec import marker
-    from tesserae.spec.rules import STATES
+    from tess_ui.spec import marker
+    from tess_ui.spec.rules import STATES
 
     defs = _style_definitions()
     rule = {
@@ -715,7 +715,7 @@ def _stylesheet() -> dict[str, Any]:
             "state": {"enum": list(STATES), "description": "Only while the widget is in this state."},
             "style": {"$ref": "#/definitions/style", "description": "The style fields the rule sets."}},
         "additionalProperties": False}
-    return _root("tesserae-stylesheet-schema.json", "Tesserae stylesheet of rules",
+    return _root("tess-ui-stylesheet-schema.json", "Tesserae stylesheet of rules",
                  "A stylesheet of rules: `<Name>_Stylesheet.yaml`, or the file `App(stylesheet=)` names. Each rule says which widgets it is for and the style it sets.",
                  defs, {"type": "object", "required": ["styles"], "additionalProperties": False, "properties": {
                      marker.KEY: marker.SCHEMA,
@@ -723,9 +723,9 @@ def _stylesheet() -> dict[str, Any]:
 
 
 def schemas() -> dict[str, dict[str, Any]]:
-    return {"tesserae-yaml-schema.json": _view(), "tesserae-widget-schema.json": _widget(), "tesserae-stylesheet-schema.json": _stylesheet(),
-            "tesserae-theme-schema.json": _theme(), "tesserae-component-schema.json": _component(),
-            "tesserae-style-schema.json": _style_file()}
+    return {"tess-ui-yaml-schema.json": _view(), "tess-ui-widget-schema.json": _widget(), "tess-ui-stylesheet-schema.json": _stylesheet(),
+            "tess-ui-theme-schema.json": _theme(), "tess-ui-component-schema.json": _component(),
+            "tess-ui-style-schema.json": _style_file()}
 
 
 def render(schema: dict[str, Any]) -> str:

@@ -1,12 +1,12 @@
 """M42 Phase 2: MD3's date-picker day, period selector and time input
-field, Tesserae's since M42 (`tesserae.widgets.date_time`).
+field, Tesserae's since M42 (`tess_ui.widgets.date_time`).
 """
 
 import pytest
 import tre
 
-from tesserae import Theme, tokens
-from tesserae.widgets import date_picker_day, period_selector, time_input_field
+from tess_ui import Theme, tokens
+from tess_ui.widgets import date_picker_day, period_selector, time_input_field
 
 BASE = tokens.baseline_scheme()
 SEED = (0x67, 0x50, 0xA4, 0xFF)

@@ -52,7 +52,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import image
+from tess_ui.widgets import image
 
 photo = image(app.window, "cat.png", 200, 150, fit="cover")
 ```

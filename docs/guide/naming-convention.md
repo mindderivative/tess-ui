@@ -66,7 +66,7 @@ More names say what a YAML file is:
 | `*_Component.yaml` | a fragment of the older syntax, kept in `Components/` | `app.load` |
 
 A file named for one kind and loaded as another is refused, naming what its name says it is: `load_theme("card_Stylesheet.yaml")`,
-say (`load_theme` and `load_stylesheet` are in `tesserae.spec.themes`). A theme or stylesheet file with neither suffix (`themes/Brand.yaml`) still loads; the suffixes are recommended, not required.
+say (`load_theme` and `load_stylesheet` are in `tess_ui.spec.themes`). A theme or stylesheet file with neither suffix (`themes/Brand.yaml`) still loads; the suffixes are recommended, not required.
 
 ## The first line
 
@@ -115,5 +115,5 @@ A view written with `kind:` and `id:` is paired by file name alone: `app.load("C
 `Counter_ViewModel.py` that defines the ViewModel class (found with `inspect.getfile`, not a string you pass) have the same
 prefix, and raises `ValueError` immediately if the view does not end in `_View.yaml`, the ViewModel's file does not end in
 `_ViewModel.py`, or the prefixes differ. `instantiate` does the same check for an embedded component
-(`tesserae.naming.check_naming_convention` is the shared code); `App.register` and a `Component` built by hand take what you
+(`tess_ui.naming.check_naming_convention` is the shared code); `App.register` and a `Component` built by hand take what you
 give them. `tesserae migrate-yaml` moves such a project to the names above ([Migrating](../migration.md)).

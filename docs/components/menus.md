@@ -88,7 +88,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import menu
+from tess_ui.widgets import menu
 
 actions = menu(app.window, [("Cut", viewmodel.cut), ("Copy", viewmodel.copy)], width=200)
 actions.open(save.node)

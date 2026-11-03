@@ -1,4 +1,4 @@
-"""M37 Phase 4: Tesserae's `View` (`tesserae.view`) -- built by
+"""M37 Phase 4: Tesserae's `View` (`tess_ui.view`) -- built by
 Tesserae's compiler, reconciled in place, with bindings, handlers and
 `two_way:` wired by Tesserae.
 
@@ -13,9 +13,9 @@ import pytest
 import tre
 
 import reference
-import tesserae
-from tesserae.spec import ViewWatcher
-from tesserae.view import View
+import tess_ui
+from tess_ui.spec import ViewWatcher
+from tess_ui.view import View
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 
@@ -37,15 +37,15 @@ def _rect(node_id, **extra):
     return {"id": node_id, "kind": "Rect", "style": {"width": 40, "height": 20, "background": "#112233"}, **extra}
 
 
-class VM(tesserae.ViewModel):
+class VM(tess_ui.ViewModel):
     def __init__(self, view, **signals):
-        self.title = tesserae.Signal("Hello")
-        self.agreed = tesserae.Signal(True)
-        self.name = tesserae.Signal("bob")
-        self.width = tesserae.Signal(50)
-        self.color = tesserae.Signal("#FF0000")
-        self.flag = tesserae.Signal(True)
-        self.other = tesserae.Signal("other")
+        self.title = tess_ui.Signal("Hello")
+        self.agreed = tess_ui.Signal(True)
+        self.name = tess_ui.Signal("bob")
+        self.width = tess_ui.Signal(50)
+        self.color = tess_ui.Signal("#FF0000")
+        self.flag = tess_ui.Signal(True)
+        self.other = tess_ui.Signal("other")
         self.clicks, self.events, self.changes, self.not_callable = 0, [], 0, 5
         for key, value in signals.items():
             setattr(self, key, value)
@@ -100,10 +100,10 @@ def test_bindings_apply_and_follow_their_signals():
 
 
 def test_a_binding_can_read_a_computed():
-    class CVM(tesserae.ViewModel):
+    class CVM(tess_ui.ViewModel):
         def __init__(self, view):
-            self.n = tesserae.Signal(2)
-            self.total = tesserae.Computed(lambda: f"total {self.n.get() * 10}")
+            self.n = tess_ui.Signal(2)
+            self.total = tess_ui.Computed(lambda: f"total {self.n.get() * 10}")
             super().__init__(view)
 
     view = _view(_root(_text(binding="{{ total.get() }}")))
@@ -323,7 +323,7 @@ def _unthemed(**style):
 def test_a_theme_role_works_in_a_view_with_no_theme():
     """0.3.3 (#82): `background: surface` in an app with no `theme_seed` was "unknown color identifier";
     it is MD3's baseline palette now, what an unthemed widget already uses."""
-    baseline = tesserae.tokens.baseline_scheme()
+    baseline = tess_ui.tokens.baseline_scheme()
     view = _unthemed(background="surface", border_color="outline", border_width=2)
     assert view.node("r").get("fill") == baseline["surface"] and view.node("r").get("stroke_color") == baseline["outline"]
     text = View({"id": "t", "kind": "Text", "text": {"content": "x", "font_family": "Roboto", "font_size": 14},
@@ -335,8 +335,8 @@ def test_a_themed_view_still_uses_its_own_roles():
     seed = (0x12, 0x80, 0x40, 0xFF)
     themed = View({"id": "r", "kind": "Rect", "style": {"width": 10, "height": 10, "background": "primary"}},
                   theme_seed=seed, dark=False)
-    assert themed.node("r").get("fill") == tesserae.tokens.color_scheme(seed)["primary"]
-    assert themed.node("r").get("fill") != tesserae.tokens.baseline_scheme()["primary"]
+    assert themed.node("r").get("fill") == tess_ui.tokens.color_scheme(seed)["primary"]
+    assert themed.node("r").get("fill") != tess_ui.tokens.baseline_scheme()["primary"]
 
 
 def test_a_misspelt_role_says_what_was_meant_and_a_name_that_is_no_role_keeps_tres_wording():
@@ -396,7 +396,7 @@ def test_set_stylesheet_and_set_theme_restyle_in_place_and_keep_state():
     view.set_stylesheet({"styles": [{"kind": "Rect", "style": {"corner_radius": 7}}]})
     assert view.node("a") == a and a.get("corner_radius") == 7.0
     view.set_theme(theme_seed=(0xB3, 0x26, 0x1E, 0xFF))
-    from tesserae import tokens
+    from tess_ui import tokens
 
     assert a.get("fill") == tokens.color_scheme((0xB3, 0x26, 0x1E, 0xFF))["primary"]
     assert a.get("corner_radius") == 7.0  # the stylesheet stays
@@ -410,7 +410,7 @@ def test_set_stylesheet_and_set_theme_restyle_in_place_and_keep_state():
 def test_view_watcher_reloads_a_tesserae_view(tmp_path):
     import os
 
-    from tesserae.spec.load import build_view_spec
+    from tess_ui.spec.load import build_view_spec
 
     path = tmp_path / "Home_View.yaml"
     path.write_text("id: root\nkind: Container\nchildren:\n"
@@ -453,9 +453,9 @@ def test_a_node_that_sets_its_alignment_can_be_restyled():
 def test_text_is_sized_to_its_content_and_bound_text_is_measured_again():
     """M41: `tre` 0.3.4's text has no intrinsic size, so a Text with no
     width was 0 px wide; Tesserae measures it (`window.measure_text`)."""
-    class Greeting(tesserae.ViewModel):
+    class Greeting(tess_ui.ViewModel):
         def __init__(self, view):
-            self.name = tesserae.Signal("Al")
+            self.name = tess_ui.Signal("Al")
             super().__init__(view)
 
     spec = {"id": "root", "kind": "Container", "children": [
@@ -475,7 +475,7 @@ def test_text_is_sized_to_its_content_and_bound_text_is_measured_again():
 
 
 def test_a_scheme_a_view_is_given_colours_what_it_builds_later():
-    from tesserae import tokens
+    from tess_ui import tokens
 
     red = tokens.color_scheme((0xB3, 0x26, 0x1E, 0xFF))
     view = View({"id": "root", "kind": "Container", "children": []}, theme_seed=(0x67, 0x50, 0xA4, 0xFF))

@@ -1,7 +1,7 @@
 # Apps & Screens
 
 ```python
-from tesserae import App
+from tess_ui import App
 from Counter_ViewModel import CounterViewModel
 
 app = App(width=240, height=120, title="My App", search=["."])
@@ -44,7 +44,7 @@ ViewModels without a window, and an empty list is a clean bill.
 A ViewModel reaches the app as `self.app` once it is attached, so a handler can switch screens:
 
 ```python
-from tesserae import ViewModel
+from tess_ui import ViewModel
 
 class HomeViewModel(ViewModel):
     views = "Home"
@@ -142,7 +142,7 @@ document -- belongs to the app, not to one screen. Give the app
 any object as `state=`, typically a class of `Signal`s:
 
 ```python
-from tesserae import App, Signal
+from tess_ui import App, Signal
 
 class AppState:
     def __init__(self):
@@ -265,7 +265,7 @@ the main window. [Windows, Docks & Embedded Views](windows-and-docks.md#several-
 app.run(max_frames=None)  # the one blocking call
 ```
 
-Opens the window and runs the render loop. `max_frames` caps the loop, for headless and CI runs that need an exit with no one to close the window; omit it for an interactive run that exits when the window closes. The environment variable `TESSERAE_MAX_FRAMES=n` does the same for a run that gives no `max_frames`, which is how `tesserae build --check` runs a built app and sees it exit.
+Opens the window and runs the render loop. `max_frames` caps the loop, for headless and CI runs that need an exit with no one to close the window; omit it for an interactive run that exits when the window closes. The environment variable `TESS_UI_MAX_FRAMES=n` does the same for a run that gives no `max_frames`, which is how `tesserae build --check` runs a built app and sees it exit.
 
 With no display reachable, `run()` returns without opening anything. If
 the window's GPU can't be set up (no adapter, device or supported

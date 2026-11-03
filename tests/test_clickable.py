@@ -9,8 +9,8 @@ import pytest
 import tre
 
 import reference
-import tesserae
-from tesserae import View
+import tess_ui
+from tess_ui import View
 
 
 def _rect(node_id, **extra):
@@ -21,7 +21,7 @@ def _spec(*children):
     return {"id": "root", "kind": "Container", "children": list(children)}
 
 
-class VM(tesserae.ViewModel):
+class VM(tess_ui.ViewModel):
     def __init__(self, view):
         self.clicks = 0
         super().__init__(view)
@@ -92,7 +92,7 @@ def test_a_button_fragment_wrapped_as_a_clickable_is_reachable():
     """A fragment wrapped in a clickable container: the wrapper is the
     button. (Since M69 a call can take `handlers:` itself, which puts them
     on the fragment's root; wrapping still works.)"""
-    from tesserae.spec import expand_components_to_spec
+    from tess_ui.spec import expand_components_to_spec
 
     spec = expand_components_to_spec(
         "id: root\nkind: Container\nchildren:\n  - id: save\n    kind: Container\n    handlers: {on_click: go}\n"

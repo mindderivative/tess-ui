@@ -1,4 +1,4 @@
-"""M41 Phase 5: `tesserae.overlays`, MD3's overlays on `tre` 0.3.4's
+"""M41 Phase 5: `tess_ui.overlays`, MD3's overlays on `tre` 0.3.4's
 layers (`show_layer`/`hide_layer`), since `tre` 0.3.5 removes its
 `open_*`/`close_*`. Driven headlessly with `simulate`/`advance`.
 """
@@ -8,9 +8,9 @@ import math
 import pytest
 import tre
 
-from tesserae import Theme, tokens
-from tesserae.overlays import Dialog, Menu, NavigationDrawer, Popover, SideSheet, Snackbar, Tooltip
-from tesserae.widgets import dialog, menu, menu_item, popover, side_sheet, snackbar, tooltip
+from tess_ui import Theme, tokens
+from tess_ui.overlays import Dialog, Menu, NavigationDrawer, Popover, SideSheet, Snackbar, Tooltip
+from tess_ui.widgets import dialog, menu, menu_item, popover, side_sheet, snackbar, tooltip
 
 from helpers import elevation
 

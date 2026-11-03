@@ -2,8 +2,8 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel, tokens
-from tesserae.shipped import shipped_views
+from tess_ui import App, Signal, ViewModel, tokens
+from tess_ui.shipped import shipped_views
 
 NODES = """[{value: docs, label: Documents, icon: folder, children: [{value: a, label: Letter}, {value: b, label: Reports, children: [{value: q, label: Q1}, {value: r, label: Q2}]}]},
         {value: pics, label: Pictures, children: [{value: p, label: Holiday}]}, {value: readme, label: Readme, icon: file}]"""

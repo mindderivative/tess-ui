@@ -1,5 +1,5 @@
 /**
- * After an edit or write under `src/tesserae/` or `tests/`: run the tests `tools/tests_for.py` picks for the changed files (the Claude Code hook
+ * After an edit or write under `src/tess_ui/` or `tests/`: run the tests `tools/tests_for.py` picks for the changed files (the Claude Code hook
  * `tests_for_edit.sh`). Silent when they pass or none is picked; a failure adds the end of the output after the tool's own result.
  *
  * omp gives a handler 30 seconds, where the Claude Code hook had 50, so the run is capped at 25: a run that is cut off says so and is not a failure.
@@ -12,7 +12,7 @@ import { editedFiles, insideProject, run, venvPython, withReport } from "../lib.
 export const TIMEOUT_MS = 25_000;
 
 /** A shipped source or view file, or a test file. */
-export const SELECTED = /\/src\/tesserae\/.*\.(py|yaml)$|\/tests\/test_[^/]*\.py$/;
+export const SELECTED = /\/src\/tess_ui\/.*\.(py|yaml)$|\/tests\/test_[^/]*\.py$/;
 
 export async function failuresIn(files: string[], cwd: string, timeoutMs = TIMEOUT_MS): Promise<string | null> {
 	const mine = files.filter((file) => SELECTED.test(file) && insideProject(file, cwd) !== null);

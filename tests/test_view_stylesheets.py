@@ -5,9 +5,9 @@ import os
 
 import pytest
 
-from tesserae import App, ViewModel
-from tesserae import shipped
-from tesserae.spec.watch import ComposedWatcher
+from tess_ui import App, ViewModel
+from tess_ui import shipped
+from tess_ui.spec.watch import ComposedWatcher
 
 
 class VM(ViewModel):

@@ -60,7 +60,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import icon_button
+from tess_ui.widgets import icon_button
 
 settings = icon_button(app.window, "settings", 40, variant="standard")
 ```

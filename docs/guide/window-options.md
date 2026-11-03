@@ -43,7 +43,7 @@ Operating systems let users ask for less animation and for more contrast. An app
   on and off.
 
 `app.reduced_motion` and `app.high_contrast` are what the app is doing now. For your own animations,
-`tesserae.motion.duration(window, ms)` is `ms`, or 0 when motion is reduced.
+`tess_ui.motion.duration(window, ms)` is `ms`, or 0 when motion is reduced.
 
 ## Spring easing
 
@@ -62,8 +62,8 @@ percentile and maximum of the total and the CPU time). `app.frame_stats(reset=Tr
 `app.stats_handle()` is an object another thread can read the stats from.
 
 For a quick look, `app.stats_overlay = True` shows the frame rate and time in the window's corner, and running with
-`TESSERAE_STATS=1` in the environment turns it on for a run from the terminal:
+`TESS_UI_STATS=1` in the environment turns it on for a run from the terminal:
 
 ```bash
-TESSERAE_STATS=1 python app.py
+TESS_UI_STATS=1 python app.py
 ```

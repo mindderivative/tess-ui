@@ -4,7 +4,7 @@
 import pytest
 import tre
 
-from tesserae import App, Signal, ViewModel
+from tess_ui import App, Signal, ViewModel
 
 
 class VM(ViewModel):

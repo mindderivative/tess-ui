@@ -91,7 +91,7 @@ whether the focus ring turns are App options: see
 ## From code
 
 `view = app.open_view("Main")` returns the view, and
-`view.interaction("root.save")` the node's `tesserae.interaction.Interaction`
+`view.interaction("root.save")` the node's `tess_ui.interaction.Interaction`
 (by the node's id, the path from the root), or `None` if it has none. Its `layer` is the state layer node,
 `ripples` lists the live ripple nodes, and `ring` is the focus ring
 (`ring_visible` says whether it's showing). `set_dragged(True)` shows
@@ -197,12 +197,12 @@ a label, a level, a state or a number (not `hidden`). A wrong value is an error 
 changes are announced, so it is set once and is not an expression; a `role` may be worked out from a view's params, but is fixed while the
 view is open, since it is what the node is. A bound label on a Link is its name, whatever its text says.
 
-## For widgets: `tesserae.a11y`
+## For widgets: `tess_ui.a11y`
 
-Tesserae's widgets describe themselves with `tesserae.a11y`:
+Tesserae's widgets describe themselves with `tess_ui.a11y`:
 
 ```python
-from tesserae import a11y
+from tess_ui import a11y
 
 a11y.describe(node, role="switch", label="Wi-Fi", checked=True)
 undo = a11y.on_action(slider, {
@@ -229,7 +229,7 @@ can't be focused or used, and draws in MD3's disabled colours.
 function of no arguments or a plain value:
 
 ```python
-from tesserae import Computed, a11y
+from tess_ui import Computed, a11y
 
 stop = a11y.bind(inbox_button, label=Computed(lambda: f"{unread.get()} unread"),
                  hidden=collapsed)

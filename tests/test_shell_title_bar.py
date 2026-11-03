@@ -7,8 +7,8 @@ as it was.
 
 import pytest
 
-from tesserae import App, View
-from tesserae.widgets.navigation import top_app_bar
+from tess_ui import App, View
+from tess_ui.widgets.navigation import top_app_bar
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 

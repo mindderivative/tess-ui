@@ -2,8 +2,8 @@
 
 import pytest
 
-from tesserae import App, View, ViewModel, tokens
-from tesserae.spec.nodes import LoadError
+from tess_ui import App, View, ViewModel, tokens
+from tess_ui.spec.nodes import LoadError
 
 SEED = (103, 80, 164, 255)
 
@@ -60,7 +60,7 @@ def test_a_heading_level_is_one_to_six(tmp_path, level):
 
 
 def test_text_follows_a_signal(tmp_path):
-    from tesserae import Signal
+    from tess_ui import Signal
 
     class Greeting(ViewModel):
         views = "main"

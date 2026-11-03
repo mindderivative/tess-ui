@@ -1,16 +1,16 @@
 from helpers import elevation, view_from
 """Real coverage for the `icon_button`/`fab`/`extended_fab` component
-fragment families (`src/tesserae/spec/components/`). Same cross-check
+fragment families (`src/tess_ui/spec/components/`). Same cross-check
 strategy as `test_spec_expand.py`'s own `Button` test: expand a real
 `component:` usage, construct via `tre.View(source=...)`, and compare
-against `tesserae.widgets`'s own imperative output for the identical
+against `tess_ui.widgets`'s own imperative output for the identical
 widget/variant.
 """
 
 from tre import Window
 
-from tesserae.spec import expand_components
-from tesserae.widgets import extended_fab, fab, icon_button
+from tess_ui.spec import expand_components
+from tess_ui.widgets import extended_fab, fab, icon_button
 
 ICON_BUTTON_VARIANTS = [
     ("IconButtonFilled", "filled"),

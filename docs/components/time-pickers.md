@@ -90,7 +90,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import time_picker_dial
+from tess_ui.widgets import time_picker_dial
 
 dial = time_picker_dial(app.window, hour=9, minute=30)
 ```

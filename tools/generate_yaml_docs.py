@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from tesserae.spec import cascade
+from tess_ui.spec import cascade
 
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT = ROOT / "docs" / "api" / "yaml.md"
@@ -216,7 +216,7 @@ def _stub(reader: Reader, schema: dict[str, Any], indent: int = 0, depth: int = 
 
 
 def _style_tables(reader: Reader) -> list[str]:
-    """The style fields in the sections `tesserae.spec.cascade.STYLE_GROUPS` makes, each its own table."""
+    """The style fields in the sections `tess_ui.spec.cascade.STYLE_GROUPS` makes, each its own table."""
     style = reader.defs["style"]
     rows = _rows(reader, style)
     by_group: dict[str, list[tuple[str, str, str, bool]]] = {}
@@ -238,8 +238,8 @@ def _block(reader: Reader, schema: dict[str, Any], what: str, first: str = "Key"
 
 def render() -> str:
     schemas = _schemas()
-    view, component = Reader(schemas["tesserae-yaml-schema.json"]), Reader(schemas["tesserae-component-schema.json"])
-    theme = Reader(schemas["tesserae-theme-schema.json"])
+    view, component = Reader(schemas["tess-ui-yaml-schema.json"]), Reader(schemas["tess-ui-component-schema.json"])
+    theme = Reader(schemas["tess-ui-theme-schema.json"])
     out = ["# YAML Reference", "",
            "Every key Tesserae's YAML files take, with the values it accepts and what it does. "
            "This page is written from the same schemas your editor uses (`tesserae schema`), "
@@ -277,7 +277,7 @@ def render() -> str:
             "A control's color (a `Switch`, a `Slider`) takes a plain color only.", ""]
     out += ["## The text", "", "`text:` on a Text, Link or TextField.", ""]
     out += _block(view, view.defs["text"], "text", "Key")
-    from tesserae import view as view_module
+    from tess_ui import view as view_module
 
     actions = ", ".join([*(f"`window.{action}`" for action in view_module.WINDOW_ACTIONS),
                          *(f"`surface.{action}`" for action in view_module.SURFACE_ACTIONS),
@@ -324,7 +324,7 @@ def render() -> str:
     out += _block(view, view.resolve(view.defs["view_node"]), "view node")
     out += ["## Theme and stylesheet", "",
             "A stylesheet has only `styles:`; a theme has everything. See [Themes](../themes/index.md).", ""]
-    out += _block(theme, schemas["tesserae-theme-schema.json"], "theme")
+    out += _block(theme, schemas["tess-ui-theme-schema.json"], "theme")
     rule = theme.defs["rule"]
     out += ["**A rule in `styles:`**", ""] + _table(_rows(theme, rule), "Key")
     return "\n".join(out).rstrip() + "\n"

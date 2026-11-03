@@ -2,7 +2,7 @@
 
 import yaml
 
-from tesserae import App, View
+from tess_ui import App, View
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 SPEC = """

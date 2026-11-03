@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from tesserae import View, icons
+from tess_ui import View, icons
 
 ROOT = Path(__file__).resolve().parent.parent
 spec = importlib.util.spec_from_file_location("import_mdi", ROOT / "tools" / "import_mdi.py")
@@ -66,7 +66,7 @@ def test_the_bundled_mdi_icons_are_in_the_set_with_their_own_view_box():
 
 
 def test_every_curated_name_is_bundled():
-    bundled = json.loads((ROOT / "src" / "tesserae" / "icon_data" / "mdi.json").read_text())
+    bundled = json.loads((ROOT / "src" / "tess_ui" / "icon_data" / "mdi.json").read_text())
     missing = [n for n in tool.CURATED if n.replace("-", "_") not in icons.ICONS]
     assert not missing and len(bundled) >= 140
 

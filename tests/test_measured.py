@@ -1,6 +1,6 @@
 """A Container's `measured_width` and `measured_height` tell the view how big it is laid out."""
 
-from tesserae import App
+from tess_ui import App
 
 
 def opened(tmp_path, width=400):

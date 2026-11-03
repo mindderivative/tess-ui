@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-import tesserae
+import tess_ui
 
 ROOT = Path(__file__).resolve().parent.parent
 EX = ROOT / "examples"
@@ -27,7 +27,7 @@ def run_step(monkeypatch):
     def run(flavour, step, argv=()):
         folder = EX / flavour / f"step{step}"
         seen = {}
-        monkeypatch.setattr(tesserae.App, "run", lambda self, *a, **k: seen.setdefault("app", self))
+        monkeypatch.setattr(tess_ui.App, "run", lambda self, *a, **k: seen.setdefault("app", self))
         monkeypatch.syspath_prepend(str(folder))
         monkeypatch.chdir(folder.parent)  # nothing depends on where the app is started from
         monkeypatch.setattr(sys, "argv", ["app.py", *argv])
@@ -173,7 +173,7 @@ def run_gs(monkeypatch):
     def run(kind, step):
         folder = EX / "getting_started" / kind / f"step{step}"
         seen = {}
-        monkeypatch.setattr(tesserae.App, "run", lambda self, *a, **k: seen.setdefault("app", self))
+        monkeypatch.setattr(tess_ui.App, "run", lambda self, *a, **k: seen.setdefault("app", self))
         monkeypatch.syspath_prepend(str(folder))
         names = runpy.run_path(str(folder / "app.py"), run_name="__main__")
         sys.modules.pop("Counter_ViewModel", None)

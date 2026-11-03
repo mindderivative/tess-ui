@@ -2,10 +2,10 @@
 
 import pytest
 
-from tesserae.expr import Template
-from tesserae.spec import widgets as W
-from tesserae.spec.nodes import EVENTS, LoadError, load_marked, parse_view
-from tesserae.spec.widgets import Property, WidgetDecl
+from tess_ui.expr import Template
+from tess_ui.spec import widgets as W
+from tess_ui.spec.nodes import EVENTS, LoadError, load_marked, parse_view
+from tess_ui.spec.widgets import Property, WidgetDecl
 
 
 def node(text, **kw):
@@ -32,7 +32,7 @@ def resolver(name):
 
 def accepting_foreground():
     """The widgets that declare `foreground` among their style extras, as the error names them."""
-    from tesserae.spec import widgets as registry
+    from tess_ui.spec import widgets as registry
 
     registry._load_builtins()
     return ", ".join(sorted(name for name, decl in registry._REGISTRY.items() if "foreground" in decl.extras))
@@ -121,7 +121,7 @@ def test_handlers_map_known_events_to_an_action_or_statements():
 
 
 def test_the_events_are_the_views_events_plus_on_key():
-    from tesserae.view import _EVENTS
+    from tess_ui.view import _EVENTS
 
     assert set(EVENTS) == set(_EVENTS) | {"on_key", "on_submit", "on_press", "on_move", "on_release", "on_input", "on_dismiss"}
 

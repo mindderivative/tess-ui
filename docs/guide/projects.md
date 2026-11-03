@@ -103,4 +103,4 @@ syntax a screen is a view in `Views/` with a `name:`, a ViewModel in `ViewModels
 `open_view` in `app.py`; a view you call is a file in `Views/`; a theme or a stylesheet is a file in `Themes/` or `Styles/`.
 Nothing else needs registering.
 
-The API is [`tesserae.project`](../api/python.md#projects); an app's is `app.project`.
+The API is [`tess_ui.project`](../api/python.md#projects); an app's is `app.project`.

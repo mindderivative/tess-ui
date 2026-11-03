@@ -9,8 +9,8 @@ restyle or reconcile never undoes it. A control keeps its own `disabled`.
 import pytest
 import yaml
 
-from tesserae import App, Signal, View, ViewModel
-from tesserae.spec import expand_components_to_spec
+from tess_ui import App, Signal, View, ViewModel
+from tess_ui.spec import expand_components_to_spec
 
 DISABLED_OPACITY = 0.38  # MD3's disabled content opacity
 

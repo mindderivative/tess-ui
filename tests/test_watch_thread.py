@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pytest
 
-from tesserae.spec import ViewWatcher, load_view
+from tess_ui.spec import ViewWatcher, load_view
 
 
 class FakeHandle:

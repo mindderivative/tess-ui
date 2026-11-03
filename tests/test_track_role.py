@@ -3,7 +3,7 @@ it was a bare `KeyError` from deep in the control's painting."""
 
 import pytest
 
-from tesserae import App, ViewModel, controls
+from tess_ui import App, ViewModel, controls
 
 HEAD = "name: main\nwidget: Container\nstyle: {width: 300, height: 200, flex_direction: vertical}\nchildren:\n"
 
@@ -53,14 +53,14 @@ def test_a_control_made_in_python_says_so_too():
 def test_a_role_of_the_full_scheme_that_the_few_published_baseline_values_lack_works_without_a_theme(tmp_path, widget):
     """The first form of this issue: `track: surface_variant` is a real role, and it was a `KeyError` because an unthemed control looked it up in
     `tokens.BASELINE`, which holds only some of the roles."""
-    from tesserae import tokens
+    from tess_ui import tokens
 
     assert "surface_variant" not in tokens.BASELINE
     assert open_with(tmp_path, widget, "surface_variant").node("root.bar") is not None
 
 
 def test_a_control_without_a_theme_paints_every_role_of_the_scheme():
-    from tesserae import tokens
+    from tess_ui import tokens
 
     app = App(width=300, height=200)
     bar = controls.LinearProgress(app.window, value=0.5)

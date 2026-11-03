@@ -54,7 +54,7 @@ refuses a view written with `widget:`; `tesserae migrate-yaml` moves a project o
 ([Migrating](../migration.md)). Its signature is in the [Python API](../api/python.md).
 
 ```python
-from tesserae import Repeater, Signal
+from tess_ui import Repeater, Signal
 
 items = Signal([])  # the single source of truth
 

@@ -1,7 +1,7 @@
 """The window's ViewModel. It serves `Window_View.yaml`, and so the views the window calls: the Console panel reads `last`, the Notes screen
 reads `note` and `echo` (a called view has no ViewModel of its own)."""
 
-from tesserae import Computed, Signal, ViewModel
+from tess_ui import Computed, Signal, ViewModel
 
 
 class WindowViewModel(ViewModel):

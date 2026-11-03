@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from tesserae import cli
+from tess_ui import cli
 
 EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
 SELF_CHECKING = ["counter", "multi_screen", "todo_list", "custom_title_bar", "window_dock", "typing_effects"]

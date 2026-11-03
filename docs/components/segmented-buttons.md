@@ -55,7 +55,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import segmented_button
+from tess_ui.widgets import segmented_button
 
 view = segmented_button(app.window, ["Day", "Week", "Month"], selected=0)
 many = segmented_button(app.window, ["Bold", "Italic"], multi=True, selected=[0])

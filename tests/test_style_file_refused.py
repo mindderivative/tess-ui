@@ -4,8 +4,8 @@
 import pytest
 import yaml
 
-from tesserae import App, ViewModel, cli
-from tesserae.spec.nodes import LoadError
+from tess_ui import App, ViewModel, cli
+from tess_ui.spec.nodes import LoadError
 
 OLD = "id: root\nkind: Container\nchildren:\n  - {id: a, kind: Rect, style: row_Style.yaml}\n"
 
@@ -41,7 +41,7 @@ def test_the_migration_writes_the_files_fields_into_the_node(tmp_path, capsys):
 
 
 def test_a_migrated_view_lays_out_as_the_old_one_did(tmp_path):
-    from tesserae import App as A
+    from tess_ui import App as A
 
     _project(tmp_path, "id: root\nkind: Container\nstyle: {width: 200, height: 100}\nchildren:\n  - {id: a, kind: Rect, style: row_Style.yaml}\n")
     old = A(root=tmp_path, width=200, height=100)

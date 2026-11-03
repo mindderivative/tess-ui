@@ -5,7 +5,7 @@
     python3 tools/mypy_ratchet.py --update   # rewrite the baseline to the current errors (after fixing some, never to hide a new one)
     python3 tools/mypy_ratchet.py --list     # print the current errors, one per line
 
-`tools/mypy_baseline.json` counts the errors of `mypy src/tesserae` by file, error code and message, not by line number, so editing a
+`tools/mypy_baseline.json` counts the errors of `mypy src/tess_ui` by file, error code and message, not by line number, so editing a
 file does not move an old error into "new". A key whose count went up, or a key that is not in the baseline, is new and is printed with
 its current lines. Fewer errors than the baseline is reported as progress: run `--update` to keep it.
 """
@@ -25,7 +25,7 @@ LINE = re.compile(r"^(?P<file>[^:]+):(?P<line>\d+): error: (?P<message>.*?)(?:  
 def current():
     """Return ({key: count}, {key: [lines]}) from a fresh mypy run; the key is `file|code|message`."""
     exe = ROOT / ".venv" / "bin" / "mypy"
-    done = subprocess.run([str(exe) if exe.exists() else "mypy", "src/tesserae", "--no-error-summary", "--no-pretty"], cwd=ROOT,
+    done = subprocess.run([str(exe) if exe.exists() else "mypy", "src/tess_ui", "--no-error-summary", "--no-pretty"], cwd=ROOT,
                           capture_output=True, text=True)
     counts, where = Counter(), {}
     for text in done.stdout.splitlines():

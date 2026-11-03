@@ -60,7 +60,7 @@ A view named `Divider_View.yaml` in your project replaces the shipped divider, a
 ## Using it in Python
 
 ```python
-from tesserae.widgets import divider
+from tess_ui.widgets import divider
 
 rule = divider(app.window, 240)
 ```

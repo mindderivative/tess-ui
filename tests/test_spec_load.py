@@ -1,4 +1,4 @@
-"""Real coverage for `tesserae.spec.load_view` -- the integration point
+"""Real coverage for `tess_ui.spec.load_view` -- the integration point
 between `expand_components` and a real `tre.View`, reading from an
 actual file on disk (not just a YAML string in memory, unlike
 `test_spec_expand.py`).
@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from tesserae.spec import load_view
+from tess_ui.spec import load_view
 
 BUTTON_VIEW_YAML = """
 id: root
@@ -55,7 +55,7 @@ def test_load_view_forwards_theme_kwargs_to_tre_view(tmp_path: Path):
     # `primary` is MD3's baseline when no theme_seed is given (0.3.3: a role in an unthemed
     # view used to fail), and the seed's own when one is: the fill changing proves the kwarg
     # genuinely reaches the build rather than being silently dropped.
-    from tesserae import tokens
+    from tess_ui import tokens
 
     seed = (0x12, 0x80, 0x40, 0xFF)
     bare = load_view(view_path).node("save_button").get("fill")
@@ -70,7 +70,7 @@ def test_load_view_forwards_theme_kwargs_to_tre_view(tmp_path: Path):
 
 import re
 
-from tesserae.spec import ComponentError, expand_components_to_spec
+from tess_ui.spec import ComponentError, expand_components_to_spec
 
 RECT = 'id: {id}\nkind: Rect\nstyle: {{width: 10, height: 10, background: "#112233"}}\n'
 
@@ -203,7 +203,7 @@ def test_load_view_names_the_source_file_when_tre_rejects_the_spec(tmp_path: Pat
 
 
 def test_expand_components_to_spec_returns_the_same_tree_as_the_text_form():
-    from tesserae.spec import expand_components
+    from tess_ui.spec import expand_components
     import yaml
 
     spec = expand_components_to_spec(BUTTON_VIEW_YAML)

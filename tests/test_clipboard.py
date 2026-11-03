@@ -2,7 +2,7 @@
 
 import pytest
 
-from tesserae import App, Signal, ViewModel
+from tess_ui import App, Signal, ViewModel
 
 
 class VM(ViewModel):
@@ -92,7 +92,7 @@ def test_the_view_accepts_the_actions_when_it_is_checked(tmp_path):
 
 
 def test_a_clipboard_with_no_text_or_that_cannot_be_reached_pastes_as_empty_text():
-    from tesserae.composed import builtin_actions
+    from tess_ui.composed import builtin_actions
 
     class W:
         def read_clipboard(self):
@@ -103,7 +103,7 @@ def test_a_clipboard_with_no_text_or_that_cannot_be_reached_pastes_as_empty_text
 
 
 def test_a_clipboard_that_cannot_be_written_says_false(tmp_path):
-    from tesserae.composed import builtin_actions
+    from tess_ui.composed import builtin_actions
 
     class W:
         def write_clipboard(self, text):

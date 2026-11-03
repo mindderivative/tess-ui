@@ -14,8 +14,8 @@ from pathlib import Path
 
 import pytest
 
-import tesserae.fonts as fonts
-from tesserae import App
+import tess_ui.fonts as fonts
+from tess_ui import App
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 RECT = 'id: box\nkind: Rect\nstyle: {width: 10, height: 10, background: "#112233"}\n'
@@ -53,7 +53,7 @@ def _pair(tmp_path: Path, prefix: str, view_text: str = RECT):
     view = _write(tmp_path / f"{prefix}_View.yaml", view_text)
     module = _module(
         tmp_path / f"{prefix}_ViewModel.py",
-        f"from tesserae import ViewModel\n\n\nclass {prefix}ViewModel(ViewModel):\n    pass\n",
+        f"from tess_ui import ViewModel\n\n\nclass {prefix}ViewModel(ViewModel):\n    pass\n",
     )
     return view, getattr(module, f"{prefix}ViewModel")
 
@@ -235,7 +235,7 @@ def test_a_restyle_keeps_bound_values_and_doesnt_fire_on_change(tmp_path: Path):
     view_path = _write(tmp_path / "Form_View.yaml", BOUND)
     module = _module(
         tmp_path / "Form_ViewModel.py",
-        "from tesserae import Signal, ViewModel\n\n\nclass FormViewModel(ViewModel):\n"
+        "from tess_ui import Signal, ViewModel\n\n\nclass FormViewModel(ViewModel):\n"
         "    def __init__(self, view):\n        self.agreed = Signal(True)\n        self.calls = 0\n"
         "        super().__init__(view)\n\n    def changed(self):\n        self.calls += 1\n",
     )

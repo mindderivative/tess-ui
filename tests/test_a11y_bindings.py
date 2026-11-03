@@ -9,23 +9,23 @@ import re
 import pytest
 import yaml
 
-import tesserae
-from tesserae.spec.build import SpecBuildError
-from tesserae.spec.expand import expand_components_to_spec
-from tesserae.view import View
+import tess_ui
+from tess_ui.spec.build import SpecBuildError
+from tess_ui.spec.expand import expand_components_to_spec
+from tess_ui.view import View
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 
 
-class VM(tesserae.ViewModel):
+class VM(tess_ui.ViewModel):
     def __init__(self, view):
-        self.unread = tesserae.Signal(3)
-        self.summary = tesserae.Computed(lambda: f"{self.unread.get()} unread")
-        self.collapsed = tesserae.Signal(False)
-        self.depth = tesserae.Signal(2)
-        self.title = tesserae.Signal("Inbox")
-        self.number = tesserae.Signal(7)
-        self.nothing = tesserae.Signal(None)
+        self.unread = tess_ui.Signal(3)
+        self.summary = tess_ui.Computed(lambda: f"{self.unread.get()} unread")
+        self.collapsed = tess_ui.Signal(False)
+        self.depth = tess_ui.Signal(2)
+        self.title = tess_ui.Signal("Inbox")
+        self.number = tess_ui.Signal(7)
+        self.nothing = tess_ui.Signal(None)
         super().__init__(view)
 
 
@@ -186,12 +186,12 @@ def test_a_binding_passes_through_a_fragment_while_its_params_substitute(tmp_pat
     assert view.node("s").get("label") == "2 unread" and view.node("s").get("font_size") == 14.0
 
 
-# -- Phase 3: tesserae.a11y.bind, for widgets made in Python ------------------
+# -- Phase 3: tess_ui.a11y.bind, for widgets made in Python ------------------
 
 import tre  # noqa: E402
 
-from tesserae import Computed, Signal, a11y  # noqa: E402
-from tesserae.widgets import button, checkbox  # noqa: E402
+from tess_ui import Computed, Signal, a11y  # noqa: E402
+from tess_ui.widgets import button, checkbox  # noqa: E402
 
 
 def _window():
@@ -221,7 +221,7 @@ def test_bind_takes_a_node_or_a_plain_value_and_stops():
 
 
 def test_a_controls_bound_label_survives_its_own_repaints_and_a_re_theme():
-    from tesserae import Theme
+    from tess_ui import Theme
 
     cb = checkbox(_window(), (0x67, 0x50, 0xA4, 0xFF), 18, 18, checked=False)
     terms = Signal("Agree to the terms")

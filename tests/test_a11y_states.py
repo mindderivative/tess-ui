@@ -3,11 +3,11 @@ fixed or bound, in a view written either way, cleared with `null`, and refused w
 
 import pytest
 
-from tesserae import Signal, View, ViewModel, a11y
-from tesserae.composed import open_composed
-from tesserae.spec.build import SpecBuildError
-from tesserae.spec.nodes import LoadError, parse_view
-from tesserae.viewmodel import Bindings
+from tess_ui import Signal, View, ViewModel, a11y
+from tess_ui.composed import open_composed
+from tess_ui.spec.build import SpecBuildError
+from tess_ui.spec.nodes import LoadError, parse_view
+from tess_ui.viewmodel import Bindings
 
 SEED = (103, 80, 164, 255)
 STATES = ("expanded", "selected", "checked")

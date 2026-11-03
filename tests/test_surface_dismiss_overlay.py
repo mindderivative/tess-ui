@@ -3,7 +3,7 @@ did nothing in a view (it only found Python overlays)."""
 
 import pytest
 
-from tesserae import App, Signal, ViewModel
+from tess_ui import App, Signal, ViewModel
 
 
 class VM(ViewModel):
@@ -121,8 +121,8 @@ def test_a_dismiss_outside_any_overlay_does_nothing_and_says_nothing(tmp_path):
 
 
 def test_with_no_overlay_in_the_view_a_python_overlay_around_it_is_asked(tmp_path, monkeypatch):
-    """A view shown inside a `tesserae.overlays` surface has no `widget: Overlay`: the old way, `dismiss_surface` from the view's root, is what runs."""
-    import tesserae.overlays as overlays
+    """A view shown inside a `tess_ui.overlays` surface has no `widget: Overlay`: the old way, `dismiss_surface` from the view's root, is what runs."""
+    import tess_ui.overlays as overlays
 
     app, view, vm = opened(tmp_path, f"  - {CLOSE}\n")
     asked = []

@@ -1,14 +1,14 @@
 """M40 Phase 5: the eight YAML control kinds are Tesserae's MD3 controls
 inside a `View` -- bindings, `two_way:`, handlers, reconcile, re-theming
-and teardown go to the controls (`tesserae.controls`).
+and teardown go to the controls (`tess_ui.controls`).
 """
 
 import math
 
 import pytest
 
-import tesserae
-from tesserae import App, Signal, View, tokens
+import tess_ui
+from tess_ui import App, Signal, View, tokens
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 
@@ -17,7 +17,7 @@ def _root(*children):
     return {"id": "root", "kind": "Container", "style": {"flex_direction": "vertical"}, "children": list(children)}
 
 
-class VM(tesserae.ViewModel):
+class VM(tess_ui.ViewModel):
     def __init__(self, view):
         self.on = Signal(False)
         self.level = Signal(0.25)

@@ -2,8 +2,8 @@
 
 import pytest
 
-from tesserae import App, ViewModel, tokens
-from tesserae.shipped import shipped_rules, shipped_views
+from tess_ui import App, ViewModel, tokens
+from tess_ui.shipped import shipped_rules, shipped_views
 
 
 class VM(ViewModel):
@@ -106,7 +106,7 @@ def test_a_wrong_property_is_a_load_error(tmp_path, body, message):
 @pytest.mark.parametrize("orientation", ["horizontal", "vertical"])
 def test_it_matches_the_python_widgets_look(tmp_path, orientation):
     """The Python `divider` and `widget: Divider` draw the same line: its colour and its thickness."""
-    from tesserae.widgets import divider
+    from tess_ui.widgets import divider
 
     py_app = App(width=300, height=200)
     py = divider(py_app.window, 100, orientation=orientation)

@@ -15,9 +15,9 @@ from pathlib import Path
 
 import yaml
 
-from tesserae.spec import watch
-from tesserae.spec.load import load_view
-from tesserae.spec.watch import FileWatcher, ViewWatcher, _settled, _stamp
+from tess_ui.spec import watch
+from tess_ui.spec.load import load_view
+from tess_ui.spec.watch import FileWatcher, ViewWatcher, _settled, _stamp
 
 
 class FakeHandle:

@@ -1,17 +1,17 @@
 """M58 (#5): `SpinBox` is a YAML control kind, built with
-`tesserae.controls.SpinBox` as the other controls are (M40): `value`,
+`tess_ui.controls.SpinBox` as the other controls are (M40): `value`,
 `min`, `max` and `step`; `value` bindable, clamped to the bounds, and
 `two_way:`; `on_change` hears the user's steps; `a11y:` goes to its text
 input. The `SpinBox` fragment is now this kind, with its behaviour.
 """
 
-import tesserae
-from tesserae import Signal, Theme, View, interaction
+import tess_ui
+from tess_ui import Signal, Theme, View, interaction
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 
 
-class VM(tesserae.ViewModel):
+class VM(tess_ui.ViewModel):
     def __init__(self, view):
         self.count = Signal(3)
         self.off = Signal(False)

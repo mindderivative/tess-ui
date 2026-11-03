@@ -88,7 +88,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import search_bar
+from tess_ui.widgets import search_bar
 
 search = search_bar(app.window, "Search notes", 360)
 ```

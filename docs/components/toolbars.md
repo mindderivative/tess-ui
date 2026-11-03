@@ -83,7 +83,7 @@ children:
 ## Using it in Python
 
 ```python
-from tesserae.widgets import toolbar
+from tess_ui.widgets import toolbar
 
 tools = toolbar(app.window, variant="floating", width=240)
 ```

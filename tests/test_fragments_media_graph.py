@@ -11,8 +11,8 @@ need to become optional); `graph_node` is structurally un-fragmentable
 
 from tre import Window
 
-from tesserae.spec import expand_components
-from tesserae.widgets import node_graph
+from tess_ui.spec import expand_components
+from tess_ui.widgets import node_graph
 
 THEME_SEED = (0x67, 0x50, 0xA4, 0xFF)
 

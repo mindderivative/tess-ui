@@ -1,5 +1,5 @@
 """M57 (#10): a theme's `components:` reach fragments, in views and in
-`tesserae.widgets` alike. The expander tags each fragment's root with the
+`tess_ui.widgets` alike. The expander tags each fragment's root with the
 fragment it came from (`component_of`); the cascade gives that root the
 corner radius and elevation of its `components:` entry (the variant's,
 then the component's), over the fragment's own. A FAB's entry follows its
@@ -11,10 +11,10 @@ import yaml
 from helpers import elevation
 from tre import Window
 
-from tesserae import Theme, View
-from tesserae.spec import expand_components_to_spec
-from tesserae.spec.cascade import component_key
-from tesserae.widgets import card, fab
+from tess_ui import Theme, View
+from tess_ui.spec import expand_components_to_spec
+from tess_ui.spec.cascade import component_key
+from tess_ui.widgets import card, fab
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 CUSTOM = {"components": {"card.elevated": {"corner_radius": 4, "elevation": "level_5"},
