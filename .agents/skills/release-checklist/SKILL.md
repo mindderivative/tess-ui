@@ -44,7 +44,7 @@ Release commit "Tesserae X" in the repo's style (check `git log`). Tell the user
 1. Push the branch, fast-forward `main`, push it; wait for CI on that commit (Linux, Windows, macOS, Deploy Docs).
 2. `gh release create vX --target <sha> --prerelease --title "Tesserae X" --notes-file <changelog section>`.
 3. The Release workflow stops at the `pypi` environment: the user approves it. Claude does not.
-4. Check PyPI (the index lags a few minutes), install `tess-ui==X` in a scratch venv, run a smoke test, add the `LOG.md` entry.
+4. Check PyPI (the index lags a few minutes), install `tesserae-ui==X` in a scratch venv, run a smoke test, add the `LOG.md` entry.
 5. Push the log, promote the release (`gh release edit vX --prerelease=false --latest`), move the issues to Done with `tools/board.py move N Done --approved` only after the user approves.
 
 Update the `Tesserae` memory entity only after step 4 has been seen to work. Do not write "released" before that.

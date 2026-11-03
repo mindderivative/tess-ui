@@ -20,7 +20,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-DIST = "tess-ui"
+DIST = "tesserae-ui"
 
 
 def found_versions(root):

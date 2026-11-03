@@ -63,7 +63,7 @@ def scan(text: str) -> Marker:
         said = f", not `tesserae: {value}`" if value else ""
         return Marker(True, value, f"`tesserae:` names the release series the file was written for: write `tesserae: {LINE}`{said}")
     if _tuple(value) > _tuple(LINE):
-        return Marker(True, value, f"written for Tesserae {value}; this is Tesserae {LINE}.x: upgrade Tesserae (`pip install --upgrade tess-ui`)")
+        return Marker(True, value, f"written for Tesserae {value}; this is Tesserae {LINE}.x: upgrade Tesserae (`pip install --upgrade tesserae-ui`)")
     if _tuple(value) < _tuple(LINE):
         return Marker(True, value, f"written for Tesserae {value}: run `tesserae migrate-yaml` on the project to bring it to {LINE}")
     return Marker(True, value)

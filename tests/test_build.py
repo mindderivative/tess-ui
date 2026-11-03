@@ -142,7 +142,7 @@ def test_build_mistakes_are_one_line(tmp_path, capsys, monkeypatch):
     monkeypatch.setitem(sys.modules, "PyInstaller", None)
     monkeypatch.setitem(sys.modules, "PyInstaller.__main__", None)
     assert cli.main(["build", str(app_file)]) == 2
-    assert "pip install tess-ui[build]" in capsys.readouterr().err
+    assert "pip install tesserae-ui[build]" in capsys.readouterr().err
 
 
 def test_a_generated_window_app_builds_and_runs_from_elsewhere(tmp_path, capsys, monkeypatch):

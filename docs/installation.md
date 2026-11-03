@@ -1,14 +1,11 @@
 # Installation
 
-Tesserae is on PyPI as [**`tess-ui`**](https://pypi.org/project/tess-ui/)
+Tesserae is on PyPI as [**`tesserae-ui`**](https://pypi.org/project/tesserae-ui/)
 (you import `tesserae`; `tesserae` on PyPI is an unrelated project):
 
 ```bash
-pip install tess-ui
+pip install tesserae-ui
 ```
-
-Tesserae was first published as `tesserae-ui`, which gets one last release (the same code, with a note that it was renamed) and no more. Don't install both: they hold the same `tesserae` package.
-To switch, `pip uninstall tesserae-ui`, then `pip install tess-ui`.
 
 That also installs the rendering engine, `tre`, which is on PyPI as
 [`tesserae-engine`](https://pypi.org/project/tesserae-engine/) (imported as
@@ -18,9 +15,12 @@ it tidy:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate     # Windows: .venv\Scripts\activate
-pip install tess-ui
+pip install tesserae-ui
 python -c "import tesserae; print('Tesserae is ready')"
 ```
+
+Tesserae was for a short time also published on PyPI as `tess-ui`, with the same package in it. If you installed that, run `pip uninstall tess-ui`, then `pip install tesserae-ui`:
+the two hold the same `tesserae` package, so they must not be installed together.
 
 ## Requirements
 

@@ -1,8 +1,8 @@
 name: Release
 
-# Publishes Tesserae to PyPI as `tess-ui` (issue #15) when a GitHub
+# Publishes Tesserae to PyPI as `tesserae-ui` (issue #15) when a GitHub
 # Release is published. Trusted publishing (OIDC): PyPI's publisher for
-# `tess-ui` names this repository, this file (`release.yml`) and the
+# `tesserae-ui` names this repository, this file (`release.yml`) and the
 # `pypi` environment, so no API token is stored anywhere. The `pypi`
 # environment is where a required reviewer can hold each upload.
 #
@@ -57,7 +57,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y mesa-vulkan-drivers libfontconfig1-dev
 
       # From PyPI: the wheel's dependencies, `tesserae-engine` included, as a
-      # user's `pip install tess-ui` would get them. The installed wheel
+      # user's `pip install tesserae-ui` would get them. The installed wheel
       # is tested, not the checkout.
       - name: Install the built wheel
         run: pip install tesserae/dist/*.whl pytest jsonschema  # jsonschema: tests/test_yaml_schema.py (0.3.2)
@@ -90,7 +90,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/tess-ui
+      url: https://pypi.org/p/tesserae-ui
     permissions:
       id-token: write  # trusted publishing: PyPI accepts this job's OIDC token instead of an API token
     steps:

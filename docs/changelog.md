@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.1.9
+
+The PyPI name is `tesserae-ui` again. The repository stays `mindderivative/tess-ui`.
+
+### Changed
+
+- **Install with `pip install tesserae-ui`.** The rename to `tess-ui` (0.5.1.8) is taken back: the package keeps the name it was first published under, as the other Tesserae packages keep theirs (`tesserae-engine` is `tre`). The import name (`import tesserae`) and the `tesserae` command are the same, and so is everything in a project. `tesserae new` installs `tesserae-ui` into the project's virtual environment again, and the messages that name the package say `tesserae-ui`: `pip install tesserae-ui[build]` for `tesserae build`, and the upgrade hint for a file written for a newer series.
+- **If `tess-ui` is installed, switch:** `pip uninstall tess-ui`, then `pip install tesserae-ui`. The two hold the same `tesserae` package, so they must not be installed together. The release that was published as `tess-ui` (0.5.1.8) is the same code, and this repository's release workflow publishes `tesserae-ui` only. The note in 0.5.1.8 that `tesserae-ui` gets one more release and no more no longer holds.
+- **Unchanged:** the repository, the docs address and the editor schemas' `$id` still say `tess-ui`; they name the repository and its Pages site, not the package.
+
 ## 0.5.1.8
 
 The PyPI name is `tess-ui` (it was `tesserae-ui`), and the repository is `mindderivative/tess-ui` (it was `mindderivative/tesserae`).

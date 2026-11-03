@@ -91,23 +91,8 @@ once**, run the test file with an isolated bytecode cache (`PYTHONPYCACHEPREFIX=
 1. Release commit "Tesserae X" (version in `pyproject.toml`, the changelog heading), push the branch, fast-forward `main`, push it, wait for CI on that commit (Linux, Windows, macOS; two runs plus Deploy Docs).
 2. `gh release create vX --target <sha> --prerelease --title "Tesserae X" --notes-file <changelog section>`.
 3. The Release workflow stops at the `pypi` environment: the maintainer approves it.
-4. Check PyPI (`https://pypi.org/pypi/tess-ui/json`; the index lags a few minutes), install `tess-ui==X` in a scratch venv with a smoke test, add a `LOG.md` entry.
+4. Check PyPI (`https://pypi.org/pypi/tesserae-ui/json`; the index lags a few minutes), install `tesserae-ui==X` in a scratch venv with a smoke test, add a `LOG.md` entry.
 5. Push the log, promote the release (`gh release edit vX --prerelease=false --latest`), move the issues to Done.
-
-### The last release under the old name
-
-Tesserae was first published as `tesserae-ui`. After the first `tess-ui` release is on PyPI, `tesserae-ui` gets **one** more release, the same code with a note on its PyPI page, and no more. It is the real package, not a stub that only depends on `tess-ui`: both hold the same `tesserae` package, so upgrading a stub in place would make pip install `tess-ui` and then remove the old package's files, which are the same paths (tried in a scratch venv: `import tesserae` fails afterwards). The owner of both PyPI projects sets each one's trusted publisher to `mindderivative/tess-ui`, `release.yml` and the `pypi` environment first.
-
-```bash
-rm -rf /tmp/old && mkdir /tmp/old && git archive HEAD | tar -x -C /tmp/old && cd /tmp/old   # the release commit
-# pyproject.toml: name = "tess-ui" -> name = "tesserae-ui"
-# README.md: put this line, then a blank one, at the top (PyPI shows the README as the description):
-#   > **Renamed: Tesserae is now on PyPI as `tess-ui`.** This package gets no more releases. Run `pip uninstall tesserae-ui`, then `pip install tess-ui`.
-python -m build && twine check --strict dist/*
-twine upload dist/*     # with the tesserae-ui owner's token; this repository's workflow publishes `tess-ui` only
-```
-
-The version is the one `tess-ui` just released. Never put both names in one environment.
 
 ### What CI runs
 

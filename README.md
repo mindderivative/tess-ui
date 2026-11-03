@@ -77,20 +77,21 @@ reloads, failed reloads naming the file, and warnings. Call
 ## Install
 
 ```bash
-pip install tess-ui
+pip install tesserae-ui
 ```
 
 That's all: it installs Tesserae and everything it needs, `tre`'s engine
 included, as prebuilt wheels. It needs **Python 3.12 or newer**, on Linux
 x86-64, macOS on Apple silicon or Windows x64 (elsewhere, pip builds `tre`
-from source, which needs Rust). The PyPI name is `tess-ui` (`tesserae`
-on PyPI is an unrelated project); the import name is `tesserae`. It was first published as `tesserae-ui`, which gets one last release (the same code, with a note) and no more:
-don't install both, switch with `pip uninstall tesserae-ui`, then `pip install tess-ui`. Start an app with `tesserae new myapp`. What's new: the [changelog](https://mindderivative.github.io/tess-ui/changelog/).
+from source, which needs Rust). The PyPI name is `tesserae-ui` (`tesserae`
+on PyPI is an unrelated project); the import name is `tesserae`. If you installed `tess-ui`, a name it was briefly published under, run
+`pip uninstall tess-ui`, then `pip install tesserae-ui`. Start an
+app with `tesserae new myapp`. What's new: the [changelog](https://mindderivative.github.io/tess-ui/changelog/).
 
 ## Release an app
 
 ```bash
-pip install "tess-ui[build]"
+pip install "tesserae-ui[build]"
 tesserae build --check
 ```
 

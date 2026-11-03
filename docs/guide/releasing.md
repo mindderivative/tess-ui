@@ -5,7 +5,7 @@ executable file. The people you give it to run it like any other program:
 they don't install Python, Tesserae or anything else.
 
 ```bash
-pip install "tess-ui[build]"
+pip install "tesserae-ui[build]"
 cd notes
 tesserae build --check
 ```
@@ -20,7 +20,7 @@ checked: it drew 30 frames and exited cleanly
 ```
 
 The `build` extra adds [PyInstaller](https://pyinstaller.org), which does
-the building. It's kept out of the everyday `pip install tess-ui`, so
+the building. It's kept out of the everyday `pip install tesserae-ui`, so
 an app that's never released doesn't carry it; without it, `tesserae
 build` tells you what to install.
 
@@ -51,7 +51,7 @@ jobs:
       # the keyboard library winit loads for a window (desktops have these).
       - if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y xvfb mesa-vulkan-drivers libxkbcommon-x11-0
-      - run: pip install "tess-ui[build]"
+      - run: pip install "tesserae-ui[build]"
       - shell: bash
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then RUN="xvfb-run -a"; else RUN=""; fi

@@ -84,11 +84,11 @@ def _make_venv(folder: Path) -> None:
     try:
         subprocess.run([sys.executable, "-m", "venv", str(folder / ".venv")], check=True, capture_output=True)
         python = folder / ".venv" / ("Scripts" if os.name == "nt" else "bin") / ("python.exe" if os.name == "nt" else "python")
-        subprocess.run([str(python), "-m", "pip", "install", "-q", "tess-ui"], check=True, capture_output=True)
+        subprocess.run([str(python), "-m", "pip", "install", "-q", "tesserae-ui"], check=True, capture_output=True)
     except (subprocess.CalledProcessError, OSError) as exc:
         detail = (getattr(exc, "stderr", b"") or b"").decode(errors="replace").strip().splitlines()[-1:] or [str(exc)]
         raise CliError(f"made the project, but its virtual environment failed ({detail[0]}); in {folder} run "
-                       "`python -m venv .venv`, then `.venv/bin/pip install tess-ui`") from None
+                       "`python -m venv .venv`, then `.venv/bin/pip install tesserae-ui`") from None
 
 
 def new(name: str, parent: Path, custom_title_bar: bool = False, venv: bool = True, window: bool = False) -> Path:
@@ -168,7 +168,7 @@ def _version() -> str:
     from importlib.metadata import PackageNotFoundError, version
 
     try:
-        return version("tess-ui")
+        return version("tesserae-ui")
     except PackageNotFoundError:  # a checkout that isn't installed
         return "unknown"
 
@@ -199,7 +199,7 @@ def _parser() -> argparse.ArgumentParser:
                             help="print the `yaml.schemas` setting for Red Hat's YAML language server")
     schema_cmd.add_argument("--project", nargs="?", const=Path("."), type=Path, metavar="DIR",
                             help="also know the views DIR (here by default) has of its own: writes DIR/.tesserae/tesserae-widget-schema.json")
-    build_cmd = commands.add_parser("build", help="build the app into one executable (needs tess-ui[build])")
+    build_cmd = commands.add_parser("build", help="build the app into one executable (needs tesserae-ui[build])")
     build_cmd.add_argument("app", nargs="?", type=Path, default=Path("app.py"),
                            help="the app's entry point (default: app.py)")
     build_cmd.add_argument("--name", help="the executable's name (default: the app's folder name)")
