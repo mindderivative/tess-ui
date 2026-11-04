@@ -3228,3 +3228,10 @@ The user asked to find the cause, then to add the one-line fix and send the engi
 - **A slip, said here:** `bisect-297` was branched from local `main`, which held three unpushed LOG and docs commits, so the push carried them to the remote for a short time (branch deleted; `origin/main` untouched).
 - **A second pass on the test:** it now delivers `closed` with `app.window.simulate("closed")` (the real wiring, so it also proves the listener is on the right window and event) and a fourth mutation, listening to `resize` instead of `closed`, is caught. That mutation first looked like a failure of the unmutated test: `"closed"` and `"resize"` are the same length and the file was rewritten within one second, so Python kept the old bytecode (a `.pyc` is checked by the source's mtime in seconds and its size). A mutation script must delete `__pycache__/<module>.*.pyc` or run with `PYTHONDONTWRITEBYTECODE=1`.
 - **Ran:** `tests/test_app.py`, `tests/test_keepalive_idle.py` and the tests `tests_for` picked (1281 passed, 1 skipped); `docs_audit`; `check.py` (one fewer mypy error, baseline updated to 382). **Not run:** the whole suite for this change; macOS.
+
+## 2026-11-03 `tesserae-ui` 0.6.0 is on PyPI
+
+- The prerelease `v0.6.0` (target `9fcab04`, notes from the changelog plus a Known section) started release run 41769858551; the user approved the `pypi` environment; `build` and `publish` succeeded. PyPI lists `tesserae-ui` 0.6.0.
+- **Checked from PyPI** in a clean venv: `tesserae --version` says 0.6.0; `tess_ui` and `tess_re` import; `marker.LINE` is `0.6`; `tesserae new` writes `tesserae: 0.6`; `tools/clean_install_smoke.py` exits 0 and the generated app ran. Not checked: real macOS or Windows hardware (CI covers both).
+- #295 and #296 are Done (the user approved). #297 is In review; tess-re#260 is open. #290 and #291 stay on hold.
+- **Not done, the user's:** pushing this entry, then `gh release edit v0.6.0 --prerelease=false --latest`.
