@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.6.0
+
+Tesserae's Python packages take the `tess_` prefix the other Tesserae projects use: Tesserae's own is `tess_ui` ([#295](https://github.com/mindderivative/tess-ui/issues/295)) and the engine's is `tess_re` ([#296](https://github.com/mindderivative/tess-ui/issues/296)). It is a new release series, so the first line of a file moves from `tesserae: 0.5` to `tesserae: 0.6`. This is the release of the two steps below, [0.5.1.10](#05110) and [0.5.1.11](#05111), which were not published on their own.
+
+### Changed
+
+- **`tesserae` is `tess_ui` and `tre` is `tess_re`, and nothing is left under the old names.** `from tesserae import App` is `from tess_ui import App`; `import tre` is `import tess_re`; after the upgrade the old names are a `ModuleNotFoundError`. The environment variables follow (`TESSERAE_*` is `TESS_UI_*`, the engine's `TRE_*` is `TESS_RE_*`), and so do the editor schemas (`tess-ui-*-schema.json`) and the logger (`tess_ui`). [Migrating](migration.md#to-060) lists every change and how to find the places in your code.
+- **Tesserae needs `tesserae-engine` 0.6.0**, one exact release (it was 0.5.8). A project that imports the engine itself changes `tre` to `tess_re`; every name inside the engine is unchanged.
+- **The first line of a file is `tesserae: 0.6`.** The shipped views, stylesheets and theme, the project templates, the examples and every whole-file block in the docs say it, and `tesserae new`, `tesserae add screen` and `tesserae migrate-yaml` write it. A file you wrote that says `tesserae: 0.5` is refused with `written for Tesserae 0.5: run tesserae migrate-yaml`, and the command now does that: it moves the first line of every view, stylesheet and theme of the older line to `0.6`, and changes nothing else in the file (a comment after the value, Windows line ends and a byte order mark stay). `tesserae migrate-yaml` alone reports what it would move, and `--write` moves it. The view language is the one of 0.5: nothing but the first line differs. A file with no first line still loads, with a note in the log; the key is meant to be required from a later line.
+
+### Unchanged
+
+- The PyPI names (`tesserae-ui`, `tesserae-engine`), the `tesserae` command and `python -m tess_ui`, the `.tesserae/` folder `tesserae schema --project` writes to, and the repository `mindderivative/tess-ui`.
+
 ## 0.5.1.11
 
 [#296](https://github.com/mindderivative/tess-ui/issues/296): the engine is `tess_re`.

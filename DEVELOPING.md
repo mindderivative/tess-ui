@@ -62,7 +62,7 @@ done
 
 `tools/component_docs.yaml` is the source of `docs/components/*.md`; do not edit those pages by hand.
 
-Every shipped YAML file, example and whole-file docs block starts with `tesserae: 0.5` (`src/tess_ui/spec/marker.py`: `LINE`, the first two parts of the version). A new series changes `LINE`, and `python3 tools/stamp_language.py --write` moves every one of those files; `tests/test_language_marker.py` fails while any lacks it.
+Every shipped YAML file, example and whole-file docs block starts with `tesserae: 0.6` (`src/tess_ui/spec/marker.py`: `LINE`, the first two parts of the version). A new series changes `LINE`, and `python3 tools/stamp_language.py --write` moves every one of those files; `tests/test_language_marker.py` fails while any lacks it.
 
 ### Mutation checks
 

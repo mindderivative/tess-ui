@@ -7,7 +7,7 @@ The look of [`Divider`](../../components/dividers.md) (in [Dividers](../../compo
 ## The stylesheet
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # The look of Divider (Material 3): a line in outline_variant that fills the length it is in (in a container that does not set `align_content`). The insets are margins at the ends it keeps clear.
 styles:
   - widget: Divider

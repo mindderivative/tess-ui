@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 # The Material 3 icon button: standard, filled, tonal or outlined, in five sizes and three widths, round or square, with a toggle form that swaps its icon.
 # `label` is required in spirit: it names the button for a screen reader and is its tooltip, since an icon has no text. `handlers: {on_click: save}` on the
 # call is what a press does. A toggle flips `selected` (two-way, or held by the button when nothing is bound). Colours, sizes and shapes are in

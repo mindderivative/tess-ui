@@ -7,7 +7,7 @@ The look of [`Snackbar`](../../components/snackbars.md) (in [Snackbars](../../co
 ## The stylesheet
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # The look of Snackbar (Material 3): inverse_surface at level 3 with 4 pixel corners, 16 pixels in from the edge on the left and 8 on the right of the buttons;
 # the message in inverse_on_surface, the action in inverse_primary.
 styles:

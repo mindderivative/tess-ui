@@ -7,7 +7,7 @@ The look of [`SearchView`](../../components/search.md) (in [Search](../../compon
 ## The stylesheet
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # The look of SearchView (Material 3): a surface_container_high panel with 28 pixel corners, 8 pixels above and below the rows.
 styles:
   - widget: SearchView

@@ -6,7 +6,7 @@ like), each paired with a Python **ViewModel** (what it does), drawn by the
 and accessibility in Rust underneath, which you never have to touch.
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # Counter_View.yaml
 name: Counter
 widget: Container

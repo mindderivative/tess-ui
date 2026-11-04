@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 # The Material 3 toolbar: a row (or, floating, a column) of icon buttons with an optional action button at the end and an overflow menu. `variant: docked` spans its width, 64 tall, on
 # `surface_container`; `floating` is a pill with a shadow that is as long as its buttons, and `vibrant: true` puts it on `primary_container` (the icons on_primary_container). `items` is a list of
 # {value, icon, label} and optionally {disabled}: pressing one sets `chosen` to its `value`; every icon has a label (its name and its tooltip). `overflow` is a list of Menu rows shown under a

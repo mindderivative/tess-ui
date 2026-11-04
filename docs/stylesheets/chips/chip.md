@@ -7,7 +7,7 @@ The look of [`Chip`](../../components/chips.md) (in [Chips](../../components/chi
 ## The stylesheet
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # The look of Chip (Material 3): 8 pixel corners, 8 pixels between parts, 16 pixels of padding (8 beside an icon or the close button). Assist, suggestion,
 # filter and input chips are outlined in `outline_variant`; elevated ones are `surface_container_low` at level 1 with no outline; a selected filter or input chip
 # is `secondary_container` with no outline.

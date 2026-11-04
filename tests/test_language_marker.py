@@ -1,5 +1,5 @@
-"""#292: every Tesserae YAML file starts with `tesserae: <line>` (the release series, `0.5`), and the loaders check it. In the 0.5 line it is optional
-(a missing key is a note, a wrong or misplaced one is an error); it is required from the next line."""
+"""#292: every Tesserae YAML file starts with `tesserae: <line>` (the release series, `marker.LINE`), and the loaders check it. In this line it is optional
+(a missing key is a note, a wrong or misplaced one is an error, a file of an older line is refused until `migrate-yaml` moves it); it is meant to be required from a later line."""
 
 import tomllib
 from pathlib import Path
@@ -201,6 +201,104 @@ def test_migrate_yaml_leaves_a_current_file_alone_marker_or_not(tmp_path):
     assert {r.path.name: r.status for r in report.results} == {"A_View.yaml": "current", "B_View.yaml": "current"}
     assert (tmp_path / "Views" / "A_View.yaml").read_text(encoding="utf-8") == keyed
     assert (tmp_path / "Views" / "B_View.yaml").read_text(encoding="utf-8") == VIEW
+
+
+# -- a file of an older line: the loaders refuse it and say `migrate-yaml`, so `migrate-yaml` has to be what fixes it
+
+PREVIOUS = f"{marker.LINE.split('.')[0]}.{int(marker.LINE.split('.')[1]) - 1}"  # the line before this one
+SHEET = "styles:\n  - {widget: Text, style: {opacity: 1}}\n"
+THEME = "seed: '#6750A4'\n"
+KINDS = [("view", "Views/A_View.yaml", VIEW), ("stylesheet", "Styles/A_Stylesheet.yaml", SHEET), ("theme", "Themes/A_Theme.yaml", THEME)]
+
+
+def load_as(kind, path):
+    """Loads `path` the way the app does; an older line is a `ValueError` (a `LoadError` is one) for each of the three."""
+    if kind == "view":
+        return parse_view(path.read_text(encoding="utf-8"), path.name)
+    return load_rule_sheet(path) if kind == "stylesheet" else load_theme(path)
+
+
+@pytest.mark.parametrize("line", [PREVIOUS, "0.1"])
+@pytest.mark.parametrize("kind, relative, body", KINDS)
+def test_a_file_of_an_older_line_is_refused_and_migrate_yaml_brings_it_forward(tmp_path, kind, relative, body, line):
+    from tess_ui.migrate import migrate_project
+
+    path = tmp_path / relative
+    path.parent.mkdir()
+    old = f"tesserae: {line}\n# kept\n{body}"
+    path.write_text(old, encoding="utf-8")
+    with pytest.raises(ValueError, match="tesserae migrate-yaml"):
+        load_as(kind, path)
+    dry = migrate_project(tmp_path)
+    assert {r.path.name: r.status for r in dry.results} == {path.name: "migrated"}
+    assert path.read_text(encoding="utf-8") == old  # a report writes nothing
+    report = migrate_project(tmp_path, write=True)
+    assert report.written and not report.failed
+    assert path.read_text(encoding="utf-8") == f"tesserae: {marker.LINE}\n# kept\n{body}"  # the first line moved and nothing else
+    load_as(kind, path)  # and the file loads
+
+
+def test_only_the_value_on_the_first_line_changes_a_bom_a_comment_and_windows_line_ends_stay(tmp_path):
+    from tess_ui.migrate import migrate_project
+
+    (tmp_path / "Views").mkdir()
+    path = tmp_path / "Views" / "A_View.yaml"
+    raw = "\ufefftesserae: 0.1  # the line\r\n# header\r\nwidget: Container\r\nstyle: {width: 10, height: 10}\r\n"
+    path.write_bytes(raw.encode("utf-8"))
+    assert migrate_project(tmp_path, write=True).written
+    assert path.read_bytes() == raw.replace("0.1", marker.LINE, 1).encode("utf-8")
+
+
+def test_migrate_yaml_leaves_a_file_of_this_line_a_newer_line_or_no_line_alone(tmp_path):
+    from tess_ui.migrate import migrate_project
+
+    files = {"Views/A_View.yaml": f"tesserae: {marker.LINE}\n{VIEW}", "Views/B_View.yaml": VIEW, "Views/C_View.yaml": f"tesserae: 9.9\n{VIEW}",
+             "Themes/Plain_Theme.yaml": THEME, "Themes/Same_Theme.yaml": f"tesserae: {marker.LINE}\n{THEME}", "Themes/Newer_Theme.yaml": f"tesserae: 9.9\n{THEME}"}
+    for relative, text in files.items():
+        (tmp_path / relative).parent.mkdir(exist_ok=True)
+        (tmp_path / relative).write_text(text, encoding="utf-8")
+    report = migrate_project(tmp_path, write=True)
+    assert [r.path.name for r in report.results if r.status == "migrated"] == []
+    assert {relative: (tmp_path / relative).read_text(encoding="utf-8") for relative in files} == files
+
+
+def test_a_view_that_only_has_its_first_line_moved_gets_no_viewmodel_advice(tmp_path):
+    """The advice is for a view that was translated (`views = ...`, no `view` argument): this one is already in the current language."""
+    from tess_ui.migrate import migrate_project
+
+    (tmp_path / "Views").mkdir()
+    (tmp_path / "ViewModels").mkdir()
+    (tmp_path / "Views" / "Main_View.yaml").write_text(f"tesserae: 0.1\nname: Main\n{VIEW}", encoding="utf-8")
+    (tmp_path / "ViewModels" / "Main_ViewModel.py").write_text("class MainViewModel:\n    views = 'Main'\n", encoding="utf-8")
+    report = migrate_project(tmp_path)
+    assert [r.status for r in report.results] == ["migrated"] and report.python == []
+
+
+def test_a_file_with_a_problem_of_its_own_still_gets_its_first_line_moved_and_blocks_nothing(tmp_path):
+    """Only the first line is this command's to change: an unrelated mistake in the file is for the loader to report when the app opens it, and no reason to leave the
+    whole project on the old line."""
+    from tess_ui.migrate import migrate_project
+
+    (tmp_path / "Views").mkdir()
+    broken = tmp_path / "Views" / "Broken_View.yaml"
+    good = tmp_path / "Views" / "Good_View.yaml"
+    broken.write_text("tesserae: 0.1\nwidget: NoSuchWidget\n", encoding="utf-8")
+    good.write_text(f"tesserae: 0.1\n{VIEW}", encoding="utf-8")
+    report = migrate_project(tmp_path, write=True)
+    assert report.written and not report.failed
+    for path in (broken, good):
+        assert path.read_text(encoding="utf-8").startswith(f"tesserae: {marker.LINE}\n")
+
+
+def test_the_command_brings_a_project_of_an_older_line_forward(tmp_path, capsys):
+    from tess_ui import cli
+
+    (tmp_path / "Views").mkdir()
+    (tmp_path / "Views" / "Main_View.yaml").write_text(f"tesserae: 0.1\n{VIEW}", encoding="utf-8")
+    assert cli.main(["migrate-yaml", str(tmp_path), "--write"]) == 0
+    out = capsys.readouterr().out
+    assert "migrated" in out and "Main_View.yaml" in out and f"tesserae: {marker.LINE}" in out and "written" in out
+    assert (tmp_path / "Views" / "Main_View.yaml").read_text(encoding="utf-8").startswith(f"tesserae: {marker.LINE}\n")
 
 
 # -- a dict a user loaded from such a file

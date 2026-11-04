@@ -7,7 +7,7 @@ The look of [`Card`](../../components/cards.md) (in [Cards](../../components/car
 ## The stylesheet
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # The look of Card (Material 3): 12 pixel corners, 16 pixels of padding around the text. Elevated is surface_container_low at level 1 (2 when an
 # actionable one is hovered), filled is surface_container_highest, outlined is surface with a 1 pixel outline_variant border. A selected outlined card has
 # an outline border; a selected filled or elevated one is secondary_container.

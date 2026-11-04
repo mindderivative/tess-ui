@@ -7,7 +7,7 @@ The look of [`SideSheetPanel`](../../components/side-sheets.md) (in [Side sheets
 ## The stylesheet
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # The look of the inside of a side sheet: 24 pixels beside the header and the content, 16 above the actions, the title in on_surface.
 styles:
   - widget: SideSheetPanel

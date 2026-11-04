@@ -1,8 +1,9 @@
-"""The first line of a Tesserae YAML file: `tesserae: 0.5`, the release series the file was written for (#292).
+"""The first line of a Tesserae YAML file: `tesserae: <line>`, the release series the file was written for (#292).
 
 A view, a stylesheet or a theme says which line of Tesserae it is written for, on its first line, so a loader can tell a Tesserae file from any other
-YAML and a file for another line from one for this. In the 0.5 line the key is **optional**: a file without it loads and is noted once; one with it
-is checked. From the next line it is required. The value is the first two parts of the package version (`LINE`); it moves only when a new line is
+YAML and a file for another line from one for this. In this line (`LINE`) the key is **optional**: a file without it loads and is noted once; one with it
+is checked, and a file for an older line is refused until `tesserae migrate-yaml` moves it forward (`older_line` finds one, `restamp` moves it). It is
+meant to be required from a later line. The value is the first two parts of the package version (`LINE`); it moves only when a new line is
 started, and `tests/test_language_marker.py` fails when the version moves without it.
 
 `scan(text)` reads the first line without parsing the YAML. `strip(data)` takes the key out of a parsed mapping, so no loader's own check of keys
@@ -16,16 +17,17 @@ from typing import Any, Optional
 
 from loguru import logger
 
-__all__ = ["KEY", "LINE", "Marker", "SCHEMA", "note_if_missing", "scan", "strip"]
+__all__ = ["KEY", "LINE", "Marker", "SCHEMA", "note_if_missing", "older_line", "restamp", "scan", "strip"]
 
 KEY = "tesserae"
 #: The release series this Tesserae reads and writes: the first two parts of its version.
-LINE = "0.5"
+LINE = "0.6"
 
-#: The key as an editor's schema describes it. A YAML parser reads `0.5` as a number, hence both types.
+#: The key as an editor's schema describes it. A YAML parser reads `0.6` as a number, hence both types.
 SCHEMA = {"type": ["number", "string"], "description": f"The release series of Tesserae this file was written for ({LINE}). It must be the first line of the file."}
 
 _FIRST = re.compile(r"tesserae[ \t]*:[ \t]*(.*)$")
+_FIRST_VALUE = re.compile(r"\A(\ufeff?tesserae[ \t]*:[ \t]*)\d+\.\d+")
 _ELSEWHERE = re.compile(r"(?m)^tesserae[ \t]*:")
 _VALUE = re.compile(r"(\d+)\.(\d+)")
 _noted: set[str] = set()
@@ -67,6 +69,20 @@ def scan(text: str) -> Marker:
     if _tuple(value) < _tuple(LINE):
         return Marker(True, value, f"written for Tesserae {value}: run `tesserae migrate-yaml` on the project to bring it to {LINE}")
     return Marker(True, value)
+
+
+def older_line(text: str) -> Optional[str]:
+    """The series the first line of `text` names when it is older than `LINE`, which is what `tesserae migrate-yaml` brings forward; else `None`."""
+    scanned = scan(text)
+    if scanned.found and scanned.value and _VALUE.fullmatch(scanned.value) and _tuple(scanned.value) < _tuple(LINE):
+        return scanned.value
+    return None
+
+
+def restamp(text: str) -> str:
+    """`text` with the series on its first line moved to `LINE`. Nothing else changes: a comment after the value, a byte order mark and Windows line
+    ends stay as they were."""
+    return _FIRST_VALUE.sub(lambda found: found[1] + LINE, text, count=1)
 
 
 def strip(data: Any) -> Any:

@@ -11,6 +11,7 @@ from tess_ui import Signal, View, ViewModel
 from tess_ui import cli
 from tess_ui.composed import open_composed
 from tess_ui.migrate import migrate_project
+from tess_ui.spec import marker
 from tess_ui.spec.nodes import parse_view
 from tess_ui.spec.rules import RuleSheet, is_rule_sheet
 from tess_ui.viewmodel import Bindings
@@ -104,7 +105,7 @@ def test_write_moves_the_project_to_the_current_syntax(tmp_path):
     assert report.written and not report.failed
     assert not (root / "Components" / "Pill_Component.yaml").exists() and (root / "Components" / "Pill_View.yaml").exists()
     view = (root / "Views" / "Counter_View.yaml").read_text()
-    assert view.startswith("tesserae: 0.5\n# The counter screen.\n# Edit while the app runs.\n")  # the line it is written for, then the header comments
+    assert view.startswith(f"tesserae: {marker.LINE}\n# The counter screen.\n# Edit while the app runs.\n")  # the line it is written for, then the header comments
     data = yaml.safe_load(view)
     assert data["name"] == "Counter" and data["widget"] == "Container" and "id" not in data and data["children"][0]["name"] == "label"
     assert data["children"][0]["text"] == "{{ label.get() }}" and data["children"][1] == {"widget": "Pill", "name": "go", "caption": "Go"}
@@ -125,7 +126,7 @@ def test_stylesheets_become_rules_a_components_by_part_and_an_apps_by_widget_and
     app = yaml.safe_load((root / "Styles" / "App_Stylesheet.yaml").read_text())
     assert app["styles"] == [{"widget": "Rect", "style": {"corner_radius": 4}}, {"name": "go", "style": {"opacity": 0.5}},
                              {"classes": ["big"], "style": {"width": 9}}]
-    assert (root / "Components" / "Pill_Stylesheet.yaml").read_text().startswith("tesserae: 0.5\n# Pill's look.\n")
+    assert (root / "Components" / "Pill_Stylesheet.yaml").read_text().startswith(f"tesserae: {marker.LINE}\n# Pill's look.\n")
     assert is_rule_sheet(component) and is_rule_sheet(app)
     RuleSheet.of(component)
     RuleSheet.of(app)

@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 # A standard navigation drawer whose destinations are the app's screens: `items` is a list of {screen, label, icon} and optionally {badge}, with {heading: Text} and
 # {divider: true} rows between them. The destination of the screen showing is selected, and pressing one navigates to its screen. It belongs in each screen (or in a window's shell).
 params:

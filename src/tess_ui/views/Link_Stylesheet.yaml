@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 # The look of Link: primary text, a different colour once it has been followed, dimmed while disabled. The underline is drawn by the renderer
 # (while the pointer is over it or it has the keyboard focus, unless `underline:` says otherwise).
 styles:

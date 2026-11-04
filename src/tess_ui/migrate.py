@@ -6,9 +6,12 @@
   `<Name>_ViewModel.py` beside it gets `name: <Name>`, the bind key the ViewModel's `views` lists;
 - a stylesheet in the old shape becomes rules: a component's own stylesheet names the view and its parts, an app's maps `kind` to `widget` and
   `id` to `name`;
-- a file already in the new syntax is left alone, and so are themes and style files.
+- a file already in the new syntax is left alone, except that a view, stylesheet or theme whose first line names an older release series (`tesserae: 0.5`
+  in a project for a later line) gets that line moved to the current one, and nothing else in it changes: the loaders refuse such a file and say to run
+  this command. Style files are left alone.
 
-Before anything is written every result is checked with the same loader the app uses. By default nothing is written (a dry run that reports);
+Before anything is written every result is checked with the same loader the app uses (not a file that only had its first line moved: its language is
+the one it had). By default nothing is written (a dry run that reports);
 `write=True` writes only if every file checked out, or `force=True` writes what translated anyway. Header comments (the `#` lines at the top
 of a file) are kept; comments inside a file are not, and the report says which files had them. ViewModels are Python, so the report lists what to
 change in them instead of changing them.
@@ -40,7 +43,8 @@ _OLD_INIT = re.compile(r"def\s+__init__\s*\(\s*self\s*,\s*view\b")
 
 @dataclass
 class FileResult:
-    """What one file becomes. `status` is `migrated`, `current` (already new), `skipped` or `failed`."""
+    """What one file becomes. `status` is `migrated`, `current` (already new), `skipped` or `failed`. `restamped` is a file of the current language that
+    only had the series on its first line moved: `text` is then the file as it was read, with that one change, and is written back as bytes."""
 
     path: Path
     status: str
@@ -49,6 +53,7 @@ class FileResult:
     notes: list[str] = field(default_factory=list)
     error: Optional[str] = None
     lost_comments: bool = False
+    restamped: bool = False
 
 
 @dataclass
@@ -105,7 +110,7 @@ def _header(text: str) -> str:
 
 
 def _stamped(text: str) -> str:
-    """A migrated file starts with the line it was written for (`tesserae: 0.5`), then its own comments."""
+    """A migrated file starts with the line it was written for (`tesserae: <line>`), then its own comments."""
     return f"{marker.KEY}: {marker.LINE}\n{text}"
 
 
@@ -202,17 +207,46 @@ def migrate_project(root: str | Path, *, write: bool = False, force: bool = Fals
         translated[path] = result
         report.results.append(result)
 
+    _bring_forward([*view_files, *sheet_files], _files(root, "*_Theme.yaml"), translated, report)
+
     _validate(translated, params)
     report.python = _python_hints(root, viewmodels, translated)
     if write and (not report.failed or force):
         for path, result in translated.items():
             if result.status != "migrated" or result.text is None or result.new_path is None:
                 continue
-            result.new_path.write_text(result.text, encoding="utf-8")
+            if result.restamped:
+                result.new_path.write_bytes(result.text.encode("utf-8"))  # as read, so line ends and a byte order mark stay
+            else:
+                result.new_path.write_text(result.text, encoding="utf-8")
             if result.new_path != path:
                 path.unlink()
         report.written = True
     return report
+
+
+def _bring_forward(candidates: list[Path], theme_files: list[Path], translated: dict[Path, FileResult], report: Report) -> None:
+    """A view, stylesheet or theme of the current language whose first line names an older release series gets that line moved to this one: the loaders
+    refuse it until then. Nothing else in the file changes, which is right between the lines this covers (the language did not change); a line that
+    changes the language adds its own translation to the passes above."""
+    results = {r.path: r for r in report.results}
+    for path in [*candidates, *theme_files]:
+        found = results.get(path)
+        if path in translated or (found is not None and found.status != "current"):
+            continue  # translated and stamped already, or not a file of the current language
+        try:
+            text = path.read_bytes().decode("utf-8")  # bytes, so the line ends and a byte order mark are kept
+        except (OSError, UnicodeDecodeError):
+            continue
+        older = marker.older_line(text)
+        if older is None:
+            continue
+        if found is None:  # a theme is not in the report until it needs something
+            found = FileResult(path, "migrated")
+            report.results.append(found)
+        found.status, found.new_path, found.text, found.restamped = "migrated", path, marker.restamp(text), True
+        found.notes.append(f"the first line moved from `tesserae: {older}` to `tesserae: {marker.LINE}`; nothing else in the file changed")
+        translated[path] = found
 
 
 def _validate(translated: dict[Path, FileResult], params: dict[str, Any]) -> None:
@@ -228,7 +262,7 @@ def _validate(translated: dict[Path, FileResult], params: dict[str, Any]) -> Non
         except ValueError:
             decls[stem] = WidgetDecl(stem, view=True, container=True)
     for path, result in translated.items():
-        if result.status != "migrated" or result.text is None:
+        if result.status != "migrated" or result.text is None or result.restamped:
             continue
         try:
             if path.name.endswith("_Stylesheet.yaml"):
@@ -243,7 +277,7 @@ def _python_hints(root: Path, viewmodels: dict[str, Path], translated: dict[Path
     """What each ViewModel of a migrated view needs, since Python is not rewritten."""
     hints = []
     for result in translated.values():
-        if result.new_path is None or not result.new_path.name.endswith("_View.yaml"):
+        if result.restamped or result.new_path is None or not result.new_path.name.endswith("_View.yaml"):
             continue
         stem = result.new_path.name.removesuffix("_View.yaml")
         if result.status != "migrated" or stem not in viewmodels:

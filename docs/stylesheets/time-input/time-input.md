@@ -7,7 +7,7 @@ The look of [`TimeInput`](../../components/time-input.md) (in [Time input](../..
 ## The stylesheet
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # The look of TimeInput: the colon in on_surface, centred on the fields.
 styles:
   - {widget: TimeInput, part: colon, style: {foreground: on_surface}}

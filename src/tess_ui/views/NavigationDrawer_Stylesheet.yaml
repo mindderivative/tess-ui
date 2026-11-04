@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 # The look of the standard navigation drawer: a `surface` column.
 styles:
   - widget: NavigationDrawer

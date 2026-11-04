@@ -6,8 +6,8 @@ What to change in an existing app when you upgrade. Each section is the release 
 ## To 0.6.0
 
 **Two Python packages change name: Tesserae's is `tess_ui` (it was `tesserae`) and the engine's is `tess_re` (it was `tre`).** The name `tesserae` is also an unrelated project on PyPI, and the Tesserae packages share the
-`tess_` prefix. Nothing is left under the old names: after the upgrade `import tesserae` and `import tre` are a `ModuleNotFoundError`. What did not change: the PyPI names (`tesserae-ui`, `tesserae-engine`), the `tesserae`
-command (`tesserae new`, `tesserae add screen`; `python -m tess_ui` is the same) and the `tesserae:` first line of a YAML file.
+`tess_` prefix. Nothing is left under the old names: after the upgrade `import tesserae` and `import tre` are a `ModuleNotFoundError`. What did not change: the PyPI names (`tesserae-ui`, `tesserae-engine`) and the `tesserae`
+command (`tesserae new`, `tesserae add screen`; `python -m tess_ui` is the same). The `tesserae:` first line of a YAML file stays, but its value is `0.6` now (the last bullet).
 
 - **Rewrite the imports.** `from tesserae import App` is `from tess_ui import App`, `import tesserae.spec` is `import tess_ui.spec`, and a dotted name such as `tesserae.spec.themes` is `tess_ui.spec.themes`
   (a string given to `importlib` or to `monkeypatch.setattr` too). A search for `import tesserae` and `from tesserae` in your `*.py` files finds every place; the views and ViewModels you have need nothing else.
@@ -20,11 +20,16 @@ command (`tesserae new`, `tesserae add screen`; `python -m tess_ui` is the same)
   said `tre` (a shader error, the default window title) say `tess_re`, so a test that matches that text needs the new word.
 - **The engine's environment variables** `TRE_*` are `TESS_RE_*`, and the two Tesserae's own tools read follow: `TRE_SOURCE_DIR` (the engine checkout a font test reads) is `TESS_RE_SOURCE_DIR`, and
   `TESSERAE_RECORD_TRE` (records the engine's answers for the reference tests) is `TESS_UI_RECORD_TESS_RE`.
+- **A file marked `tesserae: 0.5` is refused until it is moved up a line.** The first line of a view, stylesheet or theme names the release series it was written for, and 0.6 is a new one, so a file that says `0.5` stops
+  loading with `written for Tesserae 0.5: run tesserae migrate-yaml`. Run `tesserae migrate-yaml` in the project to see which files, and `tesserae migrate-yaml --write` to move them: only that first line changes (a comment
+  after the value, Windows line ends and a byte order mark stay), and nothing in the view language changed between the two lines. A file with no first line loads as before, and the shipped files and what `tesserae new`
+  and `tesserae add screen` write say `0.6`.
 
 ## The first line of a file
 
-Nothing has to change. A view, stylesheet or theme may start with `tesserae: 0.5` (the release series), and the files Tesserae ships and writes do: `tesserae new`,
-`tesserae add screen` and `tesserae migrate-yaml`. A file without it loads and is noted once in the log (info level); a later series will ask for it. To add it to your
+Nothing has to change in a file that has none. A view, stylesheet or theme may start with `tesserae: 0.6` (the release series), and the files Tesserae ships and writes do: `tesserae new`,
+`tesserae add screen` and `tesserae migrate-yaml`. A file without it loads and is noted once in the log (info level); a later series will ask for it, and a file written for an older series is refused until
+`tesserae migrate-yaml --write` moves its first line ([To 0.6.0](#to-060)). To add it to your
 own files, put it on the first line, above the comments: [the first line](guide/naming-convention.md#the-first-line) says what is checked. A schema modeline
 (`# yaml-language-server: $schema=...`) cannot sit under it; use the `yaml.schemas` setting of [Editor Support](guide/editor-support.md).
 

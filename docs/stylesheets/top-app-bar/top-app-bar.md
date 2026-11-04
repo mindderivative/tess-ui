@@ -7,7 +7,7 @@ The look of [`TopAppBar`](../../components/top-app-bar.md) (in [Top app bar](../
 ## The stylesheet
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # The look of TopAppBar (Material 3): a `surface` bar that becomes `surface_container` once content has scrolled under it; 4 pixels in from the edge for the icons, the
 # title in on_surface (16 pixels from the left of a medium or large bar's title), 16 pixels of room at each end.
 styles:

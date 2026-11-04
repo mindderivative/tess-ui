@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 name: Counter  # the name the ViewModel serves
 widget: Container
 style: {flex_direction: vertical, width: 360, height: 160, gap: 12, padding: 16, background: "#1C1B1F"}

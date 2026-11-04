@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 # A window's title bar, two ways.
 name: Home
 widget: Container

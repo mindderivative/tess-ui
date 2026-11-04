@@ -7,7 +7,7 @@ The look of [`SideSheet`](../../components/side-sheets.md) (in [Side sheets](../
 ## The stylesheet
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # The look of the standard side sheet: a `surface` column.
 styles:
   - widget: SideSheet

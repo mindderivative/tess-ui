@@ -2679,7 +2679,7 @@
         "number",
         "string"
       ],
-      "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+      "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
     },
     "styles": {
       "type": "array",

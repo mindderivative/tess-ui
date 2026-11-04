@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 params:
   task: {type: dict, required: true}
   on_toggle: {type: handler}

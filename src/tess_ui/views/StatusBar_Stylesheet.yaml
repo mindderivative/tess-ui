@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 # The look of StatusBar: a thin surface_container strip with label_small text in on_surface_variant; an item that can be pressed has a state layer.
 styles:
   - widget: StatusBar

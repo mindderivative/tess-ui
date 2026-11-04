@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 # A screen of the window: it has no `name:` and no ViewModel of its own. It reads the names of the one that serves Window_View.yaml.
 widget: Container
 classes: [page]

@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 # The Files panel: a view named like a screen, shown by the Dock in Window_View.yaml.
 widget: Container
 style: {flex_direction: vertical, gap: 8, padding: 16}

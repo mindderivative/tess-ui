@@ -7,7 +7,7 @@ The look of [`NavigationRail`](../../components/navigation-rail.md) (in [Navigat
 ## The stylesheet
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # The look of NavigationRail (Material 3): a surface column 80 pixels wide, with 44 pixels above the first destination (less when there is a header),
 # 12 between destinations. An expanded rail has 20 pixels of padding each side.
 styles:

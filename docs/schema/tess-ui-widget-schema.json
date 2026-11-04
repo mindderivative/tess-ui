@@ -177,7 +177,7 @@
         "number",
         "string"
       ],
-      "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+      "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
     }
   },
   "allOf": [
@@ -282,7 +282,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -474,7 +474,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -647,7 +647,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -830,7 +830,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -1128,7 +1128,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -1386,7 +1386,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "draw": {
             "anyOf": [
@@ -1532,7 +1532,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -1793,7 +1793,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -2007,7 +2007,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "checked": {
             "anyOf": [
@@ -2191,7 +2191,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -2479,7 +2479,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -2713,7 +2713,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "value": {
             "anyOf": [
@@ -2911,7 +2911,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -3090,7 +3090,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -3324,7 +3324,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -3529,7 +3529,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -3790,7 +3790,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -3976,7 +3976,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -4129,7 +4129,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -4295,7 +4295,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -4522,7 +4522,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -4698,7 +4698,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "icon": {
             "anyOf": [
@@ -4870,7 +4870,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -5171,7 +5171,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "src": {
             "anyOf": [
@@ -5351,7 +5351,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "value": {
             "anyOf": [
@@ -5588,7 +5588,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "text": {
             "anyOf": [
@@ -5902,7 +5902,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -6211,7 +6211,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "contained": {
             "anyOf": [
@@ -6370,7 +6370,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -6657,7 +6657,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -6866,7 +6866,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -7062,7 +7062,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -7258,7 +7258,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -7454,7 +7454,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -7637,7 +7637,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -7803,7 +7803,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -8003,7 +8003,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -8212,7 +8212,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -8408,7 +8408,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -8591,7 +8591,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -8783,7 +8783,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -9050,7 +9050,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -9242,7 +9242,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -9424,7 +9424,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "selected": {
             "anyOf": [
@@ -9620,7 +9620,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "low": {
             "anyOf": [
@@ -9912,7 +9912,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -10065,7 +10065,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -10291,7 +10291,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -10574,7 +10574,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -10835,7 +10835,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -11018,7 +11018,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -11236,7 +11236,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -11483,7 +11483,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -11701,7 +11701,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "value": {
             "anyOf": [
@@ -11980,7 +11980,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           }
         },
         "required": [
@@ -12113,7 +12113,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -12383,7 +12383,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -12579,7 +12579,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "value": {
             "anyOf": [
@@ -12837,7 +12837,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -13133,7 +13133,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -13380,7 +13380,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -13601,7 +13601,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -13792,7 +13792,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "src": {
             "anyOf": [
@@ -13964,7 +13964,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "selected": {
             "anyOf": [
@@ -14147,7 +14147,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -14333,7 +14333,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "text": {
             "anyOf": [
@@ -14630,7 +14630,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -15123,7 +15123,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "text": {
             "anyOf": [
@@ -15500,7 +15500,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -15692,7 +15692,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -15910,7 +15910,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "hour": {
             "anyOf": [
@@ -16111,7 +16111,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -16287,7 +16287,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -16601,7 +16601,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -16867,7 +16867,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -17050,7 +17050,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -17246,7 +17246,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -17490,7 +17490,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -17781,7 +17781,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",
@@ -18000,7 +18000,7 @@
               "number",
               "string"
             ],
-            "description": "The release series of Tesserae this file was written for (0.5). It must be the first line of the file."
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
           },
           "children": {
             "type": "array",

@@ -7,7 +7,7 @@ The look of [`NavigationDrawerPanel`](../../components/navigation-drawer.md) (in
 ## The stylesheet
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # The look of the inside of a drawer: 12 pixels in from the edge, section headings in on_surface_variant, a little space above the first destination.
 styles:
   - widget: NavigationDrawerPanel

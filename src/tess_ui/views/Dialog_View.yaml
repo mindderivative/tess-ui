@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 # The Material 3 dialog, basic or (`fullscreen: true`) full-screen: a modal panel over a scrim, with an optional icon, a headline, supporting text or your own content, and up to a few text
 # button actions. `open` is two-way (Escape and a press on the scrim close it, unless `dismissible: false`); pressing an action closes it and writes the
 # action's value to `result`, so the caller can tell which was chosen. A screen reader hears a `dialog` named by the headline (tess_re has no `alertdialog` role, so an alert is a `dialog` with

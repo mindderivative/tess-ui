@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 # The Settings screen. `Settings_ViewModel.py` goes back; `app.state.came_from` is the app's shared state.
 name: Settings
 widget: Container

@@ -78,7 +78,7 @@ kind: Container
 id: root
 ```
 
-That is for a file with no `tesserae:` first line, such as one in the older syntax. **A file that starts with `tesserae: 0.5` cannot use one**: the server reads a
+That is for a file with no `tesserae:` first line, such as one in the older syntax. **A file that starts with `tesserae: 0.6` cannot use one**: the server reads a
 modeline only from the comments before the first key, and the `tesserae:` line is the first key, so a comment under it, or beside it, is not applied (tried on the real
 server). Such a file takes its schema from the `yaml.schemas` setting above, which `tesserae schema --project` prints and which does not care what is on the first line.
 

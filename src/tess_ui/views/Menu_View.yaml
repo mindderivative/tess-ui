@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 # The Material 3 menu: a list of choices on a temporary surface next to the node it comes from (`anchor`, the name of a node in the view that has the menu). `items` is
 # a list of {value, label} and optionally {icon, shortcut, checked, disabled, submenu}; a {divider: true} is a line and a {heading: "Text"} a small heading. Pressing
 # an item sets `chosen` to its `value` and closes the menu; `mode: check` makes pressing an item flip its check (kept in `checks`, the list of checked values) and

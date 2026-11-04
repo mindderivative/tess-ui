@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 # One destination of a navigation drawer (Material 3): a 56 pixel tall pill with a 24 pixel icon, a `label_large` label and, at the end, a badge (a count or short
 # text). The selected one is `secondary_container`. A screen reader hears a link named by the label, current when it is selected.
 # `handlers: {on_click: ...}` on the call is what a press does.

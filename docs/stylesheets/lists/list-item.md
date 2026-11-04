@@ -7,7 +7,7 @@ The look of [`ListItem`](../../components/lists.md) (in [Lists](../../components
 ## The stylesheet
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # The look of ListItem (Material 3): 16 pixels of padding each side, 16 between the parts; the headline in on_surface, the supporting text and the
 # small text in on_surface_variant; a selected item is secondary_container.
 styles:

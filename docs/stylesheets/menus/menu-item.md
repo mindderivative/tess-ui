@@ -7,7 +7,7 @@ The look of [`MenuItem`](../../components/menus.md) (in [Menus](../../components
 ## The stylesheet
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # The look of MenuItem (Material 3): 12 pixels each side and between the parts, the label in on_surface, the icon and the trailing text in on_surface_variant.
 styles:
   - widget: MenuItem

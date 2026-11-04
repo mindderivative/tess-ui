@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 # The Home screen: a static view, a routed call in Window_View.yaml.
 widget: Container
 style: {flex_direction: vertical, gap: 12, padding: 24}

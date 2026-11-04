@@ -7,7 +7,7 @@ The look of [`Toolbar`](../../components/toolbars.md) (in [Toolbars](../../compo
 ## The stylesheet
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # The look of Toolbar (Material 3): a docked one is a 64 pixel surface_container strip with 16 pixels of padding; a floating one is a pill at elevation level 3 with 8 pixels of padding.
 # Vibrant uses primary_container. The buttons stand 4 pixels apart.
 styles:

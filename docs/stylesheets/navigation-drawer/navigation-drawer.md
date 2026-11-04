@@ -7,7 +7,7 @@ The look of [`NavigationDrawer`](../../components/navigation-drawer.md) (in [Nav
 ## The stylesheet
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # The look of the standard navigation drawer: a `surface` column.
 styles:
   - widget: NavigationDrawer

@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 # The AM / PM selector of a time picker (Material 3): two 40 pixel halves in a 52 pixel wide, 1 pixel `outline` frame with 8 pixel corners. The chosen half is
 # `tertiary_container`. `period` is "AM" or "PM" and a press writes it back. One Tab stop on the chosen half; the up and down arrows move and choose.
 params:

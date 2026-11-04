@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 # The Material 3 badge: a 6 dp dot (no value) or a 16 dp pill holding a count or short text. Alone it is the mark itself, to place where you like;
 # with `anchored: true` its children are the host (an icon, a button, a tab) and the mark sits over the host's top right corner.
 # The look is in Badge_Stylesheet.yaml; this file is the structure. A count over `limit` shows as `999+`. Hide a zero count with `show: "{{ n > 0 }}"`.

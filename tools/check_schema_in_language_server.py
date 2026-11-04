@@ -166,12 +166,12 @@ u = open_doc("Scn29_View.yaml", "widget: Overlay\nanchor: t\nplacement: bottom_s
 check("an overlay's corner placement, offset and flip are accepted", not messages(u), messages(u))
 u = open_doc("Scn30_View.yaml", "widget: Overlay\nanchor: t\nplacement: diagonal\nflip: maybe\n")
 check("an overlay's wrong placement and flip are flagged", len(messages(u)) >= 2, messages(u)[:2])
-# the first-line marker (#292): `tesserae: 0.5` is the first line of a file, so it must be accepted, and a modeline under it must still apply
-u = open_doc("Scn31_View.yaml", "tesserae: 0.5\nwidget: Container\n")
+# the first-line marker (#292): `tesserae: 0.6` is the first line of a file, so it must be accepted, and a modeline under it must still apply
+u = open_doc("Scn31_View.yaml", "tesserae: 0.6\nwidget: Container\n")
 check("the first-line marker is accepted in a view", not messages(u), messages(u))
-u = open_doc("Scn32_Stylesheet.yaml", "tesserae: 0.5\nstyles:\n  - widget: Text\n    style: {opacity: 1}\n")
+u = open_doc("Scn32_Stylesheet.yaml", "tesserae: 0.6\nstyles:\n  - widget: Text\n    style: {opacity: 1}\n")
 check("the first-line marker is accepted in a stylesheet", not messages(u), messages(u))
-u = open_doc("Scn33_View.yaml", "tesserae: 0.5\nwidget: Button\nlabell: Save\n")
+u = open_doc("Scn33_View.yaml", "tesserae: 0.6\nwidget: Button\nlabell: Save\n")
 check("a mistake under the marker is still flagged", bool(messages(u)), messages(u))
 widget_schema = (S / "tess-ui-widget-schema.json").as_uri()
 modeline = f"# yaml-language-server: $schema={widget_schema}"
@@ -180,9 +180,9 @@ check("a schema modeline on line 1 applies", bool(messages(u)), messages(u)[:1])
 # What the server does with the marker on line 1 is a limit, not a choice: a modeline is read from the comments before the first YAML node, and the
 # marker is the first node. So under the marker, or beside it, the server does not apply it, and a file takes its schema from `yaml.schemas` (the globs
 # `tesserae schema --project` prints). These two checks name that; if a newer server applies the modeline, they fail and the guide can say so.
-u = open_doc("Elsewhere_line2.yaml", f"tesserae: 0.5\n{modeline}\nwidget: Button\nlabell: Save\n")
+u = open_doc("Elsewhere_line2.yaml", f"tesserae: 0.6\n{modeline}\nwidget: Button\nlabell: Save\n")
 check("a schema modeline under the marker is not applied by the server (use yaml.schemas)", not messages(u), messages(u)[:1])
-u = open_doc("Elsewhere_beside.yaml", f"tesserae: 0.5  {modeline}\nwidget: Button\nlabell: Save\n")
+u = open_doc("Elsewhere_beside.yaml", f"tesserae: 0.6  {modeline}\nwidget: Button\nlabell: Save\n")
 check("a schema modeline beside the marker is not applied by the server (use yaml.schemas)", not messages(u), messages(u)[:1])
 c.p.terminate()
 if problems:

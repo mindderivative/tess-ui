@@ -7,7 +7,7 @@ The look of [`SearchBar`](../../components/search.md) (in [Search](../../compone
 ## The stylesheet
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # The look of SearchBar (Material 3): a surface_container_high pill, 56 tall, at level 3; 4 pixels in from the edge, the icons 24 pixels in a 48 pixel button, the text
 # in on_surface and the placeholder dimmed, the avatar a 30 pixel circle in primary_container.
 styles:

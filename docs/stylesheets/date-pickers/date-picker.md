@@ -7,7 +7,7 @@ The look of [`DatePicker`](../../components/date-pickers.md) (in [Date picker](.
 ## The stylesheet
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # The look of DatePicker (Material 3): a surface_container_high dialog with 28 pixel corners and 24 pixels of padding; the heading in on_surface_variant, the date in on_surface,
 # the weekday initials and the month in on_surface_variant / on_surface.
 styles:

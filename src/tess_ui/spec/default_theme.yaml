@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 # Tesserae's copy of tess_re's shipped default theme (crates/engine-py/assets/
 # default_theme.yaml at v0.3.4), the default-theme layer of the cascade
 # when an app gives none. `tess_re` removes its copy with theming in 0.3.5.

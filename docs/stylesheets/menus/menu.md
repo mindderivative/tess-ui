@@ -7,7 +7,7 @@ The look of [`Menu`](../../components/menus.md) (in [Menus](../../components/men
 ## The stylesheet
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # The look of Menu (Material 3): a surface_container surface with 4 pixel corners at level 2, 8 pixels above and below its items; headings in on_surface_variant.
 styles:
   - widget: Menu

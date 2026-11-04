@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 # One row of a menu (Material 3): 48 pixels tall, `label_large` text, an optional 24 pixel leading icon, trailing text such as a keyboard shortcut, and a chevron when
 # it opens a submenu. `checked` makes it a checkable item: true shows a check where the icon would be, false leaves the space, and nothing (null) is no check at all.
 # It is pressable (a state layer, a ripple, Enter); `handlers: {on_click: ...}` on the call is what a press does. Roles: a `menuitem`, with `checked` for a checkable one.

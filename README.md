@@ -11,7 +11,7 @@ app authors write views, not Python widget-class trees, and a plain `Signal`-dri
 [changelog](https://mindderivative.github.io/tess-ui/changelog/) says what each release changed.
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # Counter_View.yaml
 name: Counter
 widget: Container

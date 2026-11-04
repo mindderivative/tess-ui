@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 # One row. A view with `params:` is a component: Todo_View.yaml calls it as `widget: TodoItem`. It has no ViewModel of its own: the list's
 # ViewModel (Todo_ViewModel.py) holds the items, and the row calls back with the handlers it is given.
 params:

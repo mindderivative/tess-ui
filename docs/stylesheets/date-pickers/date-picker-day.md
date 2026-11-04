@@ -7,7 +7,7 @@ The look of [`DatePickerDay`](../../components/date-pickers.md) (in [Date picker
 ## The stylesheet
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # The look of DatePickerDay: the selected day is a primary circle with on_primary text; today a 1 pixel primary outline with primary text; a day outside the month is
 # on_surface_variant; the rest on_surface.
 styles:

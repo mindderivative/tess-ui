@@ -7,7 +7,7 @@ The look of [`TreeNode`](../../components/trees.md) (in [Trees](../../components
 ## The stylesheet
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # The look of TreeNode (Material 3 list terms): 16 pixels in plus 24 for each level on the left, 16 on the right, 8 between the parts; a selected row is
 # secondary_container.
 styles:

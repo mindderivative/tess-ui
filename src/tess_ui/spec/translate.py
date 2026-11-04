@@ -242,7 +242,7 @@ class Translator:
 
 def to_yaml(data: Any) -> str:
     """The mapping as YAML text, in order, with short mappings and lists on one line. The top level is always block style (`widget: Rect`, not
-    `{widget: Rect}`): a file starts with the line `tesserae: 0.5`, and a flow mapping cannot follow a key."""
+    `{widget: Rect}`): a file starts with the line `tesserae: <line>`, and a flow mapping cannot follow a key."""
     text = yaml.safe_dump(data, sort_keys=False, default_flow_style=None, width=140, allow_unicode=True)
     if isinstance(data, dict) and text.startswith("{"):  # only scalars inside: nothing nested to be written differently
         text = yaml.safe_dump(data, sort_keys=False, default_flow_style=False, width=140, allow_unicode=True)

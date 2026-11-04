@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 # The Material 3 search bar: a 56 pixel `surface_container_high` pill with a leading icon (a search glass, or a menu button), the text being typed, and trailing parts: a
 # clear button once there is a `query`, an optional `trailing_icon` (a microphone) and an optional avatar (`avatar_text`). Pressing it, or typing in it, makes it `active`
 # (two-way; a `SearchView` shows while it is), and while it is active the leading icon becomes a back arrow that deactivates it. Enter calls `on_search`. `query` is two-way.

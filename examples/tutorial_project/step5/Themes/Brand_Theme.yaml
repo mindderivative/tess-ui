@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 seed: "#0B6B58"
 typography:
   headline_medium: {font_weight: 600}

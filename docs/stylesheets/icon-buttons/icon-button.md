@@ -7,7 +7,7 @@ The look of [`IconButton`](../../components/icon-buttons.md) (in [Icon buttons](
 ## The stylesheet
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # The look of IconButton (Material 3, with the Expressive sizes, widths and shapes). The icon is 20, 24, 24, 32 or 40 pixels for the five sizes. A toggle
 # that is on takes the selected colours and the other shape; a press squares a round button off.
 styles:

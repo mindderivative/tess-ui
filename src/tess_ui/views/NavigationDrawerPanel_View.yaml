@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 # The inside of a navigation drawer, which `NavigationDrawer` (standard) and `NavigationDrawerModal` both put in a sheet: a header slot, the destinations in a column
 # that scrolls when there are more than fit, and a footer slot. `items` is a list of {value, label, icon} and optionally {badge, disabled}; a {heading: Text} is a
 # section's title and a {divider: true} a line. `selected` is the value of the chosen one and a press writes it back. One Tab stop on the current destination; the

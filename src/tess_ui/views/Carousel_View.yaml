@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 # The Material 3 carousel: a row of rounded items that scrolls sideways and settles with an item lined up (the scroll view's `snap`). `items` is a list of {value, title}
 # and optionally {image, supporting}; `variant` sets how big they are: `uncontained` (every item `item_width` wide), `multi_browse` (a large item, a medium one, then small ones),
 # `hero` (large items with a peek of the next) and `center_hero` (the item in the middle large, with a peek of the ones either side). `width` and `height` are the carousel's own.

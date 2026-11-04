@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 styles:
   - {widget: Container, classes: [page], style: {flex_direction: vertical, width: 100%, height: 100%, gap: 12, padding: 24, background: surface}}
   - {widget: Text, classes: [heading], style: {foreground: on_surface}}

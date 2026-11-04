@@ -7,7 +7,7 @@ The look of [`VideoPlayer`](../../components/video.md) (in [Video](../../compone
 ## The stylesheet
 
 ```yaml
-tesserae: 0.5
+tesserae: 0.6
 # The look of VideoPlayer: the picture sits on a dark stage; the time labels are on_surface_variant; the subtitle band is white on a darkened scrim.
 styles:
   - {widget: VideoPlayer, part: elapsed, style: {foreground: on_surface_variant}}

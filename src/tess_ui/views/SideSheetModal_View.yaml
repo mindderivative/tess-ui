@@ -1,4 +1,4 @@
-tesserae: 0.5
+tesserae: 0.6
 # The Material 3 modal side sheet: the same header, scrolling content and actions as the standard one, over a scrim and on top of the content. `side` is the end
 # (the default) or the start. Escape and a press on the scrim close it (they write false to `open`) unless `dismissible` is off; Tab stays inside it, and focus goes
 # back to where it was. Children are the content; children with `slot: actions` are the buttons.
