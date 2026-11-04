@@ -63,7 +63,7 @@ with `--write` writes the ones that did. Keep the project in version control: th
 renamed (a `*_Style.yaml` file is read in and left in place). The report lists what each ViewModel needs, including the `app.bind` and `app.open_view`
 lines for `app.py`, because Python is not rewritten. A call of a shipped fragment that became one view with a property (`ButtonFilled` is `widget: Button` with
 `variant: filled`) fails the check with `no widget named 'ButtonFilled'`, and is written by hand from the table in Migrating. The exit code is 1 if any file failed,
-and 2 for a wrong argument (`--force` without `--write` is one). [Migrating](../migration.md#to-050) has the table of every change and of the shipped names.
+A view, stylesheet or theme whose `tesserae:` first line names an older series is also moved to the current one: that line only, nothing else in the file changes, and a file already current, newer or without the line is left alone. and 2 for a wrong argument (`--force` without `--write` is one). [Migrating](../migration.md#to-050) has the table of every change and of the shipped names.
 
 ## Build an executable
 
