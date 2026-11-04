@@ -2,14 +2,14 @@
 component fragments: `Card` (3 variants), `Chip` (5 variants),
 `ListItem`, `Badge` (2 structural shapes), `Divider`,
 `AccordionHeader`, `TreeNode` (2 structural shapes), `Link` (was
-blocked until `tre`'s own M84 added declarative `NodeKindSpec` support
+blocked until `tess_re`'s own M84 added declarative `NodeKindSpec` support
 for it, this repo's own M27 -- see `BUILD_TRACKER_ARCHIVE_0.2.md`).
 """
 
 import pytest
 
 from helpers import elevation, view_from
-from tre import Window
+from tess_re import Window
 
 from tess_ui.spec import ComponentError, expand_components
 from tess_ui.widgets import accordion_header, badge, card, chip, divider, link, list_item, tree_node

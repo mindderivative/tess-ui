@@ -1,6 +1,6 @@
 """M29 Phase 4: Tesserae reads theme, stylesheet and font files itself
-and hands `tre` only dicts (`*_spec=`, tre M86) and bytes
-(`tre.register_font`).
+and hands `tess_re` only dicts (`*_spec=`, tess_re M86) and bytes
+(`tess_re.register_font`).
 
 A theme's or stylesheet's effect is observed through `corner_radius`,
 which both can set via `styles:` and `Node.get` can read back.
@@ -11,7 +11,7 @@ import warnings
 from pathlib import Path
 
 import pytest
-import tre
+import tess_re
 
 import tess_ui
 import tess_ui.fonts as fonts
@@ -22,13 +22,13 @@ from tess_ui.spec import load_stylesheet, load_theme, load_view
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 RECT_VIEW = 'id: box\nkind: Rect\nstyle: {width: 10, height: 10, background: "#112233"}\n'
 _FONT = Path("crates") / "engine-render" / "assets" / "fonts" / "Roboto-Regular.ttf"
-# A real font file from tre's source tree: next to tre itself when it's
-# installed from a checkout (as on CI), or wherever TRE_SOURCE_DIR points
-# when tre is an installed wheel (the wheel ships no .ttf files).
+# A real font file from tess_re's source tree: next to tess_re itself when it's
+# installed from a checkout (as on CI), or wherever TESS_RE_SOURCE_DIR points
+# when tess_re is an installed wheel (the wheel ships no .ttf files).
 ROBOTO = next(
-    (p for p in (Path(os.environ["TRE_SOURCE_DIR"]) / _FONT if "TRE_SOURCE_DIR" in os.environ else None,
-                 Path(tre.__file__).parents[2] / _FONT) if p is not None and p.is_file()),
-    Path(tre.__file__).parents[2] / _FONT,
+    (p for p in (Path(os.environ["TESS_RE_SOURCE_DIR"]) / _FONT if "TESS_RE_SOURCE_DIR" in os.environ else None,
+                 Path(tess_re.__file__).parents[2] / _FONT) if p is not None and p.is_file()),
+    Path(tess_re.__file__).parents[2] / _FONT,
 )
 
 
@@ -129,7 +129,7 @@ def test_set_theme_takes_a_loaded_theme(tmp_path: Path):
 # -- fonts -------------------------------------------------------------
 
 
-@pytest.mark.skipif(not ROBOTO.is_file(), reason="needs a real font file from tre's source tree -- set TRE_SOURCE_DIR (runs on CI)")
+@pytest.mark.skipif(not ROBOTO.is_file(), reason="needs a real font file from tess_re's source tree -- set TESS_RE_SOURCE_DIR (runs on CI)")
 def test_register_font_hands_tre_the_bytes_and_returns_families():
     assert tess_ui.register_font(ROBOTO) == ["Roboto"]
 
@@ -138,7 +138,7 @@ def test_register_font_records_a_new_family(tmp_path: Path, monkeypatch):
     font = tmp_path / "Inter.ttf"
     font.write_bytes(b"pretend font bytes")
     received = []
-    monkeypatch.setattr(tre, "register_font", lambda data: received.append(data) or ["Inter"])
+    monkeypatch.setattr(tess_re, "register_font", lambda data: received.append(data) or ["Inter"])
 
     assert tess_ui.register_font(font) == ["Inter"]
     assert received == [b"pretend font bytes"]
@@ -164,7 +164,7 @@ def test_a_theme_naming_an_unavailable_font_warns(tmp_path: Path):
 
 
 def test_a_bundled_or_registered_font_does_not_warn(tmp_path: Path, monkeypatch):
-    monkeypatch.setattr(tre, "register_font", lambda data: ["Inter"])
+    monkeypatch.setattr(tess_re, "register_font", lambda data: ["Inter"])
     font = tmp_path / "Inter.ttf"
     font.write_bytes(b"x")
     tess_ui.register_font(font)

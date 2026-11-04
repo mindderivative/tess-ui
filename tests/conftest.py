@@ -62,21 +62,21 @@ def logs():
     logger.remove(handler_id)
 
 
-# -- M43: tre's recorded answers (tests/reference.py) -----------------------
+# -- M43: tess_re's recorded answers (tests/reference.py) -----------------------
 
 import reference  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
 def _tre_reference(request):
-    """Keys `reference.tre()` answers by the running test."""
+    """Keys `reference.tess_re()` answers by the running test."""
     reference.begin(request.module.__name__, request.node.name)
     yield
 
 
 def pytest_sessionfinish(session, exitstatus):
     """Recording: saved only if every test passed, so a mismatch is never
-    written in as `tre`'s answer."""
+    written in as `tess_re`'s answer."""
     if reference.RECORDING and exitstatus == 0:
         reference.STORE.save()
 

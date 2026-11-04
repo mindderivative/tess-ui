@@ -1,5 +1,5 @@
-"""M43 Phase 3: `tests/reference.py`, the recorded `tre` answers the parity
-tests replay. Its encoding must give back exactly what `tre` answered."""
+"""M43 Phase 3: `tests/reference.py`, the recorded `tess_re` answers the parity
+tests replay. Its encoding must give back exactly what `tess_re` answered."""
 
 import json
 
@@ -30,8 +30,8 @@ def test_a_recorded_exception_is_raised_again_with_its_type_and_message(monkeypa
     })
     reference.begin("fake", "x")
     with pytest.raises(ValueError, match='widget "x": bad'):
-        reference.tre(lambda: pytest.fail("not called when replaying"))
+        reference.tess_re(lambda: pytest.fail("not called when replaying"))
     with pytest.raises(Exception, match="boom"):  # not a builtin: a generic stand-in
-        reference.tre(lambda: None)
+        reference.tess_re(lambda: None)
     with pytest.raises(reference.MissingAnswer, match="run tools/record_tre_reference.py"):
-        reference.tre(lambda: None)
+        reference.tess_re(lambda: None)

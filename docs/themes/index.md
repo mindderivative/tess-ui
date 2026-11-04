@@ -358,8 +358,8 @@ A resolved theme. Build one with `Theme.resolve(...)`.
 
 ### Loading files
 
-- `load_theme(path: str | Path) -> dict[str, Any]`: Reads a theme YAML file into the dict `tre`'s `default_theme_spec=`/`custom_theme_spec=` take, for `load_view` or for switching themes later:
-- `load_stylesheet(path: str | Path) -> dict[str, Any]`: Reads a stylesheet YAML file into the dict `tre`'s `stylesheet_spec=` takes.
+- `load_theme(path: str | Path) -> dict[str, Any]`: Reads a theme YAML file into the dict `tess_re`'s `default_theme_spec=`/`custom_theme_spec=` take, for `load_view` or for switching themes later:
+- `load_stylesheet(path: str | Path) -> dict[str, Any]`: Reads a stylesheet YAML file into the dict `tess_re`'s `stylesheet_spec=` takes.
 
 ### Tokens
 
@@ -370,9 +370,9 @@ A resolved theme. Build one with `Theme.resolve(...)`.
 - `type_style(role: str) -> Optional[TypeStyle]`: The font size, weight, line height and tracking of the MD3 type role `role`, or `None` if it isn't one.
 - `color_scheme(seed: RGBA, dark: bool = False, contrast: float = 0.0) -> dict[str, RGBA]`: Every MD3 role for `seed`, light or dark.
 - `baseline_scheme() -> dict[str, RGBA]`: Every role, for widgets with no theme: the scheme MD3's baseline seed (#6750A4) generates, with MD3's published `BASELINE` values over it where they differ.
-- `resolve_scheme(theme_seed: Optional[RGBA], dark: bool, default_theme: Optional[dict[str, Any]], custom_theme: Optional[dict[str, Any]], contrast: float = 0.0) -> Optional[dict[str, RGBA]]`: The scheme a view resolves roles against, by `tre`'s `View` rules: the seed is `theme_seed`, else the custom theme's `seed:`, else the default theme's; `colors:` overrides apply default theme first, then custom.
-- `parse_color(raw: str) -> RGBA`: A colour string as `tre` parses it: hex (`#RGB`, `#RGBA`, `#RRGGBB`, `#RRGGBBAA`), a CSS colour name, `transparent`, or `rgb()`/`rgba()`/`hsl()`/`hsla()` in CSS Color 4's comma or space syntax with an optional alpha, and CSS's wide-gamut functions (`color()`, `lab()`, `lch()`, `oklab()`, `oklch()`, `hwb()`), clipped into sRGB.
-- `elevation_shadows(level: float) -> list[Shadow]`: MD3 elevation `level` (0–5, fractional allowed) as a `shadows` list, `(color, offset_x, offset_y, blur, spread)`: `tre`'s key shadow (30% black) first, so it paints on top, then its ambient shadow (15%).
+- `resolve_scheme(theme_seed: Optional[RGBA], dark: bool, default_theme: Optional[dict[str, Any]], custom_theme: Optional[dict[str, Any]], contrast: float = 0.0) -> Optional[dict[str, RGBA]]`: The scheme a view resolves roles against, by `tess_re`'s `View` rules: the seed is `theme_seed`, else the custom theme's `seed:`, else the default theme's; `colors:` overrides apply default theme first, then custom.
+- `parse_color(raw: str) -> RGBA`: A colour string as `tess_re` parses it: hex (`#RGB`, `#RGBA`, `#RRGGBB`, `#RRGGBBAA`), a CSS colour name, `transparent`, or `rgb()`/`rgba()`/`hsl()`/`hsla()` in CSS Color 4's comma or space syntax with an optional alpha, and CSS's wide-gamut functions (`color()`, `lab()`, `lch()`, `oklab()`, `oklch()`, `hwb()`), clipped into sRGB.
+- `elevation_shadows(level: float) -> list[Shadow]`: MD3 elevation `level` (0–5, fractional allowed) as a `shadows` list, `(color, offset_x, offset_y, blur, spread)`: `tess_re`'s key shadow (30% black) first, so it paints on top, then its ambient shadow (15%).
 
 - `tokens.ROLES` = `tuple of 49`
 - `tokens.SHAPES` = `dict of 6`
@@ -381,9 +381,9 @@ A resolved theme. Build one with `Theme.resolve(...)`.
 - `tokens.BASELINE` = `dict of 24`
 ### Fonts
 
-- `register_font(path: str | Path) -> list[str]`: Reads the font file at `path` and registers it with `tre`, process-wide.
-- `available_families() -> frozenset[str]`: Every family `tre` can draw right now: its bundled ones plus any registered through `register_font`.
-- `FontFallbackWarning`: A `font_family` names a family that isn't bundled with `tre` and hasn't been registered, so `tre` will draw a bundled face instead.
+- `register_font(path: str | Path) -> list[str]`: Reads the font file at `path` and registers it with `tess_re`, process-wide.
+- `available_families() -> frozenset[str]`: Every family `tess_re` can draw right now: its bundled ones plus any registered through `register_font`.
+- `FontFallbackWarning`: A `font_family` names a family that isn't bundled with `tess_re` and hasn't been registered, so `tess_re` will draw a bundled face instead.
 - `BUNDLED_FAMILIES` = `['Hack Nerd Font Mono', 'Noto Sans Arabic', 'Roboto']`
 
 <!-- api:end -->

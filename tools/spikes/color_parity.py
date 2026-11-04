@@ -1,15 +1,15 @@
-"""M34 Phase 2 Step 2 spike: materialyoucolor's MD3 schemes against tre's
-DynamicTheme, every role tre's ColorScheme.role answers, 8 seeds, light
+"""M34 Phase 2 Step 2 spike: materialyoucolor's MD3 schemes against tess_re's
+DynamicTheme, every role tess_re's ColorScheme.role answers, 8 seeds, light
 and dark. Needs materialyoucolor (not a Tesserae dependency yet):
 
     python tools/spikes/color_parity.py "$(roles)"
 
-where the argument is the comma-separated role list from tre's
+where the argument is the comma-separated role list from tess_re's
 crates/engine-md3/src/color.rs. With spec_version="2021", 752 of 784
 match; the 32 others (light on_*_container) match at tone 10, which
 M38 applies. A prototype, not product code."""
 import inspect, re, subprocess, sys
-import tre
+import tess_re
 from materialyoucolor.hct import Hct
 from materialyoucolor.scheme.scheme_tonal_spot import SchemeTonalSpot
 from materialyoucolor.dynamiccolor.material_dynamic_colors import MaterialDynamicColors
@@ -30,7 +30,7 @@ total = mismatches = missing = 0
 worst = []
 for seed in SEEDS:
     for dark in (False, True):
-        w = tre.Window(width=10, height=10)
+        w = tess_re.Window(width=10, height=10)
         w.set_theme((*seed, 0xFF), dark=dark)
         argb = 0xFF000000 | (seed[0] << 16) | (seed[1] << 8) | seed[2]
         scheme = SchemeTonalSpot(Hct.from_int(argb), dark, 0.0, spec_version="2021")
@@ -45,7 +45,7 @@ for seed in SEEDS:
             diff = max(abs(a - b) for a, b in zip(want, got))
             if diff:
                 mismatches += 1
-                worst.append((f"{role} seed={bytes(seed).hex()} dark={dark}", f"tre={want} mcu={got} maxdiff={diff}"))
+                worst.append((f"{role} seed={bytes(seed).hex()} dark={dark}", f"tess_re={want} mcu={got} maxdiff={diff}"))
 print(f"{total} role values compared; {mismatches} differ; {missing} missing")
 seen = set()
 for k, v in worst:

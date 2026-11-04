@@ -58,7 +58,7 @@ settings_button = settings_view.node("root.button")
 # Three real, dispatched clicks, each firing from whichever screen is
 # genuinely active at that moment -- Home -> Settings -> back to Home -> Settings,
 # each switch happening *from inside* the handler App.show() calls into,
-# the exact reentrant scenario tre's own M42 Phase 2 caught and fixed a
+# the exact reentrant scenario tess_re's own M42 Phase 2 caught and fixed a
 # real borrow-panic bug for. Each click also writes the shared state,
 # which both screens show.
 window.simulate("click", node=home_button)

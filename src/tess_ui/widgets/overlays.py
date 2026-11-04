@@ -3,7 +3,7 @@
 
 Each (but `menu_item`, and a standard `side_sheet`) returns one of
 `tess_ui.overlays`' overlays (M41; `popover` M42), built by Tesserae on
-`tre`'s layers: `open()` shows it and `close()` hides it."""
+`tess_re`'s layers: `open()` shows it and `close()` hides it."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from tess_ui.widgets.buttons import _borders
 
 if TYPE_CHECKING:
     from tess_ui.theme import Theme
-    from tre import Window
+    from tess_re import Window
 
 
 def dialog(
@@ -164,7 +164,7 @@ def popover(
     anchor: Any = None,
     theme: "Theme | None" = None,
 ) -> overlays.Popover:
-    """MD3's rich tooltip, `tre`'s popover (`tess_ui.overlays.Popover`).
+    """MD3's rich tooltip, `tess_re`'s popover (`tess_ui.overlays.Popover`).
     `open(anchor)` it, or `attach(anchor)` (or `anchor=`) to open and close
     it on the anchor's click; an outside press, Escape or an action closes it."""
     p = overlays.Popover(window, supporting_text, subhead=subhead, width=width, actions=actions, theme=theme)

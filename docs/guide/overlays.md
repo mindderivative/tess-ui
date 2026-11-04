@@ -3,7 +3,7 @@
 An overlay is a layer over the window: a dialog, a menu, a snackbar, a side sheet. There are two ways to make one.
 In a view, a `widget: Overlay` shows its children while its `open` is true. From Python, `tess_ui.overlays` has MD3's
 dialogs, menus, snackbars, tooltips, popovers, side sheets and modal navigation drawers, ready made, built from Tesserae's
-fragments and shown with `tre`'s layers.
+fragments and shown with `tess_re`'s layers.
 
 ## An Overlay in a view
 
@@ -166,7 +166,7 @@ modal overlay keeps Tab inside it.
   hides it when the pointer or focus leaves. It gives the anchor its text
   as a label, since screen readers can't reach a tooltip.
 - **`Popover(window, supporting_text, *, subhead=None, width=312, actions=[(label, fn)])`:**
-  MD3's rich tooltip, `tre`'s popover: a `surface_container` panel with
+  MD3's rich tooltip, `tess_re`'s popover: a `surface_container` panel with
   an optional subhead, the text wrapped to the width, and optional text
   buttons. Unlike a plain tooltip it stays open until an outside press,
   Escape or an action closes it, and with actions, focus moves to the

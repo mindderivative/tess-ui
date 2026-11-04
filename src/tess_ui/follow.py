@@ -6,7 +6,7 @@ OS switching light and dark, and `App.set_theme_specs` re-colour it with
 the app's views (M50 Q1). An explicit `theme=` pins it. On a window
 no `App` owns, it keeps MD3's baseline, as before.
 
-The app is found by its window. `tre`'s `Window` can't be weakly
+The app is found by its window. `tess_re`'s `Window` can't be weakly
 referenced, so each app is kept as a weak reference keyed by `id()` of
 its window; an app keeps its window alive, so a live entry's window
 can't have been replaced. An app holds its followers strongly, so a

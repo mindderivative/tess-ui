@@ -1,6 +1,6 @@
 """One listener per node and event, shared.
 
-`tre`'s `node.on(event, handler)` keeps a single listener per event: a
+`tess_re`'s `node.on(event, handler)` keeps a single listener per event: a
 second `on` replaces the first. Everything in Tesserae that listens on a
 node -- a View's handlers and bindings, M39's `Interaction`, M40's
 controls -- goes through one `Listeners` per window's tree, so they all
@@ -41,7 +41,7 @@ class Listeners:
 
 def handled(fn: Callable[[Any], Any]) -> Callable[[Any], None]:
     """`fn(event)`, then stop the event going on to the node's ancestors
-. `tre`'s `click` and `secondary_click` bubble to every
+. `tess_re`'s `click` and `secondary_click` bubble to every
     ancestor's listener; a clickable inside a clickable -- a button in a
     card, a checkbox in a list row -- takes its click alone, as MD3 (and
     Compose and Flutter) expect. Wraps every activation listener Tesserae
@@ -57,7 +57,7 @@ def handled(fn: Callable[[Any], Any]) -> Callable[[Any], None]:
     return handle
 
 
-#: One dispatcher per window for window events (M54): `tre`'s
+#: One dispatcher per window for window events (M54): `tess_re`'s
 #: `window.on(event, ...)` keeps a single listener, so every Tesserae
 #: listener for a window's event shares one. The window is held while
 #: anything listens, so its `id()` can't be reused meanwhile.

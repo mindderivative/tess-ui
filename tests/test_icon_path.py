@@ -11,7 +11,7 @@ SQUARE = "M2 2H22V22H2Z"
 
 
 def engine_data(view, data):
-    """What tre reads back for `data` (it rewrites path data into its own form)."""
+    """What tess_re reads back for `data` (it rewrites path data into its own form)."""
     return view.window.create("path", data=data, view_box=ICON_VIEW_BOX, fill=(0, 0, 0, 255)).get("data")
 
 

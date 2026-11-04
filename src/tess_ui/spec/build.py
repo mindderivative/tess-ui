@@ -1,9 +1,9 @@
 """Tesserae's spec compiler: builds an expanded view spec
-(a `WidgetSpec`-shaped dict, from `tess_ui.spec.expand`) into `tre`
-0.3.4 nodes with `window.create`/`set`/`add_child`, the job `tre`'s
+(a `WidgetSpec`-shaped dict, from `tess_ui.spec.expand`) into `tess_re`
+0.3.4 nodes with `window.create`/`set`/`add_child`, the job `tess_re`'s
 `engine-spec/src/build.rs` does today and 0.3.5 removes.
 
-Each kind maps onto `tre`'s building blocks:
+Each kind maps onto `tess_re`'s building blocks:
 
 | `kind:` | nodes |
 |---|---|
@@ -17,7 +17,7 @@ Each kind maps onto `tre`'s building blocks:
 
 Styles resolve through `tess_ui.spec.cascade`; theme roles, shape
 tokens, elevation levels and type roles through `tess_ui.tokens`. Errors
-use `tre`'s wording. Bindings, handlers and `two_way:` aren't wired here
+use `tess_re`'s wording. Bindings, handlers and `two_way:` aren't wired here
 .
 """
 
@@ -76,7 +76,7 @@ _NODE_KEYS = frozenset({
 
 
 class SpecBuildError(ValueError):
-    """A spec the compiler can't build. The message is `tre`'s."""
+    """A spec the compiler can't build. The message is `tess_re`'s."""
 
 
 @dataclass
@@ -125,7 +125,7 @@ def build(
 ) -> Built:
     """Builds `spec` into detached nodes of `window`. `scheme` is the
     resolved colour scheme (`tokens.resolve_scheme`), or `None` for no
-    theme. `default_theme` defaults to `tre`'s shipped one. `frames` maps
+    theme. `default_theme` defaults to `tess_re`'s shipped one. `frames` maps
     an Image's id to its decoded `(rgba, width, height)`."""
     if default_theme is None:
         default_theme = shipped_default_theme()
@@ -153,7 +153,7 @@ def prepare_layers(
     stylesheet: Optional[dict[str, Any]],
 ) -> Layers:
     """The cascade's three layers, prepared once (`default_theme` defaults
-    to `tre`'s shipped one), with the themes' typography overrides: a
+    to `tess_re`'s shipped one), with the themes' typography overrides: a
     custom theme's role entry replaces the default theme's."""
     from tess_ui.theme import _component, _type_override
 
@@ -202,7 +202,7 @@ _shipped: Optional[dict[str, Any]] = None
 
 
 def shipped_default_theme() -> dict[str, Any]:
-    """`tre`'s shipped default theme (Tesserae's copy)."""
+    """`tess_re`'s shipped default theme (Tesserae's copy)."""
     global _shipped
     if _shipped is None:
         from pathlib import Path
@@ -284,7 +284,7 @@ def _build(ctx: _Context, node: dict[str, Any], built: Built, parent_id: Optiona
     except ValueError as exc:
         if isinstance(exc, SpecBuildError):
             raise
-        raise SpecBuildError(f"widget {_q(node_id)}: {exc}") from None  # `tre`'s message, naming the widget (M71)
+        raise SpecBuildError(f"widget {_q(node_id)}: {exc}") from None  # `tess_re`'s message, naming the widget (M71)
     built.layout_keys[node_id] = layout_keys(style)
     built.nodes[node_id] = inner
     built.outer[node_id] = outer
@@ -328,7 +328,7 @@ def _spacing(value: Any, prefix: str) -> dict[str, float]:
     return {f"{prefix}_{side}": float(value.get(side, 0.0)) for side in ("top", "right", "bottom", "left")}
 
 
-#: M71's layout keys, each with the default `tre` takes back. A style sets
+#: M71's layout keys, each with the default `tess_re` takes back. A style sets
 #: one only when it gives it, and a patch resets one only when the style
 #: gave it before (`patch`'s `before`): Python code also places and clips
 #: nodes a spec built (a widget's `x`/`y`, an overlay's `position`, a
@@ -336,7 +336,7 @@ def _spacing(value: Any, prefix: str) -> dict[str, float]:
 _OPTIONAL_LAYOUT: dict[str, Any] = {
     "flex_wrap": "no_wrap", "align_self": None, "min_width": "auto", "max_width": "auto", "min_height": "auto",
     "max_height": "auto", "aspect_ratio": None, "position": "relative", "x": "auto", "y": "auto", "z_index": 0,
-    "left": None, "top": None, "right": None, "bottom": None,  # insets (#279): tre leaves them unset unless given; `inset` is worked out into these by `layout.engine_style`
+    "left": None, "top": None, "right": None, "bottom": None,  # insets (#279): tess_re leaves them unset unless given; `inset` is worked out into these by `layout.engine_style`
     "clip_children": False,
     # `style.pointer_events`, as `layout.engine_style` turns it: the node's own pointer hits (its children keep theirs)
     "hit_testable": True,
@@ -354,7 +354,7 @@ _OPTIONAL_LAYOUT: dict[str, Any] = {
 
 
 def _resets(style: dict[str, Any], dropped: frozenset[str]) -> dict[str, Any]:
-    """What each dropped M71/M74 key goes back to: `tre`'s default, but a
+    """What each dropped M71/M74 key goes back to: `tess_re`'s default, but a
     row or column gap to the style's `gap`, which sets both."""
     gap = float(style.get("gap", 0.0))
     return {k: gap if k in ("row_gap", "column_gap") else _OPTIONAL_LAYOUT[k] for k in dropped}
@@ -366,7 +366,7 @@ def layout_keys(style: dict[str, Any]) -> frozenset[str]:
 
 
 def _layout(style: dict[str, Any]) -> dict[str, Any]:
-    """Every layout property, defaults included, as `tre`'s
+    """Every layout property, defaults included, as `tess_re`'s
     `layout_style` sets it -- so a patch can also reset one."""
     return {
         "width": style.get("width", "auto"),
@@ -379,7 +379,7 @@ def _layout(style: dict[str, Any]) -> dict[str, Any]:
         "flex_shrink": float(style.get("flex_shrink", 1.0)),
         "flex_basis": style.get("flex_basis", "auto"),
         **{k: style[k] for k in _OPTIONAL_LAYOUT if k in style},  # M71: only those a style gives
-        # `tre` leaves these unset unless given, and `create` won't take None.
+        # `tess_re` leaves these unset unless given, and `create` won't take None.
         **({"align_items": style["align_items"]} if style.get("align_items") is not None else {}),
         **({"justify_content": style["justify_content"]} if style.get("justify_content") is not None else {}),
     }
@@ -404,7 +404,7 @@ def _color(ctx: _Context, node_id: str, field_name: str, raw: Any) -> RGBA:
 
 
 def _fill(ctx: _Context, node_id: str, field_name: str, raw: Any) -> Any:
-    """A style colour or a gradient (`tess_ui.spec.effects`): RGBA, or a `tre.Gradient` whose stops are roles or colours."""
+    """A style colour or a gradient (`tess_ui.spec.effects`): RGBA, or a `tess_re.Gradient` whose stops are roles or colours."""
     if not effects.is_gradient(raw):
         return _color(ctx, node_id, field_name, raw)
     try:
@@ -556,7 +556,7 @@ def _required_foreground(ctx: _Context, node: dict[str, Any], style: dict[str, A
     return _fill(ctx, node["id"], "foreground", style["foreground"])
 
 
-#: What `text.text_align` can be: `tre`'s own values, where the text
+#: What `text.text_align` can be: `tess_re`'s own values, where the text
 #: sits in its node's width.
 _TEXT_ALIGNS = ("start", "center", "end")
 #: `text.wrap`: `word` breaks a line that is too long for its node; `none` never does.
@@ -682,12 +682,12 @@ _CONTENT = frozenset({"flex_direction", "gap", "padding_top", "padding_right", "
 
 
 def _scroll_props(ctx, node, style):
-    """A ScrollView is `tre`'s `scroll_view` holding one content box,
+    """A ScrollView is `tess_re`'s `scroll_view` holding one content box,
     which is where its children go: several children straight in a
     `scroll_view` shrink to fit it, and nothing scrolls (it lays its one
     child out unshrunk, and ignores its own padding). The content is
     vertical unless the style says otherwise, and the full width. The
-    scroll view is a Tab stop (its keys are `tre`'s since 0.4.2), and its
+    scroll view is a Tab stop (its keys are `tess_re`'s since 0.4.2), and its
     scrollbar is the theme's `outline`."""
     outer, _ = _box_props(ctx, node, style)
     content = {k: v for k, v in outer.items() if k in _CONTENT}
@@ -729,7 +729,7 @@ def _overlay_props(ctx, node, style):
 
 def natural_size(window: Any, props: dict[str, Any], style: dict[str, Any]) -> dict[str, float]:
     """A Text or Link's measured `width`/`height` for whichever its style
-    leaves out: `tre` 0.3.4's text has no intrinsic size, so text
+    leaves out: `tess_re` 0.3.4's text has no intrinsic size, so text
     without one was 0 px wide -- every fragment's label was invisible."""
     missing = [d for d in ("width", "height") if style.get(d) is None]
     if not missing:
@@ -768,7 +768,7 @@ _PLACED = ("scale", "translate_x", "translate_y", "rotation_deg", "margin_top", 
 
 
 def _link_props(ctx, node, style):
-    """A Link is a box holding its text: `tre` 0.3.4's `text` never
+    """A Link is a box holding its text: `tess_re` 0.3.4's `text` never
     gets pointer events, so a Link that was a bare `text` could only be
     clicked from the keyboard. The box takes the events, focus, role and
     label (the text's content); the text is only drawn."""
@@ -959,7 +959,7 @@ def a11y_bindings(node: dict[str, Any]) -> dict[str, str]:
 
 
 def _a11y_fields(node: dict[str, Any]) -> dict[str, Any]:
-    """The node's fixed `a11y:` fields, checked, as `tre` properties. A
+    """The node's fixed `a11y:` fields, checked, as `tess_re` properties. A
     bound one is left to the view, and only its field is checked."""
     value = node.get("a11y")
     if value is None:
@@ -985,7 +985,7 @@ def _a11y_fields(node: dict[str, Any]) -> dict[str, Any]:
         checked = a11y.check({k: v for k, v in value.items() if k not in bound}, where)
     except ValueError as exc:
         raise SpecBuildError(str(exc)) from None
-    # what tre may not have yet (and relations) are applied by the view, one at a time, not set with the rest
+    # what tess_re may not have yet (and relations) are applied by the view, one at a time, not set with the rest
     return {k: v for k, v in checked.items() if k not in a11y.EXTRAS and k not in a11y.RELATIONS}
 
 
@@ -1042,8 +1042,8 @@ WINDOW_REGIONS = ("drag", "none")
 
 
 def _window_region(node: dict[str, Any], *, patching: bool) -> dict[str, Any]:
-    """The node's `window_region` for `tre`; on a patch, a dropped one
-    resets (`tre`'s default, `None`)."""
+    """The node's `window_region` for `tess_re`; on a patch, a dropped one
+    resets (`tess_re`'s default, `None`)."""
     value = node.get("window_region")
     if value is None:
         return {"window_region": None} if patching else {}
@@ -1074,7 +1074,7 @@ def _create(ctx, node, style, built):
         return control.node, control.node
     tre_kind, props_of = _PRIMITIVE[kind]
     outer_props, inner_props = props_of(ctx, node, style)
-    # M39: as `tre`'s `set_on_click` did, a clickable node is a focusable
+    # M39: as `tess_re`'s `set_on_click` did, a clickable node is a focusable
     # Tab stop that Enter and Space activate -- and a button.
     (inner_props if kind in ("TextField", "Overlay") else outer_props).update(_a11y_for(node, kind, patching=False))
     outer_props.update(_window_region(node, patching=False))
@@ -1107,7 +1107,7 @@ def patch(
     parent: tuple[str, str] = ("horizontal", "flex"),
 ) -> frozenset[str]:
     """Sets `node`'s properties on its existing nodes, in place -- what
-    `tre`'s `patch_node` does. The node keeps its identity, focus and
+    `tess_re`'s `patch_node` does. The node keeps its identity, focus and
     running animations. Children aren't touched.
 
     For a control kind, `control` is its control: it's re-themed, and its

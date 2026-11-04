@@ -5,7 +5,7 @@ for a person or a fresh session.)
 
 ## 1. The machine
 
-Tesserae is pure Python on top of `tre` (the `tesserae-engine` package, imported as `tre`), which is Rust built with `maturin`. The checkout was developed on
+Tesserae is pure Python on top of `tess_re` (the `tesserae-engine` package, imported as `tess_re`), which is Rust built with `maturin`. The checkout was developed on
 Fedora/Nobara and then CachyOS, both with KDE Plasma on Wayland; CI also runs Windows and macOS.
 
 ```bash
@@ -30,11 +30,11 @@ python3 -m venv .venv
 .venv/bin/pip install mkdocs mkdocs-material   # the docs build; also pillow-based tools need no extra
 ```
 
-`pip install -e ".[dev]"` pulls `tesserae-engine==0.5.8` from PyPI (still `import tre`; pinned to the release the whole suite was run on); nothing else is needed. A newer `tre` is tried first in a throwaway venv (`python3 tools/tre_version_check.py` says when there is one), then the pin moves. The suite was run on the PyPI build of 0.5.8
-(8404 passed, 3 skipped). To work against an unreleased tre, build its wheel (`pip install maturin`, then in the tre checkout `maturin build --release -m
+`pip install -e ".[dev]"` pulls `tesserae-engine==0.6.0` from PyPI (`import tess_re`; pinned to the release the whole suite was run on); nothing else is needed. A newer `tess_re` is tried first in a throwaway venv (`python3 tools/tre_version_check.py` says when there is one), then the pin moves. The suite was run on the PyPI build of 0.6.0
+(8747 passed, 4 skipped). To work against an unreleased tess_re, build its wheel (`pip install maturin`, then in the tess_re checkout `maturin build --release -m
 crates/engine-py/Cargo.toml`) and `pip install --force-reinstall --no-deps` it into a scratch venv.
 
-Never put a scratch tre build into `.venv` by accident; to try another tre version make a throwaway venv (`python3 -m venv /tmp/v055`, install the wheel and
+Never put a scratch tess_re build into `.venv` by accident; to try another tess_re version make a throwaway venv (`python3 -m venv /tmp/v055`, install the wheel and
 `pip install -e . --no-deps` plus the dependencies).
 
 ## 3. Checking your work
@@ -49,7 +49,7 @@ A commit needs the tests that cover its change to pass; the full suite runs when
 `tests/test_pixels.py` reads those back by pixel (see its helpers); what a snapshot cannot tell you is how it *feels* (timing, scroll snap) or looks to a person. A real display is needed for
 `tools/window_perf.py` and anything that opens a second OS window while running.
 
-Some tests read tre's source: `TRE_SOURCE_DIR=<path to the tre checkout>` lets the one real-font test run.
+Some tests read tess_re's source: `TESS_RE_SOURCE_DIR=<path to the tess_re checkout>` lets the one real-font test run.
 
 ### Generated files (the tests compare them)
 

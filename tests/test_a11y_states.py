@@ -1,4 +1,4 @@
-"""#210: the accessibility states tre already has -- `expanded`, `selected`, `checked`, `value`, `value_min`, `value_max`, `value_step` -- as `a11y:` fields:
+"""#210: the accessibility states tess_re already has -- `expanded`, `selected`, `checked`, `value`, `value_min`, `value_max`, `value_step` -- as `a11y:` fields:
 fixed or bound, in a view written either way, cleared with `null`, and refused where a control sets its own."""
 
 import pytest

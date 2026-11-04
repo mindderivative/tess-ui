@@ -6,7 +6,7 @@ a circle with an anti-aliased edge, and Python moves the three `vec4`s (centre x
 timing Material Web's `md-ripple` has. Nothing is drawn, and no timer runs, while no ripple is alive. The state layer stays a node: it is a flat
 colour whose opacity the engine already eases.
 
-tre's headless snapshot draws shaders, so `tests/test_pixels.py` reads the ripple back from the pixels as well as the uniforms.
+tess_re's headless snapshot draws shaders, so `tests/test_pixels.py` reads the ripple back from the pixels as well as the uniforms.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from __future__ import annotations
 import math
 from typing import Any
 
-import tre
+import tess_re
 
 from tess_ui import motion
 
@@ -61,7 +61,7 @@ def uses_shader(window: Any) -> bool:
 
 def shader_for(tint: tuple[int, int, int, int]) -> Any:
     """A new shader for one node (each node has its own uniforms)."""
-    return tre.Shader(WGSL, uniforms={"tint": _color(tint), "r0": (0.0,) * 4, "r1": (0.0,) * 4, "r2": (0.0,) * 4})
+    return tess_re.Shader(WGSL, uniforms={"tint": _color(tint), "r0": (0.0,) * 4, "r1": (0.0,) * 4, "r2": (0.0,) * 4})
 
 
 def _color(tint: tuple[int, int, int, int]) -> tuple[float, float, float, float]:

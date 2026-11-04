@@ -10,7 +10,7 @@ style:
     all: 100                                         # whatever else can ease
 ```
 
-Only a *change* eases: the first time a node is built it is where it says. The properties are the ones tre can animate (`background`,
+Only a *change* eases: the first time a node is built it is where it says. The properties are the ones tess_re can animate (`background`,
 `foreground` for text and glyphs, `border_color`, `border_width`, `corner_radius`, `elevation`, `opacity`, `blur`, `backdrop_blur`, `scale`,
 `translate_x`, `translate_y`, `rotation_deg`, and `icon` on an `Icon`: one glyph morphing into the next); layout properties (`width`, `height`, `x`, `y`, `gap`, `padding`, `margin`) ease too, in pixels (a change to or from `auto` or a percentage is made at once). An app that asked for reduced
 motion gets the new value at once.

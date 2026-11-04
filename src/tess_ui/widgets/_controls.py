@@ -1,4 +1,4 @@
-"""Placing a `tess_ui.controls` control the way `tre`'s `add_*` placed
+"""Placing a `tess_ui.controls` control the way `tess_re`'s `add_*` placed
 its widget: attached to the window's root, and at `x`/`y` when given."""
 
 from __future__ import annotations

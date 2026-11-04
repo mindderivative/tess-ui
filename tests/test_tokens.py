@@ -1,11 +1,11 @@
-"""M37 Phase 1: Tesserae's MD3 tokens (`tess_ui.tokens`) match `tre`'s,
-checked against `tre` 0.3.4's answers, recorded (M43, `tests/reference.py`)
-since 0.3.5 removes them (`tre` D7)."""
+"""M37 Phase 1: Tesserae's MD3 tokens (`tess_ui.tokens`) match `tess_re`'s,
+checked against `tess_re` 0.3.4's answers, recorded (M43, `tests/reference.py`)
+since 0.3.5 removes them (`tess_re` D7)."""
 
 import struct
 
 import pytest
-import tre
+import tess_re
 
 import reference
 from tess_ui import tokens
@@ -16,20 +16,20 @@ SEEDS = [(0x67, 0x50, 0xA4), (0xB3, 0x26, 0x1E), (0x00, 0x6A, 0x60), (0xFF, 0xB0
 
 def _tre_roles(seed, dark, custom=None):
     def ask():
-        window = tre.Window(width=10, height=10)
+        window = tess_re.Window(width=10, height=10)
         window.set_theme((*seed, 0xFF), dark=dark, custom_theme_spec=custom)
         return {role: window.theme.role(role) for role in tokens.ROLES}
-    return reference.tre(ask)
+    return reference.tess_re(ask)
 
 
 def _tre_read(spec, prop, show=False, **kwargs):
-    """A `tre` `View` of `spec`'s node `r`'s `prop`, recorded."""
+    """A `tess_re` `View` of `spec`'s node `r`'s `prop`, recorded."""
     def ask():
-        view = tre.View(spec=spec, **kwargs)
+        view = tess_re.View(spec=spec, **kwargs)
         if show:
-            tre.Window.from_view(view, width=10, height=10, title="t")
+            tess_re.Window.from_view(view, width=10, height=10, title="t")
         return view.node("r").get(prop)
-    return reference.tre(ask)
+    return reference.tess_re(ask)
 
 
 @pytest.mark.parametrize("dark", [False, True], ids=["light", "dark"])
@@ -46,7 +46,7 @@ def test_colors_overrides_match_tre():
 
 def test_seed_precedence_matches_tre_views():
     """`theme_seed`, else the custom theme's `seed:`, else the default
-    theme's -- `tre`'s `View` rule."""
+    theme's -- `tess_re`'s `View` rule."""
     red, blue = {"seed": "#FF0000"}, {"seed": "#0000FF"}
     purple = (0x67, 0x50, 0xA4, 0xFF)
     assert tokens.resolve_scheme(purple, False, blue, red) == tokens.color_scheme(purple)
@@ -86,16 +86,16 @@ def test_unknown_tokens_are_none_as_in_tre():
 @pytest.mark.parametrize("role", sorted(tokens.TYPE_SCALE))
 def test_type_roles_match_tre(role):
     def ask():
-        window = tre.Window(width=10, height=10)
+        window = tess_re.Window(width=10, height=10)
         window.set_theme((0x67, 0x50, 0xA4, 0xFF))
         return window.theme.typography(role)
     style = tokens.type_style(role)
-    f32 = lambda x: struct.unpack("f", struct.pack("f", x))[0]  # tre stores these as f32
-    assert reference.tre(ask) == (style.font_family, style.font_weight, style.font_size, f32(style.line_height))
+    f32 = lambda x: struct.unpack("f", struct.pack("f", x))[0]  # tess_re stores these as f32
+    assert reference.tess_re(ask) == (style.font_family, style.font_weight, style.font_size, f32(style.line_height))
 
 
 def test_elevation_shadows_reproduce_tres_geometry():
-    """`tre`'s own docs give level 1 as exactly this pair; the others
+    """`tess_re`'s own docs give level 1 as exactly this pair; the others
     follow `engine-render`'s key/ambient formulas."""
     assert tokens.elevation_shadows(0) == []
     assert tokens.elevation_shadows(1) == [((0, 0, 0, 77), 0.0, 1.0, 2.0, 0.0), ((0, 0, 0, 38), 0.0, 1.0, 3.0, 1.0)]
@@ -104,7 +104,7 @@ def test_elevation_shadows_reproduce_tres_geometry():
 
 
 def test_elevation_shadows_are_accepted_by_tre():
-    window = tre.Window(width=10, height=10)
+    window = tess_re.Window(width=10, height=10)
     box = window.create("box", width=10, height=10, shadows=tokens.elevation_shadows(2))
     assert box.get("shadows") == tokens.elevation_shadows(2)
 
@@ -122,7 +122,7 @@ def test_colour_strings_parse_as_tre_parses_them(raw):
 
 
 @pytest.mark.parametrize("raw, message", [
-    ("#12345", "wrong number of hex digits"), ("notacolor", "unknown color identifier"),  # tre's wording
+    ("#12345", "wrong number of hex digits"), ("notacolor", "unknown color identifier"),  # tess_re's wording
     ("rgb(1,2)", "invalid color"), ("rgb(a,b,c)", "invalid color"),
 ])
 def test_invalid_colours_raise(raw, message):

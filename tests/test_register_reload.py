@@ -3,7 +3,7 @@ a file -- `load()`ed, or `build_view()`ed and given to `register()` --
 taking the file from the view itself (Q1); a screen built from a spec is
 named in the log instead (Q2).
 
-As in `test_theme_reload.py`, a `FakeHandle` stands in for `tre`'s loop:
+As in `test_theme_reload.py`, a `FakeHandle` stands in for `tess_re`'s loop:
 the watcher queues each reload, and the test runs it on this thread.
 """
 

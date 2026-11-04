@@ -1,6 +1,6 @@
 """M49 Phase 2: a click goes to the innermost clickable only (M49 Q1-Q3).
 
-`tre`'s `click` and `secondary_click` bubble to every ancestor's
+`tess_re`'s `click` and `secondary_click` bubble to every ancestor's
 listener; each activation listener Tesserae adds -- YAML `on_click`,
 `Widget.on_click`, controls, `SpinBox`, overlays, `Dock` tabs -- stops the
 event after it runs (`tess_ui.listeners.handled`), so a clickable inside
@@ -9,7 +9,7 @@ still takes it (Q2).
 """
 
 import pytest
-import tre
+import tess_re
 
 import tess_ui
 from tess_ui import View
@@ -94,7 +94,7 @@ def test_a_click_on_a_plain_child_still_reaches_its_clickable_parent():
 
 
 def test_a_control_in_a_clickable_card_takes_its_click_even_when_disabled():
-    window = tre.Window(width=600, height=400)
+    window = tess_re.Window(width=600, height=400)
     opened = []
     c = card(window, 300, 200, on_click=lambda: opened.append("card"))
     box = checkbox(window, (0x67, 0x50, 0xA4, 0xFF), 48, 48)
@@ -112,7 +112,7 @@ def test_a_control_in_a_clickable_card_takes_its_click_even_when_disabled():
 
 
 def test_widget_on_click_spin_box_and_menu_items_take_their_clicks():
-    window = tre.Window(width=600, height=400)
+    window = tess_re.Window(width=600, height=400)
     heard = _heard(window)
     chosen = []
     c = card(window, 200, 100, on_click=lambda: chosen.append("card"))
@@ -143,7 +143,7 @@ def test_a_right_click_opens_only_the_innermost_context_menu():
 
 
 def test_dock_tabs_take_their_clicks_and_right_clicks():
-    window = tre.Window(width=900, height=500)
+    window = tess_re.Window(width=900, height=500)
     window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, gap=0, align_items="stretch")
     heard = _heard(window)
     dock = Dock(window)
@@ -161,7 +161,7 @@ def test_dock_tabs_take_their_clicks_and_right_clicks():
 
 
 def test_a_popover_anchor_and_a_search_result_take_their_clicks():
-    window = tre.Window(width=600, height=500)
+    window = tess_re.Window(width=600, height=500)
     window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, gap=0,
                     align_items="flex_start", flex_direction="vertical")
     heard = _heard(window)

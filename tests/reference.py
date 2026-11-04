@@ -1,15 +1,15 @@
-"""M43 Phase 3: `tre`'s answers, recorded once, so the parity tests keep
-their proof after `tre` 0.3.5 removes `View`, `Signal` and window themes.
+"""M43 Phase 3: `tess_re`'s answers, recorded once, so the parity tests keep
+their proof after `tess_re` 0.3.5 removes `View`, `Signal` and window themes.
 
-A reference test wraps each question it asks `tre` in `tre(fn)`:
+A reference test wraps each question it asks `tess_re` in `tess_re(fn)`:
 
-    assert ours == reference.tre(lambda: view.node("r").get("fill"))
+    assert ours == reference.tess_re(lambda: view.node("r").get("fill"))
 
-Normally `tre(fn)` doesn't call `fn`: it returns the answer recorded for
+Normally `tess_re(fn)` doesn't call `fn`: it returns the answer recorded for
 this test (or raises the exception recorded, with the same type and
-message), so the test runs with no `tre` reference at all. With
-`TESSERAE_RECORD_TRE=1` -- set by `tools/record_tre_reference.py`, on a
-`tre` that still has them (0.3.4) -- it calls `fn`, returns its answer and
+message), so the test runs with no `tess_re` reference at all. With
+`TESS_UI_RECORD_TESS_RE=1` -- set by `tools/record_tre_reference.py`, on a
+`tess_re` that still has them (0.3.4) -- it calls `fn`, returns its answer and
 records it. Answers are keyed by the test's id and the order it asks, and
 kept per test module in `tests/reference/<module>.json`, in a small tagged
 JSON form that keeps tuples, non-string dict keys and exceptions exact.
@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 DIR = Path(__file__).resolve().parent / "reference"
-RECORDING = os.environ.get("TESSERAE_RECORD_TRE") == "1"
+RECORDING = os.environ.get("TESS_UI_RECORD_TESS_RE") == "1"
 
 
 class MissingAnswer(AssertionError):
@@ -88,15 +88,15 @@ def begin(module: str, test_id: str) -> None:
 
 
 def answer(key: str, fn: Callable[[], Any], module: str) -> Any:
-    """`tre`'s answer to `fn` under an explicit `key`, for questions asked
+    """`tess_re`'s answer to `fn` under an explicit `key`, for questions asked
     outside a test (building a parametrize list, say)."""
     return _answer(module, key, fn)
 
 
-def tre(fn: Callable[[], Any]) -> Any:
-    """`tre`'s answer to `fn`, for the running test (see the module doc)."""
+def tess_re(fn: Callable[[], Any]) -> Any:
+    """`tess_re`'s answer to `fn`, for the running test (see the module doc)."""
     if STORE.test is None:
-        raise RuntimeError("reference.tre() outside a test: use reference.answer(key, fn, module)")
+        raise RuntimeError("reference.tess_re() outside a test: use reference.answer(key, fn, module)")
     module, test_id = STORE.test
     STORE.asked += 1
     return _answer(module, f"{test_id}#{STORE.asked}", fn)
@@ -113,7 +113,7 @@ def _answer(module: str, key: str, fn: Callable[[], Any]) -> Any:
         answers[key] = encode(value)
         return value
     if key not in answers:
-        raise MissingAnswer(f"no recorded tre answer for {module}: {key} -- run tools/record_tre_reference.py "
+        raise MissingAnswer(f"no recorded tess_re answer for {module}: {key} -- run tools/record_tre_reference.py "
                             f"on tre 0.3.4 (the question changed, or it's new)")
     recorded = answers[key]
     if isinstance(recorded, dict) and "__raises__" in recorded:

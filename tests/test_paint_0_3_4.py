@@ -1,6 +1,6 @@
-"""M33: Tesserae's own YAML is right for `tre` 0.3.4's paint model.
+"""M33: Tesserae's own YAML is right for `tess_re` 0.3.4's paint model.
 
-`tre` 0.3.4 (its M95) changed two things a static spec can get wrong,
+`tess_re` 0.3.4 (its M95) changed two things a static spec can get wrong,
 and neither shows up anywhere but on screen:
 
 - **A color's own alpha renders.** A Text glyph colored `"#FFFFFF00"`
@@ -10,7 +10,7 @@ and neither shows up anywhere but on screen:
   translucent scrim wrapping its panel has to take its translucency
   from its color, or the panel fades with it.
 
-`tre` 0.3.4 can't read pixels back from Python, so this checks what
+`tess_re` 0.3.4 can't read pixels back from Python, so this checks what
 every view, fragment and docs snippet declares.
 """
 

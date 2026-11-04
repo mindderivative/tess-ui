@@ -1,11 +1,11 @@
 """The carousel and the splitter: new by M42's Q1, since
-`tre` had them (`add_carousel`, `add_splitter`) and Tesserae never
-wrapped them. Built on `tre` 0.3.4's building blocks, following `tre`'s
+`tess_re` had them (`add_carousel`, `add_splitter`) and Tesserae never
+wrapped them. Built on `tess_re` 0.3.4's building blocks, following `tess_re`'s
 `legacy-behavior.md` (0.3.5) for how they move.
 
-`tre` animates no `width` and has no per-frame callback, so the carousel
+`tess_re` animates no `width` and has no per-frame callback, so the carousel
 drives its fractional position by animating a property of a private node
-in no tree (`tre` applies the easing, and `get` reads the value mid-
+in no tree (`tess_re` applies the easing, and `get` reads the value mid-
 animation), and re-lays its items out each frame from a chained one-frame
 animation (`_Ticker`), the trick `tess_ui.overlays._Timer` uses.
 """
@@ -21,11 +21,11 @@ from tess_ui.widgets._composed import Widget
 from tess_ui import motion
 
 if TYPE_CHECKING:
-    from tre import Window
+    from tess_re import Window
 
 __all__ = ["carousel", "carousel_layout", "splitter"]
 
-#: The carousel's geometry (`tre`'s, MD3's): items 16 px in, 8 apart, 8 above and below.
+#: The carousel's geometry (`tess_re`'s, MD3's): items 16 px in, 8 apart, 8 above and below.
 CAROUSEL_PADDING = 16.0
 CAROUSEL_GAP = 8.0
 CAROUSEL_INSET = 8.0
@@ -36,7 +36,7 @@ LAYOUTS = ("uncontained", *PATTERNS)
 #: An uncontained item's width when it has none; px dragged per index when snapping.
 UNCONTAINED_WIDTH = 200.0
 DRAG_STEP = 60.0
-#: Moving to an index takes 300 ms, standard easing (`tre`'s).
+#: Moving to an index takes 300 ms, standard easing (`tess_re`'s).
 MOVE_MS = 300
 
 
@@ -68,7 +68,7 @@ class _Ticker:
 
 def carousel_layout(layout: str, width: float, count: int, position: float,
                     own_widths: list[float], scroll: float = 0.0) -> list[tuple[float, float]]:
-    """Each item's `(x, width)` in a carousel `width` wide, by `tre`'s
+    """Each item's `(x, width)` in a carousel `width` wide, by `tess_re`'s
     rules. The snapping layouts blend their layouts at the indices either
     side of a fractional `position`; `uncontained` places items at their
     own widths, `scroll` px along."""

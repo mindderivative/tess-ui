@@ -1,4 +1,4 @@
-"""#279: `left`, `top`, `right`, `bottom` and `inset` are style fields (tre 0.5.7), sizes may be sums and `fit-content`, and a size or an inset tre would refuse is
+"""#279: `left`, `top`, `right`, `bottom` and `inset` are style fields (tre 0.5.7), sizes may be sums and `fit-content`, and a size or an inset tess_re would refuse is
 refused where it is written."""
 
 import pytest
@@ -169,7 +169,7 @@ def test_a_restyle_that_drops_an_inset_puts_the_node_back(tmp_path):
 
 
 def test_an_edge_beats_inset_whichever_of_them_the_rule_gave(tmp_path):
-    """The cascade merges a rule's fields with the node's own; tre applies `inset` after the edges, so Tesserae works `inset` out itself."""
+    """The cascade merges a rule's fields with the node's own; tess_re applies `inset` after the edges, so Tesserae works `inset` out itself."""
     view = opened(tmp_path, box("position: absolute, height: 20, right: 16"), stylesheet_spec={"styles": [{"widget": "Rect", "style": {"inset": 4, "height": 20}}]})
     assert frame(view)[0::2] == (4.0, 280.0)  # the rule's 4 for left; the node's 16 for right
     view = opened(tmp_path / "x", box("position: absolute, height: 20, x: 12"), stylesheet_spec={"styles": [{"widget": "Rect", "style": {"inset": 4}}]})

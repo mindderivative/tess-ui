@@ -9,7 +9,7 @@ size (`fab.small`), which its fragments name themselves.
 import pytest
 import yaml
 from helpers import elevation
-from tre import Window
+from tess_re import Window
 
 from tess_ui import Theme, View
 from tess_ui.spec import expand_components_to_spec

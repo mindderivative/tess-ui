@@ -2,7 +2,7 @@
 
 **Write desktop apps in Python and YAML.** A Tesserae app is **YAML views** (what the screen looks
 like), each paired with a Python **ViewModel** (what it does), drawn by the
-[Tesserae Render Engine](https://github.com/mindderivative/tre) (`tre`): rendering, layout, animation
+[Tesserae Render Engine](https://github.com/mindderivative/tess-re) (`tess_re`): rendering, layout, animation
 and accessibility in Rust underneath, which you never have to touch.
 
 ```yaml
@@ -82,8 +82,8 @@ Linux, macOS and Windows.
 | [Architecture](architecture.md) | How it fits together |
 | [Changelog](changelog.md) and [Migrating](migration.md) | What changed, release by release |
 
-## Files: Tesserae reads them, `tre` gets data
+## Files: Tesserae reads them, `tess_re` gets data
 
 You always give Tesserae file paths or names: views, images, themes, stylesheets and fonts. Tesserae reads, parses and
-decodes them itself and hands `tre` only data. Every error names the file, line and column you wrote, and the nearest
+decodes them itself and hands `tess_re` only data. Every error names the file, line and column you wrote, and the nearest
 name when you misspelt one.

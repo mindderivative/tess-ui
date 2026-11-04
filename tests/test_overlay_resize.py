@@ -4,7 +4,7 @@ sheet and a snackbar stay at their edge. Overlays listen through one
 shared dispatcher per window (`listeners.listen_window`), while open.
 """
 
-import tre
+import tess_re
 
 from tess_ui import listeners
 from tess_ui.listeners import listen_window
@@ -12,7 +12,7 @@ from tess_ui.overlays import Dialog, NavigationDrawer, SideSheet, Snackbar
 
 
 def _window():
-    window = tre.Window(width=800, height=600)
+    window = tess_re.Window(width=800, height=600)
     window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, gap=0,
                     align_items="flex_start")
     window.advance(16)
@@ -60,7 +60,7 @@ def test_edge_sheets_keep_their_scrim_and_edge():
 
 
 def test_the_resize_event_alone_refits_it():
-    """What a live OS resize delivers: the event (`tre` has already laid
+    """What a live OS resize delivers: the event (`tess_re` has already laid
     the root out at the new size when it arrives)."""
     window = _window()
     d = Dialog(window, "Discard draft?", "It won't be saved.", actions=[("Cancel", None)])

@@ -3,7 +3,7 @@
 only buildable one; `video`/`node_graph`/`graph_node` all confirmed
 blocked, no declarative kind), `DatePickerDay` (4 real states)/
 `PeriodSelectorAM`/`PeriodSelectorPM`/`TimePickerDial` (Date & Time --
-the latter was blocked until `tre`'s own M84 added declarative
+the latter was blocked until `tess_re`'s own M84 added declarative
 `NodeKindSpec` support, this repo's own M27; see `test_fragments_
 progress.py` for the sibling `CircularProgress`/`LinearProgress`/
 `LoadingIndicator` fragments the same milestone unblocked).
@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 
 from helpers import elevation, view_from
-from tre import Window
+from tess_re import Window
 
 from tess_ui.spec import ComponentError, expand_components
 from tess_ui.widgets import date_picker_day, period_selector, search_bar, search_view, time_picker_dial
@@ -119,7 +119,7 @@ children:
 
         imperative = date_picker_day(_window(), 15, **kwargs)  # a Widget since M42
 
-        # both are 48 px targets; since M42 the widget draws MD3's 40 px circle inside (the fragment keeps tre's)
+        # both are 48 px targets; since M42 the widget draws MD3's 40 px circle inside (the fragment keeps tess_re's)
         assert declarative.get("width") == imperative.node.get("width") == 48.0, component_name
         assert imperative.part("indicator").get("corner_radius") == 20.0, component_name
 
@@ -131,7 +131,7 @@ def test_date_picker_day_requires_a_quoted_string_day():
     # supplied Python type verbatim. `expand_components` itself is a
     # pure string-substitution pass with no schema validation -- the
     # real error only surfaces once the view is built (Tesserae's compiler
-    # rejects it as `tre`'s parser did).
+    # rejects it as `tess_re`'s parser did).
     yaml_text = """
 id: root
 kind: Container
@@ -162,7 +162,7 @@ children:
 
         imperative = period_selector(_window(), selected="AM")  # a Widget since M42
 
-        # the fragment keeps tre's rounded halves; the widget is MD3's, square halves in an outlined 8 px frame
+        # the fragment keeps tess_re's rounded halves; the widget is MD3's, square halves in an outlined 8 px frame
         assert am.get("corner_radius") == pm.get("corner_radius") == 8.0, component_name
         assert imperative.node.get("corner_radius") == 8.0 and imperative.part("am").get("corner_radius") == 0.0
 

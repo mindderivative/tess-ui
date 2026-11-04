@@ -15,8 +15,8 @@ from tess_ui import App, cli
 
 ROOT = Path(__file__).resolve().parent.parent
 GONE = re.compile(r"shell_file|AppShell|load_shell|use_shell|_Shell|tess_ui\.shell|decorations|_removed|RemovedError")
-#: `decorations` is also `tre`'s own window option: the lines where `borderless` is passed to it (the main window's two, and a second window's).
-TRE_LINES = re.compile(r"Window\(width=width, height=height, title=title, decorations=not borderless\)"
+#: `decorations` is also `tess_re`'s own window option: the lines where `borderless` is passed to it (the main window's two, and a second window's).
+TESS_RE_LINES = re.compile(r"Window\(width=width, height=height, title=title, decorations=not borderless\)"
                        r"|self\._window\.set\(decorations=not bool\(value\)"
                        r"|win\.set\(decorations=False, resize_border=")
 
@@ -27,7 +27,7 @@ def test_nothing_of_the_old_shell_or_decorations_is_left_in_src():
         if path.suffix not in (".py", ".yaml", ".tmpl", ".json") or "__pycache__" in path.parts:
             continue
         for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-            if GONE.search(line) and not (path.name == "app.py" and TRE_LINES.search(line)):
+            if GONE.search(line) and not (path.name == "app.py" and TESS_RE_LINES.search(line)):
                 left.append(f"{path.relative_to(ROOT)}:{number}: {line.strip()[:80]}")
     assert left == []
     assert not (ROOT / "src" / "tess_ui" / "shell.py").exists()

@@ -1,11 +1,11 @@
-"""M38 Phase 1: `tess_ui.Theme` answers what `tre`'s `Window.theme` does
+"""M38 Phase 1: `tess_ui.Theme` answers what `tess_re`'s `Window.theme` does
 -- checked against its answers on 0.3.4, recorded (M43, `tests/reference.py`)
 since 0.3.5 removes it -- plus MD3 motion."""
 
 import struct
 
 import pytest
-import tre
+import tess_re
 
 import reference
 from tess_ui import Theme, tokens
@@ -24,12 +24,12 @@ CUSTOM = {
 
 
 def _tre(question, custom=None, default=None):
-    """`question(tre's Window.theme)` for these themes, recorded."""
+    """`question(tess_re's Window.theme)` for these themes, recorded."""
     def ask():
-        window = tre.Window(width=10, height=10)
+        window = tess_re.Window(width=10, height=10)
         window.set_theme(SEED, custom_theme_spec=custom, default_theme_spec=default)
         return question(window.theme)
-    return reference.tre(ask)
+    return reference.tess_re(ask)
 
 
 def _keys(*specs):
@@ -102,10 +102,10 @@ def test_motion_tokens():
     assert (Theme.duration("short1"), Theme.duration("medium2"), Theme.duration("long4"), Theme.duration("extra_long4")) == (50, 300, 600, 1000)
     with pytest.raises(ValueError, match="unknown easing"):
         Theme.easing("bouncy")
-    window = tre.Window(width=10, height=10)
+    window = tess_re.Window(width=10, height=10)
     box = window.create("box", width=10, height=10)
     for name in ("standard", "emphasized", "standard_accelerate"):
-        box.animate("opacity", 0.5, Theme.duration("short2"), easing=Theme.easing(name))  # tre takes every one
+        box.animate("opacity", 0.5, Theme.duration("short2"), easing=Theme.easing(name))  # tess_re takes every one
 
 
 def test_views_and_apps_expose_their_resolved_theme(tmp_path):

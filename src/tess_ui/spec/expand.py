@@ -1,27 +1,27 @@
 """Component macro-expansion: `component: Name` / `with: {...}` in a
 `*_View.yaml` expands to the referenced `*_Component.yaml` fragment's own
-`WidgetSpec`-shaped subtree, before `tre` ever sees the file. Modeled
+`WidgetSpec`-shaped subtree, before `tess_re` ever sees the file. Modeled
 directly on pyCopper's own real, proven `source:`/`with:`/`params:`
-design (`pycopper/spec/include.py`), adapted to `tre`'s real schema
+design (`pycopper/spec/include.py`), adapted to `tess_re`'s real schema
 (`id`/`kind`/`style`/`text`/`children`, confirmed against
 `engine-spec/src/spec.rs` -- no `anchor:`-style cross-reference field
 exists, so only `id:` needs namespacing, unlike pyCopper's own `name:`+
 `anchor:` pair).
 
-M29: also resolves `include:` itself, a straight port of `tre`'s own
+M29: also resolves `include:` itself, a straight port of `tess_re`'s own
 `engine-spec/src/include.rs` (same sole-key rule, same relative-to-the-
 including-file resolution, same confinement, cycle and depth-8 rules).
-Tesserae now hands `tre` a finished dict via `spec=`, and `tre` only
+Tesserae now hands `tess_re` a finished dict via `spec=`, and `tess_re` only
 splices `include:` on its YAML-text path -- so this is where it has to
 happen, and it keeps file reading on Tesserae's side, per the user's
-own rule that `tre` gets specs and bytes, never files. An `include:`
+own rule that `tess_re` gets specs and bytes, never files. An `include:`
 inside a `*_Component.yaml` fragment is rejected rather than resolved:
 fragments are parameterized reuse, and an include there has no
 sensible base directory.
 
 M28: `repeat:` lets one `component:` entry expand to N sibling
 instances from a literal, static list of per-item overrides -- real,
-deliberately narrow scope, confirmed against `tre`'s own imperative
+deliberately narrow scope, confirmed against `tess_re`'s own imperative
 `add_list` first: it takes pre-built `Node`s and does pure layout
 composition (`window_factory.rs`, no `NodeKind::List` primitive at
 all), meaning "a list" is *already* expressible today as a plain
@@ -29,8 +29,8 @@ all), meaning "a list" is *already* expressible today as a plain
 capability isn't a primitive, it's repeating a fragment call without
 hand-duplicating N near-identical `component:` blocks. Deliberately
 NOT reactive -- `repeat:`'s own items are known at macro-expansion
-time, before `tre` ever sees the file (matching this whole module's
-own "before `tre` ever sees the file" framing), so an app wanting
+time, before `tess_re` ever sees the file (matching this whole module's
+own "before `tess_re` ever sees the file" framing), so an app wanting
 runtime-changing content (items added/removed, live reordering) still
 uses the existing imperative `tess_ui.Repeater`, not this. Checked
 `pyCopper` directly (M26/M28's own scoping) -- no repeat/loop construct
@@ -42,14 +42,14 @@ the supplied value's own real Python type (int/float/bool/str) when a
 string is *exactly* one placeholder with nothing else around it --
 verified necessary directly: PyYAML's `safe_dump` quotes a numeric-
 looking Python `str`, which would turn `width: "{{ width }}"` into
-`width: '120'` after substitution -- a quoted string `tre`'s own
+`width: '120'` after substitution -- a quoted string `tess_re`'s own
 `serde_yaml_ng` parser rejects for an `f32` field. Only genuinely mixed
 strings (a placeholder embedded in surrounding text) fall back to plain
 string interpolation, where stringifying is correct. This same
 whole-value rule is what lets `with: {label: "{{ some_signal.get() }}"}`
-forward a live `tre` binding expression through untouched -- the
+forward a live `tess_re` binding expression through untouched -- the
 supplied value is itself the string `"{{ some_signal.get() }}"`, so a
-whole-value substitution reproduces it exactly, for `tre`'s own
+whole-value substitution reproduces it exactly, for `tess_re`'s own
 `binding.rs` to resolve later at `View._attach()` time.
 """
 
@@ -75,12 +75,12 @@ _INCLUDE_KEY = "include"
 _WHEN_KEY = "when"
 _IF_KEYS = {"if", "then", "else"}
 
-#: Matches `tre`'s own `MAX_INCLUDE_DEPTH` (`engine-spec/src/include.rs`),
-#: so a view that loaded under `tre`'s own `include:` still loads here.
+#: Matches `tess_re`'s own `MAX_INCLUDE_DEPTH` (`engine-spec/src/include.rs`),
+#: so a view that loaded under `tess_re`'s own `include:` still loads here.
 MAX_INCLUDE_DEPTH = 8
 
 #: A guard against pathological/adversarial nesting, not a real depth
-#: any legitimate component tree needs. `tre`'s own `include:` uses 8
+#: any legitimate component tree needs. `tess_re`'s own `include:` uses 8
 #: for a simpler, unparameterized splice; this allows real component-
 #: composing-component nesting (e.g. a `Card` fragment using `component:
 #: Button` inside it) some real headroom without being unbounded.
@@ -192,7 +192,7 @@ def _namespace_ids(node: Any, prefix: str) -> Any:
     """Prefix every `id:` inside `node` with `prefix.`, except the
     fragment's own root `id:`, which the caller already renamed to
     `prefix` directly (mirrors pyCopper's own `_namespace_names`,
-    adapted from `name:`/`anchor:` to `tre`'s single `id:` field --
+    adapted from `name:`/`anchor:` to `tess_re`'s single `id:` field --
     `WidgetSpec` has no cross-reference field an id-rename could break).
     """
     if isinstance(node, list):
@@ -356,7 +356,7 @@ def _contains_include(node: Any) -> bool:
 
 
 def _resolve_include_path(base_dir: Path, include_path: str) -> Path:
-    """`tre`'s own `resolve_confined`: relative only, and the resolved
+    """`tess_re`'s own `resolve_confined`: relative only, and the resolved
     file must stay inside `base_dir` -- no `../` escapes, no symlink
     escapes (both sides are fully resolved before the check)."""
     if Path(include_path).is_absolute():
@@ -373,7 +373,7 @@ def _resolve_include_path(base_dir: Path, include_path: str) -> Path:
 
 def _expand_includes(node: Any, base_dir: Path | None, visited: list[Path], deps: set[Path]) -> Any:
     """Replaces every `{include: path}` mapping with that file's parsed
-    YAML, recursively -- a port of `tre`'s own `expand_includes`. Each
+    YAML, recursively -- a port of `tess_re`'s own `expand_includes`. Each
     included file's own includes resolve against *its* directory."""
     if len(visited) >= MAX_INCLUDE_DEPTH:
         raise ComponentError(f"`include:` nested more than {MAX_INCLUDE_DEPTH} deep")
@@ -418,8 +418,8 @@ def _expand_includes(node: Any, base_dir: Path | None, visited: list[Path], deps
 
 def _normalize_scalars(node: Any) -> Any:
     """PyYAML's `safe_load` turns an unquoted `2026-09-24` into a
-    `datetime.date`, which `tre`'s `spec=` depythonizer can't read into a
-    string field. The old text round-trip (`safe_dump` then `tre`'s own
+    `datetime.date`, which `tess_re`'s `spec=` depythonizer can't read into a
+    string field. The old text round-trip (`safe_dump` then `tess_re`'s own
     `serde_yaml_ng` parse) turned it back into the string `"2026-09-24"`;
     `str()` gives that exact same string, so `spec=` sees what the text
     path used to."""
@@ -631,7 +631,7 @@ def expand_components_to_spec(
     `base_dir` is the directory `include:` paths resolve against --
     normally the `*_View.yaml`'s own directory. `None` means there is
     none, and any `include:` is a clear `ComponentError`, the same
-    contract `tre`'s own `include:` has.
+    contract `tess_re`'s own `include:` has.
 
     `component_dirs` defaults to the folder `base_dir` names (the view's
     own: an app's own fragments and component stylesheets live next to its
@@ -676,8 +676,8 @@ def expand_components(
     base_dir: Path | None = None,
 ) -> str:
     """`expand_components_to_spec`, dumped back to YAML text -- for
-    inspecting an expansion, or for `tre`'s own text-based `source=`
-    path. Nothing on Tesserae's own `tre` handoff path uses this any
+    inspecting an expansion, or for `tess_re`'s own text-based `source=`
+    path. Nothing on Tesserae's own `tess_re` handoff path uses this any
     more (`load_view`/`instantiate` pass the dict via `spec=`)."""
     spec = expand_components_to_spec(yaml_text, component_dirs=component_dirs, base_dir=base_dir)
     return yaml.safe_dump(spec, sort_keys=False)

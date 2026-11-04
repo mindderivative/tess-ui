@@ -1,9 +1,9 @@
 """Tesserae's reactivity: `Signal`, `Computed`, `Effect`, `batch`,
 `untrack` and `ViewModel`.
 
-Taken over from `tre` (`python/tre/__init__.py` at v0.3.4, MIT, same
-author), which moves reactivity out of the engine (`tre` D5) and removes
-its copy in 0.3.5. The behavior is `tre`'s exactly:
+Taken over from `tess_re` (`python/tess_re/__init__.py` at v0.3.4, MIT, same
+author), which moves reactivity out of the engine (`tess_re` D5) and removes
+its copy in 0.3.5. The behavior is `tess_re`'s exactly:
 
 - `Signal.set`/`update` notify only when the value changes;
 - `Computed` recomputes when a dependency changes, and notifies only if
@@ -19,14 +19,14 @@ module's own stack.
 
 Bindings are evaluated by Tesserae (`tess_ui.binding`, wired by
 `tess_ui.View`) in these same frames. (Until M37 Phase 6, a read with no
-frame open was passed on to `tre`'s native `_record_read`, so `tre`'s
-own `View` bindings tracked Tesserae's signals; no view uses `tre`'s
+frame open was passed on to `tess_re`'s native `_record_read`, so `tess_re`'s
+own `View` bindings tracked Tesserae's signals; no view uses `tess_re`'s
 evaluation any more.)
 
-Tesserae's classes track only each other, not `tre.Signal`, so an app
-uses these (`from tess_ui import Signal`), not `tre`'s.
+Tesserae's classes track only each other, not `tess_re.Signal`, so an app
+uses these (`from tess_ui import Signal`), not `tess_re`'s.
 
-Single-threaded, as in `tre`: module-level state, touched only on the
+Single-threaded, as in `tess_re`: module-level state, touched only on the
 event-loop thread. Tesserae's watcher threads never read or write
 signals.
 """

@@ -1,18 +1,18 @@
 """M29 Phase 2: every `kind: Image` node's `image.src:` is taken out of
 the spec, decoded by Tesserae, and returned as frames the builder puts
-into the `image` node (M37: `tre`'s `create("image", rgba=...)`). A
+into the `image` node (M37: `tess_re`'s `create("image", rgba=...)`). A
 `kind: Image` with no `src:` is a blank image that keeps its `fit:`.
 
 This covers hand-written views and the `Image` fragment alike, since it
 runs on the fully expanded tree -- ids are already final (namespaced)
 by then.
 
-`src:` resolves with `tre`'s own rules (`engine-spec/src/build.rs`,
+`src:` resolves with `tess_re`'s own rules (`engine-spec/src/build.rs`,
 `resolve_image_src`), so a view that loaded before still loads: relative
 to the top-level view's directory (an `include:`d file's images too, as
-under `tre`, since includes are spliced into one tree), no absolute
+under `tess_re`, since includes are spliced into one tree), no absolute
 paths, no `../` or symlink escapes. Failures raise `ComponentError`, a
-`ValueError`, as `tre`'s own image errors were.
+`ValueError`, as `tess_re`'s own image errors were.
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from tess_ui.spec.expand import ComponentError
 __all__ = ["Frame", "check_frame", "extract_images"]
 
 #: `(node_id, rgba, pixel_width, pixel_height)` -- one decoded image,
-#: waiting to be pushed onto its node once `tre` has built the view.
+#: waiting to be pushed onto its node once `tess_re` has built the view.
 Frame = tuple[str, bytes, int, int]
 
 
@@ -80,7 +80,7 @@ def _svg(node: dict[str, Any], base_dir: Path | None, deps: set[Path]) -> dict[s
 
 
 def _cursor(node: dict[str, Any], base_dir: Path | None, deps: set[Path]) -> dict[str, Any]:
-    """A node's `style.cursor: {src: file.png, hotspot: [x, y]}` with its picture decoded, as `tre.CursorImage` takes it."""
+    """A node's `style.cursor: {src: file.png, hotspot: [x, y]}` with its picture decoded, as `tess_re.CursorImage` takes it."""
     node_id = str(node.get("id"))
     cursor = node["style"]["cursor"]
     src = cursor.get("src")

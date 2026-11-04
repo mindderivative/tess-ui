@@ -2,21 +2,21 @@
 colour scheme from a seed, the shape and elevation scales, MD3 elevation
 as `shadows`, the type scale, and colour parsing.
 
-`tre` resolves these today, in `engine-md3` and `engine-render`, and
-removes them in 0.3.5 (its D7: `tre` keeps no theme). The values here are
-`tre`'s at v0.3.4, and `tests/test_tokens.py` checks them against `tre`
+`tess_re` resolves these today, in `engine-md3` and `engine-render`, and
+removes them in 0.3.5 (its D7: `tess_re` keeps no theme). The values here are
+`tess_re`'s at v0.3.4, and `tests/test_tokens.py` checks them against `tess_re`
 while it still has them:
 
 - **colour roles** come from `materialyoucolor`'s TonalSpot scheme with
-  `spec_version="2021"`, which `tre`'s `material-colors` 0.4.2 follows,
+  `spec_version="2021"`, which `tess_re`'s `material-colors` 0.4.2 follows,
   plus tone 10 for the four light-mode `on_*_container` roles, where
   newer `material-color-utilities` moved to tone 30 (M34's spike: 784 of
   784 role values identical);
-- **shapes** and **elevation levels** are `tre`'s `engine-md3` scales;
+- **shapes** and **elevation levels** are `tess_re`'s `engine-md3` scales;
 - **elevation as shadows**: 0.3.4 nodes have no `elevation`, only
-  `shadows`, so a level becomes `tre`'s own key and ambient shadow pair,
+  `shadows`, so a level becomes `tess_re`'s own key and ambient shadow pair,
   with `engine-render`'s geometry, key first (it paints on top);
-- **type styles** are `tre`'s 15 MD3 roles.
+- **type styles** are `tess_re`'s 15 MD3 roles.
 """
 
 from __future__ import annotations
@@ -42,7 +42,7 @@ RGBA = Tuple[int, int, int, int]
 
 # -- colour -------------------------------------------------------------------
 
-#: Every role `tre`'s `ColorScheme.role` answers, in its order.
+#: Every role `tess_re`'s `ColorScheme.role` answers, in its order.
 ROLES = (
     "primary", "on_primary", "primary_container", "on_primary_container", "inverse_primary",
     "primary_fixed", "primary_fixed_dim", "on_primary_fixed", "on_primary_fixed_variant",
@@ -63,10 +63,10 @@ def _hex(text: str) -> RGBA:
     return (int(text[1:3], 16), int(text[3:5], 16), int(text[5:7], 16), 0xFF)
 
 
-#: MD3's published baseline colours, for widgets with no theme: `tre`'s
+#: MD3's published baseline colours, for widgets with no theme: `tess_re`'s
 #: no-theme colours (its MD3 handover's `baseline`), plus `on_surface` and
 #: `secondary` from MD3's baseline scheme. They differ from the scheme the
-#: baseline seed generates, as `tre`'s did.
+#: baseline seed generates, as `tess_re`'s did.
 BASELINE: dict[str, RGBA] = {role: _hex(value) for role, value in {
     "error": "#B3261E", "inverse_on_surface": "#F4EFF4", "inverse_primary": "#D0BCFF",
     "inverse_surface": "#313033", "on_error": "#FFFFFF", "on_primary": "#FFFFFF",
@@ -108,7 +108,7 @@ def baseline_scheme() -> dict[str, RGBA]:
     return {**color_scheme(BASELINE["primary"]), **BASELINE}
 
 
-#: The four roles `tre` keeps at tone 10 in light mode.
+#: The four roles `tess_re` keeps at tone 10 in light mode.
 _TONE_10_LIGHT = {
     "on_primary_container": "primary_palette",
     "on_secondary_container": "secondary_palette",
@@ -177,7 +177,7 @@ def _functional(name: str, body: str) -> RGBA:
 
 
 def parse_color(raw: str) -> RGBA:
-    """A colour string as `tre` parses it: hex (`#RGB`, `#RGBA`,
+    """A colour string as `tess_re` parses it: hex (`#RGB`, `#RGBA`,
     `#RRGGBB`, `#RRGGBBAA`), a CSS colour name, `transparent`, or
     `rgb()`/`rgba()`/`hsl()`/`hsla()` in CSS Color 4's comma or space
     syntax with an optional alpha, and CSS's wide-gamut functions
@@ -199,14 +199,14 @@ def parse_color(raw: str) -> RGBA:
             raise ValueError(f"invalid color {raw!r}") from None
     if text.startswith("#"):
         if len(text) - 1 not in (3, 4, 6, 8):
-            raise ValueError("wrong number of hex digits")  # tre's wording
+            raise ValueError("wrong number of hex digits")  # tess_re's wording
         if len(text) == 5:  # #RGBA, which Pillow reads differently
             text = "#" + "".join(c * 2 for c in text[1:])
     elif text.isidentifier() or text.replace("-", "").isalpha():
         try:
             value = ImageColor.getrgb(text)
         except ValueError:
-            raise ValueError("unknown color identifier") from None  # tre's wording
+            raise ValueError("unknown color identifier") from None  # tess_re's wording
         return tuple(value) if len(value) == 4 else (*value, 255)
     try:
         value = ImageColor.getrgb(text)
@@ -245,11 +245,11 @@ def resolve_scheme(
     custom_theme: Optional[dict[str, Any]],
     contrast: float = 0.0,
 ) -> Optional[dict[str, RGBA]]:
-    """The scheme a view resolves roles against, by `tre`'s `View` rules:
+    """The scheme a view resolves roles against, by `tess_re`'s `View` rules:
     the seed is `theme_seed`, else the custom theme's `seed:`, else the
     default theme's; `colors:` overrides apply default theme first, then
     custom. `None` when there's no seed at all: roles then don't resolve,
-    as in `tre`."""
+    as in `tess_re`."""
     seed = theme_seed or _seed_of(custom_theme) or _seed_of(default_theme)
     if seed is None:
         return None
@@ -264,9 +264,9 @@ def resolve_scheme(
 
 # -- shape and elevation ---------------------------------------------------------
 
-#: `tre`'s shape scale, in pixels.
+#: `tess_re`'s shape scale, in pixels.
 SHAPES = {"none": 0.0, "extra_small": 4.0, "small": 8.0, "medium": 12.0, "large": 16.0, "extra_large": 28.0}
-#: `tre`'s elevation levels.
+#: `tess_re`'s elevation levels.
 ELEVATION_LEVELS = {f"level_{n}": float(n) for n in range(6)}
 
 
@@ -308,11 +308,11 @@ Shadow = Tuple[RGBA, float, float, float, float]
 
 def elevation_shadows(level: float) -> list[Shadow]:
     """MD3 elevation `level` (0–5, fractional allowed) as a `shadows` list,
-    `(color, offset_x, offset_y, blur, spread)`: `tre`'s key shadow (30%
+    `(color, offset_x, offset_y, blur, spread)`: `tess_re`'s key shadow (30%
     black) first, so it paints on top, then its ambient shadow (15%).
     Level 0 is no shadow.
 
-    One difference from `tre`'s legacy `elevation`: its ambient shadow
+    One difference from `tess_re`'s legacy `elevation`: its ambient shadow
     keeps the node's corner radius, while a `shadows` entry grows it by
     the spread, as CSS does."""
     if level <= 0:
@@ -338,7 +338,7 @@ class TypeStyle:
     font_size: float
     #: A multiple of `font_size`.
     line_height: float
-    #: Extra space between letters, in pixels. 0 for every role here (as `tre` draws them); `MD3_TRACKING` is Material 3's.
+    #: Extra space between letters, in pixels. 0 for every role here (as `tess_re` draws them); `MD3_TRACKING` is Material 3's.
     tracking: float = 0.0
 
 
@@ -346,7 +346,7 @@ def _roboto(weight: float, size: float, line_height: float) -> TypeStyle:
     return TypeStyle("Roboto", weight, size, line_height)
 
 
-#: `tre`'s 15 MD3 type roles.
+#: `tess_re`'s 15 MD3 type roles.
 TYPE_SCALE = {
     "display_large": _roboto(400, 57, 1.12), "display_medium": _roboto(400, 45, 1.16),
     "display_small": _roboto(400, 36, 1.22), "headline_large": _roboto(400, 32, 1.25),

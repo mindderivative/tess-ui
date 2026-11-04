@@ -4,7 +4,7 @@
 import io
 
 import pytest
-import tre
+import tess_re
 import yaml
 from PIL import Image
 
@@ -78,14 +78,14 @@ def test_a_bad_gradient_is_refused(raw):
 
 def test_a_background_gradient_is_the_nodes_fill():
     _, _, node = _view({"background": "linear-gradient(90deg, primary, tertiary)"})
-    assert isinstance(node.get("fill"), tre.Gradient)
+    assert isinstance(node.get("fill"), tess_re.Gradient)
 
 
 def test_a_foreground_and_a_border_gradient():
     _, _, text = _view({"foreground": "linear-gradient(to right, primary, error)"}, kind="Text")
-    assert isinstance(text.get("fill"), tre.Gradient)
+    assert isinstance(text.get("fill"), tess_re.Gradient)
     _, _, box = _view({"border_width": 2, "border_color": {"gradient": "sweep", "stops": ["primary", "secondary"]}})
-    assert isinstance(box.get("stroke_color"), tre.Gradient)
+    assert isinstance(box.get("stroke_color"), tess_re.Gradient)
 
 
 def test_the_effects_reach_the_node_and_clear_again():
@@ -118,7 +118,7 @@ def test_a_cursor_from_a_picture():
     Image.new("RGBA", (8, 8), (255, 0, 0, 255)).save(buffer, format="PNG")
     cursor = effects.cursor_value({"rgba": Image.open(io.BytesIO(buffer.getvalue())).convert("RGBA").tobytes(),
                                    "width": 8, "height": 8, "hotspot": [2, 3]}, "x")
-    assert isinstance(cursor, tre.CursorImage) and cursor.hotspot == (2, 3)
+    assert isinstance(cursor, tess_re.CursorImage) and cursor.hotspot == (2, 3)
 
 
 def test_a_cursor_picture_is_read_with_the_view(tmp_path):
@@ -130,7 +130,7 @@ def test_a_cursor_picture_is_read_with_the_view(tmp_path):
     out, _ = extract_images(spec, tmp_path)
     cursor = out["children"][0]["style"]["cursor"]
     assert (cursor["width"], cursor["height"], cursor["hotspot"]) == (6, 6, [1, 2])
-    assert isinstance(effects.cursor_value(cursor, "x"), tre.CursorImage)
+    assert isinstance(effects.cursor_value(cursor, "x"), tess_re.CursorImage)
 
 
 def test_a_cursor_picture_must_be_small_and_inside_the_view(tmp_path):

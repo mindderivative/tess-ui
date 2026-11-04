@@ -474,7 +474,7 @@ class _Parser:
             problem = None if not isinstance(item, (str, int, float)) or (isinstance(item, str) and "{{" in item) else sizes.size_problem(key, item)
             if problem is None and key in placement.ANCHOR_FIELDS and not (isinstance(item, str) and "{{" in item):
                 problem = placement.style_problem(key, item.unwrap() if hasattr(item, "unwrap") else item)
-            if problem:  # a size or an inset that tre would refuse, found where it is written (an expression is checked when it is worked out)
+            if problem:  # a size or an inset that tess_re would refuse, found where it is written (an expression is checked when it is worked out)
                 raise self.fail(value.val_at[key], f"{node.decl.name}: {problem}")
             node.style[key] = self.template(item, value.val_at[key])
         for edge, others in _EDGES.items():  # two ways to place one edge in one mapping leave one unheard

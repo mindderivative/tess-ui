@@ -1,7 +1,7 @@
 # Tesserae
 
 **Write desktop apps in Python and YAML.** A Tesserae app is **YAML views** (what the screen looks like), each paired with a Python
-**ViewModel** (what it does), drawn by the [Tesserae Render Engine](https://github.com/mindderivative/tre) (`tre`): a Rust/Python hybrid
+**ViewModel** (what it does), drawn by the [Tesserae Render Engine](https://github.com/mindderivative/tess-re) (`tess_re`): a Rust/Python hybrid
 for rendering, layout, animation and accessibility.
 
 Tesserae's own shape follows [pyCopper](https://github.com/mindderivative/pycopper) (an earlier, standalone framework by the same author):
@@ -63,10 +63,10 @@ data; every Material Design 3 component ships as such a view. See the
 [Getting Started](https://mindderivative.github.io/tess-ui/getting-started/) walk-through, then the
 [Tasks tutorial](https://mindderivative.github.io/tess-ui/tutorial/).
 
-## Files: Tesserae reads them, `tre` gets data
+## Files: Tesserae reads them, `tess_re` gets data
 
 You give Tesserae file paths or names: views, images, themes, stylesheets and fonts. Tesserae reads, parses, decodes and checks them itself and
-hands `tre` only data (a finished view on `tre`'s building blocks, RGBA pixels and font bytes). Every error names the file, line and column you
+hands `tess_re` only data (a finished view on `tess_re`'s building blocks, RGBA pixels and font bytes). Every error names the file, line and column you
 wrote, and the nearest name when you misspelt one.
 
 Tesserae logs through [loguru](https://loguru.readthedocs.io/): hot
@@ -80,9 +80,9 @@ reloads, failed reloads naming the file, and warnings. Call
 pip install tesserae-ui
 ```
 
-That's all: it installs Tesserae and everything it needs, `tre`'s engine
+That's all: it installs Tesserae and everything it needs, `tess_re`'s engine
 included, as prebuilt wheels. It needs **Python 3.12 or newer**, on Linux
-x86-64, macOS on Apple silicon or Windows x64 (elsewhere, pip builds `tre`
+x86-64, macOS on Apple silicon or Windows x64 (elsewhere, pip builds `tess_re`
 from source, which needs Rust). The PyPI name is `tesserae-ui` (`tesserae`
 on PyPI is an unrelated project); the import name is `tess_ui`. If you installed `tess-ui`, a name it was briefly published under, run
 `pip uninstall tess-ui`, then `pip install tesserae-ui`. Start an
@@ -104,18 +104,16 @@ certificates, and the rest, is in [Releasing Your App](https://mindderivative.gi
 
 ## Install (development)
 
-Tesserae needs **`tre` 0.5.7 or newer, below 0.6**, which is on PyPI as
-[`tesserae-engine`](https://pypi.org/project/tesserae-engine/) (still
-`import tre`). Installing Tesserae installs it:
+Tesserae needs **`tess_re` 0.6.0**, one exact release, which is on PyPI as
+[`tesserae-engine`](https://pypi.org/project/tesserae-engine/) (imported as
+`tess_re`). Installing Tesserae installs it:
 
 ```bash
 pip install -e ".[dev]"
 ```
 
-Coming from a GitHub `tre-...` wheel, run `pip uninstall tre` first: pip
-treats `tesserae-engine` as a different project, and both would own the
-`tre` package. See the [installation guide](https://mindderivative.github.io/tess-ui/installation/)
-for testing against an unreleased `tre` checkout.
+See the [installation guide](https://mindderivative.github.io/tess-ui/installation/)
+for testing against an unreleased `tess_re` checkout.
 
 ## Examples
 

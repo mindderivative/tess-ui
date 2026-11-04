@@ -17,7 +17,7 @@ from tess_ui.widgets.buttons import _borders, _variant
 from tess_ui import motion
 
 if TYPE_CHECKING:
-    from tre import Window
+    from tess_re import Window
 
 
 class _Selection:

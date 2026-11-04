@@ -1,25 +1,25 @@
 """`tess_ui.Theme`: one resolved MD3 theme, answering
-everything `tre`'s `Window.theme` answers today -- colour roles, per-component
-shape and elevation, typography -- plus MD3's motion tokens. `tre` 0.3.5
+everything `tess_re`'s `Window.theme` answers today -- colour roles, per-component
+shape and elevation, typography -- plus MD3's motion tokens. `tess_re` 0.3.5
 removes its theme (D7); Tesserae's widgets (M39–M42) read this one.
 
 A theme is resolved from the same four inputs as a view: a seed, the
 dark flag, and the default and custom theme dicts (`seed:`, `colors:`,
 `styles:`, `components:`, `typography:`). The default theme defaults to
-`tre`'s shipped one.
+`tess_re`'s shipped one.
 
-- **Roles:** `tokens.resolve_scheme`, `tre`'s `View` rules (the seed from
+- **Roles:** `tokens.resolve_scheme`, `tess_re`'s `View` rules (the seed from
   `theme_seed`, else the custom theme's, else the default's; `colors:`
   overrides default then custom). `None` for every role with no seed.
 - **`components:`:** per-component `corner_radius`/`elevation`, numbers or
   shape/elevation tokens. A custom theme's entry replaces the default
   theme's entry for the same key. `shape("card", "elevated")` looks up
-  `card.elevated` first, then `card`, field by field -- `tre`'s lookup.
+  `card.elevated` first, then `card`, field by field -- `tess_re`'s lookup.
 - **`typography:`:** per-role field overrides on the MD3 type scale; a
   custom theme's entry for a role replaces the default theme's.
-- **Motion:** MD3's easing curves as the `(x1, y1, x2, y2)` tuples `tre`
+- **Motion:** MD3's easing curves as the `(x1, y1, x2, y2)` tuples `tess_re`
   0.3.4's `animate(easing=...)` takes, and MD3's duration tokens in ms.
-  `emphasized` is MD3's single-bézier form (0.2, 0, 0, 1): `tre`'s own
+  `emphasized` is MD3's single-bézier form (0.2, 0, 0, 1): `tess_re`'s own
   Emphasized is two cubic segments, which one bézier can't express (M38
   Q4).
 """
@@ -36,7 +36,7 @@ __all__ = ["DURATIONS", "EASINGS", "Theme"]
 RGBA = tuple[int, int, int, int]
 Easing = Union[str, tuple[float, float, float, float], tuple[str, float]]
 
-#: MD3's easing tokens. `tre`'s curves, except `emphasized` (see above).
+#: MD3's easing tokens. `tess_re`'s curves, except `emphasized` (see above).
 EASINGS: dict[str, Easing] = {
     "linear": "linear",
     "standard": (0.2, 0.0, 0.0, 1.0),
@@ -194,7 +194,7 @@ def _component(key: str, raw: Any) -> _Component:
         if isinstance(value, str):
             resolved = lookup(value)
             if resolved is None:
-                raise ValueError(f"components: {key!r} has an unknown {name} token: {value!r}")  # tre's wording
+                raise ValueError(f"components: {key!r} has an unknown {name} token: {value!r}")  # tess_re's wording
             value = resolved
         values[name] = float(value) if value is not None else None
     return _Component(**values)

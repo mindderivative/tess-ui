@@ -240,7 +240,7 @@ containers), and removes the Windows and Linux ones again.
   unpacks itself first (on Linux, about twice as long for a small app: 0.6 s
   against 0.3 s to draw 30 frames and exit).
 - **Size:** a `tesserae new --window` app is about 41 MB on Linux, 25 MB on
-  macOS and 30 MB on Windows, most of it Python itself and `tre`'s engine.
+  macOS and 30 MB on Windows, most of it Python itself and `tess_re`'s engine.
 - **Hot reload is off.** There are no source files to edit, so
   `app.run(hot_reload=True)` logs that and runs without it.
 - **Its log** goes to the console when there is one (`--console`, or

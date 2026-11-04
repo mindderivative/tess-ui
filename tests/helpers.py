@@ -6,8 +6,8 @@ from tess_ui import tokens
 
 
 def window_unthemed(window) -> bool:
-    """Whether `tre`'s window has no theme of its own (M42 Phase 7).
-    `tre` 0.3.5 removes `Window.theme` altogether, which is unthemed too."""
+    """Whether `tess_re`'s window has no theme of its own (M42 Phase 7).
+    `tess_re` 0.3.5 removes `Window.theme` altogether, which is unthemed too."""
     try:
         theme = window.theme
     except AttributeError:
@@ -18,10 +18,10 @@ def window_unthemed(window) -> bool:
 def elevation(node) -> float:
     """A node's MD3 elevation level. A Tesserae-built node carries it as
     `shadows` (0.3.4 nodes have no `elevation`); a node from one of
-    `tre`'s legacy factories still has its own `elevation`."""
+    `tess_re`'s legacy factories still has its own `elevation`."""
     shadows = node.get("shadows")
     if not shadows:
-        try:  # a legacy node's own level, while `tre` 0.3.4 has one
+        try:  # a legacy node's own level, while `tess_re` 0.3.4 has one
             return node.get("elevation")
         except (AttributeError, ValueError):  # 0.3.5 has no `elevation` (its shim raised AttributeError,
             return 0.0                         # the release ValueError); no shadows is level 0
@@ -33,7 +33,7 @@ def elevation(node) -> float:
 
 def view_from(expanded_yaml: str, **kwargs):
     """A Tesserae `View` built from `expand_components`' YAML text -- what
-    `tre.View("T.yaml", source=...)` did before M37."""
+    `tess_re.View("T.yaml", source=...)` did before M37."""
     from tess_ui import View
 
     return View(yaml.safe_load(expanded_yaml), **kwargs)

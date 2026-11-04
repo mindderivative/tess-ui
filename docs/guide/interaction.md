@@ -159,7 +159,7 @@ A node's `a11y:` field sets what assistive technology hears:
 | Field | What it does |
 | --- | --- |
 | `label` | The name read out, for a node whose content doesn't say it (an icon button, say). |
-| `role` | One of `tre`'s roles: `alert`, `button`, `checkbox`, `dialog`, `group`, `heading`, `img`, `link`, `list`, `listitem`, `menu`, `menuitem`, `none`, `progressbar`, `radio`, `separator`, `slider`, `switch`, `tab`, `tablist`, `tabpanel`, `textbox`, `tree` or `treeitem`. A clickable node is a `button` unless you give another role, and it stays focusable. A `Link` has its own role, so `role` is an error on it. |
+| `role` | One of `tess_re`'s roles: `alert`, `button`, `checkbox`, `dialog`, `group`, `heading`, `img`, `link`, `list`, `listitem`, `menu`, `menuitem`, `none`, `progressbar`, `radio`, `separator`, `slider`, `switch`, `tab`, `tablist`, `tabpanel`, `textbox`, `tree` or `treeitem`. A clickable node is a `button` unless you give another role, and it stays focusable. A `Link` has its own role, so `role` is an error on it. |
 | `hidden` | `true` hides a decorative node from assistive technology. |
 | `live` | `off`, `polite` or `assertive`, so changes to the node's content are announced. |
 | `level` | A heading's level, from 1. |
@@ -217,10 +217,10 @@ nodes of a view, so they are written in the view's `a11y:` and `describe`
 refuses them. `on_action` routes the
 requests a screen reader can make: `increment`, `decrement`, `expand`,
 `collapse`, `scroll_into_view` and `set_value`. Activating (clicking)
-isn't one of them: `tre` doesn't route it through `a11y_action`.
-`ROLES`, `LIVE` and `ACTIONS` are `tre`'s lists.
+isn't one of them: `tess_re` doesn't route it through `a11y_action`.
+`ROLES`, `LIVE` and `ACTIONS` are `tess_re`'s lists.
 
-`tre`'s `disabled` is announced only: a disabled node still takes focus
+`tess_re`'s `disabled` is announced only: a disabled node still takes focus
 and clicks. Tesserae's [controls](controls.md) make it behave: a disabled control
 can't be focused or used, and draws in MD3's disabled colours.
 

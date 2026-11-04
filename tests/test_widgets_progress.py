@@ -3,7 +3,7 @@
 returns a Tesserae indicator, attached to the window's root.
 """
 
-from tre import Window
+from tess_re import Window
 
 from tess_ui import controls
 from tess_ui.widgets import circular_progress, linear_progress, loading_indicator

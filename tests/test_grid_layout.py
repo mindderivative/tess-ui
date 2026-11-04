@@ -1,14 +1,14 @@
-"""M74: CSS Grid in a view's style, on `tre` 0.4.2 (`tre` #23) --
+"""M74: CSS Grid in a view's style, on `tess_re` 0.4.2 (`tess_re` #23) --
 `display: grid`, track templates, auto tracks and flow, placement, row and
 column gaps, and grid alignment. Each lays out exactly as the same tree
-built with `tre` directly. As M71's keys: set only when a style gives
+built with `tess_re` directly. As M71's keys: set only when a style gives
 them, reset when it drops them (a dropped row or column gap goes back to
 the style's `gap`), in stylesheets too, and a ScrollView's content can be
 a grid.
 """
 
 import pytest
-import tre
+import tess_re
 import yaml
 
 from tess_ui import View
@@ -42,7 +42,7 @@ def _view(grid_style, children):
 
 
 def _tre_boxes(grid_style, children):
-    window = tre.Window(width=400, height=300)
+    window = tess_re.Window(width=400, height=300)
     window.root.set(padding=0.0, gap=0.0, align_items="stretch")
     root = window.create("box", width=400.0, height=300.0)
     window.root.add_child(root)
@@ -180,8 +180,8 @@ children:
 
 
 def test_a_bare_number_is_one_track():
-    """How YAML writes one track (`grid_auto_rows: 96`). `tre` takes it as a
-    one-track list since 0.4.3 (`tre` #27, M79); M74's compiler turned it
+    """How YAML writes one track (`grid_auto_rows: 96`). `tess_re` takes it as a
+    one-track list since 0.4.3 (`tess_re` #27, M79); M74's compiler turned it
     into text itself before."""
     view = _view({**GRID, "grid_template_columns": 100, "grid_auto_rows": 30.0}, _cells(2))
     assert view.node("g").get("grid_template_columns") == "100" and view.node("g").get("grid_auto_rows") == "30"

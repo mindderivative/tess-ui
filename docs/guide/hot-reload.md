@@ -62,7 +62,7 @@ and hands only the final update to the event loop through
 
 ## When an edit is broken
 
-If a reload fails -- invalid YAML, an unknown component, a widget `tre`
+If a reload fails -- invalid YAML, an unknown component, a widget `tess_re`
 rejects -- Tesserae logs one `ERROR` line naming the file and the error
 (the traceback is at `DEBUG`), and the screen stays as it was. The app
 and the watcher keep running: fix the file, save, and it reloads. Each
@@ -163,12 +163,12 @@ Stylesheet files are watched:
 
 - **A stylesheet of `widget:` rules** (`App(stylesheet=)`, used by views opened with `app.open_view`): every such view is composed again under the new
   rules, its state kept. A mistake in the sheet is logged as an `ERROR` naming the file, and the views keep their old rules.
-A stylesheet `tre` rejects is reported naming the file, and every
+A stylesheet `tess_re` rejects is reported naming the file, and every
 screen keeps its old stylesheet.
 
 ### Handlers fire when bindings are re-applied
 
-After a theme or stylesheet change, `tre` re-applies every binding so
+After a theme or stylesheet change, `tess_re` re-applies every binding so
 bound nodes keep their live values. It does this by setting each bound
 value again, so a declared `on_change` handler on a bound node (a
 `Checkbox` with `checked:` bound, a `TextField` with `text:` bound)
@@ -176,10 +176,10 @@ runs once per reload, even though the value didn't change. The same
 thing happens when a view is first attached and on a view-file reload.
 Write `on_change` handlers so that running one again with the same value
 is harmless: set a `Signal` to the node's current value, don't toggle
-it or append to a list. This is a known behaviour of `tre`.
+it or append to a list. This is a known behaviour of `tess_re`.
 
 ## Limits
 
-- **Don't use `tre`'s own `View.poll_reload()`.** Tesserae gives `tre`
-  the finished view as data, never a file, so `tre` has nothing to
+- **Don't use `tess_re`'s own `View.poll_reload()`.** Tesserae gives `tess_re`
+  the finished view as data, never a file, so `tess_re` has nothing to
   watch.

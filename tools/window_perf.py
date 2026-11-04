@@ -5,8 +5,8 @@ resizes and drags it by hand.
 
     python tools/window_perf.py native            # the OS draws the title bar and borders
     python tools/window_perf.py custom            # `borderless: true`: the window view's title bar is the title bar
-    python tools/window_perf.py bare-native       # a bare `tre` window (no Tesserae), the OS's frame
-    python tools/window_perf.py bare-custom       # a bare `tre` window, undecorated, with a drag region and a resize border
+    python tools/window_perf.py bare-native       # a bare `tess_re` window (no Tesserae), the OS's frame
+    python tools/window_perf.py bare-custom       # a bare `tess_re` window, undecorated, with a drag region and a resize border
 
 Keys (the window must have focus): `1` marks "resizing", `2` "dragging", `0` "idle"; `q` ends the run and writes the
 results. Closing the window ends it too. Results go to `--out`: the raw events as JSON and a text summary, which is
@@ -46,13 +46,13 @@ def build(mode: str):
 
 
 class _Bare:
-    """A bare `tre` window standing in for a Tesserae `App`: the same few members the recorder uses."""
+    """A bare `tess_re` window standing in for a Tesserae `App`: the same few members the recorder uses."""
 
     def __init__(self, mode: str, present_mode: str | None = None, resize_border: int = 6) -> None:
-        import tre
+        import tess_re
 
         decorated = mode == "bare-native"
-        self.window = tre.Window(width=640, height=480, title=f"tre ({mode})")
+        self.window = tess_re.Window(width=640, height=480, title=f"tess_re ({mode})")
         root = self.window.root
         root.set(fill=(0x14, 0x12, 0x18, 0xFF), flex_direction="vertical", padding=0, gap=0)
         if present_mode:
@@ -68,7 +68,7 @@ class _Bare:
             root.add_child(node)
         for node in (rail, content):
             body.add_child(node)
-        self._app = tre.App()
+        self._app = tess_re.App()
         self._app.add_window(self.window)
 
     def stats_handle(self):
@@ -93,7 +93,7 @@ class Recorder:
         window = app.window
         try:
             window.on("frame", self.on_frame)
-        except ValueError:  # tre before 0.5.4 has no `frame` event: only the resize events are recorded
+        except ValueError:  # tess_re before 0.5.4 has no `frame` event: only the resize events are recorded
             self.frames_available = False
         window.on("resize", self.on_resize)
         window.on("closed", lambda e: self.done.set())

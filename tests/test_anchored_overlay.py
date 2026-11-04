@@ -1,8 +1,8 @@
 """#262 (part of #257): placing a node against another node is an `Overlay` today -- four sides, following the anchor with no lag. What it cannot do
-(a corner, staying in the tree) is asked of tre in `design/tre-requests/anchored-layout.md`; the tests say what the engine does today."""
+(a corner, staying in the tree) is asked of tess_re in `design/tre-requests/anchored-layout.md`; the tests say what the engine does today."""
 
 import pytest
-import tre
+import tess_re
 
 from tess_ui import App, Signal, ViewModel
 
@@ -57,7 +57,7 @@ def test_an_overlay_sits_against_a_named_node_and_follows_it_with_no_lag(tmp_pat
 
 @pytest.mark.parametrize("placement, expected", [("below", (150, 160)), ("above", (150, 108)), ("start", (138, 120)), ("end", (210, 120))])
 def test_the_four_sides_each_start_at_the_anchors_start_edge(placement, expected):
-    window = tre.Window(width=400, height=300)
+    window = tess_re.Window(width=400, height=300)
     window.root.set(padding_top=0, padding_left=0, padding_right=0, padding_bottom=0)
     anchor = window.create("box", position="absolute", x=150.0, y=120.0, width=60.0, height=40.0)
     window.root.add_child(anchor)
@@ -72,7 +72,7 @@ def test_the_four_sides_each_start_at_the_anchors_start_edge(placement, expected
                                                  ("bottom_end", (204.0, 154.0)), ("center", (174.0, 134.0))])
 def test_a_layer_takes_a_corner_or_the_centre_of_its_anchor(placement, expected):
     """tre 0.5.7: the marker is centred on the anchor's corner (the anchor is 60 by 40 at 150, 120; the marker 12 by 12)."""
-    window = tre.Window(width=400, height=300)
+    window = tess_re.Window(width=400, height=300)
     anchor = window.create("box", position="absolute", x=150.0, y=120.0, width=60.0, height=40.0)
     window.root.add_child(anchor)
     layer = window.create("box", width=12.0, height=12.0)
@@ -83,7 +83,7 @@ def test_a_layer_takes_a_corner_or_the_centre_of_its_anchor(placement, expected)
 
 @pytest.mark.parametrize("placement", ["above_end", "over", "nonsense"])
 def test_other_placements_are_still_rejected(placement):
-    window = tre.Window(width=400, height=300)
+    window = tess_re.Window(width=400, height=300)
     anchor = window.create("box", position="absolute", x=150.0, y=120.0, width=60.0, height=40.0)
     window.root.add_child(anchor)
     with pytest.raises(ValueError, match="`placement` must be one of: below, above, start, end, top_start, top_end, bottom_start, bottom_end, center"):
@@ -92,7 +92,7 @@ def test_other_placements_are_still_rejected(placement):
 
 def test_an_ordinary_node_can_stay_in_the_tree_and_be_placed_against_another():
     """tre 0.5.7: `anchor`, `placement` and `offset` on a node that is not a layer."""
-    window = tre.Window(width=400, height=300)
+    window = tess_re.Window(width=400, height=300)
     anchor = window.create("box", position="absolute", x=150.0, y=120.0, width=60.0, height=40.0)
     window.root.add_child(anchor)
     marker = window.create("box", position="absolute", width=12.0, height=12.0)
@@ -109,7 +109,7 @@ def test_an_ordinary_node_can_stay_in_the_tree_and_be_placed_against_another():
 
 
 def test_a_layer_flips_to_fit_which_a_marker_on_a_corner_would_not_want():
-    window = tre.Window(width=400, height=300)
+    window = tess_re.Window(width=400, height=300)
     window.root.set(padding_top=0, padding_left=0, padding_right=0, padding_bottom=0)
     anchor = window.create("box", position="absolute", x=150.0, y=4.0, width=60.0, height=40.0)
     window.root.add_child(anchor)
@@ -121,7 +121,7 @@ def test_a_layer_flips_to_fit_which_a_marker_on_a_corner_would_not_want():
 
 
 def test_a_layer_is_not_cut_by_a_clipping_ancestor():
-    window = tre.Window(width=400, height=300)
+    window = tess_re.Window(width=400, height=300)
     window.root.set(padding_top=0, padding_left=0, padding_right=0, padding_bottom=0)
     clip = window.create("box", position="absolute", x=100.0, y=100.0, width=80.0, height=60.0, clip_children=True)
     window.root.add_child(clip)

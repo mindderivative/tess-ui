@@ -1,7 +1,7 @@
 """#248: `typing_effect` (flash, fade_in) and `caret_effect` (glide) on a text input, from the engine's `caret_move` event and `text_rects`."""
 
 import pytest
-import tre
+import tess_re
 
 from tess_ui import App, Signal, ViewModel, tokens
 from tess_ui.listeners import Listeners
@@ -12,7 +12,7 @@ WHITE = (255, 255, 255, 255)
 
 
 def build(typing="none", caret="none", reduced=False, background=WHITE, multiline=False, width=200.0, options=None):
-    window = tre.Window(width=400, height=160)
+    window = tess_re.Window(width=400, height=160)
     window.root.set(padding_top=0, padding_left=0, padding_right=0, padding_bottom=0)
     box = window.create("box", position="absolute", x=20.0, y=20.0, width=300.0, height=100.0, fill=background, padding_left=12.0, padding_top=10.0)
     field = window.create("text_input", width=width, height=60.0 if multiline else 30.0, font_size=16.0, multiline=multiline)

@@ -1,10 +1,10 @@
 """M35: Tesserae's reactivity (`tess_ui.reactive`) behaves exactly like
-`tre`'s, which it replaces (`tre` D5).
+`tess_re`'s, which it replaces (`tess_re` D5).
 
-Every behavioural test ran against both implementations while `tre`
+Every behavioural test ran against both implementations while `tess_re`
 0.3.4 had its own, so a difference showed as one side failing; all passed
-on both. M43 retired `tre`'s half, since 0.3.5 removes it (M43 Q1).
-(M35's bridge, which fed `tre`'s own `View` bindings from Tesserae's
+on both. M43 retired `tess_re`'s half, since 0.3.5 removes it (M43 Q1).
+(M35's bridge, which fed `tess_re`'s own `View` bindings from Tesserae's
 signals, was removed in M37 Phase 6; bindings on Tesserae views are
 covered by `test_view.py`.)
 """
@@ -198,4 +198,4 @@ def test_writing_a_signal_while_it_notifies_raises(rx):
 def test_tesserae_exports_its_own_reactivity():
     for name in ("Signal", "Computed", "Effect", "ViewModel", "batch", "untrack"):
         assert getattr(tess_ui, name) is getattr(tess_ui.reactive, name)
-        assert getattr(tess_ui, name).__module__ == "tess_ui.reactive"  # not tre's (0.3.5 has none)
+        assert getattr(tess_ui, name).__module__ == "tess_ui.reactive"  # not tess_re's (0.3.5 has none)

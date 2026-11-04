@@ -1,9 +1,9 @@
-"""M34 Phase 2 Step 3 spike: an MD3 checkbox built only from tre 0.3.4's
+"""M34 Phase 2 Step 3 spike: an MD3 checkbox built only from tess_re 0.3.4's
 building blocks, driven headlessly with simulate/advance. A prototype."""
-import tre
+import tess_re
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
-ref = tre.Window(width=10, height=10); ref.set_theme(SEED)
+ref = tess_re.Window(width=10, height=10); ref.set_theme(SEED)
 ROLE = {r: ref.theme.role(r) for r in ("primary", "on_primary", "on_surface", "on_surface_variant")}
 EMPHASIZED = (0.2, 0.0, 0.0, 1.0)          # MD3 standard easing
 HOVER, FOCUS, PRESS = 0.08, 0.10, 0.10     # MD3 state-layer opacities
@@ -69,7 +69,7 @@ class Checkbox:
         self.ripple.animate("scale", 1.0, 225, easing=EMPHASIZED)
         self.ripple.animate("opacity", 0.0, 375, on_complete=lambda: None)
 
-w = tre.Window(width=200, height=100)
+w = tess_re.Window(width=200, height=100)
 before = w.create("box", width=40, height=40, focusable=True, role="button", label="Back")
 cb = Checkbox(w, "Accept terms")
 w.root.set(flex_direction="horizontal")

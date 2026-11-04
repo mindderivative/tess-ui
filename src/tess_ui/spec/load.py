@@ -1,26 +1,26 @@
 """`load_view` -- reads a view file through Tesserae's whole pipeline and
 builds a `tess_ui.View` from it (M37: Tesserae builds views itself on
-`tre`'s building blocks; before that, this built a `tre.View`).
+`tess_re`'s building blocks; before that, this built a `tess_re.View`).
 
-M29 Phase 1: hands `tre` the finished dict via `spec=` -- no more
-`yaml.safe_dump` back to text for `tre` to re-parse. Tesserae reads the
+M29 Phase 1: hands `tess_re` the finished dict via `spec=` -- no more
+`yaml.safe_dump` back to text for `tess_re` to re-parse. Tesserae reads the
 file and resolves `include:` itself (`expand.py`).
 
 M29 Phase 2: every `kind: Image`'s `src:` is taken out, decoded by
-Tesserae, and pushed onto the built node (`spec/images.py`), so `tre`
+Tesserae, and pushed onto the built node (`spec/images.py`), so `tess_re`
 never opens an image file either.
 
-M29 Phase 3: `tre` is given no path at all.
-The one job the path still had (`tre`'s own `poll_reload` watch target)
+M29 Phase 3: `tess_re` is given no path at all.
+The one job the path still had (`tess_re`'s own `poll_reload` watch target)
 is replaced by Tesserae's `ViewWatcher` (`watch.py`), which reuses
 `build_view_spec` below so a reload runs the exact same pipeline as the
 first load.
 
 M29 Phase 4: theme and stylesheet files too. `load_view`'s
 `stylesheet=`/`default_theme=`/`custom_theme=` still take file paths,
-but Tesserae reads them (`themes.py`) and hands `tre` the dicts via
+but Tesserae reads them (`themes.py`) and hands `tess_re` the dicts via
 `stylesheet_spec=`/`default_theme_spec=`/`custom_theme_spec=`.
-Fonts a view or theme names are checked against what `tre` can draw
+Fonts a view or theme names are checked against what `tess_re` can draw
 (`tess_ui.fonts`).
 """
 
@@ -39,7 +39,7 @@ from tess_ui.spec.themes import load_stylesheet, load_theme, view_font_families
 
 __all__ = ["build_view_spec", "load_view"]
 
-#: `load_view` path argument -> (the `tre` dict argument it becomes, the
+#: `load_view` path argument -> (the `tess_re` dict argument it becomes, the
 #: loader that reads it).
 _FILE_ARGS = {
     "stylesheet": ("stylesheet_spec", load_stylesheet),
@@ -67,7 +67,7 @@ def build_view_spec(
 ) -> tuple[Any, list[Frame], set[Path]]:
     """Reads `path` and runs the whole Tesserae-side pipeline --
     `include:`, `component:`, then image extraction and decoding --
-    returning `(spec, frames, dependencies)`: the dict to hand `tre`, the
+    returning `(spec, frames, dependencies)`: the dict to hand `tess_re`, the
     decoded images to push once it's built, and every file read along
     the way (the view itself included), resolved."""
     path = Path(path)
@@ -87,7 +87,7 @@ def load_view(path: str | Path, *, component_dirs: list[Path] | None = None, **v
 
     `stylesheet=`, `default_theme=` and `custom_theme=` take file paths
     (relative to the current directory, as before); Tesserae reads them
-    and passes `tre` the dicts. Their `*_spec=` forms take a dict
+    and passes `tess_re` the dicts. Their `*_spec=` forms take a dict
     directly -- give one form or the other, not both. Everything else
     (`theme_seed=`, `dark=`) forwards straight to `tess_ui.View`.
 

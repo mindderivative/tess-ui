@@ -1,4 +1,4 @@
-"""#223: `copy(text)` and `paste()` in a handler -- the OS clipboard through tre."""
+"""#223: `copy(text)` and `paste()` in a handler -- the OS clipboard through tess_re."""
 
 import pytest
 
@@ -35,7 +35,7 @@ def opened(tmp_path, text=VIEW):
     view = app.open_view("Main")
     app.show("main")
     if not view.window.write_clipboard("probe") or view.window.read_clipboard() != "probe":
-        pytest.skip("this machine has no clipboard (no display)")  # tre reads and writes the OS clipboard; CI's Linux has none
+        pytest.skip("this machine has no clipboard (no display)")  # tess_re reads and writes the OS clipboard; CI's Linux has none
     return view, app.bindings.viewmodel_for("main")
 
 

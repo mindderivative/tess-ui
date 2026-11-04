@@ -8,7 +8,7 @@ with `simulate`/`advance`.
 import math
 
 import pytest
-import tre
+import tess_re
 
 from tess_ui import Effect, Signal, Theme, interaction, tokens
 from tess_ui.controls import DISABLED_CONTENT, STATE_LAYER_SIZE, TARGET_SIZE, Checkbox
@@ -18,7 +18,7 @@ SEED = (0x67, 0x50, 0xA4, 0xFF)
 
 
 def _window():
-    window = tre.Window(width=300, height=200)
+    window = tess_re.Window(width=300, height=200)
     window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, gap=0,
                     align_items="flex_start", flex_direction="horizontal")
     before = window.create("box", width=40, height=40, focusable=True, role="button")
@@ -608,7 +608,7 @@ def _numbers(data):
 
 
 def _indicator(cls, **kwargs):
-    window = tre.Window(width=400, height=300)
+    window = tess_re.Window(width=400, height=300)
     window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, align_items="flex_start")
     ind = cls(window, **kwargs)
     window.root.add_child(ind.node)
@@ -655,7 +655,7 @@ def test_indeterminate_linear_progress_sweeps_forever_and_settles_on_a_value():
 def test_circular_progress_draws_the_value_clockwise_from_the_top():
     cp, window = _indicator(CircularProgress, value=0.25)
     assert (cp.node.get("layout_width"), cp.node.get("role")) == (48.0, "progressbar")
-    # tre reads path data back normalised (arcs as curves), so check where it starts and ends
+    # tess_re reads path data back normalised (arcs as curves), so check where it starts and ends
     assert cp.arc.get("data").startswith("M24,4 C") and cp.arc.get("stroke_width") == 4.0
     assert _numbers(cp.arc.get("data"))[-2:] == pytest.approx([24.0, 4.0])  # round the circle, back to the top
     assert cp.arc.get("trim_end") == 0.25 and cp.arc.get("stroke_color") == tokens.BASELINE["primary"]
@@ -702,7 +702,7 @@ def test_indicators_follow_the_theme():
 
 
 def _dial(**kwargs):
-    window = tre.Window(width=400, height=400)
+    window = tess_re.Window(width=400, height=400)
     window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, align_items="flex_start")
     before = window.create("box", width=40, height=40, focusable=True, role="button")
     window.root.add_child(before)
@@ -790,6 +790,6 @@ def test_setting_the_hour_moves_the_hand():
 
 
 def test_a_bad_dial_mode_is_an_error():
-    window = tre.Window(width=100, height=100)
+    window = tess_re.Window(width=100, height=100)
     with pytest.raises(ValueError, match="'hour' or 'minute'"):
         TimePickerDial(window, mode="second")

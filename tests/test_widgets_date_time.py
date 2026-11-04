@@ -2,7 +2,7 @@
 rest of the Date & Time category is in `tests/test_date_time.py` (M42).
 """
 
-from tre import Window
+from tess_re import Window
 
 from tess_ui.widgets import time_picker_dial
 

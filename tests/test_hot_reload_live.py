@@ -1,6 +1,6 @@
 """End to end: `App.run(hot_reload=True)` reloads a screen while the
 app is running -- `watchfiles` notices the edit on the watcher thread,
-and the reload reaches the live tree through `tre`'s `LoopHandle`.
+and the reload reaches the live tree through `tess_re`'s `LoopHandle`.
 
 Runs in a fresh subprocess: a second real `App.run()` in one pytest
 process can break unrelated tests (found by `tre`'s own M87 testing).

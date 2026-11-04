@@ -6,7 +6,7 @@ view/viewModel."
 
 Owns a registry of named `(View, ViewModel)` pairs -- each `*_View.yaml`
 + `*_ViewModel.py` file pair a real app registers once, up front -- and
-exactly one live `tre.Window`, created with the `App`. Screens are built
+exactly one live `tess_re.Window`, created with the `App`. Screens are built
 into it by Tesserae; `App.show(name)` attaches that screen's root
 to the window and detaches the one shown before. Neither a `View` nor
 its `ViewModel` is ever re-parsed,
@@ -27,8 +27,8 @@ from pathlib import Path
 from typing import Any, Callable
 
 from loguru import logger
-from tre import App as _TreApp
-from tre import Window
+from tess_re import App as _TreApp
+from tess_re import Window
 
 from tess_ui.follow import alive, app_of, register_app, register_window, retheme
 from tess_ui.listeners import Listeners, listen_window
@@ -51,10 +51,10 @@ KEEPALIVE_INTERVAL = 0.02
 
 def _keepalive_interval(keepalive: bool | float | None) -> float | None:
     """Seconds between keepalive ticks for `run(keepalive=)`, or `None` for
-    none. Off by default since 0.3.2: before `tre` 0.5.1 its idle window
+    none. Off by default since 0.3.2: before `tess_re` 0.5.1 its idle window
     starved other Python threads (so a hot-reload watcher couldn't hand a
     reload over without a tick: 0.3.1 ticked by default), and Tesserae now
-    requires a `tre` that doesn't. `None` is accepted as `False`, for code
+    requires a `tess_re` that doesn't. `None` is accepted as `False`, for code
     that passed 0.3.1's "follow hot_reload"."""
     if keepalive is None or keepalive is False:
         return None
@@ -126,7 +126,7 @@ def _os_dark(window: Any) -> bool | None:
     headless, never. One function, so tests can fix the answer."""
     try:
         value = window.get("dark")
-    except ValueError:  # a `tre` before 0.3.5.2
+    except ValueError:  # a `tess_re` before 0.3.5.2
         return None
     return None if value is None else bool(value)
 
@@ -151,7 +151,7 @@ def _apply_all(views: list[Any], apply: Any, undo: Any) -> None:
 
 def _from_file(path: Path, what: str, fn: Any) -> Any:
     """Wraps `fn(arg)`, a change read from `path`: a `ValueError` from
-    `tre` names the file, as a failed view reload does, and a change that
+    `tess_re` names the file, as a failed view reload does, and a change that
     applies is logged."""
 
     def apply(arg: Any) -> None:
@@ -179,7 +179,7 @@ def _non_negative(name: str, value: Any, *, allow_none: bool = False) -> Any:
 
 def _file_or_spec(owner: str, file_arg: str, file: Any, spec: Any, loader: Any) -> Any:
     """One `*=` file path / `*_spec=` dict pair -> the dict (or `None`).
-    The file is read here, by Tesserae; `tre` only ever gets the dict."""
+    The file is read here, by Tesserae; `tess_re` only ever gets the dict."""
     if file is not None and spec is not None:
         raise ValueError(f"{owner}: pass {file_arg}= or {file_arg}_spec=, not both")
     return loader(file) if file is not None else spec
@@ -212,17 +212,17 @@ class App:
     `default_theme=`/`custom_theme=` (file paths) or their `*_spec=`
     dict forms apply to every screen `build_view()`/`load()` builds. The
     theme is Tesserae's (`tess_ui.Theme`, `app.theme`); since M42 the
-    window's own `tre` theme is never set or read, as nothing `tre` draws
+    window's own `tess_re` theme is never set or read, as nothing `tess_re` draws
     uses it any more.
 
     `stylesheet=`/`stylesheet_spec=` here is the default stylesheet for
     every screen; `load(stylesheet=...)` replaces it for one screen (a
-    stylesheet is genuinely per-`View` in `tre`).
+    stylesheet is genuinely per-`View` in `tess_re`).
 
     The theme and default stylesheet files are read once, here, by
     Tesserae (so a `FontFallbackWarning` fires once, not once per
     screen); a screen's own `load(stylesheet=...)` file is read when it
-    loads. `tre` only ever gets the dicts.
+    loads. `tess_re` only ever gets the dicts.
     """
 
     def __init__(
@@ -296,7 +296,7 @@ class App:
         self._stylesheet_spec = _file_or_spec("App", "stylesheet", stylesheet, stylesheet_spec, load_stylesheet)
         #: The default stylesheet's file, for `run(hot_reload=True)`.
         self._stylesheet_file = stylesheet
-        #: Each screen's own stylesheet file -> the dict `tre` last accepted.
+        #: Each screen's own stylesheet file -> the dict `tess_re` last accepted.
         self._own_sheets: dict[Path, Any] = {}
         self._registered: dict[str, _Registered] = {}
         #: The navigation history (M66): each entry a screen's name and its
@@ -319,7 +319,7 @@ class App:
         self._window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0,
                               align_items="flex_start")
         # 0.3.0 M2: the window's own options, for a title bar the app draws
-        # (`tre` 0.5.0). A borderless window resizes from a 6 px border
+        # (`tess_re` 0.5.0). A borderless window resizes from a 6 px border
         # unless the app gives its own width (the design's Q6).
         self._resize_border: int | None = _non_negative("resize_border", resize_border, allow_none=True)
         self._window.set(resize_border=self._resize_for(bool(borderless)),
@@ -329,7 +329,7 @@ class App:
         if icon is not None:
             self.set_icon(icon)
         #: Whether the window is maximized, and whether it has the OS's
-        #: focus (0.3.0 M2): read-only, following `tre`'s `maximized` and
+        #: focus (0.3.0 M2): read-only, following `tess_re`'s `maximized` and
         #: `active` events, for a title bar's bindings --
         #: `{{ app.maximized.get() }}` swaps its maximize icon.
         self._maximized = Signal(bool(self._window.get("maximized")))
@@ -404,7 +404,7 @@ class App:
         self._followers: dict[Any, None] = {}
         register_app(self)
         #: Alt+Left and Alt+Right go back and forward (M66), and so do the
-        #: mouse's side buttons (M72, on `tre` 0.4.1). Key presses and pointer
+        #: mouse's side buttons (M72, on `tess_re` 0.4.1). Key presses and pointer
         #: events bubble to the window's root, wherever they happen.
         self._keys = Listeners()
         self._keys.listen(self._window.root, "key_down", self._history_key)
@@ -421,7 +421,7 @@ class App:
         #: view (M61); weakly held, so removed ones drop out.
         self._instances: weakref.WeakSet[Any] = weakref.WeakSet()
         self._window.on("color_scheme", self._on_color_scheme)
-        # the window's display options: the engine's (`tre` 0.5.4)
+        # the window's display options: the engine's (`tess_re` 0.5.4)
         self._set_window(dpi_scaling=bool(dpi_scaling), present_mode=present_mode, glyph_cache=bool(glyph_cache))
         if ripple not in ("nodes", "shader"):
             raise ValueError(f"App: ripple is 'nodes' (a circle per press) or 'shader' (one shader for them), got {ripple!r}")
@@ -771,10 +771,10 @@ class App:
     def set_theme_specs(self, default_theme_spec: Any, custom_theme_spec: Any) -> None:
         """Re-themes the running app in place: every view
         `build_view()`/`load()` made. Both theme dicts
-        are the complete new selection (`None` for none), as in `tre`,
+        are the complete new selection (`None` for none), as in `tess_re`,
         where each `set_theme` call is a fresh choice, not a patch; the
         seed and light/dark stay as they are. Bound values stay
-        live (`tre` M91). Runs `tre` code, so call it on the event-loop
+        live (`tess_re` M91). Runs `tess_re` code, so call it on the event-loop
         thread -- `run(hot_reload=True)` does, for theme-file edits.
         """
         old_theme = self._view_theme()
@@ -791,7 +791,7 @@ class App:
         every view `build_view()`/`load()` made with the default -- not
         one given its own `stylesheet=` -- is re-styled, and views built
         later use it too. `None` means no stylesheet. Bound values stay
-        live (`tre` M91). If `tre` rejects it, it raises and every screen
+        live (`tess_re` M91). If `tess_re` rejects it, it raises and every screen
         keeps its old stylesheet. Call it on the event-loop thread;
         `run(hot_reload=True)` does, when the default stylesheet file
         changes.
@@ -1003,7 +1003,7 @@ class App:
             raise KeyError(f"no window named {name!r} is open (open: {', '.join(self._windows) or 'none'})") from None
 
     def _appwindow_for(self, window: Any) -> Any:
-        """The `AppWindow` whose tre window this is, or None for the main window."""
+        """The `AppWindow` whose tess_re window this is, or None for the main window."""
         return next((each for each in self._windows.values() if each.window == window), None)
 
     def close_window(self, name: str) -> None:
@@ -1450,7 +1450,7 @@ class App:
         """
         return self._current
 
-    # -- the window (0.3.0 M2: custom windowing, `tre` 0.5.0) ----------------
+    # -- the window (0.3.0 M2: custom windowing, `tess_re` 0.5.0) ----------------
 
     #: The resize border of a borderless window whose app gives none.
     DEFAULT_RESIZE_BORDER = 6
@@ -1474,7 +1474,7 @@ class App:
     @property
     def resize_border(self) -> int:
         """How many pixels along each edge resize a borderless window
-        (`tre` turns it off while maximized or fullscreen, and on macOS).
+        (`tess_re` turns it off while maximized or fullscreen, and on macOS).
         Unless set, 6 while borderless and 0 otherwise."""
         return int(self._window.get("resize_border"))
 
@@ -1596,7 +1596,7 @@ class App:
 
     def _sync_maximized(self) -> None:
         # Before `run()` these set how the window opens, and no event says
-        # so; an open window's state is `tre`'s event's to report (it may
+        # so; an open window's state is `tess_re`'s event's to report (it may
         # still read the old state here, and the event follows).
         self._maximized.set(bool(self._window.get("maximized")))
 
@@ -1635,7 +1635,7 @@ class App:
         return len(self._window.root.children()) <= (1 if self._border is not None else 0)
 
     def thread_handle(self) -> Any:
-        """`tre`'s thread-safe `LoopHandle` for this app: the one
+        """`tess_re`'s thread-safe `LoopHandle` for this app: the one
         object that may cross threads. `handle.call_soon(fn)` runs `fn`
         (no arguments) on the event-loop thread at the next frame, waking
         an idle loop -- the way for a background thread to touch a view,
@@ -1775,23 +1775,23 @@ class App:
 
     def run(self, max_frames: int | None = None, *, hot_reload: bool = False,
             keepalive: bool | float = False) -> None:
-        """The one blocking call -- opens the real `Window` and runs `tre`'s
+        """The one blocking call -- opens the real `Window` and runs `tess_re`'s
         own real render loop, showing the screen `show()` made current and
         any nodes added to `app.window.root` by calls. Since 0.3.1 an app
         needs no screen: an empty window runs. Registering screens and not
         showing one is still the `RuntimeError` it was. `max_frames`
-        is the identical headless-CI-safe convention `tre`'s own examples
+        is the identical headless-CI-safe convention `tess_re`'s own examples
         already use (TRE v1 finding #261) -- omit it for a real,
         interactive run that exits only when the window closes. With no
         display it returns at once; a window whose GPU can't be set up
-        raises `RuntimeError` (`tre` 0.4.0).
+        raises `RuntimeError` (`tess_re` 0.4.0).
 
         `hot_reload=True` watches every screen built from a file --
         by `load()`, or by `build_view()` and given to `register()`
         -- its view file and everything it was built from, and reloads it
         in place while the app runs, its ViewModel and bindings kept. Each
         screen gets a `ViewWatcher` on a background thread (`watchfiles`),
-        which hands its reloads to the event loop through `tre`'s
+        which hands its reloads to the event loop through `tess_re`'s
         thread-safe `App.thread_handle()`. A failed reload is
         logged; the app keeps running. A screen built from a spec
         dict has no file, so it isn't watched, and the log says so. A
@@ -1810,10 +1810,10 @@ class App:
         `keepalive` (0.3.1, #77) keeps the window ticking about 50 times a
         second (a number is the seconds between ticks), for code that wants
         the loop woken regularly. It is off by default since 0.3.2:
-        `tre` 0.5.1 lets other Python threads run while the window sits
+        `tess_re` 0.5.1 lets other Python threads run while the window sits
         idle, so a hot-reload watcher, or any thread calling
         `thread_handle().call_soon`, needs no tick (0.3.1 ticked by default
-        with `hot_reload`, for `tre` 0.5.0.x). Each tick sleeps on the loop
+        with `hot_reload`, for `tess_re` 0.5.0.x). Each tick sleeps on the loop
         thread, so input can wait up to a tick, and an idle window costs
         about half a percent of one core.
 
@@ -1875,6 +1875,6 @@ class App:
             self._stop_watchers()
             if report:
                 Path(report).write_text(str(drawn[0]), encoding="utf-8")
-            # A later run() starts from a fresh tre App, as before
+            # A later run() starts from a fresh tess_re App, as before
             # thread_handle() existed; a handle from this run is spent.
             self._tre_app = None

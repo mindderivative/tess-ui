@@ -1,6 +1,6 @@
 """0.3.0 M2 (#40): the window on `App`, for a title bar the app draws
-(`tre` 0.5.0's custom windowing). Phase 1 (#45): the window's options.
-They're the window's own properties, so each is read back from `tre`.
+(`tess_re` 0.5.0's custom windowing). Phase 1 (#45): the window's options.
+They're the window's own properties, so each is read back from `tess_re`.
 """
 
 import pytest
@@ -43,7 +43,7 @@ def test_the_other_options_at_start_and_live():
     assert (app.min_width, app.min_height, app.fullscreen, app.system_menu) == (320, 200, True, True)
     app.min_width, app.min_height, app.fullscreen, app.system_menu = 400, 240, False, False
     assert (app.min_width, app.min_height, app.fullscreen, app.system_menu) == (400, 240, False, False)
-    assert app.window.get("min_width") == 400.0  # tre's own
+    assert app.window.get("min_width") == 400.0  # tess_re's own
 
 
 @pytest.mark.parametrize("name, value", [("resize_border", -1), ("min_width", -5), ("min_height", "wide"),
@@ -62,7 +62,7 @@ def test_the_icon_is_an_image_file(tmp_path, monkeypatch):
     handed = []
     app = App()
 
-    class Recording:  # tre's Window is native: its `set` can't be patched, so wrap it
+    class Recording:  # tess_re's Window is native: its `set` can't be patched, so wrap it
         def __init__(self, window):
             self._window = window
 
@@ -92,7 +92,7 @@ def test_the_icon_is_an_image_file(tmp_path, monkeypatch):
 def test_an_icon_given_at_start(tmp_path):
     png = tmp_path / "icon.png"
     Image.new("RGBA", (8, 8), (0, 0, 0, 255)).save(png)
-    App(icon=png)  # tre accepts it (it checks the byte count)
+    App(icon=png)  # tess_re accepts it (it checks the byte count)
     with pytest.raises(ValueError, match="isn't an image file"):
         App(icon=tmp_path / "missing.png")
 
@@ -154,7 +154,7 @@ def test_close_asks_first(monkeypatch):
             return getattr(self._window, name)
 
         def close(self):
-            closed.append(True)  # tre's own: close_requested first, on the next turn
+            closed.append(True)  # tess_re's own: close_requested first, on the next turn
 
     monkeypatch.setattr(app, "_window", Recording(app._window))
     app.close()

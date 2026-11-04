@@ -66,7 +66,7 @@ def test_its_own_buttons_still_work():
 def test_on_macos_it_makes_room_and_hides_its_buttons():
     app = _app(borderless=True)
     bar = _bar(app)
-    app._native_controls.set(True)  # as tre reports it on a Mac
+    app._native_controls.set(True)  # as tess_re reports it on a Mac
     app._titlebar_inset.set((28.0, 78.0))
     app.window.advance(16)
     node = bar.view.node

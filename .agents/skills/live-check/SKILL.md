@@ -5,7 +5,7 @@ description: Use when a Tesserae change should show on screen (a view, styleshee
 
 # Looking at what a change draws
 
-Unit tests say a value is right; they do not say the window looks right. `tools/shot.py` renders a view in tre's headless window (no GPU, no display) and saves the pixels, and the `read` tool shows the PNG. Use it for any change a user would see.
+Unit tests say a value is right; they do not say the window looks right. `tools/shot.py` renders a view in tess_re's headless window (no GPU, no display) and saves the pixels, and the `read` tool shows the PNG. Use it for any change a user would see.
 
 ## 1. Render
 

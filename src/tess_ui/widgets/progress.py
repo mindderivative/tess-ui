@@ -2,7 +2,7 @@
 `circular_progress`, `linear_progress`, `loading_indicator`.
 
 Since M40 each returns a Tesserae indicator (`tess_ui.controls`), not a
-bare `tre.Node`: `.node` is attached to the window's root, and `.value`
+bare `tess_re.Node`: `.node` is attached to the window's root, and `.value`
 is a `Signal` (0.0..=1.0, or `None` for indeterminate). `foreground=`
 replaces `primary`.
 """
@@ -15,7 +15,7 @@ from tess_ui import controls
 from tess_ui.widgets._controls import place
 
 if TYPE_CHECKING:
-    from tre import Window
+    from tess_re import Window
 
 
 def circular_progress(

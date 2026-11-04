@@ -12,7 +12,7 @@ They are built from Tesserae's own code, so a new kind, style field or
 token can't be left out by accident: the kinds, node keys, style fields, the
 colour, type and shape tokens, the icons, the accessibility roles, the
 handlers, and every built-in fragment's name and parameters. The layout
-enums (`flex_direction`, `align_items`, ...) are asked of `tre`, whose error
+enums (`flex_direction`, `align_items`, ...) are asked of `tess_re`, whose error
 for a bad value lists the good ones. `tests/test_yaml_schema.py` checks every
 YAML file in the repository against them and that the committed files match
 what this writes.
@@ -37,14 +37,14 @@ OUTPUT_DIRS = (ROOT / "src" / "tess_ui" / "schema", ROOT / "docs" / "schema")
 SITE = "https://mindderivative.github.io/tess-ui/schema/"
 DRAFT = "http://json-schema.org/draft-07/schema#"
 
-#: The style fields whose valid values `tre` lists in its errors.
-TRE_ENUMS = ("flex_direction", "flex_wrap", "position", "display", "grid_auto_flow")
+#: The style fields whose valid values `tess_re` lists in its errors.
+TESS_RE_ENUMS = ("flex_direction", "flex_wrap", "position", "display", "grid_auto_flow")
 
 
-# -- what Tesserae and tre say ---------------------------------------------------------------
+# -- what Tesserae and tess_re say ---------------------------------------------------------------
 
 def _tre_values(prop: str) -> list[str]:
-    """The values `tre` accepts for a node property, from the error it gives for a bad one."""
+    """The values `tess_re` accepts for a node property, from the error it gives for a bad one."""
     from tess_ui import App
 
     window = App(width=10, height=10).window
@@ -54,7 +54,7 @@ def _tre_values(prop: str) -> list[str]:
         found = re.search(r"must be one of: (.+)$", str(exc))
         if found:
             return [value.strip() for value in found.group(1).split(",")]
-    raise SystemExit(f"tre did not list the values of `{prop}`: has its error message changed?")
+    raise SystemExit(f"tess_re did not list the values of `{prop}`: has its error message changed?")
 
 
 def _fragments() -> dict[str, dict[str, Any]]:
@@ -112,7 +112,7 @@ def _definitions(fragment: bool) -> dict[str, Any]:
     sides = ("top", "right", "bottom", "left")
     spacing = {"anyOf": [loose(number), {"type": "object", "properties": {side: loose(number) for side in sides},
                                          "additionalProperties": False}]}
-    enums = {name: {"enum": _tre_values(name)} for name in TRE_ENUMS}
+    enums = {name: {"enum": _tre_values(name)} for name in TESS_RE_ENUMS}
     size_text = ("Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as "
                  "`calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum).")
     style_fields: dict[str, tuple[dict[str, Any], str]] = {

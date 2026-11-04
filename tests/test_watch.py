@@ -1,5 +1,5 @@
 """M29 Phase 3: `ViewWatcher` -- Tesserae-owned hot reload by polling
-file modification times, replacing `tre`'s own `poll_reload`.
+file modification times, replacing `tess_re`'s own `poll_reload`.
 
 Every edit here bumps the file's mtime explicitly (`_edit`), so the
 tests don't depend on how finely the filesystem records timestamps.
@@ -157,7 +157,7 @@ def test_a_spec_tre_rejects_is_reported_naming_the_view_file(tmp_path: Path):
 
 
 def test_a_reload_that_edits_a_bound_node_keeps_its_live_value(tmp_path: Path):
-    """M32: `tre` 0.3.3 (M91, `tre` issue #8) re-applies bindings after
+    """M32: `tess_re` 0.3.3 (M91, `tess_re` issue #8) re-applies bindings after
     `reconcile`. Before it, editing any property of a bound node made the
     node show its YAML placeholder until its `Signal` next changed."""
     import importlib.util, sys

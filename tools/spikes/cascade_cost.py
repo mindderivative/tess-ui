@@ -1,8 +1,8 @@
 """M34 Phase 2 Step 1 spike: the cost of Tesserae's own cascade, role
 resolution and bindings in Python, on tre 0.3.4's create/set, against
-tre's View doing the same work. A prototype, not product code."""
+tess_re's View doing the same work. A prototype, not product code."""
 import ast, time, statistics
-import tre
+import tess_re
 
 N = 2000          # boxes, each with a text child
 BOUND = 500       # texts bound to one shared Signal
@@ -26,9 +26,9 @@ def spec(label_binding=True):
                      "style": {"width": 40, "height": 20}, "children": [t]})
     return {"id": "root", "kind": "Container", "children": kids}
 
-# -- tre's reference roles, so both sides paint the same colours ----------
+# -- tess_re's reference roles, so both sides paint the same colours ----------
 def roles_for(seed):
-    w = tre.Window(width=10, height=10); w.set_theme(seed)
+    w = tess_re.Window(width=10, height=10); w.set_theme(seed)
     return {r: w.theme.role(r) for r in ("primary", "on_primary", "tertiary")}
 
 # -- the Tesserae prototype --------------------------------------------------
@@ -132,15 +132,15 @@ s = spec()
 class VM: pass
 def build_tesserae():
     vm = VM(); vm.label = Signal("bound")
-    w = tre.Window(width=800, height=600)
+    w = tess_re.Window(width=800, height=600)
     b = Built(w, s, SHEET, A, vm); w.root.add_child(b.root)
     return b, vm
 
 def build_tre():
-    v = tre.View(spec=s, stylesheet_spec=SHEET, theme_seed=SEED_A)
-    class TVM(tre.ViewModel):
+    v = tess_re.View(spec=s, stylesheet_spec=SHEET, theme_seed=SEED_A)
+    class TVM(tess_re.ViewModel):
         def __init__(self, view):
-            self.label = tre.Signal("bound"); super().__init__(view)
+            self.label = tess_re.Signal("bound"); super().__init__(view)
     return v, TVM(v)
 
 t_build, (b, vm) = timeit(build_tesserae)
@@ -157,7 +157,7 @@ assert b.nodes["b7"].get("fill") == B["tertiary"] and b.nodes["b8"].get("fill") 
 assert b.nodes["b8"].get("corner_radius") == v.node("b8").get("corner_radius") == 6.0
 
 print(f"{N} boxes + {N} texts, 4-rule stylesheet, {BOUND} texts bound to one Signal (median of 5)")
-print(f"{'':28}{'Tesserae prototype':>20}{'tre View':>12}")
+print(f"{'':28}{'Tesserae prototype':>20}{'tess_re View':>12}")
 print(f"{'build (incl. cascade, bind)':28}{t_build:>17.1f} ms{r_build:>9.1f} ms")
 print(f"{'theme switch':28}{t_theme:>17.1f} ms{r_theme:>9.1f} ms")
 print(f"{'one Signal.set -> 500 nodes':28}{t_bound:>17.1f} ms{r_bound:>9.1f} ms")

@@ -1,12 +1,12 @@
 """M31 Phase 1: theme files are hot-reloaded, re-theming every screen.
 
-M31 also gave the window `tre`'s theme, for the imperative widgets and
+M31 also gave the window `tess_re`'s theme, for the imperative widgets and
 tints that read it then. Since M42 Phase 7 nothing does, so the window
 is never themed: the app's theme is `app.theme` and its screens'.
 
 The watcher tests use a `FakeHandle`, as `test_watch_thread.py` does:
 the watcher queues each reload, and the test runs it on this (main)
-thread, as `tre`'s loop would.
+thread, as `tess_re`'s loop would.
 """
 
 import importlib.util
@@ -94,8 +94,8 @@ def watching():
 
 
 def test_the_window_is_never_themed(tmp_path: Path):
-    """Since M42 nothing `tre` draws reads the window's theme, so `App`
-    no longer sets it (`tre` 0.3.5 removes `Window.set_theme`)."""
+    """Since M42 nothing `tess_re` draws reads the window's theme, so `App`
+    no longer sets it (`tess_re` 0.3.5 removes `Window.set_theme`)."""
     app = App(theme_seed=SEED, custom_theme_spec={"colors": {"primary": "#0000FF"}})
     app.load(*_pair(tmp_path, "Home"))
     window = app.show("Home")

@@ -11,7 +11,7 @@ text-only extended FAB they make declarable.
 import pytest
 import yaml
 from helpers import view_from
-from tre import Window
+from tess_re import Window
 
 from tess_ui.spec import expand_components, expand_components_to_spec
 from tess_ui.spec.expand import ComponentError

@@ -1,11 +1,11 @@
-"""M42 Phase 5: `segmented_button` and `pagination`, new by Q1 (`tre` had
+"""M42 Phase 5: `segmented_button` and `pagination`, new by Q1 (`tess_re` had
 them as `add_segmented_button`/`add_pagination`, never wrapped), built on
-`tre` 0.3.4's building blocks and M39's interaction. Driven headlessly
+`tess_re` 0.3.4's building blocks and M39's interaction. Driven headlessly
 with `simulate`/`advance`.
 """
 
 import pytest
-import tre
+import tess_re
 
 from tess_ui import Theme, tokens
 from tess_ui.widgets import pagination, segmented_button
@@ -17,7 +17,7 @@ CLEAR = (0, 0, 0, 0)
 
 
 def _window():
-    window = tre.Window(width=600, height=300)
+    window = tess_re.Window(width=600, height=300)
     window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, gap=0,
                     align_items="flex_start")
     return window

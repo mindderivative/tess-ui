@@ -1,5 +1,5 @@
 """MD3 interaction feedback: a state layer and a ripple, built from
-`tre` 0.3.4's building blocks, since `tre` 0.3.5 draws none (`tre` D7).
+`tess_re` 0.3.4's building blocks, since `tess_re` 0.3.5 draws none (`tess_re` D7).
 
 A node that gets an `Interaction` holds two extra children, after its
 content, absolutely positioned, never hit-tested and hidden from
@@ -35,7 +35,7 @@ __all__ = ["DRAGGED", "FOCUSED", "HOVERED", "Interaction", "PRESSED"]
 
 RGBA = tuple[int, int, int, int]
 #: A listener registrar: `listen(node, event, fn)` returns a function
-#: that removes the listener (`tre` keeps one listener per event, so the
+#: that removes the listener (`tess_re` keeps one listener per event, so the
 #: caller shares a dispatcher between everyone listening on a node).
 Listen = Callable[[Any, str, Callable[[Any], None]], Callable[[], None]]
 
@@ -312,7 +312,7 @@ class _Ripple:
         owner.clip.add_child(self.circle)
         self.circle.animate("scale", 1.0, motion.duration(owner.window, PRESS_GROW_MS), easing=STANDARD)
         self.circle.animate("opacity", PRESSED, motion.duration(owner.window, PRESS_FADE_IN_MS))
-        # `tre` has no timers; an invisible animation of the circle's
+        # `tess_re` has no timers; an invisible animation of the circle's
         # stroke width stands in for one, so a quick tap still shows.
         self.circle.animate("stroke_width", 0.001, MINIMUM_PRESS_MS, on_complete=self._held)
 

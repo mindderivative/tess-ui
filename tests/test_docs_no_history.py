@@ -17,7 +17,7 @@ HISTORY = [
     (re.compile(r"\(M\d+\b|\bM\d+ Phase\b"), "a milestone number"),
     (re.compile(r"\b0\.\d+\.\d+(?:\.\d+)?\b"), "a version number"),
     (re.compile(r"\(#\d+\)|/issues/\d+|\btre#\d+"), "an issue number"),
-    (re.compile(r"\b(?:since|before|after|until) (?:tre )?\d+\.\d+", re.IGNORECASE), "a version"),
+    (re.compile(r"\b(?:since|before|after|until) (?:tess_re )?\d+\.\d+", re.IGNORECASE), "a version"),
 ]
 PAGES = sorted(p for p in DOCS.rglob("*.md") if p not in ALLOWED)
 

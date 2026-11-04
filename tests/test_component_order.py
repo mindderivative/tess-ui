@@ -59,8 +59,8 @@ def test_the_things_that_wait_on_tre_are_marked_and_have_something_waiting(tool)
     below = tool.dependents(nodes)
     for name, node in nodes.items():
         if node.get("gated"):
-            assert node["kind"] == "tre" and any(nodes[d]["kind"] == "component" for d in below[name]), name
-    assert {n for n, node in nodes.items() if node["kind"] == "tre"} >= {"engine-a11y", "engine-layout-animation", "engine-input"}
+            assert node["kind"] == "tess_re" and any(nodes[d]["kind"] == "component" for d in below[name]), name
+    assert {n for n, node in nodes.items() if node["kind"] == "tess_re"} >= {"engine-a11y", "engine-layout-animation", "engine-input"}
 
 
 def test_a_requested_tre_change_is_asked_for_only_after_what_it_rests_on(tool):

@@ -62,17 +62,17 @@ jobs:
       - name: Install the built wheel
         run: pip install tesserae/dist/*.whl pytest jsonschema  # jsonschema: tests/test_yaml_schema.py (0.3.2)
 
-      # tre's source, only for the real font file tests/test_themes.py reads.
+      # tess-re's source, only for the real font file tests/test_themes.py reads.
       - uses: actions/checkout@v4
         with:
-          repository: mindderivative/tre
-          ref: v0.5.5
-          path: tre
+          repository: mindderivative/tess-re
+          ref: v0.6.0
+          path: tess-re
 
       - name: Test the built wheel
         working-directory: tesserae
         env:
-          TRE_SOURCE_DIR: ${{ github.workspace }}/tre
+          TESS_RE_SOURCE_DIR: ${{ github.workspace }}/tess-re
         run: |
           python -c "import tess_ui; assert 'site-packages' in tess_ui.__file__, tess_ui.__file__; print(tess_ui.__file__)"
           pytest tests/

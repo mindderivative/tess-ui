@@ -3,7 +3,7 @@ from its fragment) and docked search view (`tess_ui.overlays.SearchView`).
 """
 
 import pytest
-import tre
+import tess_re
 
 from tess_ui import Theme, tokens
 from tess_ui.overlays import SearchView
@@ -14,7 +14,7 @@ SEED = (0x67, 0x50, 0xA4, 0xFF)
 
 
 def _window():
-    window = tre.Window(width=600, height=500)
+    window = tess_re.Window(width=600, height=500)
     window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, gap=0,
                     align_items="flex_start", flex_direction="vertical")
     return window
@@ -39,7 +39,7 @@ def test_the_search_bar_is_md3s():
 
 
 def test_the_placeholder_is_hint_text_not_the_fields_text():
-    """`tre`'s search bar (and the fragment) filled the field with it."""
+    """`tess_re`'s search bar (and the fragment) filled the field with it."""
     window, bar, _ = _bar_and_view()
     field = bar.part("field")
     assert field.get("text") == "" and field.get("placeholder") == "Search mail"

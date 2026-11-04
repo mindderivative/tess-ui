@@ -6,7 +6,7 @@ the base, proved on `button`.
 import math
 
 import pytest
-import tre
+import tess_re
 
 from tess_ui import Theme, interaction, tokens
 from tess_ui.spec import expand_components
@@ -18,7 +18,7 @@ BASE = tokens.baseline_scheme()
 
 
 def _window():
-    window = tre.Window(width=500, height=300)
+    window = tess_re.Window(width=500, height=300)
     window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, gap=0,
                     align_items="flex_start")
     return window
@@ -50,7 +50,7 @@ def test_the_label_is_sized_to_its_text_and_centred():
     b = button(window, "Save", 120, 40)
     window.advance(16)
     label = b.part("label")
-    # label_large: Roboto 14/20, 500; tre's line_height is a multiple of the font size
+    # label_large: Roboto 14/20, 500; tess_re's line_height is a multiple of the font size
     width, height = window.measure_text("Save", font_family="Roboto", font_size=14.0, font_weight=500.0,
                                         line_height=20.0 / 14.0)
     # at least its text, rounded up to whole pixels (the engine rounds a width down, which wrapped text that fit),
@@ -276,7 +276,7 @@ def test_pressing_an_end_button_takes_from_its_one_neighbour():
 
 
 def test_repeated_presses_dont_compound():
-    """`tre`'s reflow compounded on every layout pass; this one doesn't."""
+    """`tess_re`'s reflow compounded on every layout pass; this one doesn't."""
     window = _window()
     bg = button_group(window, ["A", "B"], 60, 40)
     window.advance(16)

@@ -9,7 +9,7 @@ import importlib.util
 import sys
 
 import pytest
-import tre
+import tess_re
 
 from tess_ui import App, Signal, View, ViewModel, instantiate
 
@@ -60,7 +60,7 @@ def test_a_viewmodel_reaches_the_app_and_its_state():
 def test_state_can_be_set_later_and_app_of_finds_the_app():
     app = App()
     view = View(_label_view("{{ 'none' }}"), window=app.window)
-    assert App.of(view) is app and App.of(app.window) is app and App.of(tre.Window(width=10, height=10)) is None
+    assert App.of(view) is app and App.of(app.window) is app and App.of(tess_re.Window(width=10, height=10)) is None
     vm = Plain(view)
     with pytest.raises(AttributeError, match=r"Plain.state: the app has no state -- give App\(state=...\)"):
         vm.state

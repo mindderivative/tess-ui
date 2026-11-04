@@ -6,7 +6,7 @@ Each is built by Tesserae from its fragment (or several) with
 `tess_ui.widgets._composed.Widget`, with MD3's feedback in its
 content's colour. The split button's hover and the button group's press
 morph animate `corner_radius` on the part and its feedback's clip, which
-`tre`'s own factories did in Rust with no public Python API.
+`tess_re`'s own factories did in Rust with no public Python API.
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from tess_ui import motion
 
 if TYPE_CHECKING:
     from tess_ui.theme import Theme
-    from tre import Window
+    from tess_re import Window
 
 
 #: `button`'s variants: the fragment, and its label's colour role (its feedback's too).
@@ -198,7 +198,7 @@ def extended_fab(
 _SPLIT_BUTTONS = {"elevated": "SplitButtonElevated", "filled": "SplitButtonFilled",
                   "filled_tonal": "SplitButtonFilledTonal", "outlined": "SplitButtonOutlined",
                   "text": "SplitButtonText"}
-#: `tre`'s split button: the facing corners tighten to this on hover, over 100 ms.
+#: `tess_re`'s split button: the facing corners tighten to this on hover, over 100 ms.
 SPLIT_TIGHTENED = 8.0
 MORPH_MS = 100
 
@@ -220,7 +220,7 @@ def split_button(
 ) -> Widget:
     """MD3's split button: a `leading`
     action and a `trailing` chevron, parts of the returned `Widget`. While
-    it's hovered, the corners where the two meet tighten, as `tre`'s did.
+    it's hovered, the corners where the two meet tighten, as `tess_re`'s did.
     `on_click` is the action, `on_menu` the chevron."""
     rest = float(height) / 2
     widget = Widget(window, _variant("split button", variant, _SPLIT_BUTTONS),
@@ -248,7 +248,7 @@ def split_button(
     return widget
 
 
-#: The pressed child's corners in a button group, by its height (`tre`'s):
+#: The pressed child's corners in a button group, by its height (`tess_re`'s):
 #: 8 up to 38 px, 12 up to 44, else 16.
 def _group_tightened(height: float) -> float:
     return 8.0 if height <= 38 else 12.0 if height <= 44 else 16.0
@@ -273,7 +273,7 @@ def button_group(
     """MD3's button group: one button per label, `width`x`height`,
     8 px apart; parts `b0`, `b1`, ... While one is pressed, its corners
     tighten and it grows 12 px, its neighbours sharing the loss, and it
-    all comes back on release -- the intent of `tre`'s, whose reflow
+    all comes back on release -- the intent of `tess_re`'s, whose reflow
     compounded and never restored. `on_click(index)` hears each."""
     fragment_name, _ = _BUTTONS[variant] if variant in _BUTTONS else (None, None)
     if fragment_name is None:

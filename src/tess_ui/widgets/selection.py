@@ -2,7 +2,7 @@
 `checkbox`, `slider`, `radio_button`, `switch`, `spin_box`.
 
 Since M40 each returns a Tesserae control (`tess_ui.controls`), not a
-bare `tre.Node` (the one break M34 wrote down, P6): `.node` is its node,
+bare `tess_re.Node` (the one break M34 wrote down, P6): `.node` is its node,
 already attached to the window's root, and its state is a `Signal`
 (`checkbox(...).checked`). Each takes `theme=` (a `tess_ui.Theme`;
 MD3's baseline colours without one) and `label=`. `background` is the
@@ -17,7 +17,7 @@ from tess_ui import controls
 from tess_ui.widgets._controls import place
 
 if TYPE_CHECKING:
-    from tre import Window
+    from tess_re import Window
 
 
 def checkbox(
@@ -88,7 +88,7 @@ def spin_box(
     **kwargs: Any,
 ) -> controls.SpinBox:
     """A number field between − and + buttons (`min=`, `max=`, `step=`).
-    `value` may be a number or its text, as `tre`'s took."""
+    `value` may be a number or its text, as `tess_re`'s took."""
     number = float(value) if isinstance(value, str) else value
     if isinstance(number, float) and number.is_integer() and isinstance(kwargs.get("step", 1), int):
         number = int(number)

@@ -1,7 +1,7 @@
 """M37 Phase 3: the tree differ. Builds one expanded view spec with
-`tre`'s `View` and with Tesserae's compiler, lays both out in same-sized
+`tess_re`'s `View` and with Tesserae's compiler, lays both out in same-sized
 windows, and compares them node by node through 0.3.4's `get()`. Since
-M43 `tre`'s side is a plain-data dump (`tre_dump`), recorded on 0.3.4.
+M43 `tess_re`'s side is a plain-data dump (`tre_dump`), recorded on 0.3.4.
 
 Used by `tests/test_tree_parity.py`; kept importable for poking at a
 single view by hand.
@@ -9,7 +9,7 @@ single view by hand.
 
 from __future__ import annotations
 
-import tre
+import tess_re
 
 from tess_ui import tokens
 from tess_ui.spec.build import build
@@ -20,19 +20,19 @@ SIZE = (500, 400)
 LAYOUT = ("layout_x", "layout_y", "layout_width", "layout_height")
 PAINT = ("fill", "stroke_color", "stroke_width", "corner_radius", "opacity")
 TEXT = ("text", "font_family", "font_size", "font_weight", "line_height")
-#: Fields `tre` never had (M39): its builder rejects them, so its copy of
+#: Fields `tess_re` never had (M39): its builder rejects them, so its copy of
 #: the spec goes without; they add no layout or paint the differ reads.
 TESS_UI_ONLY = ("a11y", "interaction", "group", "component_of")  # component_of: the cascade tag (M57)
 #: Kinds Tesserae draws as MD3's controls since M40 (Q2: MD3's look, not
-#: tre's legacy one), so they aren't compared.
+#: tess_re's legacy one), so they aren't compared.
 CONTROLS = frozenset({"Checkbox", "RadioButton", "Switch", "Slider", "CircularProgress", "LinearProgress",
                       "LoadingIndicator", "TimePickerDial"})
 
 
 def for_tre(spec, sizes=None):
-    """`spec` without Tesserae-only fields, for `tre`'s builder. `sizes`
+    """`spec` without Tesserae-only fields, for `tess_re`'s builder. `sizes`
     (id -> width/height) gives text the content size Tesserae measures for
-    it (M41), since `tre`'s text has none."""
+    it (M41), since `tess_re`'s text has none."""
     out = {k: v for k, v in spec.items() if k not in TESS_UI_ONLY}
     if sizes and spec.get("id") in sizes:
         out["style"] = {**sizes[spec["id"]], **(spec.get("style") or {})}
@@ -66,23 +66,23 @@ def _text_sizes(built, spec):
 
 
 def tre_dump(spec, frames=None, stylesheet=None):
-    """`tre`'s side, as plain data: for each node the differ compares, every
-    property `tre` can read back (and its `elevation`). Recorded by
+    """`tess_re`'s side, as plain data: for each node the differ compares, every
+    property `tess_re` can read back (and its `elevation`). Recorded by
     `tests/test_tree_parity.py` on 0.3.4, since 0.3.5 has no `View`."""
-    probe = tre.Window(width=SIZE[0], height=SIZE[1])
+    probe = tess_re.Window(width=SIZE[0], height=SIZE[1])
     sizes = _text_sizes(build(probe, spec, scheme=tokens.color_scheme(SEED), stylesheet=stylesheet, frames=frames),
                         spec)
-    view = tre.View(spec=for_tre(spec, sizes), theme_seed=SEED, **({"stylesheet_spec": stylesheet} if stylesheet else {}))
+    view = tess_re.View(spec=for_tre(spec, sizes), theme_seed=SEED, **({"stylesheet_spec": stylesheet} if stylesheet else {}))
     if frames:
         for node_id, (rgba, w, h) in frames.items():
             view.node(node_id).push_frame(rgba, w, h)
-    tre_window = tre.Window.from_view(view, width=SIZE[0], height=SIZE[1], title="tre")
+    tre_window = tess_re.Window.from_view(view, width=SIZE[0], height=SIZE[1], title="tess_re")
     tre_window.advance(16)
     dump = {}
     for node_id, node_spec in ids(spec):
         kind = node_spec.get("kind")
         if kind in CONTROLS:
-            continue  # MD3's controls, deliberately not tre's legacy drawing (M40 Q2)
+            continue  # MD3's controls, deliberately not tess_re's legacy drawing (M40 Q2)
         theirs = view.node(node_id)
         props = LAYOUT + PAINT + (TEXT if kind in ("Text", "Link", "TextField") else ())
         values = {}
@@ -90,16 +90,16 @@ def tre_dump(spec, frames=None, stylesheet=None):
             value = _get(theirs, prop)
             if isinstance(value, tuple) and value[:1] == ("n/a",):
                 if prop == "text" and hasattr(theirs, "get_text"):
-                    value = theirs.get_text()  # tre's legacy getter where get() doesn't reach
+                    value = theirs.get_text()  # tess_re's legacy getter where get() doesn't reach
                 else:
-                    continue  # not readable on tre's side: nothing to compare
+                    continue  # not readable on tess_re's side: nothing to compare
             values[prop] = value
         dump[node_id] = values
     return dump
 
 
 def build_ours(spec, frames=None, stylesheet=None):
-    window = tre.Window(width=SIZE[0], height=SIZE[1])
+    window = tess_re.Window(width=SIZE[0], height=SIZE[1])
     # like a `Window.from_view` root: no padding, and an unsized root sized to its content
     window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, align_items="flex_start")
     built = build(window, spec, scheme=tokens.color_scheme(SEED), stylesheet=stylesheet, frames=frames)
@@ -109,8 +109,8 @@ def build_ours(spec, frames=None, stylesheet=None):
 
 
 def diff(spec, frames=None, stylesheet=None, theirs=None):
-    """Every difference, as `(node_id, property, tre's value, Tesserae's)`,
-    against `theirs` (a `tre_dump`, recorded), or a live `tre` on 0.3.4."""
+    """Every difference, as `(node_id, property, tess_re's value, Tesserae's)`,
+    against `theirs` (a `tre_dump`, recorded), or a live `tess_re` on 0.3.4."""
     if theirs is None:
         theirs = tre_dump(spec, frames, stylesheet)
     built = build_ours(spec, frames, stylesheet)
@@ -132,8 +132,8 @@ def diff(spec, frames=None, stylesheet=None, theirs=None):
                         out.append((node_id, "shadows", expected, _get(outer, "shadows")))
                 continue
             if kind == "TextField" and prop in ("fill", "caret_color"):
-                continue  # tre's own view builder draws a TextField's text in a fixed dark ink; Tesserae's is the theme's
-            # On a TextField, tre's `fill` reads back its text colour, which
+                continue  # tess_re's own view builder draws a TextField's text in a fixed dark ink; Tesserae's is the theme's
+            # On a TextField, tess_re's `fill` reads back its text colour, which
             # Tesserae's inner `text_input` carries; its background can't be read.
             # a Link is a box holding its text since M41; its text props are the text's
             ours_node = inner if (kind in ("TextField", "Link") and (prop in TEXT or prop == "fill")) else outer

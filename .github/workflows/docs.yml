@@ -1,9 +1,9 @@
-# Builds docs/ (MkDocs) and deploys it to GitHub Pages. Mirrors tre's
+# Builds docs/ (MkDocs) and deploys it to GitHub Pages. Mirrors tess-re's
 # own real docs.yml -- see that repo's own workflow for the full real
 # reasoning behind this exact shape (separate from ci.yml's own gate,
 # scoped via `paths:` so an unrelated source commit doesn't redeploy
 # the same site, `mkdocs build --strict` catches broken internal
-# links). Unlike tre, this repo's docs never import tess_ui/tre
+# links). Unlike tess-re, this repo's docs never import tess_ui or tess_re
 # itself -- pure prose + links -- so no Rust toolchain or editable
 # install is needed here at all, just the two doc-build packages.
 #

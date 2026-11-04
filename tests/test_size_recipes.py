@@ -1,5 +1,5 @@
 """#261 (part of #257): "the parent's size minus something" in the flow needs no calc: `flex: fill` with margins or a gap is exact. What cannot be said
-(an absolute node stretched between two edges) is asked of tre in `design/tre-requests/absolute-insets.md`; the tests say what tre does today."""
+(an absolute node stretched between two edges) is asked of tess_re in `design/tre-requests/absolute-insets.md`; the tests say what tess_re does today."""
 
 import pytest
 
@@ -53,10 +53,10 @@ def test_the_recipes_follow_the_parent_when_it_changes(tmp_path):
 
 
 def test_what_tre_takes_for_a_size_today():
-    """The facts the feature rests on (tre 0.5.7); if tre changes one, this fails. 0.5.6 took only a number, `auto` or a percentage, and no insets."""
-    import tre
+    """The facts the feature rests on (tre 0.5.7); if tess_re changes one, this fails. 0.5.6 took only a number, `auto` or a percentage, and no insets."""
+    import tess_re
 
-    window = tre.Window(width=300, height=200)
+    window = tess_re.Window(width=300, height=200)
     node = window.create("box")
     for ok in (40, 40.5, "auto", "50%", "calc(100% - 16)", "100% - 16", "fit-content"):
         node.set(width=ok)
@@ -71,9 +71,9 @@ def test_what_tre_takes_for_a_size_today():
 
 
 def test_an_absolute_node_is_stretched_between_two_insets():
-    import tre
+    import tess_re
 
-    window = tre.Window(width=300, height=200)
+    window = tess_re.Window(width=300, height=200)
     node = window.create("box", position="absolute", x=8.0, right=16.0, height=20.0)
     window.root.add_child(node)
     window.advance(32)
@@ -81,9 +81,9 @@ def test_an_absolute_node_is_stretched_between_two_insets():
 
 
 def test_an_absolute_node_is_not_stretched_by_a_margin_today():
-    import tre
+    import tess_re
 
-    window = tre.Window(width=300, height=200)
+    window = tess_re.Window(width=300, height=200)
     node = window.create("box", position="absolute", x=8.0, width="100%", height=20.0, margin_right=16.0)
     window.root.add_child(node)
     window.advance(32)

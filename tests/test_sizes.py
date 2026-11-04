@@ -1,7 +1,7 @@
-"""#279: the size and inset check agrees with tre 0.5.7 (it takes what tre takes and refuses what tre refuses), so a mistake is found at load, where it is written."""
+"""#279: the size and inset check agrees with tre 0.5.7 (it takes what tess_re takes and refuses what tess_re refuses), so a mistake is found at load, where it is written."""
 
 import pytest
-import tre
+import tess_re
 
 from tess_ui.spec.sizes import INSET_FIELDS, LIMIT_FIELDS, SIZE_FIELDS, size_problem
 
@@ -25,15 +25,15 @@ def engine_takes(window, field, value):
 
 @pytest.fixture(scope="module")
 def window():
-    return tre.Window(width=300, height=200)
+    return tess_re.Window(width=300, height=200)
 
 
 @pytest.mark.parametrize("field", FIELDS)
 def test_the_check_agrees_with_tre(window, field):
-    """For every value in the corpus: Tesserae finds no problem exactly when tre takes it."""
+    """For every value in the corpus: Tesserae finds no problem exactly when tess_re takes it."""
     disagree = [(v, size_problem(field, v), engine_takes(window, field, v)) for v in VALUES
                 if (size_problem(field, v) is None) != engine_takes(window, field, v) and v is not None]
-    assert not disagree, f"{field}: " + "; ".join(f"{v!r}: check says {p or 'fine'}, tre {'takes' if t else 'refuses'} it" for v, p, t in disagree)
+    assert not disagree, f"{field}: " + "; ".join(f"{v!r}: check says {p or 'fine'}, tess_re {'takes' if t else 'refuses'} it" for v, p, t in disagree)
 
 
 def test_a_field_that_is_not_a_size_is_not_judged():

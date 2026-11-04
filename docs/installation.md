@@ -7,9 +7,9 @@ Tesserae is on PyPI as [**`tesserae-ui`**](https://pypi.org/project/tesserae-ui/
 pip install tesserae-ui
 ```
 
-That also installs the rendering engine, `tre`, which is on PyPI as
+That also installs the rendering engine, `tess_re`, which is on PyPI as
 [`tesserae-engine`](https://pypi.org/project/tesserae-engine/) (imported as
-`tre`), and the libraries Tesserae reads files with. A virtual environment keeps
+`tess_re`), and the libraries Tesserae reads files with. A virtual environment keeps
 it tidy:
 
 ```bash
@@ -28,8 +28,8 @@ the two hold the same `tesserae` package, so they must not be installed together
   command-line tools is older: install Python from python.org or Homebrew.
 - **Linux x86-64, macOS on Apple silicon, or Windows x64.** On these every
   dependency, the engine included, installs as a prebuilt wheel. Elsewhere
-  (Linux ARM, Intel macOS) pip builds `tre` from source, which needs Rust; see
-  [`tre`'s installation guide](https://mindderivative.github.io/tre/installation/).
+  (Linux ARM, Intel macOS) pip builds `tess_re` from source, which needs Rust; see
+  [`tess_re`'s installation guide](https://mindderivative.github.io/tess-re/installation/).
 - **A graphics driver the engine can use.** On Linux that means Vulkan.
 
 ### If a window won't open on Linux
@@ -69,14 +69,14 @@ python examples/counter/app.py
 
 The last command opens a window with a `Count: 0` label and a button that counts.
 
-- **A newer or local `tre`.** Tesserae asks for one exact `tre` (`tesserae-engine`)
+- **A newer or local `tess_re`.** Tesserae asks for one exact `tess_re` (`tesserae-engine`)
   release, the one its tests were run on, so `pip install --upgrade tesserae-engine`
   changes nothing. To try
-  a `tre` checkout you're working on, install it editable with
-  `python -m maturin develop --release --manifest-path /path/to/tre/crates/engine-py/Cargo.toml`
+  a `tess_re` checkout you're working on, install it editable with
+  `python -m maturin develop --release --manifest-path /path/to/tess-re/crates/engine-py/Cargo.toml`
   with Tesserae's environment active, and reinstall the released one with
   `pip install --force-reinstall tesserae-engine` before trusting a test run. A test
-  that reads a font file from `tre`'s source tree needs `TRE_SOURCE_DIR` set to
+  that reads a font file from `tess_re`'s source tree needs `TESS_RE_SOURCE_DIR` set to
   that checkout.
 - **Documentation.** `pip install mkdocs mkdocs-material`, then `mkdocs serve`. The Python and
   YAML references and the component and stylesheet pages are written from the code

@@ -1,12 +1,12 @@
 """M42 Phase 3: `image` and `video`, built by Tesserae (`window.create
-("image")` with decoded pixels), off `tre`'s `add_image_from_bytes`,
+("image")` with decoded pixels), off `tess_re`'s `add_image_from_bytes`,
 `add_video` and `push_frame`, which 0.3.5 removes.
 """
 
 from pathlib import Path
 
 import pytest
-import tre
+import tess_re
 
 from tess_ui import Theme
 from tess_ui.images import decode_image
@@ -17,7 +17,7 @@ SEED = (0x67, 0x50, 0xA4, 0xFF)
 
 
 def _window():
-    window = tre.Window(width=400, height=300)
+    window = tess_re.Window(width=400, height=300)
     window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, align_items="flex_start")
     return window
 
@@ -86,7 +86,7 @@ BASE = tokens.baseline_scheme()
 
 
 def _graph():
-    window = tre.Window(width=600, height=400)
+    window = tess_re.Window(width=600, height=400)
     window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, align_items="flex_start")
     g = node_graph(window, 500, 300)
     a = graph_node(window, g, "Input", 20, 20, 120, 80)

@@ -98,7 +98,7 @@ class _FakeTre:
 
 @pytest.fixture
 def run_app(monkeypatch):
-    """Runs a one-screen app on a fake `tre` loop; returns the loop and
+    """Runs a one-screen app on a fake `tess_re` loop; returns the loop and
     whether watchers started."""
     def run(**kwargs):
         fake, started = _FakeTre(), []

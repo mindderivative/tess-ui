@@ -18,7 +18,7 @@ draw:
 
 Numbers are logical pixels from the canvas's top-left; `color` is a theme role, a CSS colour or `role@N%`. `draw:` may be an expression, so a
 canvas follows the Signals it reads; `plan(...)` checks the list and returns the commands with their colours resolved, and `painter(...)` makes
-the callback tre's canvas runs.
+the callback tess_re's canvas runs.
 """
 
 from __future__ import annotations
@@ -80,7 +80,7 @@ def plan(draw: Any, colour: Callable[[Any], RGBA]) -> list[tuple[Any, ...]]:
 
 
 def painter(commands: list[tuple[Any, ...]]) -> Callable[[Any], None]:
-    """The callback tre's canvas runs with its `Painter`, drawing `commands` (from `plan`)."""
+    """The callback tess_re's canvas runs with its `Painter`, drawing `commands` (from `plan`)."""
     def draw(p: Any) -> None:
         for command in commands:
             if command[0] == "rect":

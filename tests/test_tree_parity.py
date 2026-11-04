@@ -1,24 +1,24 @@
-"""M37 Phase 3: Tesserae's compiler builds the same tree as `tre`'s.
+"""M37 Phase 3: Tesserae's compiler builds the same tree as `tess_re`'s.
 
-Every view below is built by `tre`'s `View` and by `tess_ui.spec.build`
+Every view below is built by `tess_re`'s `View` and by `tess_ui.spec.build`
 in same-sized windows and compared node by node (`tests/treediff.py`):
-laid-out box, fill, border, corner radius, opacity, elevation (`tre`)
+laid-out box, fill, border, corner radius, opacity, elevation (`tess_re`)
 against `shadows` (Tesserae), and text and font. They must be identical.
 
 The corpus:
-- every fragment `tre` 0.3.4 can build, called with ordinary parameters
+- every fragment `tess_re` 0.3.4 can build, called with ordinary parameters
   (the Image fragment with a real PNG; `items:` per fragment): 67 at M43,
   76 of 77 since (`Tabs`' `width: "100%"` divider is beyond 0.3.4);
-- every view written inline in the test suite that `tre` itself accepts;
+- every view written inline in the test suite that `tess_re` itself accepts;
 - the example views, built from their files (includes and images);
 - every `yaml` block in the docs and README that is a whole view.
 
-**Not comparable, because `tre` can't read them back:** a Link's text and
-font properties, and a TextField's background (`tre` reports its text
+**Not comparable, because `tess_re` can't read them back:** a Link's text and
+font properties, and a TextField's background (`tess_re` reports its text
 colour as `fill`). Everything else `get()` reaches is compared.
 
 M43: each case is recorded on 0.3.4 (`tests/reference.py`) -- the expanded
-spec as `tre` was given it, any image frames, and `tre`'s side
+spec as `tess_re` was given it, any image frames, and `tess_re`'s side
 (`treediff.tre_dump`) -- and Tesserae's compiler is compared with the
 recording, since 0.3.5 has no `View`. The corpus is the recorded one.
 """
@@ -29,7 +29,7 @@ import re
 from pathlib import Path
 
 import pytest
-import tre
+import tess_re
 import yaml
 from PIL import Image
 
@@ -95,7 +95,7 @@ def _doc_views():
 
 
 def _accepted(key, text):
-    """The expanded spec, or None if it doesn't expand or `tre` itself
+    """The expanded spec, or None if it doesn't expand or `tess_re` itself
     rejects it (the suite's deliberately broken views)."""
     try:
         spec = expand_components_to_spec(text)
@@ -104,16 +104,16 @@ def _accepted(key, text):
     if not isinstance(spec, dict) or "kind" not in spec or "id" not in spec:
         return None
     try:
-        tre.View(spec=treediff.for_tre(spec), theme_seed=treediff.SEED)  # without Tesserae's own keys
+        tess_re.View(spec=treediff.for_tre(spec), theme_seed=treediff.SEED)  # without Tesserae's own keys
     except Exception:
         return None
     return spec
 
 
 def _corpus():
-    """Built with `tre` (it decides which views it accepts): recording only.
+    """Built with `tess_re` (it decides which views it accepts): recording only.
     A key recorded before keeps the case it was recorded with (its spec
-    and frames), so `tre` is asked the same question and gives the same
+    and frames), so `tess_re` is asked the same question and gives the same
     answer; only keys new to the sources are added. (Keys are positions
     -- a doc's third block, say -- so rebuilding one from edited files
     would quietly give an old key a new question.)"""
@@ -161,7 +161,7 @@ def _without_cascade(spec):
 
 
 def _case(key, tmp_path):
-    """One recorded case: the spec, its frames (base64), and `tre`'s side."""
+    """One recorded case: the spec, its frames (base64), and `tess_re`'s side."""
     how, source = CORPUS[key]
     frames = None
     if how == "recorded":  # asked again exactly as before
@@ -180,12 +180,12 @@ def _case(key, tmp_path):
         frames = {node_id: (rgba, w, h) for node_id, rgba, w, h in raw}
     if how != "recorded":
         spec = _without_cascade(spec)
-    return {"spec": spec, "tre": treediff.tre_dump(spec, frames=frames),
+    return {"spec": spec, "tess_re": treediff.tre_dump(spec, frames=frames),
             "frames": {k: (base64.b64encode(rgba).decode(), w, h) for k, (rgba, w, h) in (frames or {}).items()}}
 
 
 @pytest.mark.parametrize("key", KEYS)
 def test_tesserae_builds_the_same_tree_as_tre(key, tmp_path):
-    case = reference.tre(lambda: _case(key, tmp_path))
+    case = reference.tess_re(lambda: _case(key, tmp_path))
     frames = {k: (base64.b64decode(b64), w, h) for k, (b64, w, h) in case["frames"].items()} or None
-    assert treediff.diff(case["spec"], frames=frames, theirs=case["tre"]) == []
+    assert treediff.diff(case["spec"], frames=frames, theirs=case["tess_re"]) == []

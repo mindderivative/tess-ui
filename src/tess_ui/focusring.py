@@ -1,7 +1,7 @@
 """The focus ring as a turning gradient (tre 0.5.4's sweep `Gradient`).
 
 With `App(focus_ring="gradient")` the ring of the keyboard-focused node is a sweep gradient through `secondary`, `primary` and `tertiary` that turns once
-every `PERIOD_MS`. tre does not animate a gradient on a *stroke* ("set it again"), so Python sets a new start angle every `TICK_MS` while a ring is
+every `PERIOD_MS`. tess_re does not animate a gradient on a *stroke* ("set it again"), so Python sets a new start angle every `TICK_MS` while a ring is
 showing; one ring shows at a time (the focus is in one place), and an app that asks for reduced motion gets the gradient standing still.
 """
 
@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-import tre
+import tess_re
 
 from tess_ui import motion
 
@@ -45,7 +45,7 @@ class GradientRing:
 
     def _gradient(self) -> Any:
         first, second, third = self.colors
-        return tre.Gradient.sweep([first, second, third, first], start=self.angle % 360.0)
+        return tess_re.Gradient.sweep([first, second, third, first], start=self.angle % 360.0)
 
     def recolor(self, colors: tuple[Any, Any, Any], paint: bool = True) -> None:
         self.colors = colors

@@ -1,12 +1,12 @@
-"""M42 Phase 6: `carousel` and `splitter`, new by Q1 (`tre` had them as
-`add_carousel`/`add_splitter`, never wrapped), following `tre`'s
+"""M42 Phase 6: `carousel` and `splitter`, new by Q1 (`tess_re` had them as
+`add_carousel`/`add_splitter`, never wrapped), following `tess_re`'s
 `legacy-behavior.md` (0.3.5). Driven headlessly with `simulate`/`advance`.
 """
 
 import math
 
 import pytest
-import tre
+import tess_re
 
 from tess_ui import Theme, tokens
 from tess_ui.widgets import carousel, splitter
@@ -17,7 +17,7 @@ BASE = tokens.baseline_scheme()
 
 
 def _window():
-    window = tre.Window(width=600, height=500)
+    window = tess_re.Window(width=600, height=500)
     window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, gap=0,
                     align_items="flex_start")
     return window

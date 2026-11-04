@@ -1,16 +1,16 @@
-"""M63 (#16): CSS Color 4's wide-gamut functions parse as `tre` 0.3.4
+"""M63 (#16): CSS Color 4's wide-gamut functions parse as `tess_re` 0.3.4
 parsed them (the `color` crate, 0.3.3), byte for byte. A seeded corpus
 reaches every branch: each `color()` space's transfer, near zero (the
 linear segments) and far out of gamut (clipped), `lab`'s linear toe,
 `hwb`'s grey when whiteness and blackness pass 100%, `none`, angle
-units, percentages and alpha. `tre`'s answers are recorded once
+units, percentages and alpha. `tess_re`'s answers are recorded once
 (`tests/reference.py`), as the other parity data is.
 """
 
 import random
 
 import pytest
-import tre
+import tess_re
 
 from tess_ui import tokens
 
@@ -69,10 +69,10 @@ CORPUS = _corpus()
 def _tre_fill(raw):
     def ask():
         spec = {"id": "r", "kind": "Rect", "style": {"width": 1, "height": 1, "background": raw}}
-        view = tre.View(spec=spec)
-        tre.Window.from_view(view, width=10, height=10, title="t")
+        view = tess_re.View(spec=spec)
+        tess_re.Window.from_view(view, width=10, height=10, title="t")
         return view.node("r").get("fill")
-    return reference.tre(ask)
+    return reference.tess_re(ask)
 
 
 @pytest.mark.parametrize("raw", CORPUS)

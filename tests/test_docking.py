@@ -1,12 +1,12 @@
-"""M45 Phase 2: `tess_ui.docking.Dock`, docking's presentation on `tre`
+"""M45 Phase 2: `tess_ui.docking.Dock`, docking's presentation on `tess_re`
 0.3.5's bare mechanism -- MD3 secondary tabs per zone, the tab as the drag
 handle, a highlight over the target zone, and a "Move to" menu for the
-keyboard (M45 Q2). Driven headlessly with `simulate`, as `tre`'s docking
+keyboard (M45 Q2). Driven headlessly with `simulate`, as `tess_re`'s docking
 guide does.
 """
 
 import pytest
-import tre
+import tess_re
 
 from tess_ui import Theme, tokens
 from tess_ui.docking import DRAG_THRESHOLD, TAB_HEIGHT, Dock
@@ -15,7 +15,7 @@ BASE = tokens.baseline_scheme()
 
 
 def _dock(theme=None):
-    window = tre.Window(width=900, height=500)
+    window = tess_re.Window(width=900, height=500)
     window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, gap=0, align_items="stretch")
     dock = Dock(window, theme=theme)
     for side, size in (("left", 220), ("center", 400), ("right", 220)):
@@ -151,7 +151,7 @@ def test_move_and_the_keyboard_menu_move_a_panel_without_a_pointer():
 
 
 def test_move_uses_tres_dock_panel_not_a_simulated_drag():
-    """`tre` 0.3.5.1 fixed `dock_panel` for a docked panel (`tre` issue
+    """`tess_re` 0.3.5.1 fixed `dock_panel` for a docked panel (`tess_re` issue
     #14), so `move` sends no pointer events and hears no `dock_drop`."""
     window, dock, panels = _dock()
     pointer = []
@@ -225,7 +225,7 @@ def test_remove_panel_undocks_it_and_shows_the_next_or_previous():
     assert [t.label.get("text") for t in dock._zones["left"].tabs] == ["Files", "Outline"]
     dock.remove_panel(dock.panel("Outline"))
     assert dock.shown("left") == panels["Files"]  # the previous one, with no next
-    dock.show(panels["Files"])  # the indexes still match tre's list
+    dock.show(panels["Files"])  # the indexes still match tess_re's list
     assert dock.shown("left") == panels["Files"]
     dock.add_panel("left", panels["Search"], "Search")  # it can be docked again
     assert dock.titles("left") == ["Files", "Search"] and dock.shown("left") == panels["Search"]

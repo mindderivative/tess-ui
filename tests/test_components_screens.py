@@ -3,7 +3,7 @@
 A component (`tess_ui.instantiate`, `View.instantiate`) is built in its
 host's window with the host's theme and stylesheet, and follows them when
 they change -- which closes M31's gap, where an embedded component built
-by `tre` got neither. `App` builds screens in its own window and switches
+by `tess_re` got neither. `App` builds screens in its own window and switches
 them by attaching and detaching their roots.
 """
 
@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 import pytest
-import tre
+import tess_re
 
 import tess_ui
 from tess_ui import App, instantiate, tokens
@@ -51,7 +51,7 @@ def _host(tmp_path, **theme):
 
 
 def test_a_component_gets_its_hosts_theme_and_stylesheet(tmp_path, card):
-    """M31's gap: a component built by `tre` got neither."""
+    """M31's gap: a component built by `tess_re` got neither."""
     sheet = {"styles": [{"kind": "Rect", "style": {"corner_radius": 6}}]}
     host = _host(tmp_path, stylesheet_spec=sheet, custom_theme_spec={"styles": [{"kind": "Rect", "style": {"elevation": 2}}]})
     component, vm = instantiate(host, card[0], card[1], host.node("host"))
@@ -142,7 +142,7 @@ def test_a_view_built_on_its_own_is_moved_into_the_apps_window(tmp_path):
 
 
 def test_register_rejects_anything_but_a_tesserae_view(tmp_path):
-    """Once a `tre` `View` (M43: 0.3.5 has none); any other object now."""
+    """Once a `tess_re` `View` (M43: 0.3.5 has none); any other object now."""
     app = App()
     with pytest.raises(TypeError, match="must be a tesserae View"):
         app.register("x", object(), None)

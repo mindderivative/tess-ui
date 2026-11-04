@@ -1,27 +1,27 @@
 """Docking: panels in zones around an app's content -- a file tree
 on the left, an inspector on the right -- that the user moves between
-zones, on `tre` 0.3.5's bare docking mechanism.
+zones, on `tess_re` 0.3.5's bare docking mechanism.
 
-`tre` registers zones (`add_dock_zone`), docks panels (`dock_panel`),
+`tess_re` registers zones (`add_dock_zone`), docks panels (`dock_panel`),
 shows one panel per zone (`set_active_panel`) and runs a pointer drag
 (`start_panel_drag`), reporting the zone under the pointer (`dock_target`)
 and the drop (`dock_drop`). What a drag looks like is the framework's
-(`tre` D10), so `Dock` draws it, in MD3's terms (M45 Q2):
+(`tess_re` D10), so `Dock` draws it, in MD3's terms (M45 Q2):
 
 - each zone is a column: a strip of MD3 secondary tabs, one per panel,
-  over the `tre` zone that shows the selected panel;
+  over the `tess_re` zone that shows the selected panel;
 - a click or Enter on a tab shows its panel; the left and right arrows
   move along the strip; the strip is one Tab stop, the shown tab;
 - dragging a tab (past a few pixels) drags its panel, with MD3's dragged
   state on the tab and a `primary` highlight over the zone under the
   pointer; releasing over no zone leaves the panel where it was;
-- `tre`'s drag is pointer-only, so each tab's context menu (a right
+- `tess_re`'s drag is pointer-only, so each tab's context menu (a right
   click, the Menu key or Shift+F10) offers "Move to <side>" (`move`).
 
 A `Dock` owns its window's `dock_target`/`dock_drop` events (`window.on`
 keeps one listener per event), so a window has one `Dock`.
 
-Split halves (0.5.0, #106): `tre` knows only the five zones, so the `Dock` keeps the
+Split halves (0.5.0, #106): `tess_re` knows only the five zones, so the `Dock` keeps the
 halves of a split as zones of its own (`add_half`): a column of the same tab strip over
 the half, which shows one panel at a time (the half's own content is its first tab).
 A panel is dropped onto a half, and dragged between halves and zones, like this:
@@ -31,7 +31,7 @@ A panel is dropped onto a half, and dragged between halves and zones, like this:
   pointer itself: the outer quarter of a side is that edge (the drop splits the half there,
   which the host does: `on_half_drop`), the rest is the middle (the drop adds the panel
   to the half as a tab). The highlight shows which;
-- a tab in a half is not `tre`'s to drag (`tre` knows no such panel), so the `Dock` drags it
+- a tab in a half is not `tess_re`'s to drag (`tess_re` knows no such panel), so the `Dock` drags it
   with the pointer captured on the tab, and finds the zone or half under it the same way;
 - a half whose last panel leaves, and has no content of its own, is empty (`on_half_empty`):
   the host collapses it into its neighbour.
@@ -96,10 +96,10 @@ class _Zone:
     node: Any  # the column: strip, divider, body
     strip: Any
     divider: Any
-    body: Any  # `tre`'s dock zone
+    body: Any  # `tess_re`'s dock zone
     panels: list[_Panel] = field(default_factory=list)
     tabs: list[_Tab] = field(default_factory=list)
-    half: bool = False  # a half of a split, not one of `tre`'s zones: it shows its `active` panel itself
+    half: bool = False  # a half of a split, not one of `tess_re`'s zones: it shows its `active` panel itself
     active: Optional[_Panel] = None
 
 
@@ -123,7 +123,7 @@ class Dock:
         self._menu: Any = None
         self._half_drop: Optional[Callable[[Any, str, str], Any]] = None
         self._half_empty: Optional[Callable[[str], Any]] = None
-        self._own_drag = False  # a tab of a half is being dragged with the pointer captured (`tre` is not dragging it)
+        self._own_drag = False  # a tab of a half is being dragged with the pointer captured (`tess_re` is not dragging it)
         self._tracking: list[Callable[[], None]] = []  # the root's pointer listeners, while a tab is dragged
         self._pointer: Optional[tuple[float, float]] = None
         self._zone_target: Optional[str] = None
@@ -480,7 +480,7 @@ class Dock:
         self._dragging = entry
         press["tab"].interaction.set_dragged(True)
         self._pointer, self._zone_target, self._half_target = (event.window_x, event.window_y), None, None
-        if self._zones[entry.side].half:  # `tre` does not know this panel: the tab holds the pointer and Tesserae finds the target
+        if self._zones[entry.side].half:  # `tess_re` does not know this panel: the tab holds the pointer and Tesserae finds the target
             self._own_drag = True
             press["tab"].node.capture_pointer()
             return
@@ -505,7 +505,7 @@ class Dock:
             press["tab"].interaction.set_dragged(False)
         entry = self._find(event.panel) if event.panel is not None else None
         if half is not None and entry is not None and self._half_drop is not None:
-            # `tre` may have moved the panel to the zone it reported; take it out of whichever zone it is in
+            # `tess_re` may have moved the panel to the zone it reported; take it out of whichever zone it is in
             self._half_drop(self.remove_panel(entry.node), *half)
             return
         if entry is None or event.side is None or event.side == entry.side or event.side not in self._zones:
@@ -551,7 +551,7 @@ class Dock:
         return False
 
     def _zone_hit(self, x: float, y: float) -> Optional[str]:
-        """The side of the `tre` zone (tab strip and all) the point is in, or `None`."""
+        """The side of the `tess_re` zone (tab strip and all) the point is in, or `None`."""
         for zone in self._zones.values():
             rect = _rect(zone.node)
             if not zone.half and rect is not None and rect[0] <= x < rect[0] + rect[2] and rect[1] <= y < rect[1] + rect[3]:
@@ -624,7 +624,7 @@ class Dock:
         self._paint_tabs(zone)
 
     def _carry(self, entry: _Panel, target: _Zone) -> None:
-        """Moves `entry`'s node out of the zone or half it is in and into `target` (a half, or a `tre` zone), as `tre` does for a drop."""
+        """Moves `entry`'s node out of the zone or half it is in and into `target` (a half, or a `tess_re` zone), as `tess_re` does for a drop."""
         if self._zones[entry.side].half:
             entry.node.set(visible=True)
             entry.node.remove()
@@ -645,7 +645,7 @@ class Dock:
             self._half_empty(zone.side[len(HALF):])
 
     def _moved(self, entry: _Panel, side: str) -> None:
-        """`entry`'s node is now in `side` (a drop `tre` made, or `move`): follow it."""
+        """`entry`'s node is now in `side` (a drop `tess_re` made, or `move`): follow it."""
         old, new = self._zones[entry.side], self._zones[side]
         old.panels.remove(entry)
         entry.side = side

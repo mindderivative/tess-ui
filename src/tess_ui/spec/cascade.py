@@ -1,5 +1,5 @@
-"""The style cascade, owned by Tesserae: a port of `tre`'s
-`engine-spec/src/cascade.rs` at v0.3.4, which `tre` removes in 0.3.5.
+"""The style cascade, owned by Tesserae: a port of `tess_re`'s
+`engine-spec/src/cascade.rs` at v0.3.4, which `tess_re` removes in 0.3.5.
 
 Precedence, lowest first:
 
@@ -39,7 +39,7 @@ def _check_fields(spec: Any, allowed: tuple[str, ...], is_kind: str, file: str) 
         if key not in allowed and key != marker.KEY:  # the first-line marker of a file the dict was read from
             expected = ", ".join(f"`{name}`" for name in allowed)
             hint = looks_like(spec, is_kind, file)
-            raise ValueError(f"unknown field `{key}`, expected one of {expected}" + (f" ({hint})" if hint else ""))  # tre's wording
+            raise ValueError(f"unknown field `{key}`, expected one of {expected}" + (f" ({hint})" if hint else ""))  # tess_re's wording
     Sheet.of({key: value for key, value in spec.items() if key != marker.KEY})
 
 
@@ -52,7 +52,7 @@ def check_stylesheet(spec: Any, file: str = "") -> None:
     """Raises `ValueError` if `spec` isn't a valid stylesheet dict. `file` as for `check_theme`."""
     _check_fields(spec, ("styles",), "stylesheet", file)
 
-#: Every field a `style:` can hold, as in `tre`'s `StyleSpec`.
+#: Every field a `style:` can hold, as in `tess_re`'s `StyleSpec`.
 STYLE_FIELDS = frozenset({
     "width", "height", "flex_direction", "padding", "margin", "gap", "background", "foreground", "corner_radius",
     "opacity", "border_width", "border_color", "elevation",
@@ -136,7 +136,7 @@ class Sheet:
         return sheet
 
     def resolve(self, node: dict[str, Any], into: dict[str, Any]) -> None:
-        """Merges this sheet's rules for `node` into `into`, in `tre`'s
+        """Merges this sheet's rules for `node` into `into`, in `tess_re`'s
         tier order."""
         for style in self.baseline:
             into.update(style)

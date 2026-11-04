@@ -1,16 +1,16 @@
-"""M33: a background thread's garbage collector can free a `tre` object
-made on the main thread (`tre` issue #10, fixed in 0.3.4's M96).
+"""M33: a background thread's garbage collector can free a `tess_re` object
+made on the main thread (`tess_re` issue #10, fixed in 0.3.4's M96).
 
 Tesserae's watcher threads (`ViewWatcher.start`, `FileWatcher`) parse
 YAML, and any allocation there can run Python's cyclic GC on that
 thread. If the last reference to a `View` sits in a reference cycle, the
-GC frees the `View` there. On `tre` 0.3.3 that raised a `PanicException`
+GC frees the `View` there. On `tess_re` 0.3.3 that raised a `PanicException`
 and a `RuntimeError` ("View is unsendable, but is being dropped on
 another thread") and leaked the `View`; CI saw it as unraisable-exception
 warnings in `test_watch_thread.py`. 0.3.4 makes objects `ThreadBound`,
 so the drop is safe.
 
-M43: 0.3.5 has no `View`, but every `tre` object is `ThreadBound`, so the
+M43: 0.3.5 has no `View`, but every `tess_re` object is `ThreadBound`, so the
 guard now frees a `Window` and a node the same way.
 """
 
@@ -18,11 +18,11 @@ import gc
 import sys
 import threading
 
-import tre
+import tess_re
 
 
 def _make_cyclic_garbage() -> None:
-    window = tre.Window(width=10, height=10)
+    window = tess_re.Window(width=10, height=10)
     node = window.create("box", width=10, height=10)
 
     class Holder:

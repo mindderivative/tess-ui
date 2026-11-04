@@ -1,12 +1,12 @@
 """M39 Phase 1: a YAML node with an `on_click` handler is reachable from
 the keyboard -- focusable, a Tab stop, activated by Enter and Space -- as
-it was in `tre`'s `View` (whose `set_on_click` added a click action), and
+it was in `tess_re`'s `View` (whose `set_on_click` added a click action), and
 exposed to assistive technology as a button (M39 Q1). M37 had dropped
 this: `node.on("click")` alone doesn't make a node focusable.
 """
 
 import pytest
-import tre
+import tess_re
 
 import reference
 import tess_ui
@@ -44,15 +44,15 @@ def _keyboard(view, window, node_id):
 
 def test_a_clickable_node_is_reachable_by_keyboard_as_in_tre():
     spec = _spec(_rect("btn", handlers={"on_click": "go"}))
-    def ask():  # tre's answer, recorded on 0.3.4 (M43)
-        tre_view = tre.View(spec=spec)
-        return _keyboard(tre_view, tre.Window.from_view(tre_view, width=200, height=100, title="t"), "btn")
-    theirs = reference.tre(ask)
+    def ask():  # tess_re's answer, recorded on 0.3.4 (M43)
+        tre_view = tess_re.View(spec=spec)
+        return _keyboard(tre_view, tess_re.Window.from_view(tre_view, width=200, height=100, title="t"), "btn")
+    theirs = reference.tess_re(ask)
     view = View(spec)
     ours = _keyboard(view, view.window, "btn")
     assert theirs[0] is True and ours[0] is True  # Tab reaches it in both
     assert ours[1] == 2  # Enter and Space each click it
-    assert theirs[1] >= 1  # tre: Enter at least
+    assert theirs[1] >= 1  # tess_re: Enter at least
 
 
 def test_a_clickable_node_is_a_button_unless_it_has_its_own_role():
@@ -105,7 +105,7 @@ def test_a_button_fragment_wrapped_as_a_clickable_is_reachable():
 
 
 def test_a_yaml_link_takes_a_pointer_click():
-    """M41: a Link was a bare `text`, which `tre` 0.3.4 never gives pointer
+    """M41: a Link was a bare `text`, which `tess_re` 0.3.4 never gives pointer
     events, so only the keyboard could follow it. It's a box holding its
     text now; the box takes the click, the focus and the role."""
     link = {"id": "more", "kind": "Link", "text": {"content": "More", "font_family": "Roboto", "font_size": 14},

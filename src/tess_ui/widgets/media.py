@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
     from tess_ui.theme import Theme
     from tess_ui.widgets._composed import Widget
-    from tre import Window
+    from tess_re import Window
 
 
 def _image_spec(node_id: str, width: float, height: float, fit: str) -> dict[str, Any]:

@@ -1,12 +1,12 @@
-"""The sizes and insets a style may give, checked as tre takes them (tre 0.5.7), so a mistake is found where it is written.
+"""The sizes and insets a style may give, checked as tess_re takes them (tre 0.5.7), so a mistake is found where it is written.
 
 - `width`, `height`: a number, `auto`, `fit-content`, a percentage, or a sum such as `calc(100% - 16)` or `100% - 16`;
 - `min_width`, `max_width`, `min_height`, `max_height`, `flex_basis`: a number, `auto` or a percentage;
 - `left`, `top`, `right`, `bottom`, `inset` (and `x`, `y`): a number, a percentage or `auto`.
 
 A sum has terms (a number, a percentage, or pixels written `16px`) joined by ` + ` or ` - `, with a space each side; written without `calc( )` it has
-at least two terms (`16px` alone is not a size). tre takes no negative size (an inset may be a negative number), no other unit (`vw`, `em`), no `*` or `/`,
-and no `min()`. `tests/test_sizes.py` runs this against tre, so it fails if tre's own grammar moves. (tre also takes `50 %`, with a space, in some fields;
+at least two terms (`16px` alone is not a size). tess_re takes no negative size (an inset may be a negative number), no other unit (`vw`, `em`), no `*` or `/`,
+and no `min()`. `tests/test_sizes.py` runs this against tess_re, so it fails if tess_re's own grammar moves. (tess_re also takes `50 %`, with a space, in some fields;
 that is not copied.)
 """
 
@@ -41,7 +41,7 @@ def _sum(text: str) -> bool:
 
 
 def size_problem(field: str, value: Any) -> Optional[str]:
-    """Why `value` is not one that tre takes for style `field`, or `None` when it is (or when `field` is not a size or an inset)."""
+    """Why `value` is not one that tess_re takes for style `field`, or `None` when it is (or when `field` is not a size or an inset)."""
     if field in SIZE_FIELDS:
         if (_is_number(value) and value >= 0) or value in ("auto", "fit-content"):
             return None

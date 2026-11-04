@@ -1,9 +1,9 @@
 """0.3.2 (#77, #78): a real window held idle, and what reaches it.
 
-Before `tre` 0.5.1 its window, while it sat idle waiting for input, starved
+Before `tess_re` 0.5.1 its window, while it sat idle waiting for input, starved
 the other Python threads: a worker's `thread_handle().call_soon(...)` never
 ran, and nor did a hot-reload watcher's reload, so Tesserae 0.3.1 ticked the
-window by default (`run(keepalive=)`). `tre` 0.5.1 lets threads run, and
+window by default (`run(keepalive=)`). `tess_re` 0.5.1 lets threads run, and
 Tesserae 0.3.2 requires it, so each of these holds a real window idle and
 checks that the outside thread gets through: with no keepalive, which is the
 default, and with `keepalive=True`; and that an edit reaches a window left
@@ -110,9 +110,9 @@ def _run(tmp_path: Path, source: str, mode: str, timeout: float) -> tuple[subpro
 
 
 def test_a_thread_reaches_an_idle_window_by_default(tmp_path):
-    """`tre` 0.5.1: no keepalive, and the outside thread's `call_soon` still runs."""
+    """`tess_re` 0.5.1: no keepalive, and the outside thread's `call_soon` still runs."""
     done, result = _run(tmp_path, CODE_ONLY, "default", timeout=60)
-    assert done is not None, "the window stayed starved: tre no longer lets threads run while it is idle"
+    assert done is not None, "the window stayed starved: tess_re no longer lets threads run while it is idle"
     assert done.returncode == 0, done.stderr
     if not result:
         pytest.skip("no display reachable -- the window rendered nothing")
@@ -131,7 +131,7 @@ def test_a_thread_reaches_an_idle_window_with_the_keepalive_too(tmp_path):
 def test_hot_reload_applies_an_edit_to_an_idle_window(tmp_path):
     """The user's report: `width: auto` -> `100%` on a window left alone."""
     done, result = _run(tmp_path, HOT_RELOAD, "default", timeout=60)
-    assert done is not None, "the window stayed starved: the reload never arrived (tre before 0.5.1?)"
+    assert done is not None, "the window stayed starved: the reload never arrived (tess_re before 0.5.1?)"
     assert done.returncode == 0, done.stderr
     if not result:
         pytest.skip("no display reachable -- the window rendered nothing")

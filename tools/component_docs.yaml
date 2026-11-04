@@ -257,7 +257,7 @@ components:
       grows; **indeterminate** ones keep moving when there's no value to show. The loading indicator is MD3's
       shape-morphing one, for short waits.
     built: |
-      Each is a Tesserae control (`tess_ui.controls`), not a drawing of `tre`'s: `widget: LinearProgress`, `widget: CircularProgress` and
+      Each is a Tesserae control (`tess_ui.controls`), not a drawing of `tess_re`'s: `widget: LinearProgress`, `widget: CircularProgress` and
       `widget: LoadingIndicator`. Leave `value` out, or let an expression give nothing, for a wait with no end; a number from 0 to 1 is determinate and
       eases to each new value.
 
@@ -404,7 +404,7 @@ components:
       form: the panel fills the window on `surface`, with a close button, the headline and the actions in a 56 pixel bar along the top, and the content scrolling under it.
 
       Children are the content, after the supporting text. When the content scrolls, a line shows above the actions. Actions stack when they do not fit
-      one row. A screen reader hears a `dialog` named by the headline (tre has no `alertdialog` role). In the full-screen form the close button writes
+      one row. A screen reader hears a `dialog` named by the headline (tess_re has no `alertdialog` role). In the full-screen form the close button writes
       `false` to `open` with no result, the actions sit in the bar instead of under the content (MD3 has one confirming action there), and a line shows under
       the bar once the content has scrolled; use it where the window is `compact` (`fullscreen: "{{ app.width_class == 'compact' }}"`). Not built: focusing a
       form dialog's first field.
@@ -641,7 +641,7 @@ components:
       next, starting 44 pixels down. Children with `slot: header` (a menu button, a FAB) go above the destinations and `slot: footer` below. There is one Tab stop;
       the up and down arrows move the focus and choose the destination. A screen reader hears a link named by the label, the current one marked as the page.
       The screens rail follows `app.current_screen` and a press is `navigate_to(screen)`; it belongs in each screen (or in a window's shell). Not built: the
-      modal expanded rail, sections with headings, the pill growing as it is selected (it fades in), and a `navigation` role for the rail (tre has none, so it is a `group` named Navigation).
+      modal expanded rail, sections with headings, the pill growing as it is selected (it fades in), and a `navigation` role for the rail (tess_re has none, so it is a `group` named Navigation).
     usage_view: |
       name: shell
       widget: Container

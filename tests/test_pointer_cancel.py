@@ -1,5 +1,5 @@
 """0.3.0 M2 Phase 3 (#47): every press Tesserae tracks clears on
-`pointer_cancel`. Since `tre` 0.5.0 the OS can take a press -- to move
+`pointer_cancel`. Since `tess_re` 0.5.0 the OS can take a press -- to move
 the window from its title bar, maximize it, or show its menu -- and the
 pressed node gets `pointer_cancel` instead of `pointer_up` (and no
 click). A pressed state layer, a split button's squeeze, a splitter's or
@@ -20,7 +20,7 @@ def test_every_function_listening_for_pointer_up_listens_for_pointer_cancel():
     """The invariant, over Tesserae's source: wherever a press's release
     is heard, its cancellation is too (ten places in 0.3.0 M2, and any
     added later). Nodes that take the pointer capture (a slider, a
-    splitter) can't be dragged in `tre`, so this is how theirs are held."""
+    splitter) can't be dragged in `tess_re`, so this is how theirs are held."""
     missing, found = [], 0
     for path in sorted(SRC.rglob("*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -46,7 +46,7 @@ class VM(ViewModel):
 
 
 def _button_in_a_title_bar():
-    """A button marked as a drag region: `tre` moves the window from a
+    """A button marked as a drag region: `tess_re` moves the window from a
     press on it, as it would from a title bar."""
     spec = {"id": "root", "kind": "Container", "style": {"width": 400, "height": 300},
             "children": [{"id": "btn", "kind": "Rect", "handlers": {"on_click": "go"},

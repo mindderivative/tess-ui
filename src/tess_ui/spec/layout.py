@@ -88,7 +88,7 @@ def engine_style(node_id: str, style: dict[str, Any], parent: Optional[tuple[str
     for old, new in REPLACED.items():
         if old in style:
             raise LayoutError(f'widget "{node_id}": style.{old} is now {new}')
-    for field in (*sizes.SIZE_FIELDS, *sizes.LIMIT_FIELDS, *sizes.INSET_FIELDS):  # a size or an inset (a template is worked out by now) is one tre takes
+    for field in (*sizes.SIZE_FIELDS, *sizes.LIMIT_FIELDS, *sizes.INSET_FIELDS):  # a size or an inset (a template is worked out by now) is one tess_re takes
         problem = sizes.size_problem(field, style[field]) if field in style and style[field] is not None else None
         if problem:
             raise LayoutError(f'widget "{node_id}": {problem}')

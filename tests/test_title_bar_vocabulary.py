@@ -43,7 +43,7 @@ def test_window_region_reaches_tre(tmp_path):
 
 
 def test_a_press_on_the_bar_moves_the_window(tmp_path):
-    """`tre` takes a primary press on a drag region: the pressed node gets
+    """`tess_re` takes a primary press on a drag region: the pressed node gets
     `pointer_cancel`, not `pointer_up` or a click."""
     app = App()
     view = _shown(app, _file(tmp_path, BAR), "Home")
@@ -67,7 +67,7 @@ def test_reconcile_follows_window_region(tmp_path):
     dropped = {**BAR, "children": [{k: v for k, v in BAR["children"][0].items() if k != "window_region"},
                                    BAR["children"][1]]}
     view.reconcile(spec=dropped)
-    assert view.node("bar").get("window_region") is None  # dropped: back to tre's default
+    assert view.node("bar").get("window_region") is None  # dropped: back to tess_re's default
     view.reconcile(spec=BAR)
     assert view.node("bar").get("window_region") == "drag"
 
@@ -119,7 +119,7 @@ def test_a_window_action_needs_an_apps_window():
 
 
 def test_a_control_takes_window_region_too():
-    """A control (here a Switch) is built by Tesserae, not from a `tre`
+    """A control (here a Switch) is built by Tesserae, not from a `tess_re`
     primitive, so its node is set, and patched, separately."""
     spec = {"id": "root", "kind": "Container", "style": {"width": 300, "height": 100},
             "children": [{"id": "s", "kind": "Switch", "style": {}, "window_region": "none"}]}

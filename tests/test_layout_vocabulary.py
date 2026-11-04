@@ -1,14 +1,14 @@
-"""M71 (#21): the rest of `tre`'s flexbox in a view's style -- `flex_wrap`,
+"""M71 (#21): the rest of `tess_re`'s flexbox in a view's style -- `flex_wrap`,
 `align_self`, `min_`/`max_width`/`height`, `aspect_ratio`, `position`
 with `x`/`y`, `z_index` and `clip_children`. Each lays out exactly as the
-same tree built with `tre` directly. A style sets one only when it gives
+same tree built with `tess_re` directly. A style sets one only when it gives
 it, and a patch resets one only when the style gave it before, so what
 Python code sets on a spec-built node (a widget's `x`/`y`) survives a
-re-theme. And `tre`'s layout errors name the widget.
+re-theme. And `tess_re`'s layout errors name the widget.
 """
 
 import pytest
-import tre
+import tess_re
 
 from tess_ui import View, ViewModel
 from tess_ui.spec.build import SpecBuildError
@@ -37,8 +37,8 @@ def _view(parent_style, *children):
 
 
 def _tre_boxes(parent_style, *children):
-    """The same tree built with `tre` directly: the reference layout."""
-    window = tre.Window(width=300, height=200)
+    """The same tree built with `tess_re` directly: the reference layout."""
+    window = tess_re.Window(width=300, height=200)
     window.root.set(padding=0.0, gap=0.0, align_items="stretch")
     root = window.create("box", width=300.0, height=200.0)
     window.root.add_child(root)
@@ -115,7 +115,7 @@ def test_reconcile_sets_changes_and_resets_them():
     root, b = view.node("root"), view.node("b")
     view.reconcile(spec(flex_wrap="wrap"))
     assert view.node("root") == root and root.get("flex_wrap") == "wrap" and b.get("position") == "absolute"
-    view.reconcile(spec())  # both gone from the spec: back to tre's defaults
+    view.reconcile(spec())  # both gone from the spec: back to tess_re's defaults
     assert root.get("flex_wrap") == "no_wrap" and (b.get("position"), b.get("x")) == ("relative", "auto")
 
 

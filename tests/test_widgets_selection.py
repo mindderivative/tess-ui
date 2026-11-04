@@ -4,7 +4,7 @@ returns a Tesserae control (P6), attached to the window's root; these
 check the factory's arguments reach it.
 """
 
-from tre import Window
+from tess_re import Window
 
 from tess_ui import controls
 from tess_ui.widgets import checkbox, radio_button, slider, spin_box, switch

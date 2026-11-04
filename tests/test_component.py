@@ -1,5 +1,5 @@
 """Real, repeatable coverage for `tess_ui.instantiate` -- the real,
-enforced-naming counterpart to `tre.View.instantiate`/`Component
+enforced-naming counterpart to `tess_re.View.instantiate`/`Component
 .instantiate` (TRE M43), used by `examples/todo_list/` for a real
 dynamic list of independently-`ViewModel`'d components.
 """
@@ -147,16 +147,16 @@ children:
 def test_instantiate_genuinely_expands_component_usage(tmp_path):
     """Real, distinguishing proof `tess_ui.instantiate()` (an embedded
     component, not a top-level `View`) genuinely applies `component:`
-    macro-expansion -- the real gap `tre`'s own M73 closed
+    macro-expansion -- the real gap `tess_re`'s own M73 closed
     (`Component.instantiate`/`View.instantiate` had no `source=`
     override at all before it). Before M73 + this wiring, a
-    `component:`-using `*_Component.yaml` would fail with `tre`'s own
+    `component:`-using `*_Component.yaml` would fail with `tess_re`'s own
     schema error (`component` is not a real `WidgetSpec` field). After,
     it fails later, at MD3 color resolution (no `theme_seed` given --
     `View` itself supports one, but this test constructs a plain,
     unthemed `View` on purpose to isolate this one real, distinguishing
     proof) -- confirming `component:`/`with:` were genuinely replaced
-    before `tre` ever parsed this component's own YAML.
+    before `tess_re` ever parsed this component's own YAML.
     """
     parent_path = write(tmp_path, PARENT_VIEW, "Parent_View.yaml")
     item_path = write(tmp_path, NESTED_COMPONENT_USING_ITEM_VIEW, "Item_View.yaml")
@@ -179,7 +179,7 @@ kind: NotARealKind
 
 
 def test_instantiate_names_the_source_file_when_tre_rejects_the_spec(tmp_path):
-    """M29: `tre` only sees a dict via `spec=`, so it can't know which
+    """M29: `tess_re` only sees a dict via `spec=`, so it can't know which
     file a bad spec came from -- `instantiate` must say."""
     parent_path = write(tmp_path, PARENT_VIEW, "Parent_View.yaml")
     item_path = write(tmp_path, BOGUS_ITEM_VIEW, "Item_View.yaml")

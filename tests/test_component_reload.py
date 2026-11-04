@@ -6,7 +6,7 @@ reconciles in place, keeping its node, its ViewModel and its bound
 values (Q1). A component added while hot reload runs is watched too
 (Q2). A bad edit leaves every row as it was and fails once (Q3).
 
-As in `test_register_reload.py`, a `FakeHandle` stands in for `tre`'s
+As in `test_register_reload.py`, a `FakeHandle` stands in for `tess_re`'s
 loop for the threaded tests; the rest use `poll()`.
 """
 

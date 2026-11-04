@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.1.11
+
+[#296](https://github.com/mindderivative/tess-ui/issues/296): the engine is `tess_re`.
+
+### Changed
+
+- **Tesserae needs `tesserae-engine` 0.6.0** (it was 0.5.8), which renames the engine's Python package from `tre` to `tess_re` and its environment variables from `TRE_*` to `TESS_RE_*`; every name inside is unchanged. Tesserae imports `tess_re` everywhere, and the pin is one exact release, as before. [Migrating](migration.md#to-060) says what to change if your own code imports the engine.
+- **Names that followed it:** `TRE_SOURCE_DIR` (the engine checkout the one real-font test reads, and CI checks out) is `TESS_RE_SOURCE_DIR`, and `TESSERAE_RECORD_TRE` is `TESS_UI_RECORD_TESS_RE`. The docs and the messages that called the engine `tre` call it `tess_re`, and the links go to its repository, `mindderivative/tess-re`.
+- **Unchanged:** the PyPI name `tesserae-engine`; notes that say what an old engine release did (they still say `tre 0.5.4`); and the release workflow's refusal of PyPI's unrelated `tre` as a dependency.
+- **Ships in 0.6.0** with the package rename ([#295](https://github.com/mindderivative/tess-ui/issues/295)); this point version is not published on its own.
+
 ## 0.5.1.10
 
 [#295](https://github.com/mindderivative/tess-ui/issues/295): the Python package is `tess_ui`.

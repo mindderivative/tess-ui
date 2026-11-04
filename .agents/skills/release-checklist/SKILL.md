@@ -15,7 +15,7 @@ The process is written in `DEVELOPING.md` section 6 and `.github/workflows/relea
 - Every issue in the release is In review or Done on the board (`python3 tools/board.py status`), each with a comment of what was checked and what was not.
 - Anything that could not be verified here (Windows, macOS, other GPUs, other compositors) is listed in the notes as not verified, not dropped.
 - The version is free on PyPI: `python3 tools/check_version.py --pypi` (PyPI never accepts a version twice).
-- The engine pin: `python3 tools/tre_version_check.py`. A tre release outside `<0.6` is a new Tesserae line, not a bump.
+- The engine pin: `python3 tools/tre_version_check.py`. A tess_re release outside `<0.6` is a new Tesserae line, not a bump.
 
 ## 2. Version
 

@@ -489,7 +489,7 @@ class ComposedView(View):
                 self._handler_undos.append(self._listen(outer, "scroll", report))
 
             def settle(inst: Instance = inst, outer: Any = outer, content: Any = content, report: Callable[..., None] = report) -> None:
-                """On the first frame after a build: the offset that was asked for. tre clamps an offset to the content, which has no size until it
+                """On the first frame after a build: the offset that was asked for. tess_re clamps an offset to the content, which has no size until it
                 has been laid out, and reading a layout property lays it out."""
                 content.get("layout_height")
                 if "scroll_offset" in inst.props:
@@ -888,9 +888,9 @@ class ComposedView(View):
         return None
 
     def _wire_anchors(self) -> None:
-        """A node whose style says `anchor: name` (with `placement` and `offset`) is placed against that node by tre, and follows it: the anchor is set on the
+        """A node whose style says `anchor: name` (with `placement` and `offset`) is placed against that node by tess_re, and follows it: the anchor is set on the
         engine's node here, every time the view is synced, and taken off when the style stops saying it. If the anchor goes (an `if:`), the node is hidden until
-        it is back, as tre would leave it where it was."""
+        it is back, as tess_re would leave it where it was."""
         live: set[str] = set()
         for inst in self.handle.composition.walk():
             if inst.id not in self._built.nodes:
@@ -941,7 +941,7 @@ class ComposedView(View):
             self._anchor_hidden.discard(gone)
 
     def _follow_visibility(self, inst: Instance, node: Any, target: Instance) -> None:
-        """tre leaves a node whose anchor is hidden at the window's corner, drawn and pressable, so the node is hidden while its anchor, or anything it is in, is.
+        """tess_re leaves a node whose anchor is hidden at the window's corner, drawn and pressable, so the node is hidden while its anchor, or anything it is in, is.
         The anchor's `visible` is a value the view reads, so a change of it syncs the view, and this runs again."""
         if self._shown(inst) and self._shown_with_parents(target):
             if inst.id in self._anchor_hidden:  # back: shown, unless the node's own `visible:` says no

@@ -18,7 +18,7 @@ dismissed. The panel is `width` wide, held between 280 and 560 pixels (312 by de
 form: the panel fills the window on `surface`, with a close button, the headline and the actions in a 56 pixel bar along the top, and the content scrolling under it.
 
 Children are the content, after the supporting text. When the content scrolls, a line shows above the actions. Actions stack when they do not fit
-one row. A screen reader hears a `dialog` named by the headline (tre has no `alertdialog` role). In the full-screen form the close button writes
+one row. A screen reader hears a `dialog` named by the headline (tess_re has no `alertdialog` role). In the full-screen form the close button writes
 `false` to `open` with no result, the actions sit in the bar instead of under the content (MD3 has one confirming action there), and a line shows under
 the bar once the content has scrolled; use it where the window is `compact` (`fullscreen: "{{ app.width_class == 'compact' }}"`). Not built: focusing a
 form dialog's first field.
@@ -29,7 +29,7 @@ A view Tesserae ships is a `<Name>_View.yaml` (what it takes and what it is made
 
 ### `Dialog`
 
-The Material 3 dialog, basic or (`fullscreen: true`) full-screen: a modal panel over a scrim, with an optional icon, a headline, supporting text or your own content, and up to a few text button actions. `open` is two-way (Escape and a press on the scrim close it, unless `dismissible: false`); pressing an action closes it and writes the action's value to `result`, so the caller can tell which was chosen. A screen reader hears a `dialog` named by the headline (tre has no `alertdialog` role, so an alert is a `dialog` with `dismissible: false`). The content scrolls when it is taller than the dialog, and a line shows above the actions then. Children are the content: they follow the supporting text. Actions stack when they do not fit the width on one row.
+The Material 3 dialog, basic or (`fullscreen: true`) full-screen: a modal panel over a scrim, with an optional icon, a headline, supporting text or your own content, and up to a few text button actions. `open` is two-way (Escape and a press on the scrim close it, unless `dismissible: false`); pressing an action closes it and writes the action's value to `result`, so the caller can tell which was chosen. A screen reader hears a `dialog` named by the headline (tess_re has no `alertdialog` role, so an alert is a `dialog` with `dismissible: false`). The content scrolls when it is taller than the dialog, and a line shows above the actions then. Children are the content: they follow the supporting text. Actions stack when they do not fit the width on one row.
 
 | Parameter | Type | Default | Meaning |
 | --- | --- | --- | --- |

@@ -16,7 +16,7 @@ PLACEMENTS = (*SIDES, *CORNERS)
 
 
 def offset_pair(value: Any, where: str) -> tuple[float, float]:
-    """`[dx, dy]` (or a tuple) as the pair of floats tre takes; raises `ValueError` naming `where`."""
+    """`[dx, dy]` (or a tuple) as the pair of floats tess_re takes; raises `ValueError` naming `where`."""
     if isinstance(value, (list, tuple)) and len(value) == 2 and all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in value):
         return float(value[0]), float(value[1])
     raise ValueError(f"{where}: offset is a pair of pixels, [dx, dy], got {value!r}")

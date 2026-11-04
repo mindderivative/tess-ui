@@ -1,7 +1,7 @@
 """Tesserae's `{{ }}` bindings: a thin layer over :mod:`tess_ui.expr`.
 
 Since 0.5.0 a binding is a Python-subset expression (see ``design/yaml-language.md`` section 8), evaluated by the
-sandboxed evaluator in :mod:`tess_ui.expr` -- no longer the port of `tre`'s binding grammar. Python's arithmetic and
+sandboxed evaluator in :mod:`tess_ui.expr` -- no longer the port of `tess_re`'s binding grammar. Python's arithmetic and
 comparison rules apply (``1 == 1.0``, unbounded ints up to a limit, unary minus, ``None``), and a Signal reads as its
 value, with ``count.get()`` still working.
 
@@ -76,7 +76,7 @@ def _str_debug(s: str) -> str:
 
 
 def value_debug(value: Value) -> str:
-    """A value as `tre` prints it (`Int(3)`, `Str("a")`, `Handle(0)`)."""
+    """A value as `tess_re` prints it (`Int(3)`, `Str("a")`, `Handle(0)`)."""
     if isinstance(value, bool):
         return f"Bool({'true' if value else 'false'})"
     if isinstance(value, int):

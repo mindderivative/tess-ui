@@ -56,7 +56,7 @@ def test_the_inset_and_native_controls_off_macos(tmp_path):
 @pytest.mark.skipif(sys.platform != "darwin", reason="macOS's own answer, on a Mac (CI's macOS job)")
 def test_on_a_real_mac_the_traffic_lights_show_and_the_buttons_hide(tmp_path):
     app, view = _app_with(tmp_path)
-    assert app.native_controls.get() is True  # tre's, for an undecorated window on macOS
+    assert app.native_controls.get() is True  # tess_re's, for an undecorated window on macOS
     assert view.node("bar.buttons").get("visible") is False
 
 

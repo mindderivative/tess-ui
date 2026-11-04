@@ -1,9 +1,9 @@
-"""Tesserae's `View`: a view spec built onto `tre` 0.3.4's
+"""Tesserae's `View`: a view spec built onto `tess_re` 0.3.4's
 building blocks by Tesserae's compiler, kept up to date by Tesserae's
 reconciler, with bindings, `handlers:` and `two_way:` wired by Tesserae --
-the job `tre`'s `View` does today and 0.3.5 removes.
+the job `tess_re`'s `View` does today and 0.3.5 removes.
 
-The surface is the one Tesserae used on `tre`'s `View`: `node(id)`,
+The surface is the one Tesserae used on `tess_re`'s `View`: `node(id)`,
 `reconcile(spec=...)`, `set_theme(...)`, `set_stylesheet(...)`, and
 `_attach(viewmodel)` (called by `ViewModel.__init__`), plus `root` and
 `window`.
@@ -12,9 +12,9 @@ The surface is the one Tesserae used on `tre`'s `View`: `node(id)`,
 `tess_ui.reactive` recording frame, so their dependencies are tracked
 by Tesserae; a change re-evaluates the expression (re-tracking what it
 reads) and sets the property. A value that hasn't changed isn't set
-again. On `tre` 0.3.4's building blocks a programmatic `set` fires no
+again. On `tess_re` 0.3.4's building blocks a programmatic `set` fires no
 `change` event, so a declared `on_change` runs only for the user's own
-edits (`tre` issue #12 doesn't happen here). The eight MD3 control kinds
+edits (`tess_re` issue #12 doesn't happen here). The eight MD3 control kinds
 are Tesserae's controls: their `checked`/
 `selected`/`value`/`hour`/`minute` and `disabled` bindings set the
 control's `Signal`s, and `on_change` and `two_way:` hear the control's
@@ -24,8 +24,8 @@ control's `Signal`s, and `on_change` and `two_way:` hear the control's
 `on_hover_enter` → `pointer_enter`, `on_hover_exit` → `pointer_leave`,
 `on_change` → `change`, `on_focus_enter` → `focus`, `on_focus_exit` →
 `unfocus`. A handler taking one argument gets the event; one taking none
-is called without it, as in `tre`. Other names are validated but not
-wired, as in `tre`.
+is called without it, as in `tess_re`. Other names are validated but not
+wired, as in `tess_re`.
 
 **`two_way:`** names one bound property whose user edits write back to
 its `Signal`; the binding must be exactly `{{ name.get() }}`.
@@ -33,7 +33,7 @@ its `Signal`; the binding must be exactly `{{ name.get() }}`.
 **Reconciling** matches children by `id`: an unchanged node is kept, a
 changed one is patched in place (keeping its identity, focus and
 animations), a changed kind is rebuilt, a missing one destroyed. Unlike
-`tre`, children also follow the new spec's order. After any update --
+`tess_re`, children also follow the new spec's order. After any update --
 reconcile, theme, stylesheet -- bindings and handlers are wired again, so
 bound nodes show their live values.
 """
@@ -46,7 +46,7 @@ import types
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
-import tre
+import tess_re
 
 from tess_ui import a11y, reactive, tokens
 from tess_ui.binding import BindingError, Handle, evaluate_value, parse_binding, value_debug
@@ -102,7 +102,7 @@ _NUMBER_PROPS = {"width", "height", "padding", "gap", "opacity", "corner_radius"
 
 
 def _props_equal(a: dict[str, Any], b: dict[str, Any]) -> bool:
-    """`tre`'s `node_props_equal`, plus the state fields Tesserae builds from."""
+    """`tess_re`'s `node_props_equal`, plus the state fields Tesserae builds from."""
     # `handlers` and `a11y` too: they change focus, role and label (M39)
     keys = ("kind", "classes", "style", "text", "image", "icon", "svg", "canvas", "scroll", "overlay", "virtual", "track", "stop_indicator", "buffer", "value", "error", "icons", "ticks", "value_indicator", "vertical", "size", "low", "high", "thickness", "two_bar", "contained", "wavy", "checked", "selected", "value", "hour", "minute",
             "handlers", "a11y", "component_of", "min", "max", "step", "label", "x", "y",  # M57, M58, M60
@@ -117,10 +117,10 @@ class View:
     """A built view. `spec` is an expanded view spec (from
     `tess_ui.spec.build_view_spec` or `expand_components_to_spec`);
     `frames` maps an Image's id to its decoded `(rgba, width, height)`.
-    The theme and stylesheet arguments are `tre`'s `View`'s: the seed and
+    The theme and stylesheet arguments are `tess_re`'s `View`'s: the seed and
     dark flag, and the three `*_spec` dicts.
 
-    `window` is the `tre.Window` to build into. Without one, the view
+    `window` is the `tess_re.Window` to build into. Without one, the view
     makes its own and mounts its root there. It doesn't theme that window:
     everything a view builds takes the view's theme. Built on an
     `App`'s window with no theme argument at all, it takes the app's theme
@@ -178,7 +178,7 @@ class View:
         self._layers = prepare_layers(default_theme_spec, custom_theme_spec, stylesheet_spec)
         self._owns_window = window is None
         if window is None:
-            window = tre.Window(width=DEFAULT_SIZE[0], height=DEFAULT_SIZE[1])
+            window = tess_re.Window(width=DEFAULT_SIZE[0], height=DEFAULT_SIZE[1])
             window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, align_items="flex_start")
             # no `Window.set_theme` (removed in tre 0.3.5): since M40 nothing a view builds reads the window's theme
         self.window = window
@@ -198,14 +198,14 @@ class View:
         self._viewmodel: Any = None
         self._wiring: list[Callable[[], None]] = []  # undo steps
         self._interactions: dict[str, Interaction] = {}
-        self._scrollers: dict[str, Scroller] = {}  # each ScrollView's write-back (M71; `tre` scrolls, M73)
+        self._scrollers: dict[str, Scroller] = {}  # each ScrollView's write-back (M71; `tess_re` scrolls, M73)
         #: M70: the nodes shown disabled now, by their `disabled:` key or binding.
         self._disabled_on: set[str] = set()
         self._sync_interactions()
         self._sync_docks()
         self._sync_embeds()
         self._wire_actions()
-        self._extras_set: dict[str, set[str]] = {}  # the accessibility states tre may lack that each node was given, to take back one that is dropped
+        self._extras_set: dict[str, set[str]] = {}  # the accessibility states tess_re may lack that each node was given, to take back one that is dropped
         self._apply_a11y_extras()
         if app is not None:
             app._followers[self] = None
@@ -400,7 +400,7 @@ class View:
         contrast: float = 0.0,
     ) -> None:
         """Re-themes every node in place. Each call is a complete
-        selection, as in `tre`: an omitted argument means its default."""
+        selection, as in `tess_re`: an omitted argument means its default."""
         scheme = tokens.resolve_scheme(theme_seed, dark, default_theme_spec, custom_theme_spec, contrast)
         layers = prepare_layers(default_theme_spec, custom_theme_spec, self._stylesheet_spec)
         self._repatch(scheme, layers)
@@ -429,7 +429,7 @@ class View:
         -- under `into`, a node of this view, in this view's window. It gets
         this view's theme and stylesheet, and follows them when they change.
         `spec` is the expanded spec; without it, `path` is read (the same
-        call shape as `tre`'s `View.instantiate`)."""
+        call shape as `tess_re`'s `View.instantiate`)."""
         component = Component(self, spec if spec is not None else path, frames=frames,
                               path=Path(path) if spec is not None and path else None)
         if spec is not None and path:
@@ -600,7 +600,7 @@ class View:
                                         frames=self._frames, into=self._built, listen=self._events.listen,
                                         parent=node_id)
             child_node = self._placed(child["id"], child_node, outer)
-            # a tre Node is a fresh handle on each call, so compare with ==, not `is`
+            # a tess_re Node is a fresh handle on each call, so compare with ==, not `is`
             if child_node.parent() != outer or _child_index(outer, child_node) != index:
                 outer.insert_child(index, child_node)
         for child_id, child in old_children.items():
@@ -761,8 +761,8 @@ class View:
         self._apply_a11y_extras()
 
     def _apply_a11y_extras(self) -> None:
-        """The `a11y:` fields tre may not have a property for yet (`a11y.EXTRAS`) and the relations (`describedby`, `controls`, which name other
-        nodes of the view): set one at a time on the node that carries the node's accessibility, so one tre lacks is skipped and said once. A field
+        """The `a11y:` fields tess_re may not have a property for yet (`a11y.EXTRAS`) and the relations (`describedby`, `controls`, which name other
+        nodes of the view): set one at a time on the node that carries the node's accessibility, so one tess_re lacks is skipped and said once. A field
         a node no longer gives is cleared."""
         for node_spec in _walk(self._spec):
             node_id = node_spec["id"]
@@ -832,7 +832,7 @@ class View:
             raise ValueError(f'widget "{node_id}": handler "{event}" names "{method_name}", which is not callable')
         tre_event = _EVENTS.get(event)
         if tre_event is None:
-            return  # validated, not wired -- as in tre
+            return  # validated, not wired -- as in tess_re
         adapted = _arity_adapter(method)
 
         def call(event_obj: Any) -> Any:
@@ -847,7 +847,7 @@ class View:
             if hasattr(control, "on_change"):
                 self._wiring.append(control.on_change(lambda value: call(None)))
             return
-        if tre_event == "click":  # the innermost clickable takes the click (tre bubbles it, M49)
+        if tre_event == "click":  # the innermost clickable takes the click (tess_re bubbles it, M49)
             self._add_listener(node, tre_event, handled(call))
             return
         self._add_listener(node, tre_event, call)
@@ -1061,7 +1061,7 @@ class View:
             raise ValueError(f'widget "{node_id}": two_way binding names "{name}", which has no matching attribute '
                              "on the ViewModel")
         node = self._node_for(node_spec, prop)
-        if node_spec.get("kind") == "ScrollView":  # its Scroller follows `tre`'s `scroll` event (M71, M73)
+        if node_spec.get("kind") == "ScrollView":  # its Scroller follows `tess_re`'s `scroll` event (M71, M73)
             if prop != "scroll_offset":
                 raise ValueError(f'widget "{node_id}": a ScrollView\'s only user-editable property is "scroll_offset"')
             self._wiring.append(self._scrollers[node_id].on_scroll(signal.set))
@@ -1104,7 +1104,7 @@ class Component(View):
 
     def _forget_dead(self) -> None:
         """Unwires a component whose nodes are already gone, and the
-        components inside it; its `Signal`s stop reaching it. (`tre`'s
+        components inside it; its `Signal`s stop reaching it. (`tess_re`'s
         `off` on a destroyed node is harmless, so unwiring is safe.)"""
         for component in list(self._components):
             component._forget_dead()
@@ -1174,7 +1174,7 @@ def _quoted(raw: str) -> str:
 
 def _arity_adapter(method: Callable[..., Any]) -> Callable[[Any], Any]:
     """Calls `method` with the event if it takes an argument, else
-    without -- `tre`'s handler convention."""
+    without -- `tess_re`'s handler convention."""
     try:
         params = [p for p in inspect.signature(method).parameters.values()
                   if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD, p.VAR_POSITIONAL)]
@@ -1199,7 +1199,7 @@ _CONTROL_STATE = {"checked": bool, "selected": bool, "disabled": bool, "value": 
 
 
 def _apply_to_control(control: Any, kind: Optional[str], prop: str, value: Any) -> None:
-    """Sets a bound value on a control's `Signal`, with `tre`'s type rules
+    """Sets a bound value on a control's `Signal`, with `tess_re`'s type rules
     and messages."""
     expected = _CONTROL_STATE[prop]
     if expected is bool:
@@ -1215,7 +1215,7 @@ def _apply_to_control(control: Any, kind: Optional[str], prop: str, value: Any) 
 
 
 def _apply(node: Any, kind: Optional[str], prop: str, value: Any, scheme: Optional[dict[str, Any]] = None) -> None:
-    """Sets one bound value, with `tre`'s type rules and messages; an
+    """Sets one bound value, with `tess_re`'s type rules and messages; an
     unchanged value isn't set again."""
     if prop in ("checked", "selected", "visible"):  # visible: out of layout and hit-testing (0.3.0 M3)
         if not isinstance(value, bool):

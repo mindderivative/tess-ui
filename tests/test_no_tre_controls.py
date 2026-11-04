@@ -1,4 +1,4 @@
-"""M40 Phase 6, M41 Phase 6 and M42 Phase 8: the gate for tre's MD3 widgets. `tre`
+"""M40 Phase 6, M41 Phase 6 and M42 Phase 8: the gate for tess_re's MD3 widgets. `tess_re`
 0.3.5 (its M99) removes its controls (checkbox, radio button, switch,
 slider, spin box, progress, loading indicator, time picker dial, with
 their legacy state methods), its composed widgets and its overlays'
@@ -7,7 +7,7 @@ their legacy state methods), its composed widgets and its overlays'
 and time, media, node graph and new widgets, with `App` off the window's
 theme. This keeps any use of them from creeping back into `src/tess_ui`:
 it reads the code, not the docstrings, so a mention in prose is fine.
-The names are `tre`'s own removal list (`python/tre/_removed.py`, 0.3.5).
+The names are `tess_re`'s own removal list (`python/tess_re/_removed.py`, 0.3.5).
 """
 
 import ast
@@ -82,9 +82,9 @@ def test_the_check_sees_m42s_names_and_a_themed_window_but_not_tesseraes_own_set
 
 
 def test_tesserae_runs_on_a_tre_without_the_removed_api():
-    """M46: on `tre` 0.3.5 the names M43's switch forbade are gone for
+    """M46: on `tess_re` 0.3.5 the names M43's switch forbade are gone for
     good, so a green suite means Tesserae needs none of them."""
-    import tre
+    import tess_re
 
-    assert not hasattr(tre, "View") and not hasattr(tre, "Signal")
-    assert not hasattr(tre.Window, "set_theme") and not hasattr(tre.Window, "add_checkbox")
+    assert not hasattr(tess_re, "View") and not hasattr(tess_re, "Signal")
+    assert not hasattr(tess_re.Window, "set_theme") and not hasattr(tess_re.Window, "add_checkbox")

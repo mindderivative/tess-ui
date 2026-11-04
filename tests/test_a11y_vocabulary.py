@@ -10,7 +10,7 @@ SEED = (103, 80, 164, 255)
 
 
 class Recorder:
-    """A node that takes only the properties it was told to, like a tre that has them."""
+    """A node that takes only the properties it was told to, like a tess_re that has them."""
 
     def __init__(self, accepts):
         self.accepts, self.set_calls = set(accepts), []

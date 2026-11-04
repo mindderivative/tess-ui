@@ -1,17 +1,17 @@
 from helpers import elevation, view_from
 """Real coverage for the Progress & Status component fragments --
 `CircularProgress`/`LinearProgress`/`LoadingIndicator`. All 3 were
-blocked until `tre`'s own M84 added declarative `NodeKindSpec` support
+blocked until `tess_re`'s own M84 added declarative `NodeKindSpec` support
 for them (this repo's own M27) -- see `BUILD_TRACKER_ARCHIVE_0.2.md`.
 
 `Node.get()` only exposes a small numeric whitelist (`engine-py::
 node.rs`, confirmed directly) -- `value` is readable for both progress
 indicators, but no color/tint field is readable from Python for any of
-these 3 at all; `tre`'s own `engine-spec` unit tests already cover
+these 3 at all; `tess_re`'s own `engine-spec` unit tests already cover
 tint resolution directly at the Rust level.
 """
 
-from tre import Node, Window
+from tess_re import Node, Window
 
 from tess_ui.spec import expand_components
 from tess_ui.widgets import circular_progress, linear_progress, loading_indicator

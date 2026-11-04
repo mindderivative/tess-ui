@@ -8,7 +8,7 @@ limit already named for `tabs`/`navigation_rail`/etc.
 import pytest
 
 from helpers import elevation, view_from
-from tre import Window
+from tess_re import Window
 
 from tess_ui.spec import expand_components
 from tess_ui.widgets import dialog, menu_item, side_sheet, snackbar, tooltip
@@ -46,10 +46,10 @@ children:
 
 
 def _assert_scrim_matches(scrim, panel, imperative_scrim):
-    """M33 (`tre` 0.3.4): `opacity` is group opacity, so the scrim's 32%
+    """M33 (`tess_re` 0.3.4): `opacity` is group opacity, so the scrim's 32%
     lives in its color and nothing in the overlay sets `opacity` -- an
     `opacity: 0.32` scrim would fade its child panel too. Matches
-    `tre`'s own scrim exactly, `(0, 0, 0, 82)`."""
+    `tess_re`'s own scrim exactly, `(0, 0, 0, 82)`."""
     assert scrim.get("fill") == imperative_scrim.get("fill") == (0, 0, 0, 82)
     assert scrim.get("opacity") == imperative_scrim.get("opacity") == 1.0
     assert panel.get("opacity") == 1.0

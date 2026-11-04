@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tesserae-ui"  # on PyPI; `tesserae` there is an unrelated project, which is why the import name is `tess_ui`.
-version = "0.5.1.10"
-description = "A pyCopper-style declarative Python GUI framework, powered by the Tesserae Render Engine (tre)."
+version = "0.5.1.11"
+description = "A pyCopper-style declarative Python GUI framework, powered by the Tesserae Render Engine (tess_re)."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.12"  # the user's floor (M76); 3.9 would also need a compiler for materialyoucolor
@@ -27,7 +27,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "tesserae-engine==0.5.8",  # tre, on PyPI (still `import tre`), pinned to the release the whole suite was run on (8404 passed): 0.5.8 hit-tests a rounded shape (a press 5 px in from a pill's corner misses). A new tre release is tried first, by the user: a new tre line is a new Tesserae line; 0.5.7 adds `calc()` and mixed-unit sizes, `left`/`top`/`right`/`bottom`/`inset` on an absolute node, `anchor`/`placement`/`offset` (corners and centre for a layer, and a node placed in the tree against another), `fit-content` text, bitmap colour emoji and a larger minimum window size; 0.5.6 adds timers, layout animation, the extra accessibility states, text-input props, masks and late windows; PyPI's own `tre` is an unrelated regex library. 0.5.5 resizes a window without the vsync stalls of 0.5.4 (KDE Wayland); 0.5.4 adds the `svg` node and fits a text node's width to its text; 0.5.1 let other Python threads run while a window is idle (tre#92).
+    "tesserae-engine==0.6.0",  # tess_re, on PyPI as tesserae-engine (`import tess_re`; it was `import tre` before 0.6.0), pinned to the release the whole suite was run on. A new engine release is tried first, by the user: a new engine line is a new Tesserae line. PyPI's own `tre` is an unrelated regex library.
     "pyyaml>=6.0",
     "Pillow>=10.0",
     "watchfiles>=1.0",

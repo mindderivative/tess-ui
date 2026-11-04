@@ -3,13 +3,13 @@
 # (every component issue is in exactly one unit, every need exists, there is no cycle).
 #
 # Two kinds of entry:
-#   foundations  work that is not one component: the language and renderer in Tesserae (kind: tesserae), things the engine tre would have
-#                to add (kind: tre), and tre capabilities that exist and that Tesserae could adopt once the pieces under them are built
+#   foundations  work that is not one component: the language and renderer in Tesserae (kind: tesserae), things the engine tess_re would have
+#                to add (kind: tess_re), and tess_re capabilities that exist and that Tesserae could adopt once the pieces under them are built
 #                (kind: adopt, optional polish).
 #   units        a component or a group of components built together (their issues are listed). `done: true` marks finished work.
 #
-# `needs` names foundations and units that must be finished first. `gated` on a tre item says Tesserae cannot finish what needs it until
-# tre ships it (the item is a request to tre, not work in this repository).
+# `needs` names foundations and units that must be finished first. `gated` on a tess_re item says Tesserae cannot finish what needs it until
+# tess_re ships it (the item is a request to tess_re, not work in this repository).
 
 foundations:
   # ---- Tesserae: independent -------------------------------------------------------------------------------------------------------
@@ -27,14 +27,14 @@ foundations:
     title: Per-corner `corner_radius`
     kind: tesserae
     done: true
-    note: "tre already takes a 4-tuple. Needed for filled text fields, connected button groups, split buttons, segmented buttons, sheets."
+    note: "tess_re already takes a 4-tuple. Needed for filled text fields, connected button groups, split buttons, segmented buttons, sheets."
   - id: text-extras
     title: "`max_lines`, `letter_spacing` and `selectable` on text"
     kind: tesserae
     done: true
-    note: "tre has them on text nodes; expose them as properties of Text and Link."
+    note: "tess_re has them on text nodes; expose them as properties of Text and Link."
   - id: a11y-now
-    title: The accessibility states tre already has
+    title: The accessibility states tess_re already has
     kind: tesserae
     done: true
     note: "`expanded`, `selected`, `checked`, `value_min`/`value_max`, `live`, `level`, `role`, `label`, `hidden`: make them properties/fields in the view language and set by the built-in widgets."
@@ -62,19 +62,19 @@ foundations:
     title: Clipboard actions
     kind: tesserae
     done: true
-    note: "`copy(text)` and `paste()`; tre has `write_clipboard`/`read_clipboard`. Low priority."
+    note: "`copy(text)` and `paste()`; tess_re has `write_clipboard`/`read_clipboard`. Low priority."
   - id: input-mask
     title: Input masks on `TextInput`
     kind: tesserae
     done: true
-    note: "A `mask` (digits, groups, patterns) applied as the user types, in the renderer; tre's input has none."
+    note: "A `mask` (digits, groups, patterns) applied as the user types, in the renderer; tess_re's input has none."
   - id: open-url
     title: An `open_url` action
     kind: tesserae
     done: true
     note: "For `Link`; the OS opener."
   - id: canvas-drawing
-    title: Drawing with tre's canvas and painter
+    title: Drawing with tess_re's canvas and painter
     kind: tesserae
     done: true
     note: "A way for a widget to draw paths (wavy progress, slider ticks, dial ticks, graph edges)."
@@ -85,12 +85,12 @@ foundations:
     note: "`ComposedView` does not wire the bindings and handlers the Window/TitleBar/Dock expansion produces (found in phase 7). The windows track: #114, #106."
   # ---- Tesserae: after something ----------------------------------------------------------------------------------------------------
   - id: transition-paint
-    title: "`transition:` for what tre can animate"
+    title: "`transition:` for what tess_re can animate"
     kind: tesserae
     done: true
     note: "opacity, fill, corner radius, shadows, scale and translate go through `node.animate` instead of `set`, with durations, easing and springs. Reserved in the language today."
   - id: virtual-list
-    title: "`for:` backed by tre's `virtual_list`"
+    title: "`for:` backed by tess_re's `virtual_list`"
     kind: tesserae
     done: true
     needs: [scroll-state]
@@ -100,7 +100,7 @@ foundations:
     kind: tesserae
     done: true
     needs: [focus]
-    note: "A layer anchored to a node (placement, flip), modal scrim, focus trap, Escape, outside press, focus return, an `open` model property that closing writes back. tre layers exist."
+    note: "A layer anchored to a node (placement, flip), modal scrim, focus trap, Escape, outside press, focus return, an `open` model property that closing writes back. tess_re layers exist."
   - id: tooltip-prop
     title: "A `tooltip:` property on every node"
     kind: tesserae
@@ -112,44 +112,44 @@ foundations:
     kind: tesserae
     done: true
     needs: [transition-paint]
-    note: "tre animates `shadows`."
-  # ---- tre: additions the engine would have to make ---------------------------------------------------------------------------------
+    note: "tess_re animates `shadows`."
+  # ---- tess_re: additions the engine would have to make ---------------------------------------------------------------------------------
   - id: engine-a11y
-    title: "tre: more accessibility states"
-    kind: tre
+    title: "tess_re: more accessibility states"
+    kind: tess_re
     done: true
     gated: true
     needs: [a11y-now]
-    note: "`pressed`, `invalid`, `description` and `describedby`, `controls`, `current`, `value_now`/`value_text`, `busy`. tre has expanded, selected, checked, value_min/max already; ask once Tesserae has fixed the vocabulary. Done: tre 0.5.6 takes `pressed`, `invalid`, `description`, `current`, `busy` and `value_text` on a node (checked 2026-10-11 by setting them; `describedby`, `controls` and `value_now` were not probed)."
+    note: "`pressed`, `invalid`, `description` and `describedby`, `controls`, `current`, `value_now`/`value_text`, `busy`. tess_re has expanded, selected, checked, value_min/max already; ask once Tesserae has fixed the vocabulary. Done: tre 0.5.6 takes `pressed`, `invalid`, `description`, `current`, `busy` and `value_text` on a node (checked 2026-10-11 by setting them; `describedby`, `controls` and `value_now` were not probed)."
   - id: engine-layout-animation
-    title: "tre: animatable layout properties"
-    kind: tre
+    title: "tess_re: animatable layout properties"
+    kind: tess_re
     done: true
     gated: true
     needs: [transition-paint]
     note: "width, height, x, y, padding, gap and font size are not animatable today (opacity, fill, corner radius, scale, translate are), plus an animation-finished event. Without it a collapse is done with a transform or frame by frame. Done: tre 0.5.6 per `pyproject.toml` and the 0.5.0 changelog (a layout `transition:` is the engine's own animation); not probed on 2026-10-11."
   - id: engine-input
-    title: "tre: more on the text input"
-    kind: tre
+    title: "tess_re: more on the text input"
+    kind: tess_re
     done: true
     gated: true
     needs: [input-mask]
     note: "`max_length`, `read_only`, an input mode, a `submit` event and the IME composition event (the renderer works round the first three; composition has no workaround). Done: tre 0.5.6 per `pyproject.toml` and the 0.5.0 changelog; not probed on 2026-10-11."
   - id: engine-timers
-    title: "tre: timers"
-    kind: tre
+    title: "tess_re: timers"
+    kind: tess_re
     done: true
     needs: [timers]
     note: "`window.after`/`every`, cancellable. Tesserae's frame-loop timers work until then. Done: tre 0.5.6 has `window.after` and `window.every` (checked 2026-10-11)."
   - id: engine-scroll-snap
-    title: "tre: scroll snap points"
-    kind: tre
+    title: "tess_re: scroll snap points"
+    kind: tess_re
     done: true
     needs: [virtual-list]
     note: "Snap on a ScrollView or virtual list. Carousels and tab strips snap in Tesserae with an animated `scroll_offset` until then. Done in part: tre 0.5.6 takes `scroll_snap` and `snap_align` on a scroll view (checked 2026-10-11 that they are accepted; that it settles on a point was not probed) and the Carousel uses them; `snap_points` is rejected, and a virtual list was not checked. `design/tre-requests/scroll-snap.md` still says none of it exists, which is out of date."
   - id: engine-masks
-    title: "tre: rounded and circular masks"
-    kind: tre
+    title: "tess_re: rounded and circular masks"
+    kind: tess_re
     done: true
     note: "Clip any node, images included, to a shape. Images use the container's corner radius until then. Done: tre 0.5.6 takes `mask` on a node (checked 2026-10-11 that it is accepted); Image masks needed no new code (#236)."
   # ---- Tesserae: needs the engine's additions -----------------------------------------------------------------------------------------
@@ -181,7 +181,7 @@ foundations:
     kind: tesserae
     done: true
     needs: [transition-paint, composed-windows]
-  # ---- adopt: tre has it; Tesserae could use it once the pieces under it exist (optional polish) -------------------------------------
+  # ---- adopt: tess_re has it; Tesserae could use it once the pieces under it exist (optional polish) -------------------------------------
   - id: shader-ripple
     title: "Ripple and state layer as a shader (T2, T3)"
     kind: adopt

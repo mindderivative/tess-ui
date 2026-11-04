@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""#106 phase 1 spike (0.5.0): what a real tre panel drag reports, and whether Tesserae can find the split half under the pointer.
+"""#106 phase 1 spike (0.5.0): what a real tess_re panel drag reports, and whether Tesserae can find the split half under the pointer.
 
 Question: while the user drags a dock tab in a real window, do the window root's `pointer_move` events keep arriving with
 `window_x`/`window_y` (they do under `simulate`)? If so, Tesserae can hit-test a DockPanel split's halves itself from the last
-position before `dock_drop`, and tre needs no change. `dock_target`/`dock_drop` carry only the zone and the panel.
+position before `dock_drop`, and tess_re needs no change. `dock_target`/`dock_drop` carry only the zone and the panel.
 
 Run it at the machine, with a person dragging:
 
@@ -12,7 +12,7 @@ Run it at the machine, with a person dragging:
 
 Drag the tabs (Files, Outline, Notes, Properties, Console) onto: the Source half's left edge, its middle, its right edge; the
 Preview half's edges and middle; another zone; and release outside every zone once. Press `q` (window focused) to end; closing the
-window ends it too. The summary says, for each drop, which zone tre reported, the last pointer position, and which half and band
+window ends it too. The summary says, for each drop, which zone tess_re reported, the last pointer position, and which half and band
 (edge or middle) that position is in. Results go to `--out` (default `spike-results/`) as JSON and text.
 """
 
@@ -32,7 +32,7 @@ EDGE = 0.25  # the outer quarter of a half's side is its edge band
 
 
 def absolute_rect(node):
-    """(x, y, width, height) of `node` in the window (tre's `layout_x`/`layout_y` are already window coordinates)."""
+    """(x, y, width, height) of `node` in the window (tess_re's `layout_x`/`layout_y` are already window coordinates)."""
     return node.get("layout_x"), node.get("layout_y"), node.get("layout_width"), node.get("layout_height")
 
 
@@ -133,10 +133,10 @@ def main(argv=None) -> int:
     moves_in_drag = [e for e in events if e["kind"] == "pointer_move" and e.get("dragging")]
     lines = [f"drag spike: {len(events)} events, {len(drops)} drops, {len(moves_in_drag)} pointer_moves during a drag",
              "root pointer_move kept arriving during a drag: " + (
-                 "YES" if moves_in_drag else "NO (Tesserae cannot hit-test; ask tre)" if drops else
+                 "YES" if moves_in_drag else "NO (Tesserae cannot hit-test; ask tess_re)" if drops else
                  "INCONCLUSIVE: no tab drag started (press on a tab label in the strip and move it; a press elsewhere is not a drag)")]
     for drop in drops:
-        lines.append(f"  drop {drop['panel']!r}: tre said {drop['side']!r}; last pointer ({drop['last_x']}, {drop['last_y']}); "
+        lines.append(f"  drop {drop['panel']!r}: tess_re said {drop['side']!r}; last pointer ({drop['last_x']}, {drop['last_y']}); "
                      f"half {drop['half']!r}, band {drop['band']!r}")
     text = "\n".join(lines)
     args.out.mkdir(parents=True, exist_ok=True)

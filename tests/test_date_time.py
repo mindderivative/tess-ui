@@ -3,7 +3,7 @@ field, Tesserae's since M42 (`tess_ui.widgets.date_time`).
 """
 
 import pytest
-import tre
+import tess_re
 
 from tess_ui import Theme, tokens
 from tess_ui.widgets import date_picker_day, period_selector, time_input_field
@@ -14,7 +14,7 @@ CLEAR = (0, 0, 0, 0)
 
 
 def _window():
-    window = tre.Window(width=600, height=400)
+    window = tess_re.Window(width=600, height=400)
     window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, gap=8,
                     align_items="flex_start")
     return window

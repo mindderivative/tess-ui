@@ -71,7 +71,7 @@ stop = cb.on_change(print)       # the user's changes
 cb.disabled.set(True)
 ```
 
-Every control has `.node` (a `tre` node to put in a tree), its state as
+Every control has `.node` (a `tess_re` node to put in a tree), its state as
 `Signal`s, `set_theme(theme)` and `destroy()`; all but the progress widgets and the loading indicator also have `.disabled` and
 `on_change(fn)` (which returns a function that stops it). On an `App`'s window, a
 control made without `theme=` takes the app's theme and follows it

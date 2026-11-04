@@ -1,6 +1,6 @@
-"""M71 (#21): `kind: ScrollView`, `tre`'s `scroll_view` holding one content
+"""M71 (#21): `kind: ScrollView`, `tess_re`'s `scroll_view` holding one content
 box its children lay out in (vertical unless the style says otherwise).
-Since `tre` 0.4.2 (`tre` #24, M73) `tre` scrolls it with the keys around
+Since `tess_re` 0.4.2 (`tess_re` #24, M73) `tess_re` scrolls it with the keys around
 the focused node, reveals a focused child and answers `scroll_into_view`;
 Tesserae's `Scroller` follows its `scroll` event for `two_way:
 scroll_offset`. These check the outcomes, whoever does the scrolling.
@@ -10,7 +10,7 @@ import pytest
 
 from tess_ui import Signal, Theme, View, ViewModel
 
-LINE = 40.0  # an arrow key's scroll (tre's)
+LINE = 40.0  # an arrow key's scroll (tess_re's)
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 
@@ -77,9 +77,9 @@ def test_the_keys_scroll_it_when_it_has_focus(keys, offset, capfd):
     scroll.focus()
     for key in keys:
         view.window.simulate("key_down", key=key)
-        view.window.advance(16)  # tre clamps a far offset at its next layout
+        view.window.advance(16)  # tess_re clamps a far offset at its next layout
     assert scroll.get("scroll_offset") == offset and vm.pos.get() == offset  # what it reports is where it stops
-    assert "uncaught exception" not in capfd.readouterr().err  # never a negative offset (tre refuses one)
+    assert "uncaught exception" not in capfd.readouterr().err  # never a negative offset (tess_re refuses one)
 
 
 def test_a_focused_childs_keys_scroll_it_but_a_text_field_keeps_its_arrows():  # tre 0.4.2 (M73)
@@ -88,7 +88,7 @@ def test_a_focused_childs_keys_scroll_it_but_a_text_field_keeps_its_arrows():  #
     view, vm, scroll = _view(_spec(children=[*_rows(), field],
                                    bindings={"scroll_offset": "{{ pos.get() }}"}, two_way="scroll_offset"))
     view.node("r0").focus()
-    view.window.simulate("key_down", key="page_down")  # the Scroller mustn't keep it from tre (it did, before M73)
+    view.window.simulate("key_down", key="page_down")  # the Scroller mustn't keep it from tess_re (it did, before M73)
     assert scroll.get("scroll_offset") == 100.0 and vm.pos.get() == 100.0
     view.node("field").focus()  # revealed at the bottom
     at = scroll.get("scroll_offset")
@@ -226,12 +226,12 @@ def test_a_detached_scroller_hears_nothing_more():
 def test_an_offset_past_the_end_is_held_at_the_end_and_written_back():  # tre 0.4.3 (M79)
     view, vm, scroll = _view(_spec(bindings={"scroll_offset": "{{ pos.get() }}"}, two_way="scroll_offset"))
     view.window.advance(16)
-    vm.pos.set(9999.0)  # no frame needed: tre clamps it as it's set, with one `scroll` event
+    vm.pos.set(9999.0)  # no frame needed: tess_re clamps it as it's set, with one `scroll` event
     assert scroll.get("scroll_offset") == 300.0 and vm.pos.get() == 300.0
 
 
 def test_a_wheel_an_inner_scroll_view_cannot_use_goes_to_the_one_outside():  # tre 0.4.4 (M80)
-    """Scroll chaining, as in a browser, since `tre` 0.4.4: an inner
+    """Scroll chaining, as in a browser, since `tess_re` 0.4.4: an inner
     `ScrollView` whose content fits can't move, so the wheel goes on to
     the page around it. (On 0.4.3 the inner one kept it; M79 pinned that,
     and this test flipped with 0.4.4.)"""

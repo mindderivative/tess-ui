@@ -87,9 +87,9 @@ def test_the_video_fragment_with_and_without_a_frame_binding():
 
 
 def test_the_video_widget_shares_the_frame_check():
-    import tre
+    import tess_re
 
-    window = tre.Window(width=200, height=100)
+    window = tess_re.Window(width=200, height=100)
     surface = video(window, 64, 36)
     surface.frame(*_frame(2, 1, 7))
     assert _shown(surface.node) == _frame(2, 1, 7)

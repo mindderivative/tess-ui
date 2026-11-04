@@ -73,7 +73,7 @@ def test_scrolling_reports_the_offset_the_direction_and_leaving_the_top(tmp_path
 
 def test_at_end_is_true_when_scrolled_as_far_as_it_goes(tmp_path):
     view, vm = opened(tmp_path)
-    scroller(view).set(scroll_offset=10000.0)  # tre clamps it to the end: 500 content - 100 view
+    scroller(view).set(scroll_offset=10000.0)  # tess_re clamps it to the end: 500 content - 100 view
     settle(view)
     assert vm.y.get() == 400.0 and vm.end.get() is True and vm.top.get() is False
     assert view.node("root.label").get("text") == "end"

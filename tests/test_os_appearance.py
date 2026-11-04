@@ -1,6 +1,6 @@
 """M53 Phase 3 (#17): `App(dark="system")` starts with the OS's
-appearance, which `tre` 0.3.5.2 can report (`window.get("dark")`,
-`tre` issue #18), instead of always starting dark. Where the OS can't say
+appearance, which `tess_re` 0.3.5.2 can report (`window.get("dark")`,
+`tess_re` issue #18), instead of always starting dark. Where the OS can't say
 before the window opens (macOS, Windows), `run()` asks again on the first
 frame (Q2). `conftest.os_appearance` fixes what the OS says (Q3).
 """
@@ -85,9 +85,9 @@ def test_os_dark_reads_the_window_and_tolerates_an_older_tre():
 
 
 def test_os_dark_asks_the_real_window():
-    import tre
+    import tess_re
 
-    assert _os_dark(tre.Window(width=10, height=10)) in (True, False, None)
+    assert _os_dark(tess_re.Window(width=10, height=10)) in (True, False, None)
 
 
 RUN_SCRIPT = textwrap.dedent(

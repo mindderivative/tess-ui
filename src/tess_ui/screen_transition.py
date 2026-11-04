@@ -5,7 +5,7 @@ app.transition = "shared_axis_x"             # every navigate(), back() and forw
 app.navigate_with("detail", transition="container_transform", origin=card_node, params={"id": 3})
 ```
 
-`TRANSITIONS` names them. Each is two animations built from what tre animates (opacity, translate, scale), 300 ms in all at MD3's durations: the
+`TRANSITIONS` names them. Each is two animations built from what tess_re animates (opacity, translate, scale), 300 ms in all at MD3's durations: the
 outgoing screen leaves in 90 ms and the incoming one arrives in 210 ms after it (container transform is one 300 ms move). While they run both screens
 are laid over each other (`position: absolute`), and when they finish the outgoing one is taken away and both are put back as they were. Going back
 reverses the direction. An app that reduces motion swaps at once, and a new navigation while one is playing finishes it first.

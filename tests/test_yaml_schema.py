@@ -4,8 +4,8 @@
 `tools/generate_yaml_schema.py` from Tesserae's own code. Every YAML file in
 the repository must validate against the schema for its kind, the mistakes an
 editor should flag must not, the committed files must be what the generator
-writes (apart from the layout enums, which are `tre`'s and may grow without
-Tesserae changing), and the layout enums they list must be ones `tre` accepts.
+writes (apart from the layout enums, which are `tess_re`'s and may grow without
+Tesserae changing), and the layout enums they list must be ones `tess_re` accepts.
 """
 
 import importlib.util
@@ -139,7 +139,7 @@ def test_theme_files_reject_a_misspelt_key():
     assert list(_validator("theme").iter_errors({"styles": [{"kind": "Rect", "style": {"corner_radious": 4}}]}))
 
 
-TRE_ENUMS = _generator().TRE_ENUMS
+TESS_RE_ENUMS = _generator().TESS_RE_ENUMS
 
 
 def _enum_values(node, found: list) -> list:
@@ -155,17 +155,17 @@ def _enum_values(node, found: list) -> list:
 
 
 def _without_tre_enums(schema: dict) -> dict:
-    """The schema with the layout enums, which are `tre`'s, taken out."""
+    """The schema with the layout enums, which are `tess_re`'s, taken out."""
     schema = json.loads(json.dumps(schema))
     properties = schema.get("definitions", {}).get("style", {}).get("properties", {})
-    for name in TRE_ENUMS:
+    for name in TESS_RE_ENUMS:
         if name in properties:
-            properties[name] = {"description": properties[name].get("description"), "<tre's values>": True}
+            properties[name] = {"description": properties[name].get("description"), "<tess_re's values>": True}
     return schema
 
 
 def test_the_committed_files_are_what_the_generator_writes():
-    """Everything Tesserae owns must match; `tre`'s layout enums may be newer in `tre` than in the file."""
+    """Everything Tesserae owns must match; `tess_re`'s layout enums may be newer in `tess_re` than in the file."""
     generator = _generator()
     written = generator.schemas()
     for kind, name in NAMES.items():
@@ -178,7 +178,7 @@ def test_the_layout_enums_in_the_schema_are_ones_tre_accepts():
     generator = _generator()
     for kind in ("view", "component"):
         properties = _schema(kind)["definitions"]["style"]["properties"]
-        for name in TRE_ENUMS:
+        for name in TESS_RE_ENUMS:
             listed = [v for v in _enum_values(properties[name], []) if not str(v).startswith("{{")]
             assert listed and set(listed) <= set(generator._tre_values(name)), f"{kind}: {name}: {listed}"
 

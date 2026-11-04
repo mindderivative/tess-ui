@@ -15,7 +15,7 @@ will exist, in which
 
 An `Instance` holds the node's widget, its id, its property values (a plain value, or a `Computed` when the expression is reactive), its style,
 handlers (each with the scope it was written in) and its children, which change as the regions under it change; `Instance.on_children` tells a
-builder what to add, remove or move. Building real nodes from instances is phase 5; this module never touches `tre`.
+builder what to add, remove or move. Building real nodes from instances is phase 5; this module never touches `tess_re`.
 
 Ids: an instance id is its parent's id, a dot and the node's `name` or its place (`children[2]`), then `[key]` under a `for:`. A view call's id is
 its own and the callee's root has it, so the callee's parts are `nav.label`. Slot content has the call's id as its parent, and its segment is

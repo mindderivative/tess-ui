@@ -1,11 +1,11 @@
 tesserae: 0.5
-# Tesserae's copy of tre's shipped default theme (crates/engine-py/assets/
+# Tesserae's copy of tess_re's shipped default theme (crates/engine-py/assets/
 # default_theme.yaml at v0.3.4), the default-theme layer of the cascade
-# when an app gives none. `tre` removes its copy with theming in 0.3.5.
+# when an app gives none. `tess_re` removes its copy with theming in 0.3.5.
 # M49 Phase 4: the engine's own shipped default theme -- the MD3
 # specification is just the default setting (the user's own words),
 # expressed here as real, editable data instead of being invisible.
-# (That was tre's note; in Tesserae) loaded automatically by `View` whenever a caller
+# (That was tess_re's note; in Tesserae) loaded automatically by `View` whenever a caller
 # doesn't supply their own `default_theme` path -- a caller who *does*
 # supply one replaces this file entirely (as a *default*, not merged
 # with it); `custom_theme` is the usual way to override just a few

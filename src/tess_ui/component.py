@@ -3,7 +3,7 @@
 built by Tesserae in the host's window). For a component whose `ViewModel`
 needs extra constructor arguments beyond the component itself (the
 real, common case: an item's own data, or a callback letting it remove
-itself from its parent's own bookkeeping), `tre`'s raw `parent
+itself from its parent's own bookkeeping), `tess_re`'s raw `parent
 .instantiate(path, into)` plus a manual `viewmodel_cls(component, ...)`
 call already works; this adds the same real `*_View.yaml`/
 `*_ViewModel.py` check `App.load` already enforces for top-level
@@ -13,7 +13,7 @@ resolve.
 
 Also applies `component:` macro-expansion (`tess_ui.spec`) before
 handing off to `parent.instantiate`, now via `spec=` rather than the
-`source=` override `tre`'s own M73 gave `View.instantiate`/`Component.instantiate` --
+`source=` override `tess_re`'s own M73 gave `View.instantiate`/`Component.instantiate` --
 previously only reachable for a top-level `View` (via `App.load`'s own
 `load_view`), never for an embedded component.
 """
@@ -124,13 +124,13 @@ def instantiate(
     the identical way).
 
     `path`'s real content is expanded for `include:`/`component:` usage
-    and handed to `tre` as a dict via `spec=`, the same
+    and handed to `tess_re` as a dict via `spec=`, the same
     as `load_view` -- a true no-op expansion for a file with neither.
     Every `kind: Image`'s `src:` is decoded by Tesserae and pushed onto
-    the built node, so `tre` is given no file path at all
-    -- `path=""` is `tre`'s own "no base directory" value, and with
-    `include:` and `image.src:` both handled here, `tre` has nothing
-    left to resolve against one. A `ValueError` from `tre` is re-raised
+    the built node, so `tess_re` is given no file path at all
+    -- `path=""` is `tess_re`'s own "no base directory" value, and with
+    `include:` and `image.src:` both handled here, `tess_re` has nothing
+    left to resolve against one. A `ValueError` from `tess_re` is re-raised
     naming `path`.
     """
     if into is None:

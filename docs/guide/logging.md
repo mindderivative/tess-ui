@@ -47,7 +47,7 @@ no ViewModel has, is an exception that names the file, line and column; the one 
 ## Failed hot reloads
 
 When a background reload fails, from a YAML error, an unknown widget,
-or a spec or stylesheet `tre` rejects, Tesserae logs one `ERROR` line
+or a spec or stylesheet `tess_re` rejects, Tesserae logs one `ERROR` line
 naming the file. The traceback is logged at `DEBUG`, so a typo doesn't
 print a stack trace unless you ask for one. The screen stays as it was,
 and the app and the watcher keep running. `ViewWatcher.poll()`, which

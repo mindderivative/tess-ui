@@ -152,10 +152,10 @@ check("insets, sums and fit-content are accepted", not messages(u), messages(u))
 for n, (what, style) in enumerate([("40px", "width: 40px"), ("a negative size", "width: -3"), ("a sum in an inset", "right: \"calc(100% - 4)\""), ("a sum in a limit", "min_width: \"calc(100% - 4)\""),
                                     ("a negative percentage inset", "inset: -5%"), ("a sum without spaces", "width: \"100%-16\"")]):
     u = open_doc(f"Scn{16 + n}_View.yaml", f"widget: Container\nstyle:\n  {style}\n")
-    check(f"a size or inset tre refuses is flagged: {what}", bool(messages(u)), messages(u)[:1])
+    check(f"a size or inset tess_re refuses is flagged: {what}", bool(messages(u)), messages(u)[:1])
 u = open_doc("Scn22_View.yaml", "widget: Rect\nstyle:\n  anchor: target\n  placement: top_end\n  offset: [4, -4]\n")
 check("anchor, placement and offset are accepted", not messages(u), messages(u))
-for n, (what, style) in enumerate([("an empty anchor", "anchor: ''"), ("a placement tre refuses", "placement: above_end"), ("a short offset", "offset: [1]"), ("a scalar offset", "offset: 3")]):
+for n, (what, style) in enumerate([("an empty anchor", "anchor: ''"), ("a placement tess_re refuses", "placement: above_end"), ("a short offset", "offset: [1]"), ("a scalar offset", "offset: 3")]):
     u = open_doc(f"Scn{23 + n}_View.yaml", f"widget: Rect\nstyle:\n  {style}\n")
     check(f"a mistake in the anchor fields is flagged: {what}", bool(messages(u)), messages(u)[:1])
 u = open_doc("Scn27_View.yaml", "widget: Rect\nstyle:\n  anc\n"); got = labels(u, 2, 5)

@@ -1,4 +1,4 @@
-"""What the shader ripple, the frosted surfaces and the gradient focus ring actually draw, read back from the headless window's snapshot (tre draws shaders and backdrop blur there)."""
+"""What the shader ripple, the frosted surfaces and the gradient focus ring actually draw, read back from the headless window's snapshot (tess_re draws shaders and backdrop blur there)."""
 
 import pytest
 

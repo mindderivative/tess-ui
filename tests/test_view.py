@@ -2,15 +2,15 @@
 Tesserae's compiler, reconciled in place, with bindings, handlers and
 `two_way:` wired by Tesserae.
 
-Where `tre`'s `View` does the same thing, its behaviour and messages are
+Where `tess_re`'s `View` does the same thing, its behaviour and messages are
 the reference (its answers recorded on 0.3.4, M43, `tests/reference.py`). Two
 deliberate differences: `on_change` fires only for the user's own edits
-(`tre` issue #12), and a reconcile puts children in the new spec's order.
+(`tess_re` issue #12), and a reconcile puts children in the new spec's order.
 """
 
 import math
 import pytest
-import tre
+import tess_re
 
 import reference
 import tess_ui
@@ -78,7 +78,7 @@ def test_a_view_builds_into_its_own_window_and_finds_nodes():
 
 
 def test_a_view_can_build_into_a_given_window_unmounted():
-    window = tre.Window(width=200, height=100)
+    window = tess_re.Window(width=200, height=100)
     view = View(_root(_rect("a")), window=window, theme_seed=SEED)
     assert view.window is window and view.root.parent() is None
 
@@ -162,7 +162,7 @@ def test_handlers_are_wired_with_or_without_the_event():
 def test_handler_errors_read_as_tres_do(method):
     spec = _root(_rect("a", handlers={"on_click": method}))
     with pytest.raises(ValueError) as theirs:
-        reference.tre(lambda: (VM(tre.View(spec=spec, theme_seed=SEED)), None)[1])
+        reference.tess_re(lambda: (VM(tess_re.View(spec=spec, theme_seed=SEED)), None)[1])
     with pytest.raises(ValueError) as ours:
         VM(_view(spec))
     assert str(ours.value) == str(theirs.value)
@@ -189,7 +189,7 @@ def test_typing_writes_back_and_on_change_runs_only_for_user_edits():
     vm = VM(view)
     view.window.advance(16)
     assert vm.changes == 0 and view.node("name").get("text") == "bob"
-    vm.name.set("from code")  # a programmatic update: no on_change (tre issue #12)
+    vm.name.set("from code")  # a programmatic update: no on_change (tess_re issue #12)
     assert view.node("name").get("text") == "from code" and vm.changes == 0
     view.node("name").focus()
     view.window.simulate("key_down", key="x")
@@ -224,7 +224,7 @@ def test_controls_expose_their_signals_and_bind_disabled():
 def test_two_way_needs_a_plain_signal_get():
     bad = dict(FIELD, bindings={"text": "{{ name.get() + '!' }}"})
     with pytest.raises(ValueError) as theirs:
-        reference.tre(lambda: (VM(tre.View(spec=_root(bad), theme_seed=SEED)), None)[1])
+        reference.tess_re(lambda: (VM(tess_re.View(spec=_root(bad), theme_seed=SEED)), None)[1])
     with pytest.raises(ValueError) as ours:
         VM(_view(_root(bad)))
     assert str(ours.value) == str(theirs.value)
@@ -257,7 +257,7 @@ def _aligned(align=None, kind="Text", node_id="t"):
 
 
 def test_text_align_places_the_text_in_its_node():
-    """0.3.1: `text: {text_align: start | center | end}`, as `tre` names it."""
+    """0.3.1: `text: {text_align: start | center | end}`, as `tess_re` names it."""
     assert _view(_root(_aligned(None))).node("t").get("text_align") == "start"  # the default
     for align in ("start", "center", "end"):
         assert _view(_root(_aligned(align))).node("t").get("text_align") == align
@@ -344,7 +344,7 @@ def test_a_misspelt_role_says_what_was_meant_and_a_name_that_is_no_role_keeps_tr
         _unthemed(background="surfce")
     with pytest.raises(ValueError) as caught:
         _unthemed(background="notacolor")
-    assert str(caught.value).endswith('invalid style.background "notacolor": unknown color identifier')  # tre's, as before
+    assert str(caught.value).endswith('invalid style.background "notacolor": unknown color identifier')  # tess_re's, as before
 
 
 def test_reconcile_adds_removes_and_orders_children_as_the_new_spec_does():
@@ -451,7 +451,7 @@ def test_a_node_that_sets_its_alignment_can_be_restyled():
 
 
 def test_text_is_sized_to_its_content_and_bound_text_is_measured_again():
-    """M41: `tre` 0.3.4's text has no intrinsic size, so a Text with no
+    """M41: `tess_re` 0.3.4's text has no intrinsic size, so a Text with no
     width was 0 px wide; Tesserae measures it (`window.measure_text`)."""
     class Greeting(tess_ui.ViewModel):
         def __init__(self, view):

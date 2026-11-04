@@ -7,7 +7,7 @@ against the `tess_ui.widgets` factory's control by state.
 import pytest
 
 from helpers import elevation, view_from
-from tre import Window
+from tess_re import Window
 
 from tess_ui.spec import ComponentError, expand_components
 from tess_ui.widgets import radio_button, spin_box, switch
@@ -151,7 +151,7 @@ children:
 
 
 def test_switch_with_no_theme_still_builds_falling_back_to_the_real_md3_baseline():
-    # `tre`'s own engine-spec unit tests already prove the real
+    # `tess_re`'s own engine-spec unit tests already prove the real
     # fallback color; this proves the declarative path builds cleanly
     # with no theme at all, matching `add_switch`'s own identical
     # no-theme contract.

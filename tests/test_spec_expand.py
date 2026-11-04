@@ -1,7 +1,7 @@
 """Real coverage for `tess_ui.spec.expand_components` -- Part 3's
 macro-expansion engine. Exercises the real `Button_Component.yaml`
 fragment end to end (parsed by `yaml.safe_load`, constructed as a real
-`tre.View`), plus every real guard the engine states in its own module
+`tess_re.View`), plus every real guard the engine states in its own module
 docstring: missing/unknown params, a missing call-site `id:`, an unknown
 component name, a cycle, id-namespacing across two uses of the same
 component, and a `{{ }}` binding forwarded as a param value surviving
@@ -15,7 +15,7 @@ import pytest
 
 from helpers import elevation, view_from
 import yaml
-from tre import Window
+from tess_re import Window
 
 from tess_ui.spec import ComponentError, expand_components
 from tess_ui.spec.expand import MAX_DEPTH

@@ -1,9 +1,9 @@
 """Real, repeatable coverage for `tess_ui.App` -- registration,
 name-collision handling, `show()`'s own real "first call opens, later
 calls switch" behavior, and `load()`'s own real `*_View.yaml`/
-`*_ViewModel.py` naming-convention enforcement -- mirroring `tre`'s own
+`*_ViewModel.py` naming-convention enforcement -- mirroring `tess_re`'s own
 established pytest conventions (`tmp_path` for a throwaway view file, no
-`App.run()` in these tests -- `tre`'s own `test_tracing.py` documents
+`App.run()` in these tests -- `tess_re`'s own `test_tracing.py` documents
 the real reason a second real render-loop call in the same process is
 best avoided; the one live end-to-end proof lives in
 `examples/counter/app.py`/`examples/multi_screen/app.py`).
@@ -135,7 +135,7 @@ def test_an_undecorated_apps_border_is_not_something_to_show(tmp_path):
 
 
 class _FakeTre:
-    """tre's App, so `run()` can be called without a GPU or a display."""
+    """tess_re's App, so `run()` can be called without a GPU or a display."""
 
     ran = []
     queued = []  # what `thread_handle().call_soon` was given, in order
@@ -267,7 +267,7 @@ def test_load_rejects_mismatched_view_and_viewmodel_prefixes(tmp_path):
 
 def test_load_with_no_component_usage_still_works_unchanged(tmp_path):
     """Real regression proof: `App.load()` now constructs via `tess_ui.
-    spec.load_view` instead of `tre.View` directly -- a view with zero
+    spec.load_view` instead of `tess_re.View` directly -- a view with zero
     `component:` usage must still load exactly as it always did
     (`load_view`'s own real "true no-op" design)."""
     view_path = write_view(tmp_path, SIMPLE_VIEW, name="Counter_View.yaml")
@@ -294,15 +294,15 @@ def test_load_genuinely_expands_component_usage(tmp_path):
     """Real, distinguishing proof that `App.load()` now applies
     `component:` macro-expansion, not just that it doesn't crash on a
     plain view: before this change, a `component:`-using view would
-    fail with `tre`'s own schema error (`component` is not a real
+    fail with `tess_re`'s own schema error (`component` is not a real
     `WidgetSpec` field, `#[serde(deny_unknown_fields)]`) -- confirming
-    `tre` saw the raw, unexpanded YAML. After this change, the same
+    `tess_re` saw the raw, unexpanded YAML. After this change, the same
     view instead fails later, at MD3 color resolution (`Button_
     Component.yaml`'s own `background: primary`, with no `theme_seed`
     given -- `App` has no theme-related API of its own yet, a real,
     separate, pre-existing gap unrelated to this change) -- proving
     `component:`/`with:` were genuinely replaced with real `WidgetSpec`
-    content before `tre` ever parsed it.
+    content before `tess_re` ever parsed it.
     """
     view_path = write_view(tmp_path, COMPONENT_USING_VIEW, name="Save_View.yaml")
     vm_cls = load_viewmodel_class(tmp_path, "Save_ViewModel.py", "SaveViewModel")

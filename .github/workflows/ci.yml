@@ -8,8 +8,8 @@ name: CI
 #   full     the whole suite and the platform jobs: when called for (a manual run with mode `full`, a pull request labelled `full-test`, or
 #            `[full-ci]` in the head commit's message or the pull request's title), or when the release series moves up (0.5.1.x -> 0.5.2).
 # The docs checks run in every mode. The platform jobs (clean install, built executable) run in `full`, and in `partial` when a packaging
-# file changed. Since tre 0.3.5.2 the engine is on PyPI as `tesserae-engine` (still `import tre`), so installing Tesserae installs it as a
-# user's `pip install` would: no tre checkout, no Rust toolchain, no maturin build.
+# file changed. Since 0.3.5.2 the engine is on PyPI as `tesserae-engine` (`import tess_re` from 0.6.0), so installing Tesserae installs it as a
+# user's `pip install` would: no tess-re checkout, no Rust toolchain, no maturin build.
 
 on:
   push:
@@ -69,12 +69,12 @@ jobs:
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y mesa-vulkan-drivers libfontconfig1-dev
 
-      # tre's source, for the one real font file a docs test reads (see the test job).
+      # tess-re's source, for the one real font file a docs test reads (see the test job).
       - uses: actions/checkout@v4
         with:
-          repository: mindderivative/tre
-          ref: v0.5.5
-          path: tre
+          repository: mindderivative/tess-re
+          ref: v0.6.0
+          path: tess-re
 
       - name: Install tesserae and the docs build
         working-directory: tesserae
@@ -91,7 +91,7 @@ jobs:
       - name: The tests that read the docs
         working-directory: tesserae
         env:
-          TRE_SOURCE_DIR: ${{ github.workspace }}/tre
+          TESS_RE_SOURCE_DIR: ${{ github.workspace }}/tess-re
           PYTHONUTF8: "1"
         run: pytest ${{ needs.plan.outputs.doc_tests }}
 
@@ -113,23 +113,23 @@ jobs:
         with:
           python-version: "3.12"
 
-      # See `tre`'s own ci.yml for the full real reasoning -- lavapipe
+      # See `tess-re`'s own ci.yml for the full real reasoning -- lavapipe
       # (Mesa's software Vulkan implementation) is enough for a real
       # `wgpu::Instance::request_adapter` to succeed headlessly.
       - name: Install system dependencies
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y mesa-vulkan-drivers libfontconfig1-dev
 
-      # tre's source at the release pyproject's floor names, checked out only
+      # tess-re's source at the release pyproject pins, checked out only
       # for a real font file (tests/test_themes.py reads Roboto through
-      # TRE_SOURCE_DIR); the wheel ships no .ttf files. Nothing is built from it.
+      # TESS_RE_SOURCE_DIR); the wheel ships no .ttf files. Nothing is built from it.
       - uses: actions/checkout@v4
         with:
-          repository: mindderivative/tre
-          ref: v0.5.5
-          path: tre
+          repository: mindderivative/tess-re
+          ref: v0.6.0
+          path: tess-re
 
-      # Pulls `tesserae-engine` (tre) from PyPI, per pyproject's `>=` floor.
+      # Pulls `tesserae-engine` (tess_re) from PyPI, per pyproject's pin.
       - name: Install tesserae (editable, dev extras)
         working-directory: tesserae
         run: pip install -e ".[dev]"
@@ -141,7 +141,7 @@ jobs:
         shell: bash
         working-directory: tesserae
         env:
-          TRE_SOURCE_DIR: ${{ github.workspace }}/tre
+          TESS_RE_SOURCE_DIR: ${{ github.workspace }}/tess-re
           PYTHONUTF8: "1"
           MODE: ${{ needs.plan.outputs.mode }}
           TESTS: ${{ needs.plan.outputs.tests }}

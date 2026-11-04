@@ -1,5 +1,5 @@
 """Real coverage for `tess_ui.spec.load_view` -- the integration point
-between `expand_components` and a real `tre.View`, reading from an
+between `expand_components` and a real `tess_re.View`, reading from an
 actual file on disk (not just a YAML string in memory, unlike
 `test_spec_expand.py`).
 """
@@ -64,8 +64,8 @@ def test_load_view_forwards_theme_kwargs_to_tre_view(tmp_path: Path):
     assert seeded == tokens.color_scheme(seed)["primary"] != bare
 
 
-# M29 Phase 1: `load_view` hands `tre` a dict via `spec=`, and resolves
-# `include:` itself, since `tre` only splices `include:` on its YAML-text
+# M29 Phase 1: `load_view` hands `tess_re` a dict via `spec=`, and resolves
+# `include:` itself, since `tess_re` only splices `include:` on its YAML-text
 # path.
 
 import re
@@ -93,7 +93,7 @@ def test_load_view_resolves_include_relative_to_the_view_file(tmp_path: Path):
 
 def test_nested_include_resolves_against_the_including_files_own_directory(tmp_path: Path):
     # `parts/header.yaml` says `include: inner.yaml` -- that's
-    # `parts/inner.yaml`, not `<view dir>/inner.yaml`, exactly as in tre.
+    # `parts/inner.yaml`, not `<view dir>/inner.yaml`, exactly as in tess_re.
     _write(tmp_path / "parts" / "inner.yaml", RECT.format(id="inner"))
     _write(
         tmp_path / "parts" / "header.yaml",
@@ -109,8 +109,8 @@ def test_nested_include_resolves_against_the_including_files_own_directory(tmp_p
 
 def test_an_included_file_can_use_component(tmp_path: Path):
     # New capability: includes resolve *before* component expansion, so
-    # an included file's own `component:` usage expands too. Under tre's
-    # own text-path include, it reached tre unexpanded and failed.
+    # an included file's own `component:` usage expands too. Under tess_re's
+    # own text-path include, it reached tess_re unexpanded and failed.
     _write(tmp_path / "parts" / "actions.yaml", BUTTON_VIEW_YAML)
     view_path = _write(
         tmp_path / "Main_View.yaml",

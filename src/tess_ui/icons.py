@@ -1,8 +1,8 @@
 """The curated Material Symbols icons `kind: Icon` names, taken verbatim
-from `tre`'s `engine-md3/src/icons.rs` at v0.3.4 (and three window
-buttons drawn for Tesserae, 0.3.0) (`tre` hands its icon
+from `tess_re`'s `engine-md3/src/icons.rs` at v0.3.4 (and three window
+buttons drawn for Tesserae, 0.3.0) (`tess_re` hands its icon
 data to the framework, D4). Each is an SVG path `d=` string in the
-shared view box `0 -960 960 960`, drawn by a `tre` `path` node."""
+shared view box `0 -960 960 960`, drawn by a `tess_re` `path` node."""
 
 from __future__ import annotations
 

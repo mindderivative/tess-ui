@@ -1,5 +1,5 @@
 """M39 Phase 2: MD3's state layer and ripple (`tess_ui.interaction`), which
-`tre` 0.3.5 no longer draws, applied to clickable YAML nodes (M39 Q2, Q3).
+`tess_re` 0.3.5 no longer draws, applied to clickable YAML nodes (M39 Q2, Q3).
 Driven headlessly with `simulate`/`advance`, as M34's checkbox spike was.
 """
 

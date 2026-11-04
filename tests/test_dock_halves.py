@@ -1,7 +1,7 @@
 """0.5.0 (#106) phases 2 and 3: the halves of a split as mini zones of the Dock -- a tab strip over each half, a dragged panel dropped
 onto one (the middle adds it as a tab, an edge splits the half), a tab of a half dragged out to a zone or another half, a half a
 split made collapsing when it empties, the "Move to" menu, and a reload leaving all of it where the user put it. Driven headlessly
-with `simulate`; a real window was checked for the one thing it decides (the root's `pointer_move`s keep arriving during a tre drag:
+with `simulate`; a real window was checked for the one thing it decides (the root's `pointer_move`s keep arriving during a tess_re drag:
 tools/spikes/drag_events.py)."""
 
 import pytest
@@ -182,7 +182,7 @@ def test_the_highlight_goes_when_the_drag_ends_and_no_half_is_left_targeted():
     host = view.dock_host("dock")
     _pick_up(app, _tab(host, "left", "Outline"))
     _move_to(app, _point(_slot(host, "left_half"), "left"))
-    _drop_at(app, (5, 5))  # outside every zone and half: tre leaves the panel where it was
+    _drop_at(app, (5, 5))  # outside every zone and half: tess_re leaves the panel where it was
     assert host.dock.highlight.parent() is None and host.dock._half_target is None and host.dock._tracking == []
     assert host.layout()["zones"]["left"]["panels"] == ["Files", "Outline"]
 
@@ -239,7 +239,7 @@ def test_a_drop_on_a_halfs_strip_adds_the_panel_too():
 
 
 def test_a_panel_dropped_from_the_centre_zone_comes_out_of_it_too():
-    """tre moves the dragged panel to the zone it reports (centre, here) before the drop; the half takes it from there."""
+    """tess_re moves the dragged panel to the zone it reports (centre, here) before the drop; the half takes it from there."""
     app, view = _view()
     host = view.dock_host("dock")
     host.dock.move(view.node("outline"), "center")  # a second centre panel, with a tab of its own

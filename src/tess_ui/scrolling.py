@@ -1,14 +1,14 @@
-"""What a `ScrollView` adds to `tre`'s `scroll_view`: telling a
+"""What a `ScrollView` adds to `tess_re`'s `scroll_view`: telling a
 two-way binding when it scrolls.
 
-Since `tre` 0.4.2 (`tre` #24) a `scroll_view` does the rest itself: the
+Since `tess_re` 0.4.2 (`tess_re` #24) a `scroll_view` does the rest itself: the
 arrows, Page Up/Down and Home/End scroll the one around the focused node;
 focusing a node scrolls it into view; it answers `scroll_into_view`; and
 it fires a `scroll` event (`old_value`/`new_value`) on every change of
 offset, from the wheel, the keys, a reveal or a `set`. (M71's `Scroller`
 did the keys and reveals itself on 0.4.0-0.4.1; M73 handed them back,
 since its `key_down` listener on the scroll view kept every key from
-`tre`, so a focused child's keys didn't scroll.) A `Scroller` follows
+`tess_re`, so a focused child's keys didn't scroll.) A `Scroller` follows
 that event, for `two_way: scroll_offset`.
 """
 

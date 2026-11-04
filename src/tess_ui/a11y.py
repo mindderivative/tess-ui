@@ -1,15 +1,15 @@
-"""Accessibility on `tre` 0.3.4's nodes: what a node tells assistive
+"""Accessibility on `tess_re` 0.3.4's nodes: what a node tells assistive
 technology, checked here so a mistake names the field, and requests
 coming back from it (`a11y_action`).
 
-`tre` exposes each node through AccessKit from its accessibility
+`tess_re` exposes each node through AccessKit from its accessibility
 properties: `role`, `label`, `value`, `value_min`/`value_max`/`value_step`,
 `checked`, `selected`, `expanded`, `disabled`, `level`, `live` and
 `a11y_hidden`. The requests a screen reader can make of a node arrive as
 an `a11y_action` event, one of `ACTIONS`; activating (clicking) isn't
 one of them in 0.3.4.
 
-`tre`'s `disabled` is only what's announced: a disabled node still takes
+`tess_re`'s `disabled` is only what's announced: a disabled node still takes
 focus and clicks. Tesserae's widgets make it behave.
 
 `bind` keeps a node's `label`, `hidden`, `level`, `checked`, `selected`, `expanded` or `value` (with `value_min`, `value_max`, `value_step`) following a
@@ -22,7 +22,7 @@ from typing import Any, Callable
 
 __all__ = ["ACTIONS", "BINDABLE", "CURRENT", "EXTRAS", "LIVE", "RELATIONS", "ROLES", "apply_extras", "bind", "check", "describe", "on_action"]
 
-#: The roles `tre` accepts (`none` for a node that's only structure).
+#: The roles `tess_re` accepts (`none` for a node that's only structure).
 ROLES = frozenset({
     "button", "checkbox", "radio", "switch", "slider", "progressbar", "link", "textbox", "tab", "tablist",
     "tabpanel", "menu", "menuitem", "dialog", "alert", "list", "listitem", "tree", "treeitem", "heading",
@@ -33,14 +33,14 @@ LIVE = frozenset({"off", "polite", "assertive"})
 #: The requests assistive technology can make of a node.
 ACTIONS = frozenset({"increment", "decrement", "expand", "collapse", "scroll_into_view", "set_value"})
 
-#: The states tre added in 0.5.6 (mindderivative/tre#160), beyond `checked`, `selected`, `expanded` and `value`. The language and Tesserae's widgets set them.
+#: The states tess_re added in 0.5.6 (mindderivative/tess-re#160), beyond `checked`, `selected`, `expanded` and `value`. The language and Tesserae's widgets set them.
 EXTRAS = ("pressed", "invalid", "description", "current", "value_now", "value_text", "busy")
 #: `describedby` and `controls` name other nodes of the view (by their `name:`), or a list of them; the view resolves them to nodes.
 RELATIONS = ("describedby", "controls")
 CURRENT = frozenset({"page", "step", "location", "date", "time"})
 _BOOLS = ("checked", "selected", "expanded", "disabled", "hidden", "invalid", "busy")
 _NUMBERS = ("value", "value_min", "value_max", "value_step")
-#: The states and numbers tre holds as "not set" (`None`) until a node says: `expanded` is absent on a node that cannot expand, and
+#: The states and numbers tess_re holds as "not set" (`None`) until a node says: `expanded` is absent on a node that cannot expand, and
 #: `checked: null` is a box that is neither on nor off to a screen reader. `hidden` and `disabled` are always one or the other.
 _OPTIONAL = frozenset({"checked", "selected", "expanded", "value", "value_min", "value_max", "value_step", "invalid", "busy", "pressed",
                        "description", "current", "value_now", "value_text"})
@@ -48,7 +48,7 @@ _NUMBERS_EXTRA = ("value_now",)
 
 
 def check(fields: dict[str, Any], where: str = "") -> dict[str, Any]:
-    """Checks `describe`'s fields and returns them as `tre` properties
+    """Checks `describe`'s fields and returns them as `tess_re` properties
     (`hidden` becomes `a11y_hidden`). Raises `ValueError` naming the field."""
     prefix = f"{where}: " if where else ""
     props: dict[str, Any] = {}
@@ -103,7 +103,7 @@ def apply_extras(node: Any, props: dict[str, Any]) -> None:
 def describe(node: Any, **fields: Any) -> None:
     """Sets what `node` tells assistive technology, for example
     `describe(node, role="switch", label="Wi-Fi", checked=True)`. Every
-    field is checked before any is set. States beyond tre's first few
+    field is checked before any is set. States beyond tess_re's first few
     (`EXTRAS`) are set as the others are."""
     if any(name in RELATIONS for name in fields):
         raise ValueError("a11y.describe: describedby and controls name nodes of a view; write them in the view's `a11y:`")

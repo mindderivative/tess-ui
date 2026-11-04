@@ -1,6 +1,6 @@
 """M47 Phase 2: bound `a11y:` fields. A value that is a `{{ }}` binding
 follows the ViewModel, as `bindings:` do (Q1); `label`, `hidden` and
-`level` can be bound, `role` and `live` can't (Q2). `tre` can't report
+`level` can be bound, `role` and `live` can't (Q2). `tess_re` can't report
 what a screen reader says, so these read the node's properties.
 """
 
@@ -188,14 +188,14 @@ def test_a_binding_passes_through_a_fragment_while_its_params_substitute(tmp_pat
 
 # -- Phase 3: tess_ui.a11y.bind, for widgets made in Python ------------------
 
-import tre  # noqa: E402
+import tess_re  # noqa: E402
 
 from tess_ui import Computed, Signal, a11y  # noqa: E402
 from tess_ui.widgets import button, checkbox  # noqa: E402
 
 
 def _window():
-    return tre.Window(width=300, height=200)
+    return tess_re.Window(width=300, height=200)
 
 
 def test_bind_follows_a_signal_a_computed_and_a_function():

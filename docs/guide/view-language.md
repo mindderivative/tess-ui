@@ -210,7 +210,7 @@ For Python, `tess_ui.timers.Timers(window)` has the same `after`, `every`, `canc
 
 ## Scrolling
 
-A `ScrollView` draws its `scroll_offset` (pixels, 0 or more; tre clamps it to the content once the content has a size) and reports where it is to
+A `ScrollView` draws its `scroll_offset` (pixels, 0 or more; tess_re clamps it to the content once the content has a size) and reports where it is to
 whatever you bind to it, so other widgets can react. Each of these is bound the way a two-way property is, to a ViewModel Signal or a `state:` name:
 
 | Property | Meaning |
@@ -247,8 +247,8 @@ mask: "(###) ###-####"          # 5551234567 becomes (555) 123-4567; so does 555
 
 The text is read left to right and each slot takes the next character it accepts, so a paste in any format is fitted. A literal is added only
 when more input follows it (`123` is `(123`, the `) ` comes with the fourth digit), so backspace is never stuck on one; one the user typed is kept; what
-does not fit is dropped. The bound Signal holds the formatted text. The mask is applied to edits, not to a value a ViewModel sets, and tre's input
-has no caret control yet, so where the caret ends up after the text is rewritten is tre's to decide.
+does not fit is dropped. The bound Signal holds the formatted text. The mask is applied to edits, not to a value a ViewModel sets, and tess_re's input
+has no caret control yet, so where the caret ends up after the text is rewritten is tess_re's to decide.
 
 ## Drawing
 
@@ -266,7 +266,7 @@ draw: "{{ [{'rect': [0, 10, 120, 4], 'color': 'surface_variant'}, {'rect': [0, 1
 ### Dragging
 
 `capture()` makes the node whose handler is running receive every pointer event until the button is let go or `release()` is called, so a drag
-keeps following the pointer outside the node. `cursor('grabbing')` sets that node's pointer shape (any of tre's names: `default`, `pointer`, `text`, `grab`,
+keeps following the pointer outside the node. `cursor('grabbing')` sets that node's pointer shape (any of tess_re's names: `default`, `pointer`, `text`, `grab`,
 `grabbing`, `move`, `not_allowed`, `col_resize`, ...; `cursor(None)` puts back the one its style gives). Position and distance are in `event`
 (`event.x`, `event.y`; a pan's `event.delta_x`). They act on the widget the handler is written on, so a timer's action cannot call them.
 

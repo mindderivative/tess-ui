@@ -1,11 +1,11 @@
-"""M29 Phase 3: Tesserae-owned hot reload, replacing `tre`'s own
-`poll_reload` (which watched a file `tre` itself read -- `tre` now reads
+"""M29 Phase 3: Tesserae-owned hot reload, replacing `tess_re`'s own
+`poll_reload` (which watched a file `tess_re` itself read -- `tess_re` now reads
 none).
 
 A view depends on more than its own file: every `include:`d file, every
 `*_Component.yaml` fragment it expanded, and every image it decodes. A
 change to any of them re-runs the whole Tesserae pipeline
-(`build_view_spec`, the same one `load_view` runs) and hands `tre` the
+(`build_view_spec`, the same one `load_view` runs) and hands `tess_re` the
 result via `view.reconcile(spec=...)`, which keeps unchanged widgets'
 `NodeId`s, focus and in-flight animations. Images are pushed again
 afterwards. The set of watched files is recomputed on every reload, so
@@ -17,17 +17,17 @@ Two ways to drive it:
   `App.run()`: a background thread watches for file-change events with
   `watchfiles`, rebuilds the spec there (all file I/O and expansion stay
   off the UI thread), and hands only the view's `reconcile` to the
-  event loop through `tre`'s thread-safe `LoopHandle.call_soon` (tre M87,
-  tre issue #6). `App.run(hot_reload=True)` does this for every screen.
+  event loop through `tess_re`'s thread-safe `LoopHandle.call_soon` (tess_re M87,
+  tess_re issue #6). `App.run(hot_reload=True)` does this for every screen.
 - **`poll()`** -- no thread: checks each file's modification time and
   size. For a loop the app controls itself.
 
-`tre`'s `View` is single-threaded: only the `LoopHandle` crosses
+`tess_re`'s `View` is single-threaded: only the `LoopHandle` crosses
 threads, and the watcher thread never touches the view.
 
 Reloads are logged with loguru (`tess_ui.log`): each applied reload at
 INFO. A reload that fails in the background (a YAML error, a bad
-component, a spec `tre` rejects) is logged at ERROR, naming the file,
+component, a spec `tess_re` rejects) is logged at ERROR, naming the file,
 with its traceback at DEBUG, and the view stays as it was. `poll()`
 raises instead, since the app's own loop called it.
 
@@ -164,7 +164,7 @@ class ViewWatcher:
         return build_view_spec(self._path, component_dirs=self._component_dirs, project=self._project)
 
     def _apply(self, spec: Any, frames: list[Frame]) -> None:
-        """The `tre` part -- only on the thread that owns the view: the
+        """The `tess_re` part -- only on the thread that owns the view: the
         view reconciles itself with the new spec and images."""
         try:
             self._view.reconcile(spec, frames={node_id: (rgba, w, h) for node_id, rgba, w, h in frames})
@@ -178,7 +178,7 @@ class ViewWatcher:
         """Reloads the view if any watched file changed since the last
         poll. Returns `True` if it reloaded, `False` if nothing changed.
 
-        A reload that fails (a YAML error, a bad component, a spec `tre`
+        A reload that fails (a YAML error, a bad component, a spec `tess_re`
         rejects) raises, naming the file, and leaves the view as it was.
         It raises once per change -- polling again without a further
         edit returns `False` rather than raising the same error again.
@@ -200,7 +200,7 @@ class ViewWatcher:
 
     def start(self, handle: Any) -> None:
         """Starts watching on a background thread. `handle` is
-        `tre.App.thread_handle()`'s `LoopHandle`; each reload is queued
+        `tess_re.App.thread_handle()`'s `LoopHandle`; each reload is queued
         on it with `call_soon`, so it runs on the event-loop thread.
 
         A reload that fails is logged at ERROR, naming the file, and the
@@ -361,7 +361,7 @@ class FileWatcher:
         return self._thread is not None and self._thread.is_alive()
 
     def start(self, handle: Any) -> None:
-        """Starts watching. `handle` is `tre.App.thread_handle()`'s
+        """Starts watching. `handle` is `tess_re.App.thread_handle()`'s
         `LoopHandle`."""
         if self._thread is not None:
             raise RuntimeError("FileWatcher.start() called twice without stop()")

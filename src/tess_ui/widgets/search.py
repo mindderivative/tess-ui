@@ -12,7 +12,7 @@ from tess_ui.widgets.buttons import _borders
 if TYPE_CHECKING:
     from tess_ui.overlays import SearchView
     from tess_ui.theme import Theme
-    from tre import Window
+    from tess_re import Window
 
 
 def search_bar(
@@ -50,7 +50,7 @@ def search_bar(
 
     def edit(spec: dict[str, Any]) -> None:
         field = spec["children"][0]
-        field["text"]["content"] = ""  # the placeholder is hint text, not the field's text (tre's filled it in)
+        field["text"]["content"] = ""  # the placeholder is hint text, not the field's text (tess_re's filled it in)
         field["style"]["height"] = 48
         spec["style"].update(gap=16, padding={"left": 16 if leading_icon else 4, "right": 4, "top": 0, "bottom": 0})
         if leading_icon is not None:

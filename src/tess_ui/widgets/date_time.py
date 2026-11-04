@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from tre import Window
+    from tess_re import Window
 
     from tess_ui import controls
 

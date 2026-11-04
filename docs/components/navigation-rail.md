@@ -21,7 +21,7 @@ A destination is a 24 pixel icon in a 56 by 32 pill (`secondary_container` when 
 next, starting 44 pixels down. Children with `slot: header` (a menu button, a FAB) go above the destinations and `slot: footer` below. There is one Tab stop;
 the up and down arrows move the focus and choose the destination. A screen reader hears a link named by the label, the current one marked as the page.
 The screens rail follows `app.current_screen` and a press is `navigate_to(screen)`; it belongs in each screen (or in a window's shell). Not built: the
-modal expanded rail, sections with headings, the pill growing as it is selected (it fades in), and a `navigation` role for the rail (tre has none, so it is a `group` named Navigation).
+modal expanded rail, sections with headings, the pill growing as it is selected (it fades in), and a `navigation` role for the rail (tess_re has none, so it is a `group` named Navigation).
 
 ## How it is built
 

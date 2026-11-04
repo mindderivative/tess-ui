@@ -1,5 +1,5 @@
-"""MD3's stateful controls, built by Tesserae from `tre` 0.3.4's building
-blocks, since `tre` 0.3.5 removes its own.
+"""MD3's stateful controls, built by Tesserae from `tess_re` 0.3.4's building
+blocks, since `tess_re` 0.3.5 removes its own.
 
 A control is a small object (M34 P6):
 
@@ -1077,7 +1077,7 @@ class RangeSlider(Slider):
 
 
 class SpinBox:
-    """A number field between − and + buttons, as `tre`'s spin box was
+    """A number field between − and + buttons, as `tess_re`'s spin box was
     (MD3 has no spin box of its own, so it's built from MD3's parts: two
     40 px icon buttons and a filled field).
 
@@ -1379,7 +1379,7 @@ class Indicator:
         if value is not None:
             value = _clamp(float(value), 0.0, 1.0)
         self.node.set(value=value)
-        # a screen reader hears a wait with no end as busy, and a value as a percentage (states tre may not have yet are skipped)
+        # a screen reader hears a wait with no end as busy, and a value as a percentage (states tess_re may not have yet are skipped)
         a11y.apply_extras(self.node, {"busy": value is None, "value_text": None if value is None else f"{round(value * 100)}%"})
         self._paint(animate=self._painted)
         if value is None and not self._looping:
@@ -1720,8 +1720,8 @@ class CircularProgress(Indicator):
 class LoadingIndicator(Indicator):
     """MD3's loading indicator: a filled `primary` shape, 38 px in a 48 px
     box, morphing forever through a pentagon, a pill, a cookie and an oval,
-    650 ms per step, linear. These are the outlines `tre`'s MD3 handover
-    defines (its `intended` pill and oval, not the diamonds `tre` drew).
+    650 ms per step, linear. These are the outlines `tess_re`'s MD3 handover
+    defines (its `intended` pill and oval, not the diamonds `tess_re` drew).
     Always indeterminate; `value` is ignored. `contained` puts the shape in
     a `primary_container` circle the size of the box, the shape then in
     `on_primary_container` (MD3 Expressive's contained loading indicator);

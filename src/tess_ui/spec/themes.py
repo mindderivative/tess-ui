@@ -3,7 +3,7 @@ stylesheet YAML files itself and hands the dicts to the `*_spec=`
 arguments -- `stylesheet_spec=`/`default_theme_spec=`/
 `custom_theme_spec=` on `View(...)` and `App(...)`, and the theme two on
 `View.set_theme`/`App.set_theme_specs`. Since M37-M38 Tesserae's own
-cascade and `tess_ui.Theme` validate them (the schema `tre`'s had:
+cascade and `tess_ui.Theme` validate them (the schema `tess_re`'s had:
 `seed`, `dark`, `colors`, `styles`, `components`, `typography`), so this
 module only reads, parses, and checks fonts.
 """
@@ -77,7 +77,7 @@ def view_font_families(spec: Any) -> Iterator[str]:
 
 
 def load_theme(path: str | Path) -> dict[str, Any]:
-    """Reads a theme YAML file into the dict `tre`'s
+    """Reads a theme YAML file into the dict `tess_re`'s
     `default_theme_spec=`/`custom_theme_spec=` take, for `load_view` or
     for switching themes later:
 
@@ -100,7 +100,7 @@ def load_theme(path: str | Path) -> dict[str, Any]:
 
 
 def load_stylesheet(path: str | Path) -> dict[str, Any]:
-    """Reads a stylesheet YAML file into the dict `tre`'s
+    """Reads a stylesheet YAML file into the dict `tess_re`'s
     `stylesheet_spec=` takes. A file whose keys say it is a view or a theme is refused, naming the file to give it."""
     sheet = _load_mapping(path, "a stylesheet", STYLESHEET_SUFFIX)
     hint = looks_like(sheet, "stylesheet", Path(path).name)

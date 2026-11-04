@@ -7,7 +7,7 @@ since M42 (`tests/test_media.py`), and `icon` since M41
 from pathlib import Path
 
 import pytest
-from tre import Window
+from tess_re import Window
 
 from tess_ui.widgets import image
 

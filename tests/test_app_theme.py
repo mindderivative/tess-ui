@@ -1,9 +1,9 @@
 """M30: `App`'s app-wide theme and per-screen stylesheets.
 
 The theme is set once on `App(...)` and applies to every screen `load()`
-builds (a theme is window-level in `tre`); `stylesheet=` on `App(...)`
+builds (a theme is window-level in `tess_re`); `stylesheet=` on `App(...)`
 is every screen's default, and `load(stylesheet=...)` replaces it for
-one screen. Files are read once, by Tesserae; `tre` gets dicts.
+one screen. Files are read once, by Tesserae; `tess_re` gets dicts.
 
 Effects are observed through `elevation`/`corner_radius`, which a
 theme's or stylesheet's `styles:` can set and `Node.get` reads back.
@@ -120,7 +120,7 @@ def test_load_rejects_both_stylesheet_forms(tmp_path: Path):
 
 def test_screens_are_tesserae_views_built_in_the_apps_window(tmp_path: Path):
     """M37: `App` builds its screens itself, with Tesserae's `View`, in its
-    own window, from the theme and stylesheet it read; `tre` gets nodes,
+    own window, from the theme and stylesheet it read; `tess_re` gets nodes,
     never files or dicts."""
     from tess_ui.view import View as TesseraeView
 

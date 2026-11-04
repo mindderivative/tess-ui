@@ -1,13 +1,13 @@
 """More than one OS window: `app.open_window("Settings")`.
 
-`app.window` stays the app's main window. Every other window is an `AppWindow`: its `tre` window, the view built in it, and what it takes to open, close
+`app.window` stays the app's main window. Every other window is an `AppWindow`: its `tess_re` window, the view built in it, and what it takes to open, close
 and (for a dialog) block its parent. Closing the main window closes the others and ends the app; closing another leaves the app running.
 
 A view in another window is composed like any other (its ViewModel is the one that serves its name; the theme, the stylesheet and `app` are the app's), and a
 `widget: Window` at its root sets that window's title, size, minimum size, borderless and flags. What a second window does not have: screens and routes (those
 belong to the main window's frame), and a title bar whose maximize button follows its own window (the bar reads `app.maximized`, the main window's).
 
-tre opens a window while the app runs since 0.5.6; before `run()` a window waits and opens with the others. It has no owner or modal window, so `modal=True` is done
+tess_re opens a window while the app runs since 0.5.6; before `run()` a window waits and opens with the others. It has no owner or modal window, so `modal=True` is done
 here: the parent shows a scrim layer that takes its input until the child closes.
 """
 
@@ -68,7 +68,7 @@ class AppWindow:
     # -- the app's side ----------------------------------------------------------------------------------------------
 
     def _block_parent(self) -> None:
-        """A modal window's parent takes no input while it is open: a full-window scrim in a modal layer, which tre keeps the focus inside."""
+        """A modal window's parent takes no input while it is open: a full-window scrim in a modal layer, which tess_re keeps the focus inside."""
         parent = self.parent.window if self.parent is not None else self.app.window
         scrim = parent.create("box", position="absolute", x=0, y=0, width=float(parent.get("width")), height=float(parent.get("height")),
                               fill=(0, 0, 0, 82), a11y_hidden=True)

@@ -1,5 +1,5 @@
 """Tesserae -- a pyCopper-style declarative Python GUI framework, powered
-by the Tesserae Render Engine (`tre`) instead of pyCopper's own direct
+by the Tesserae Render Engine (`tess_re`) instead of pyCopper's own direct
 GLFW/wgpu-py stack.
 
 Real, current surface (v1): `App`, the real single entry point owning a
@@ -13,9 +13,9 @@ for top-level screens. `Repeater` is the declarative-*feeling* layer on
 top of that: one list `Signal` as the single source of truth, automatic
 keyed add/remove diffing. `Signal`/`Computed`/`Effect`/`batch`/
 `untrack`/`ViewModel` are Tesserae's own (`tess_ui.reactive`, M35),
-taken over from `tre`, which removes its copy in 0.3.5 (`tre` D5).
+taken over from `tess_re`, which removes its copy in 0.3.5 (`tess_re` D5).
 `View`/`Component` are Tesserae's too (`tess_ui.view`, M37): views are
-built, reconciled and wired by Tesserae on `tre` 0.3.4's building blocks.
+built, reconciled and wired by Tesserae on `tess_re` 0.3.4's building blocks.
 """
 
 from tess_ui.app import App

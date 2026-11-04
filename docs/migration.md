@@ -5,9 +5,9 @@ What to change in an existing app when you upgrade. Each section is the release 
 
 ## To 0.6.0
 
-**The Python package is `tess_ui` now (it was `tesserae`).** The name `tesserae` is also an unrelated project on PyPI, and the other Tesserae packages use the `tess_` prefix. Nothing is left under the old name: after the
-upgrade `import tesserae` is a `ModuleNotFoundError`. What did not change: the PyPI name (`tesserae-ui`), the `tesserae` command (`tesserae new`, `tesserae add screen`, `python -m tess_ui` is the same) and
-the `tesserae:` first line of a YAML file.
+**Two Python packages change name: Tesserae's is `tess_ui` (it was `tesserae`) and the engine's is `tess_re` (it was `tre`).** The name `tesserae` is also an unrelated project on PyPI, and the Tesserae packages share the
+`tess_` prefix. Nothing is left under the old names: after the upgrade `import tesserae` and `import tre` are a `ModuleNotFoundError`. What did not change: the PyPI names (`tesserae-ui`, `tesserae-engine`), the `tesserae`
+command (`tesserae new`, `tesserae add screen`; `python -m tess_ui` is the same) and the `tesserae:` first line of a YAML file.
 
 - **Rewrite the imports.** `from tesserae import App` is `from tess_ui import App`, `import tesserae.spec` is `import tess_ui.spec`, and a dotted name such as `tesserae.spec.themes` is `tess_ui.spec.themes`
   (a string given to `importlib` or to `monkeypatch.setattr` too). A search for `import tesserae` and `from tesserae` in your `*.py` files finds every place; the views and ViewModels you have need nothing else.
@@ -15,6 +15,11 @@ the `tesserae:` first line of a YAML file.
 - **The editor schemas** are `tess-ui-*-schema.json` (they were `tesserae-*-schema.json`), in the package (`site-packages/tess_ui/schema/`) and on the docs site. A `yaml.schemas` setting that names them by path or address
   needs the new names; `tesserae schema --project` writes `.tesserae/tess-ui-widget-schema.json`, and leaves the old file in `.tesserae/` for you to delete. [Editor Support](guide/editor-support.md) has the setting.
 - **The logger** is `tess_ui`: `logger.disable("tess_ui")` silences Tesserae (it was `"tesserae"`), and a filter on the module name matches `tess_ui.app`, `tess_ui.spec.watch` and the rest.
+- **Tesserae needs `tesserae-engine` 0.6.0**, one exact release: `pip install --upgrade tesserae-ui` brings it. If your code imports the engine itself, `import tre` is `import tess_re` and `from tre import Window` is
+  `from tess_re import Window`; every name inside is unchanged, so a search and replace is the whole change ([the engine's own table](https://mindderivative.github.io/tess-re/migrating-0.6/)). The engine's messages that
+  said `tre` (a shader error, the default window title) say `tess_re`, so a test that matches that text needs the new word.
+- **The engine's environment variables** `TRE_*` are `TESS_RE_*`, and the two Tesserae's own tools read follow: `TRE_SOURCE_DIR` (the engine checkout a font test reads) is `TESS_RE_SOURCE_DIR`, and
+  `TESSERAE_RECORD_TRE` (records the engine's answers for the reference tests) is `TESS_UI_RECORD_TESS_RE`.
 
 ## The first line of a file
 

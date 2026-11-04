@@ -1,16 +1,16 @@
 """M37 Phase 2: Tesserae's spec compiler (`tess_ui.spec.build`) and
 cascade (`tess_ui.spec.cascade`).
 
-The cascade and the compiler's errors are checked against `tre` 0.3.4's
-own builder, a `tre` `View`, on the same spec. Whole-tree comparison of
+The cascade and the compiler's errors are checked against `tess_re` 0.3.4's
+own builder, a `tess_re` `View`, on the same spec. Whole-tree comparison of
 every fragment and example view is M37 Phase 3's tree differ.
 
-M43: `tre`'s answers are recorded on 0.3.4 (`tests/reference.py`), since
+M43: `tess_re`'s answers are recorded on 0.3.4 (`tests/reference.py`), since
 0.3.5 has no `View`.
 """
 
 import pytest
-import tre
+import tess_re
 
 import reference
 from tess_ui import tokens
@@ -21,7 +21,7 @@ SCHEME = tokens.color_scheme(SEED)
 
 
 def _window():
-    return tre.Window(width=400, height=300)
+    return tess_re.Window(width=400, height=300)
 
 
 def _rect(node_id="r", classes=(), **style):
@@ -30,13 +30,13 @@ def _rect(node_id="r", classes=(), **style):
 
 
 def _tre(spec, reads, **sheets):
-    """`tre`'s answer: each `(node_id, property)` of `reads`, read from a
-    `tre` `View` of `spec` (shown in a window, so fills resolve), recorded."""
+    """`tess_re`'s answer: each `(node_id, property)` of `reads`, read from a
+    `tess_re` `View` of `spec` (shown in a window, so fills resolve), recorded."""
     def ask():
-        view = tre.View(spec=spec, theme_seed=SEED, **{f"{k}_spec": v for k, v in sheets.items() if v is not None})
-        tre.Window.from_view(view, width=10, height=10, title="t")
+        view = tess_re.View(spec=spec, theme_seed=SEED, **{f"{k}_spec": v for k, v in sheets.items() if v is not None})
+        tess_re.Window.from_view(view, width=10, height=10, title="t")
         return [view.node(node_id).get(prop) for node_id, prop in reads]
-    return reference.tre(ask)
+    return reference.tess_re(ask)
 
 
 def _ours(spec, **sheets):
@@ -44,8 +44,8 @@ def _ours(spec, **sheets):
 
 
 def _tre_rejects(spec):
-    """`tre`'s builder rejecting `spec`, recorded: raises its `ValueError`."""
-    reference.tre(lambda: (tre.View(spec=spec, theme_seed=SEED), None)[1])
+    """`tess_re`'s builder rejecting `spec`, recorded: raises its `ValueError`."""
+    reference.tess_re(lambda: (tess_re.View(spec=spec, theme_seed=SEED), None)[1])
 
 
 def _radius_both(spec, node_id="r", **sheets):
@@ -90,7 +90,7 @@ def test_layers_stack_default_then_custom_then_stylesheet():
 
 
 def test_the_shipped_default_theme_applies_when_none_is_given():
-    """`tre`'s default theme gives a Checkbox corner radius 2 -- Tesserae's
+    """`tess_re`'s default theme gives a Checkbox corner radius 2 -- Tesserae's
     copy of it does too."""
     spec = {"id": "c", "kind": "Container", "children": [_rect()]}
     theirs, ours = _radius_both(spec)
@@ -128,7 +128,7 @@ def test_icons_are_paths_from_tesseraes_icon_set():
     spec = {"id": "i", "kind": "Icon", "icon": {"name": "check"}, "style": {"width": 24, "height": 24, "foreground": "primary"}}
     window = _window()
     node = build(window, spec, scheme=SCHEME).nodes["i"]
-    # tre reads path data back normalised (absolute commands), so compare with its own reading
+    # tess_re reads path data back normalised (absolute commands), so compare with its own reading
     assert node.get("data") == window.create("path", data=icon_path("check")).get("data")
     assert node.get("view_box") == ICON_VIEW_BOX and node.get("fill") == SCHEME["primary"]
 
@@ -180,7 +180,7 @@ def test_the_md3_kinds_build_as_tesserae_controls(kind, fields):
 
 
 def test_a_loading_indicator_needs_no_size_now():
-    """`tre` required a LoadingIndicator's width; Tesserae's is MD3's 48 px unless given."""
+    """`tess_re` required a LoadingIndicator's width; Tesserae's is MD3's 48 px unless given."""
     built = build(_window(), {"id": "w", "kind": "LoadingIndicator", "style": {}}, scheme=SCHEME)
     assert built.nodes["w"].get("width") == 48.0
 
@@ -228,7 +228,7 @@ def test_a_bad_colour_names_the_widget_and_field_as_tre_does():
 
 
 def test_a_background_from_a_stylesheet_rule_doesnt_break_text():
-    """`tre`'s "not a fill" check reads only the node's own inline
+    """`tess_re`'s "not a fill" check reads only the node's own inline
     `style:`, so a baseline rule giving every widget a background still
     lets a Text build."""
     spec = {"id": "c", "kind": "Container", "children": [

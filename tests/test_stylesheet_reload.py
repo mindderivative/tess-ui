@@ -127,7 +127,7 @@ def test_a_failure_part_way_undoes_the_screens_already_restyled(tmp_path: Path):
     second, _ = app.load(*_pair(tmp_path, "Second"))
 
     class Refuses:
-        """Stands in for a view `tre` refuses the new stylesheet on."""
+        """Stands in for a view `tess_re` refuses the new stylesheet on."""
 
         def __init__(self, view):
             self.view = view
@@ -216,7 +216,7 @@ def test_stylesheet_specs_are_not_watched(tmp_path: Path):
             w.stop()
 
 
-# -- bindings through a re-style (tre M91) -------------------------------
+# -- bindings through a re-style (tess_re M91) -------------------------------
 
 BOUND = (
     "id: root\nkind: Container\nchildren:\n"
@@ -228,8 +228,8 @@ BOUND = (
 
 
 def test_a_restyle_keeps_bound_values_and_doesnt_fire_on_change(tmp_path: Path):
-    """A re-style re-applies bindings so bound values stay live. With `tre`
-    doing it, that fired a declared `on_change` once per re-style (`tre`
+    """A re-style re-applies bindings so bound values stay live. With `tess_re`
+    doing it, that fired a declared `on_change` once per re-style (`tess_re`
     issue #12); with Tesserae wiring views (M37), setting a bound value is
     never the user's edit, so `on_change` doesn't run."""
     view_path = _write(tmp_path / "Form_View.yaml", BOUND)

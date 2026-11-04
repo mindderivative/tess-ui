@@ -9,7 +9,7 @@ from tess_ui.spec.nodes import LoadError
 
 
 class Recorder:
-    """Stands in for tre's Painter: what a canvas's draw callback asked it to paint."""
+    """Stands in for tess_re's Painter: what a canvas's draw callback asked it to paint."""
 
     def __init__(self):
         self.calls = []

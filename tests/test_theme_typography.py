@@ -3,7 +3,7 @@
 Per M38 Q1: a Text's or Link's `typography_role` resolves through the
 theme's `typography:` overrides (default theme, then custom); a text
 input keeps its own font even with a `typography_role`. This differs from
-`tre`, where a theme's `typography:` reached only its widget factories.
+`tess_re`, where a theme's `typography:` reached only its widget factories.
 """
 
 import importlib.util

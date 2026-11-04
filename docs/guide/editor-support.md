@@ -85,7 +85,7 @@ server). Such a file takes its schema from the `yaml.schemas` setting above, whi
 ## What it knows, and what it can't
 
 It knows what Tesserae accepts of a built-in widget: the keys of a node and of its `a11y:`, every property and what it takes,
-every style field and what each takes (a dimension, a spacing, a layout keyword `tre` understands), the theme's colour roles
+every style field and what each takes (a dimension, a spacing, a layout keyword `tess_re` understands), the theme's colour roles
 and type and shape tokens, the icon names and the window buttons. A key it doesn't know is flagged, which is how a typo shows.
 
 It can't know what only your app knows:
@@ -99,7 +99,7 @@ It can't know what only your app knows:
 
 The schemas are written by `tools/generate_yaml_schema.py` (`tools/generate_widget_schema.py` runs it) from Tesserae's
 own code (the widgets, style fields, tokens and icons), and ask
-`tre` for the layout keywords, so none of it is typed by hand. Run them again
+`tess_re` for the layout keywords, so none of it is typed by hand. Run them again
 after changing what a file may hold. The tests check that the committed files are what the tools write. Run the language-server check
 (below) as well when a file format changes.
 

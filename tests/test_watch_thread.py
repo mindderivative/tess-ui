@@ -1,11 +1,11 @@
 """`ViewWatcher.start(handle)`: event-driven hot reload on a background
 thread (`watchfiles`), handing each reload to the event loop through
-`tre`'s thread-safe `LoopHandle.call_soon` (tre M87).
+`tess_re`'s thread-safe `LoopHandle.call_soon` (tess_re M87).
 
 `FakeHandle` stands in for the `LoopHandle`: it records what the watcher
 queues, and the test runs each callable on its own (main) thread -- the
-thread that owns the view, as `tre`'s loop would. The watcher thread
-must never touch the view itself; if it did, `tre` would raise a
+thread that owns the view, as `tess_re`'s loop would. The watcher thread
+must never touch the view itself; if it did, `tess_re` would raise a
 `PanicException` there.
 
 A background watcher can miss an edit made before it has started
@@ -122,7 +122,7 @@ def test_a_reload_tre_rejects_is_logged_on_the_loop(started, logs):
     view_path, view, _, handle = started(_text_view("Hello"))
 
     rejected = _edit_until_queued(handle, view_path, "id: root\nkind: NotARealKind\n")
-    rejected()  # logs instead of raising, so tre's loop carries on
+    rejected()  # logs instead of raising, so tess_re's loop carries on
 
     message = logs.wait_for("ERROR", "NotARealKind")
     assert message.startswith(f"hot reload of {view_path} failed: {view_path}: ")

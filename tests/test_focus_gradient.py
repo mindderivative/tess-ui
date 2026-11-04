@@ -1,7 +1,7 @@
 """The focus ring as a turning gradient (tess_ui.focusring)."""
 
 import pytest
-import tre
+import tess_re
 
 from tess_ui import App, tokens
 
@@ -54,7 +54,7 @@ def test_a_focused_node_gets_a_sweep_gradient_ring_that_turns(tmp_path):
     event = type("E", (), {"target": inter.node, "focus_visible": True})()
     inter._on_focus(event)
     first = inter.ring.get("stroke_color")
-    assert isinstance(first, tre.Gradient) and inter._glow.turning and inter.ring_visible
+    assert isinstance(first, tess_re.Gradient) and inter._glow.turning and inter.ring_visible
     scheme = view._scheme or tokens.BASELINE
     assert inter.glow[0] == scheme["primary"]
     assert [c[:3] for _, c in first.stops] == [tuple(c[:3]) for c in (inter.ring_color, *inter.glow, inter.ring_color)]
@@ -92,7 +92,7 @@ def test_reduced_motion_holds_the_gradient_still(tmp_path):
     app, view = opened(tmp_path, reduced_motion=True)
     inter = ring_of(view, "a")
     inter._on_focus(type("E", (), {"target": inter.node, "focus_visible": True})())
-    assert isinstance(inter.ring.get("stroke_color"), tre.Gradient) and not inter._glow.turning
+    assert isinstance(inter.ring.get("stroke_color"), tess_re.Gradient) and not inter._glow.turning
 
 
 def test_a_theme_change_recolours_the_gradient(tmp_path):

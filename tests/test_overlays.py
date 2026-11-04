@@ -1,12 +1,12 @@
-"""M41 Phase 5: `tess_ui.overlays`, MD3's overlays on `tre` 0.3.4's
-layers (`show_layer`/`hide_layer`), since `tre` 0.3.5 removes its
+"""M41 Phase 5: `tess_ui.overlays`, MD3's overlays on `tess_re` 0.3.4's
+layers (`show_layer`/`hide_layer`), since `tess_re` 0.3.5 removes its
 `open_*`/`close_*`. Driven headlessly with `simulate`/`advance`.
 """
 
 import math
 
 import pytest
-import tre
+import tess_re
 
 from tess_ui import Theme, tokens
 from tess_ui.overlays import Dialog, Menu, NavigationDrawer, Popover, SideSheet, Snackbar, Tooltip
@@ -19,7 +19,7 @@ SEED = (0x67, 0x50, 0xA4, 0xFF)
 
 
 def _window():
-    window = tre.Window(width=800, height=600)
+    window = tess_re.Window(width=800, height=600)
     window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, gap=0,
                     align_items="flex_start")
     anchor = window.create("box", width=100, height=40, focusable=True, role="button")

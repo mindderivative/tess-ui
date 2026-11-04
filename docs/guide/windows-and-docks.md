@@ -163,7 +163,7 @@ prefs.center()                                 # where the system lets an app pl
 - Before `run()` the window opens with the main one; while it runs, on the loop's next turn.
 - `window.close`, `window.minimize` and the other window handlers act on the window their view is in.
 - `modal=True` puts a dimming layer over the parent (the main window, or `parent=` another `AppWindow`) that takes its clicks and keys
-  until the child closes. The operating system is not told the child belongs to the parent (tre has no owner window), so the two can
+  until the child closes. The operating system is not told the child belongs to the parent (tess_re has no owner window), so the two can
   still be raised and minimized separately.
 - Closing a second window leaves the app running; closing the main window closes every window.
 - A second window has no screens or routes (those belong to the main window's frame), and its title bar's maximize button reads

@@ -8,7 +8,7 @@ of entries, a real structural limit this macro layer's current design
 already named for `button_group`/`list_`/`menu`).
 """
 
-from tre import Window
+from tess_re import Window
 
 from tess_ui.spec import expand_components
 from tess_ui.widgets import status_bar, toolbar, top_app_bar

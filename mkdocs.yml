@@ -1,7 +1,7 @@
 site_name: Tesserae
 site_description: >-
   A declarative Python GUI framework, powered by the Tesserae Render
-  Engine (tre) -- write desktop apps in YAML views + Python ViewModels,
+  Engine (tess_re) -- write desktop apps in YAML views + Python ViewModels,
   without touching Rust.
 site_url: https://mindderivative.github.io/tess-ui/
 repo_url: https://github.com/mindderivative/tess-ui

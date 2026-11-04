@@ -1,11 +1,11 @@
-"""M29 Phase 2: Tesserae decodes images itself (Pillow) and hands `tre`
-only RGBA bytes -- `tre` never opens an image file.
+"""M29 Phase 2: Tesserae decodes images itself (Pillow) and hands `tess_re`
+only RGBA bytes -- `tess_re` never opens an image file.
 
-`tre` has no API to read an image node's pixels back, so this covers
-the decode and extraction steps directly, proves (by wrapping `tre`'s
-entry points) that no `src:` or file path reaches `tre`, and loads real
+`tess_re` has no API to read an image node's pixels back, so this covers
+the decode and extraction steps directly, proves (by wrapping `tess_re`'s
+entry points) that no `src:` or file path reaches `tess_re`, and loads real
 views end to end -- `push_frame` rejects a frame whose byte length
-doesn't match its size, so a clean load means `tre` accepted the frame.
+doesn't match its size, so a clean load means `tess_re` accepted the frame.
 """
 
 import importlib.util
@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 import pytest
-import tre
+import tess_re
 from PIL import Image
 
 from tess_ui import View, instantiate
@@ -142,8 +142,8 @@ children:
 
 
 def test_load_view_decodes_images_into_image_nodes(tmp_path: Path):
-    """Tesserae decodes the file and builds its pixels into a `tre`
-    `image` node (M37); `tre` is given no path."""
+    """Tesserae decodes the file and builds its pixels into a `tess_re`
+    `image` node (M37); `tess_re` is given no path."""
     _png(tmp_path / "assets" / "rb.png")
     view_path = tmp_path / "Gallery_View.yaml"
     view_path.write_text(IMAGE_FRAGMENT_VIEW)

@@ -189,7 +189,7 @@ def test_an_overlay_in_a_row_sits_against_its_own_rows_node(tmp_path):
     assert second[1] - first[1] == 100.0 and first[0] == second[0] == 120.0  # one row apart, each beside its own field
 
 
-# -- #282: an anchor that is hidden hides the node anchored to it (tre leaves the node at the window's corner, drawn and pressable) ------------------
+# -- #282: an anchor that is hidden hides the node anchored to it (tess_re leaves the node at the window's corner, drawn and pressable) ------------------
 
 SHOWN = '  - {widget: Rect, name: target, visible: "{{ show }}", style: {position: absolute, x: 150, y: 120, width: 60, height: 40, background: primary}}\n'
 

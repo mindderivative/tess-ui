@@ -164,9 +164,9 @@ def _parse(raw: str, color: Callable[[Any], RGBA], where: str) -> tuple[str, dic
 
 
 def make_gradient(raw: Any, color: Callable[[Any], RGBA], where: str = "a gradient") -> Any:
-    """`tre.Gradient` for the CSS-like string or mapping `raw`; `color` turns a stop's colour (a role or a CSS
+    """`tess_re.Gradient` for the CSS-like string or mapping `raw`; `color` turns a stop's colour (a role or a CSS
     colour) into RGBA. Raises `ValueError`, naming `where`."""
-    import tre
+    import tess_re
 
     if isinstance(raw, str):
         kind, spec, items = _parse(raw, color, where)
@@ -189,22 +189,22 @@ def make_gradient(raw: Any, color: Callable[[Any], RGBA], where: str = "a gradie
         raise ValueError(f"{where}: a gradient needs at least two colours")
     stops = _spread([_colour_stop(item, color, where) for item in items])
     if kind == "linear":
-        return tre.Gradient.linear(stops, spec["angle"])
+        return tess_re.Gradient.linear(stops, spec["angle"])
     if kind == "radial":
-        return tre.Gradient.radial(stops, spec["center"], spec["radius"])
-    return tre.Gradient.sweep(stops, spec["center"], spec["start"])
+        return tess_re.Gradient.radial(stops, spec["center"], spec["radius"])
+    return tess_re.Gradient.sweep(stops, spec["center"], spec["start"])
 
 
 def cursor_value(value: Any, where: str) -> Any:
-    """A `cursor:` as the node property: a name (tre checks it), or a decoded picture (`{rgba, width, height,
-    hotspot}`, made from `{src, hotspot}` where the view is read) as a `tre.CursorImage`."""
-    import tre
+    """A `cursor:` as the node property: a name (tess_re checks it), or a decoded picture (`{rgba, width, height,
+    hotspot}`, made from `{src, hotspot}` where the view is read) as a `tess_re.CursorImage`."""
+    import tess_re
 
     if isinstance(value, str):
         return value
     if isinstance(value, dict) and "rgba" in value:
         try:
-            return tre.CursorImage(value["rgba"], int(value["width"]), int(value["height"]),
+            return tess_re.CursorImage(value["rgba"], int(value["width"]), int(value["height"]),
                                    hotspot=tuple(int(v) for v in value.get("hotspot", (0, 0))))
         except ValueError as exc:
             raise ValueError(f"{where}: cursor: {exc}") from None
@@ -214,7 +214,7 @@ def cursor_value(value: Any, where: str) -> Any:
 
 
 def _filter(value: Any, where: str) -> Any:
-    import tre
+    import tess_re
 
     if value is None or value is False:
         return None
@@ -224,7 +224,7 @@ def _filter(value: Any, where: str) -> Any:
         if key not in _FILTERS:
             raise ValueError(f"{where}: unknown filter {key!r}, expected one of {', '.join(_FILTERS)}")
     try:
-        return tre.Shader.filter(**{k: float(v) for k, v in value.items()})
+        return tess_re.Shader.filter(**{k: float(v) for k, v in value.items()})
     except (TypeError, ValueError) as exc:
         raise ValueError(f"{where}: filter: {exc}") from None
 

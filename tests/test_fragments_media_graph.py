@@ -2,14 +2,14 @@ from helpers import elevation, view_from
 """Real coverage for `NodeGraph_Component.yaml` -- the one Media &
 Graphics fragment shipped after re-scoping the "next boundary" work.
 `video`/`graph_node` are NOT here: `video` has no faithful declarative
-port available today (tracked as `tre` issue #2, `ImageSpec.src` would
+port available today (tracked as `tess_re` issue #2, `ImageSpec.src` would
 need to become optional); `graph_node` is structurally un-fragmentable
 (needs a live node reference as its own attachment parent, which no
 `{{ }}`-substitution macro can express -- see
 `NodeGraph_Component.yaml`'s own header).
 """
 
-from tre import Window
+from tess_re import Window
 
 from tess_ui.spec import expand_components
 from tess_ui.widgets import node_graph

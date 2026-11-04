@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""#105 phase 1 spike (0.5.0): can tre open a second window while the app is running, and what can that window be told?
+"""#105 phase 1 spike (0.5.0): can tess_re open a second window while the app is running, and what can that window be told?
 
-tre's `App.add_window` says it registers a window "to be opened the next time `run()` is called". This tries it anyway, in a
-real window, with bare `tre` (no Tesserae code), so the answer is tre's own:
+tess_re's `App.add_window` says it registers a window "to be opened the next time `run()` is called". This tries it anyway, in a
+real window, with bare `tess_re` (no Tesserae code), so the answer is tess_re's own:
 
     .venv/bin/python tools/spikes/second_window.py [--out DIR]
     .venv/bin/python tools/spikes/second_window.py --dry     # only probes which `Window.set` properties exist, no window
@@ -47,10 +47,10 @@ def main(argv=None) -> int:
     parser.add_argument("--out", type=Path, default=Path("spike-results"))
     parser.add_argument("--dry", action="store_true", help="probe the Window.set properties and exit")
     args = parser.parse_args(argv)
-    import tre
+    import tess_re
 
     if args.dry:
-        for name, answer in probe(tre.Window(width=200, height=100, title="probe")).items():
+        for name, answer in probe(tess_re.Window(width=200, height=100, title="probe")).items():
             print(f"  {name:14} {answer}")
         return 0
 
@@ -61,11 +61,11 @@ def main(argv=None) -> int:
         log.append({"t": round(time.perf_counter() - t0, 3), "kind": kind, **fields})
         print(kind, fields)
 
-    app = tre.App()
-    first = tre.Window(width=420, height=220, title="First window (keys: 2 3 4 5 q)")
+    app = tess_re.App()
+    first = tess_re.Window(width=420, height=220, title="First window (keys: 2 3 4 5 q)")
     first.root.set(fill=(0x21, 0x1F, 0x26, 0xFF))
     app.add_window(first)
-    second = tre.Window(width=300, height=160, title="Second window")
+    second = tess_re.Window(width=300, height=160, title="Second window")
     second.root.set(fill=(0x4A, 0x44, 0x58, 0xFF))
     frames = {"first": 0, "second": 0}
     first.on("frame", lambda e: frames.__setitem__("first", frames["first"] + 1))

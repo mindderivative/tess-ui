@@ -97,7 +97,7 @@ the parent (`"50%"`), or a sum of those such as `"calc(100% - 16)"`
 negative. `min_width`, `max_width`, `min_height` and `max_height` bound it
 with a number, `"auto"` or a percentage, and `aspect_ratio` (width over
 height) gives the missing side from the one that's set: a side the layout stretches is not computed, so set `align_content` on the parent or
-`align_self` on the node (or use `flex_wrap`). A `Text` with no `width` is measured to its text; `width: auto` stretches it like any box. A size that tre
+`align_self` on the node (or use `flex_wrap`). A `Text` with no `width` is measured to its text; `width: auto` stretches it like any box. A size that tess_re
 would refuse (`40px`, `10vw`, `stretch`, `100%-16`) is an error at the line
 that writes it, saying what to write.
 
@@ -281,7 +281,7 @@ An **absolutely positioned** node stretched between two edges of its parent take
 
 ## Placing a node against another node
 
-Three style fields place a node against another node, wherever it is written, and keep it there as the target moves (tre lays it out after the target, so
+Three style fields place a node against another node, wherever it is written, and keep it there as the target moves (tess_re lays it out after the target, so
 there is no lag):
 
 ```yaml

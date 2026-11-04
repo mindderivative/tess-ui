@@ -2,7 +2,7 @@
 
     python3 tools/tre_version_check.py
 
-Prints whether a newer release fits the pin, or falls outside it (a new tre line is a new Tesserae line). Needs network access. Exits 1 on a
+Prints whether a newer release fits the pin, or falls outside it (a new tess_re line is a new Tesserae line). Needs network access. Exits 1 on a
 release that fits the pin but is not the one installed.
 """
 

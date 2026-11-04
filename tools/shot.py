@@ -5,7 +5,7 @@
     python3 tools/shot.py examples/counter --view Counter --viewmodel Counter_ViewModel.CounterViewModel --click root.button --out /tmp/after.png
     python3 tools/shot.py some/project --view Main --size 640x480 --dark --seed 6750A4 --out /tmp/main.png
 
-ROOT is a folder holding `<Name>_View.yaml` files (and the ViewModel module, when one is named). The window is tre's headless one: it
+ROOT is a folder holding `<Name>_View.yaml` files (and the ViewModel module, when one is named). The window is tess_re's headless one: it
 draws text, shaders, gradients and backdrop blur without a GPU or display, the same snapshot `tests/test_pixels.py` reads. It does not show
 timing, scroll feel, an OS window's decorations or anything another platform draws differently. Say so when reporting what you saw.
 

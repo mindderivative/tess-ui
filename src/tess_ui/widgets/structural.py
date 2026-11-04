@@ -18,7 +18,7 @@ from tess_ui import motion
 
 if TYPE_CHECKING:
     from tess_ui.theme import Theme
-    from tre import Window
+    from tess_re import Window
 
 
 _CARDS = {"elevated": "CardElevated", "filled": "CardFilled", "outlined": "CardOutlined"}
@@ -59,7 +59,7 @@ def list_(
 ) -> Widget:
     """Lays out `list_item(...)`s (or any nodes) as MD3's list: a column
     `width` wide. The items move into it. An empty list is an error, as
-    `tre`'s was."""
+    `tess_re`'s was."""
     if not items:
         raise ValueError("a list needs at least one item")
     widget = Widget(window, spec={"id": "list", "kind": "Container",

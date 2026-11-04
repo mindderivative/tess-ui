@@ -1,6 +1,6 @@
 """Tesserae's own declarative macro-expansion layer -- `component: Name`
 / `with: {...}` in a `*_View.yaml`, expanding to a real `*_Component.yaml`
-fragment's `WidgetSpec`-shaped subtree before `tre` ever parses the file.
+fragment's `WidgetSpec`-shaped subtree before `tess_re` ever parses the file.
 See `expand.py`/`load.py` for the real design and its stated limits.
 """
 

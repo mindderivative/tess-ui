@@ -6,7 +6,7 @@ an ellipsis). At or under it nothing changes.
 """
 
 import pytest
-import tre
+import tess_re
 
 from tess_ui import Theme, tokens
 from tess_ui.widgets import pagination
@@ -17,7 +17,7 @@ CLEAR = (0, 0, 0, 0)
 
 
 def _window():
-    return tre.Window(width=900, height=300)
+    return tess_re.Window(width=900, height=300)
 
 
 def _labels(p):
@@ -75,7 +75,7 @@ def test_a_long_run_draws_slots_and_an_inert_ellipsis(capfd):
     assert p.part("slot2").get("focusable") and not p.part("slot2").get("a11y_hidden")
     heard = []
     p.on_change(heard.append)
-    p.view.click(gap)  # an ellipsis does nothing, quietly (tre logs a handler's error rather than raising)
+    p.view.click(gap)  # an ellipsis does nothing, quietly (tess_re logs a handler's error rather than raising)
     assert p.current.get() == 20 and heard == [] and "uncaught exception" not in capfd.readouterr().err
 
 

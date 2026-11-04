@@ -8,7 +8,7 @@ which stay the path for live selection.
 
 import pytest
 import yaml
-from tre import Window
+from tess_re import Window
 
 from tess_ui import View
 from tess_ui.overlays import Menu

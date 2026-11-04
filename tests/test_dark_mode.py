@@ -4,7 +4,7 @@
 `color_scheme` event re-themes every screen and `app.theme`. It starts
 dark (Q3): 0.3.4 can't read the OS's appearance before its first event.
 With `dark=True`/`False` the app keeps its choice. Since M42 Phase 7 the
-window's own `tre` theme is never set: nothing reads it. OS switches are
+window's own `tess_re` theme is never set: nothing reads it. OS switches are
 simulated with `window.simulate("color_scheme", dark=...)`.
 """
 

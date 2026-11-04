@@ -21,7 +21,7 @@ def main() -> int:
     from tess_ui import cli
 
     engine = importlib.metadata.version("tesserae-engine")
-    print(f"tesserae {importlib.metadata.version('tesserae-ui')} on tre {engine}, Python {sys.version.split()[0]}, "
+    print(f"tesserae {importlib.metadata.version('tesserae-ui')} on tess_re {engine}, Python {sys.version.split()[0]}, "
           f"{sys.platform}")
     home = os.getcwd()
     with tempfile.TemporaryDirectory() as parent:

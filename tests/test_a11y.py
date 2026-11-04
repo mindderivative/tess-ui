@@ -5,7 +5,7 @@ and `tess_ui.a11y` for Tesserae's widgets (M40).
 import math
 
 import pytest
-import tre
+import tess_re
 
 import tess_ui
 from tess_ui import View, a11y, interaction
@@ -81,7 +81,7 @@ def test_a_square_node_gets_a_square_ring_and_a_resized_node_a_resized_ring():
 
 
 def test_per_corner_radii_each_grow_by_the_ring():
-    window = tre.Window(width=300, height=200)
+    window = tess_re.Window(width=300, height=200)
     node = window.create("box", width=100, height=40, corner_radius=(8, 0, 8, 0), focusable=True)
     window.root.add_child(node)
     window.advance(16)
@@ -183,7 +183,7 @@ def test_a_link_keeps_its_role():
 # -- tess_ui.a11y, for widgets ------------------------------------------------------------
 
 def test_describe_checks_every_field_before_setting_any():
-    window = tre.Window(width=100, height=100)
+    window = tess_re.Window(width=100, height=100)
     node = window.create("box", width=10, height=10)
     a11y.describe(node, role="switch", label="Wi-Fi", checked=True, value=1)
     assert (node.get("role"), node.get("label"), node.get("checked"), node.get("value")) == (
@@ -196,7 +196,7 @@ def test_describe_checks_every_field_before_setting_any():
 
 
 def test_the_role_and_action_lists_are_tres():
-    window = tre.Window(width=100, height=100)
+    window = tess_re.Window(width=100, height=100)
     node = window.create("box", width=10, height=10)
     for role in a11y.ROLES:
         node.set(role=role)

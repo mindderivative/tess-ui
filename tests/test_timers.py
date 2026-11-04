@@ -8,9 +8,9 @@ from tess_ui.timers import Timers
 
 
 def window():
-    import tre
+    import tess_re
 
-    return tre.Window(width=100, height=100)
+    return tess_re.Window(width=100, height=100)
 
 
 def run(win, ms, step=10):

@@ -8,7 +8,7 @@ pins one; on a bare window they keep MD3's baseline.
 import gc
 
 import pytest
-import tre
+import tess_re
 
 from tess_ui import App, Theme, View, tokens
 from tess_ui.controls import Checkbox, SpinBox
@@ -71,7 +71,7 @@ def test_an_explicit_theme_pins_the_widget():
 
 
 def test_on_a_bare_window_a_widget_keeps_mds_baseline():
-    window = tre.Window(width=400, height=300)
+    window = tess_re.Window(width=400, height=300)
     save = button(window, "Save", 120, 40, variant="filled")
     assert app_of(window) is None and save.node.get("fill") == BASE["primary"]
 
@@ -125,7 +125,7 @@ def test_a_failing_follower_rolls_back_every_view_and_widget():
 def test_an_app_is_found_by_its_own_window_only():
     app, other = _app(), _app()
     assert app_of(app.window) is app and app_of(other.window) is other
-    assert app_of(tre.Window(width=10, height=10)) is None
+    assert app_of(tess_re.Window(width=10, height=10)) is None
 
 
 # -- M50 Phase 3: views, the shell and dock, overlays (Q3) ---------------------

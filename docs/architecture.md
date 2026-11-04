@@ -2,7 +2,7 @@
 
 Tesserae is a Python framework for desktop interfaces. You write screens in YAML and logic in
 Python; Tesserae builds the interface and keeps it up to date. It draws nothing itself: the
-engine, `tre`, owns the window, layout, painting, text, input and the event loop. Tesserae is
+engine, `tess_re`, owns the window, layout, painting, text, input and the event loop. Tesserae is
 everything above that.
 
 ## The layers
@@ -17,7 +17,7 @@ everything above that.
                     |               |      Signal / Computed / Effect (reactive)
                     |          tokens + Theme (colour, shape, type, motion) + rule sheets
                     v               v
- tre            Window: create / set / get / animate / on / show_layer
+ tess_re            Window: create / set / get / animate / on / show_layer
                 (node tree, flex layout, paint, text, input, accessibility)
 ```
 
@@ -44,7 +44,7 @@ serves every view that names it. See [Apps and screens](guide/apps-and-screens.m
    ViewModel, then the app.
 3. **Lower** (`spec/lower.py`). The instances become the node mappings the builder has always taken, with
    each property's current value.
-4. **Build** (`spec/build.py`, with the cascade). The builder creates `tre` nodes: `Rect`/`Container`
+4. **Build** (`spec/build.py`, with the cascade). The builder creates `tess_re` nodes: `Rect`/`Container`
    become a `box`, `Text` and `Link` a `text`, `Icon` a `path`, `Image` an `image`, a text input a
    `text_input`. The stateful kinds (`Checkbox`, `RadioButton`, `Switch`, `Slider`,
    `RangeSlider`, `SpinBox`, `CircularProgress`, `LinearProgress`, `LoadingIndicator`, `TimePickerDial`) become Tesserae's own
@@ -77,12 +77,12 @@ See the [widget catalog](guide/widget-catalog.md), [controls](guide/controls.md)
 [overlays](guide/overlays.md), [windows and docks](guide/windows-and-docks.md) and the
 [component gallery](components/index.md).
 
-**The engine, `tre`.** It provides the node tree (`create`, `set`, `get`, `animate`, `on`,
+**The engine, `tess_re`.** It provides the node tree (`create`, `set`, `get`, `animate`, `on`,
 `add_child`, `insert_child`, `remove`, `destroy`), layout, painting, text, input, accessibility,
 layers and the render loop. It has no widgets, theme, stylesheets or reactivity of its own.
 
-**What Tesserae hands `tre`: specs and bytes, never files.** Tesserae reads, parses, decodes and
-watches every file. `tre` receives nodes built through its API, colours as RGBA tuples, image
+**What Tesserae hands `tess_re`: specs and bytes, never files.** Tesserae reads, parses, decodes and
+watches every file. `tess_re` receives nodes built through its API, colours as RGBA tuples, image
 pixels as `rgba` on an `image` node, and font files as bytes (`register_font`). It is never
 given a path.
 
@@ -124,7 +124,7 @@ after each update, without doubling listeners. A node that keeps its `name` or `
 `App.run(hot_reload=True)` uses the same machinery. It watches the theme files and the app's stylesheet file given to the app, a
 `ComposedWatcher` per view opened with `open_view` or `open_window` (the file and every view, stylesheet and theme it was built from), and a
 `ViewWatcher` per screen built from a file by `app.load` in the older syntax (`watchfiles`, on a background thread). On a change it reruns the pipeline off the main thread
-and hands the result to the event loop through `tre`'s thread-safe loop handle, which reconciles the live
+and hands the result to the event loop through `tess_re`'s thread-safe loop handle, which reconciles the live
 view. A failed reload is logged and the app keeps running. See [Hot reload](guide/hot-reload.md) for what is
 watched.
 
@@ -144,7 +144,7 @@ watched.
   `typography:` overrides in a theme file re-resolve the colours and re-colour live views.
 - **Screens are long-lived.** Switching screens detaches, never rebuilds.
 - **Proven against recorded answers.** Binding, cascade, colour and tree-building tests replay
-  reference results recorded from `tre` (`tests/reference/*.json`), so a regression in those
+  reference results recorded from `tess_re` (`tests/reference/*.json`), so a regression in those
   parts fails a test.
 
 For the full list of names and signatures see the [Python API](api/python.md) and the

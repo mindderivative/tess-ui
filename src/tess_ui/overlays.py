@@ -1,12 +1,12 @@
-"""MD3's overlays on `tre` 0.3.4's layers: `Dialog`, `Menu` (and a
+"""MD3's overlays on `tess_re` 0.3.4's layers: `Dialog`, `Menu` (and a
 context menu), `Snackbar`, `Tooltip`, the modal `SideSheet` and the modal
-`NavigationDrawer`, since `tre` 0.3.5 removes its `open_*`/`close_*`;
+`NavigationDrawer`, since `tess_re` 0.3.5 removes its `open_*`/`close_*`;
 then `SearchView` and `Popover`.
 
 Each is (`tess_ui.widgets._composed.Widget`) and
 shown with `window.show_layer`: `open()` shows it, `close()` hides it (and
 focus goes back to where it was), `on_close(fn)` hears it close. Each
-closes itself on the dismissals `tre`'s legacy overlays allowed:
+closes itself on the dismissals `tess_re`'s legacy overlays allowed:
 
 | Overlay | Placement | Outside press | Escape | Modal |
 | --- | --- | --- | --- | --- |
@@ -20,7 +20,7 @@ closes itself on the dismissals `tre`'s legacy overlays allowed:
 
 A modal overlay's scrim fills the window, and keeps filling it as the
 window resizes while it's open, so an
-outside press lands on the scrim. MD3's timing, which `tre` never had: a
+outside press lands on the scrim. MD3's timing, which `tess_re` never had: a
 snackbar hides itself after 4 s (`duration=None` keeps it), and a tooltip
 opens 500 ms after its anchor is hovered, or at once on keyboard focus.
 """
@@ -62,7 +62,7 @@ def dismiss_surface(node: Any) -> bool:
 
 
 class _Timer:
-    """`fn()` after `ms`: `tre` has no timers, so an animation of a private
+    """`fn()` after `ms`: `tess_re` has no timers, so an animation of a private
     box that's in no tree (animations run there too) stands in for one."""
 
     def __init__(self, window: Any) -> None:
@@ -141,7 +141,7 @@ class Overlay:
         return root.get("layout_width") or 0.0, root.get("layout_height") or 0.0
 
     def _on_resize(self, event: Any) -> None:
-        self._fit(*self._window_size())  # `tre` has laid the root out at the new size by now
+        self._fit(*self._window_size())  # `tess_re` has laid the root out at the new size by now
 
     def _fit(self, width: float, height: float) -> None:
         """Size or place it for a `width` x `height` window: on opening, and
@@ -437,7 +437,7 @@ class Tooltip(Overlay):
 
 
 class Popover(Overlay):
-    """MD3's rich tooltip, `tre`'s popover: a `surface_container`
+    """MD3's rich tooltip, `tess_re`'s popover: a `surface_container`
     panel, 12 px corners, elevation 2, padded 16, with an optional
     `title_small` `subhead`, `body_medium` supporting text (both in
     `on_surface_variant`, the text wrapped to the width) and optional

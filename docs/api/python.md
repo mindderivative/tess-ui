@@ -114,10 +114,10 @@ class App(
 - `reduced_motion_mode` *(property)*: `"system"` (following the OS), or the app's fixed `True` or `False`.
 - `register(name: str, view: Any, viewmodel: Any) -> None`: Registers `view` (already loaded) and its already-`_attach`ed `viewmodel` (e.g. `FooViewModel(view)`) under `name`, for a later `show(name)` to display.
 - `remember_window(key: str) -> None`: Puts the window back as it was left under `key` (see `tess_ui.windowstate`) and keeps the file up to date as it changes: its size and, where the platform gives one, its place, while it is not maximized or fullscreen, and whether it is maximized.
-- `resize_border` *(property)*: How many pixels along each edge resize a borderless window (`tre` turns it off while maximized or fullscreen, and on macOS).
+- `resize_border` *(property)*: How many pixels along each edge resize a borderless window (`tess_re` turns it off while maximized or fullscreen, and on macOS).
 - `restore() -> None`: Restores the window from maximized or minimized.
 - `route(pattern: str, name: str) -> None`: Adds a route: a pattern like `"notes/{id}"` for the screen registered (now or later) under `name`.
-- `run(max_frames: int | None = None, *, hot_reload: bool = False, keepalive: bool | float = False) -> None`: The one blocking call -- opens the real `Window` and runs `tre`'s own real render loop, showing the screen `show()` made current and any nodes added to `app.window.root` by calls.
+- `run(max_frames: int | None = None, *, hot_reload: bool = False, keepalive: bool | float = False) -> None`: The one blocking call -- opens the real `Window` and runs `tess_re`'s own real render loop, showing the screen `show()` made current and any nodes added to `app.window.root` by calls.
 - `scale_factor` *(property)*: The display's scale (2.0 on a 2x screen); 1.0 until the window opens.
 - `screen(name: str) -> tuple[Any, Any]`: The `(view, viewmodel)` registered under `name` -- by `register`, `load` or an embedded view; `viewmodel` is `None` for a view with none.
 - `set_dark(dark: bool | str) -> None`: `True`/`False` fixes the app dark or light, re-theming every screen in place; `"system"` goes back to following the OS from its next switch.
@@ -133,7 +133,7 @@ class App(
 - `stop_trace() -> int`: Ends the trace `start_trace` began and returns how many frames it holds.
 - `system_menu` *(property)*: Whether a secondary press on the title bar opens the OS's window menu (Windows, and Wayland compositors with one).
 - `theme` *(property)*: The app's resolved theme (`tess_ui.Theme`): roles, component shape and elevation, typography, and motion tokens.
-- `thread_handle() -> Any`: `tre`'s thread-safe `LoopHandle` for this app: the one object that may cross threads.
+- `thread_handle() -> Any`: `tess_re`'s thread-safe `LoopHandle` for this app: the one object that may cross threads.
 - `toggle_maximized() -> None`: Maximizes the window, or restores it if it's maximized: a title bar's maximize button.
 - `transition` *(property)*: How `navigate`, `back` and `forward` change screens: `none` (the default, a swap), `fade_through`, `shared_axis_x`, `shared_axis_y`, `shared_axis_z` or `container_transform` (see `tess_ui.screen_transition`).
 - `transparent` *(property)*: Whether the window was made see-through (`App(transparent=True)`); `transparent_active` says whether it took.
@@ -424,7 +424,7 @@ The level (0 to 5) of the MD3 elevation token `name`, or `None` if it isn't one.
 elevation_shadows(level: float) -> list[Shadow]
 ```
 
-MD3 elevation `level` (0–5, fractional allowed) as a `shadows` list, `(color, offset_x, offset_y, blur, spread)`: `tre`'s key shadow (30% black) first, so it paints on top, then its ambient shadow (15%). Level 0 is no shadow.
+MD3 elevation `level` (0–5, fractional allowed) as a `shadows` list, `(color, offset_x, offset_y, blur, spread)`: `tess_re`'s key shadow (30% black) first, so it paints on top, then its ambient shadow (15%). Level 0 is no shadow.
 
 ### `height_class`
 
@@ -448,7 +448,7 @@ The MD3 window size class for a window `width` wide: `compact` (under 600), `med
 parse_color(raw: str) -> RGBA
 ```
 
-A colour string as `tre` parses it: hex (`#RGB`, `#RGBA`, `#RRGGBB`, `#RRGGBBAA`), a CSS colour name, `transparent`, or `rgb()`/`rgba()`/`hsl()`/`hsla()` in CSS Color 4's comma or space syntax with an optional alpha, and CSS's wide-gamut functions (`color()`, `lab()`, `lch()`, `oklab()`, `oklch()`, `hwb()`), clipped into sRGB. Raises `ValueError`.
+A colour string as `tess_re` parses it: hex (`#RGB`, `#RGBA`, `#RRGGBB`, `#RRGGBBAA`), a CSS colour name, `transparent`, or `rgb()`/`rgba()`/`hsl()`/`hsla()` in CSS Color 4's comma or space syntax with an optional alpha, and CSS's wide-gamut functions (`color()`, `lab()`, `lch()`, `oklab()`, `oklch()`, `hwb()`), clipped into sRGB. Raises `ValueError`.
 
 ### `resolve_color`
 
@@ -470,7 +470,7 @@ resolve_scheme(
 ) -> Optional[dict[str, RGBA]]
 ```
 
-The scheme a view resolves roles against, by `tre`'s `View` rules: the seed is `theme_seed`, else the custom theme's `seed:`, else the default theme's; `colors:` overrides apply default theme first, then custom. `None` when there's no seed at all: roles then don't resolve, as in `tre`.
+The scheme a view resolves roles against, by `tess_re`'s `View` rules: the seed is `theme_seed`, else the custom theme's `seed:`, else the default theme's; `colors:` overrides apply default theme first, then custom. `None` when there's no seed at all: roles then don't resolve, as in `tess_re`.
 
 ### `shape`
 
@@ -581,7 +581,7 @@ button_group(
 ) -> Widget
 ```
 
-MD3's button group: one button per label, `width`x`height`, 8 px apart; parts `b0`, `b1`, ... While one is pressed, its corners tighten and it grows 12 px, its neighbours sharing the loss, and it all comes back on release -- the intent of `tre`'s, whose reflow compounded and never restored.
+MD3's button group: one button per label, `width`x`height`, 8 px apart; parts `b0`, `b1`, ... While one is pressed, its corners tighten and it grows 12 px, its neighbours sharing the loss, and it all comes back on release -- the intent of `tess_re`'s, whose reflow compounded and never restored.
 
 ### `card`
 
@@ -1106,7 +1106,7 @@ popover(
 ) -> overlays.Popover
 ```
 
-MD3's rich tooltip, `tre`'s popover (`tess_ui.overlays.Popover`). `open(anchor)` it, or `attach(anchor)` (or `anchor=`) to open and close it on the anchor's click; an outside press, Escape or an action closes it.
+MD3's rich tooltip, `tess_re`'s popover (`tess_ui.overlays.Popover`). `open(anchor)` it, or `attach(anchor)` (or `anchor=`) to open and close it on the anchor's click; an outside press, Escape or an action closes it.
 
 ### `radio_button`
 
@@ -1251,7 +1251,7 @@ spin_box(
 ) -> controls.SpinBox
 ```
 
-A number field between − and + buttons (`min=`, `max=`, `step=`). `value` may be a number or its text, as `tre`'s took.
+A number field between − and + buttons (`min=`, `max=`, `step=`). `value` may be a number or its text, as `tess_re`'s took.
 
 ### `splitter`
 
@@ -1294,7 +1294,7 @@ split_button(
 ) -> Widget
 ```
 
-MD3's split button: a `leading` action and a `trailing` chevron, parts of the returned `Widget`. While it's hovered, the corners where the two meet tighten, as `tre`'s did.
+MD3's split button: a `leading` action and a `trailing` chevron, parts of the returned `Widget`. While it's hovered, the corners where the two meet tighten, as `tess_re`'s did.
 
 ### `status_bar`
 
@@ -1629,7 +1629,7 @@ class LoadingIndicator(
 ) -> None  # extends Indicator
 ```
 
-MD3's loading indicator: a filled `primary` shape, 38 px in a 48 px box, morphing forever through a pentagon, a pill, a cookie and an oval, 650 ms per step, linear. These are the outlines `tre`'s MD3 handover defines (its `intended` pill and oval, not the diamonds `tre` drew).
+MD3's loading indicator: a filled `primary` shape, 38 px in a 48 px box, morphing forever through a pentagon, a pill, a cookie and an oval, 650 ms per step, linear. These are the outlines `tess_re`'s MD3 handover defines (its `intended` pill and oval, not the diamonds `tess_re` drew).
 
 Also has everything `Indicator` has.
 
@@ -1715,7 +1715,7 @@ class SpinBox(
 ) -> None
 ```
 
-A number field between − and + buttons, as `tre`'s spin box was (MD3 has no spin box of its own, so it's built from MD3's parts: two 40 px icon buttons and a filled field).
+A number field between − and + buttons, as `tess_re`'s spin box was (MD3 has no spin box of its own, so it's built from MD3's parts: two 40 px icon buttons and a filled field).
 
 - `color(role: str) -> RGBA`: A colour role of this control's theme, or MD3's baseline.
 - `destroy() -> None`: Stops the spin box and frees its nodes.
@@ -1858,7 +1858,7 @@ class Popover(
 ) -> None  # extends Overlay
 ```
 
-MD3's rich tooltip, `tre`'s popover: a `surface_container` panel, 12 px corners, elevation 2, padded 16, with an optional `title_small` `subhead`, `body_medium` supporting text (both in `on_surface_variant`, the text wrapped to the width) and optional text-button `actions` (`(label, fn)`, in `primary`, each closing it after calling `fn`). It opens below its anchor and stays until an outside press, Escape or an action closes it; with actions, focus moves to the first.
+MD3's rich tooltip, `tess_re`'s popover: a `surface_container` panel, 12 px corners, elevation 2, padded 16, with an optional `title_small` `subhead`, `body_medium` supporting text (both in `on_surface_variant`, the text wrapped to the width) and optional text-button `actions` (`(label, fn)`, in `primary`, each closing it after calling `fn`). It opens below its anchor and stays until an outside press, Escape or an action closes it; with actions, focus moves to the first.
 
 Also has everything `Overlay` has.
 
@@ -2078,7 +2078,7 @@ Keeps `node`'s `label`, `hidden` or `level` up to date: each is a `Signal` or `C
 check(fields: dict[str, Any], where: str = '') -> dict[str, Any]
 ```
 
-Checks `describe`'s fields and returns them as `tre` properties (`hidden` becomes `a11y_hidden`). Raises `ValueError` naming the field.
+Checks `describe`'s fields and returns them as `tess_re` properties (`hidden` becomes `a11y_hidden`). Raises `ValueError` naming the field.
 
 ### `describe`
 
@@ -2168,7 +2168,7 @@ Parses ``"{{ expression }}"``. Raises `BindingError` if it isn't wrapped in ``{{
 value_debug(value: Value) -> str
 ```
 
-A value as `tre` prints it (`Int(3)`, `Str("a")`, `Handle(0)`).
+A value as `tess_re` prints it (`Int(3)`, `Str("a")`, `Handle(0)`).
 
 ## Fonts
 
@@ -2180,7 +2180,7 @@ A value as `tre` prints it (`Int(3)`, `Str("a")`, `Handle(0)`).
 register_font(path: str | Path) -> list[str]
 ```
 
-Reads the font file at `path` and registers it with `tre`, process-wide. Returns the family names it contains -- the exact names to use as `font_family`.
+Reads the font file at `path` and registers it with `tess_re`, process-wide. Returns the family names it contains -- the exact names to use as `font_family`.
 
 ## Icons
 
@@ -2273,7 +2273,7 @@ expand_components(
 ) -> str
 ```
 
-`expand_components_to_spec`, dumped back to YAML text -- for inspecting an expansion, or for `tre`'s own text-based `source=` path. Nothing on Tesserae's own `tre` handoff path uses this any more (`load_view`/`instantiate` pass the dict via `spec=`).
+`expand_components_to_spec`, dumped back to YAML text -- for inspecting an expansion, or for `tess_re`'s own text-based `source=` path. Nothing on Tesserae's own `tess_re` handoff path uses this any more (`load_view`/`instantiate` pass the dict via `spec=`).
 
 ### `expand_components_to_spec`
 
@@ -2295,7 +2295,7 @@ Resolves every `include:` and expands every `component:` entry in `yaml_text`, r
 load_stylesheet(path: str | Path) -> dict[str, Any]
 ```
 
-Reads a stylesheet YAML file into the dict `tre`'s `stylesheet_spec=` takes. A file whose keys say it is a view or a theme is refused, naming the file to give it.
+Reads a stylesheet YAML file into the dict `tess_re`'s `stylesheet_spec=` takes. A file whose keys say it is a view or a theme is refused, naming the file to give it.
 
 ### `load_theme`
 
@@ -2303,7 +2303,7 @@ Reads a stylesheet YAML file into the dict `tre`'s `stylesheet_spec=` takes. A f
 load_theme(path: str | Path) -> dict[str, Any]
 ```
 
-Reads a theme YAML file into the dict `tre`'s `default_theme_spec=`/`custom_theme_spec=` take, for `load_view` or for switching themes later:
+Reads a theme YAML file into the dict `tess_re`'s `default_theme_spec=`/`custom_theme_spec=` take, for `load_view` or for switching themes later:
 
 ### `load_view`
 
