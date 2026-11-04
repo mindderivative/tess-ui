@@ -366,3 +366,34 @@ def test_the_interval_rules():
     assert _keepalive_interval(None) is None and _keepalive_interval(False) is None
     assert _keepalive_interval(True) == 0.02
     assert _keepalive_interval(0.25) == 0.25 and _keepalive_interval(2) == 2.0
+
+
+def test_ticks_and_frame_counts_stop_when_the_window_closes(fake_tre, monkeypatch, tmp_path):
+    import tess_ui.app as tess_app
+    """#297: `tess_re` 0.5.9+ runs queued callbacks while no window is open, so a callback that
+    re-queues itself after the last window closed keeps `run()` from returning on macOS."""
+    slept = []
+    monkeypatch.setattr("tess_ui.app.time.sleep", slept.append)
+    monkeypatch.setenv("TESS_UI_FRAMES_REPORT", str(tmp_path / "frames.txt"))
+    heard = []
+    listen = tess_app.listen_window  # the loop is faked, so the test delivers `closed` itself
+    monkeypatch.setattr(tess_app, "listen_window", lambda window, event, fn: (heard.append((event, fn)), listen(window, event, fn))[1])
+    app = App()
+
+    def counts():
+        return [fn for fn in fake_tre.queued if getattr(fn, "__name__", "") == "count"]
+
+    def loop():
+        _ticks(fake_tre)[0]()
+        counts()[0]()
+        next_tick, next_count = _ticks(fake_tre)[-1], counts()[-1]  # what each queued for after this frame
+        slept.clear()
+        fake_tre.queued.clear()
+        for event, fn in heard:
+            if event == "closed":
+                fn(None)  # the loop tells the window it closed
+        next_tick()
+        next_count()
+    fake_tre.on_run = loop
+    app.run(keepalive=0.25)
+    assert slept == [] and fake_tre.queued == []  # neither slept nor queued itself again

@@ -1,7 +1,6 @@
 {
 "src/tess_ui/app.py|arg-type|Argument \"reveal\" to \"play\" has incompatible type \"Callable[[], Literal[False] | None]\"; expected \"Callable[[], None]\"": 1,
 "src/tess_ui/app.py|arg-type|Argument 3 to \"listen_window\" has incompatible type \"Callable[[Any, Any, Any], tuple[Any, Any]]\"; expected \"Callable[[Any], None]\"": 1,
-"src/tess_ui/app.py|arg-type|Argument 3 to \"listen_window\" has incompatible type \"Callable[[Any], list[Any]]\"; expected \"Callable[[Any], None]\"": 1,
 "src/tess_ui/app.py|func-returns-value|\"add_child\" of \"Node\" does not return a value (it only ever returns None)": 1,
 "src/tess_ui/app.py|misc|Cannot infer type of lambda": 5,
 "src/tess_ui/app.py|union-attr|Item \"None\" of \"Any | None\" has no attribute \"remove\"": 1,

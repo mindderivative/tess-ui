@@ -1844,7 +1844,14 @@ class App:
         tre_app.add_window(self._window)
         for each in list(self._windows.values()):  # windows opened before the run open with the main one
             tre_app.add_window(each.window)
-        listen_window(self._window, "closed", lambda event: [each.window.close() for each in list(self._windows.values())])
+        closed = [False]  # a callback that re-queues itself must stop with the last window: tess_re 0.5.9+ runs queued callbacks while no window is open, so one that never stops keeps run() from returning on macOS (#297)
+
+        def on_closed(event: Any) -> None:
+            closed[0] = True
+            for each in list(self._windows.values()):
+                each.window.close()
+
+        listen_window(self._window, "closed", on_closed)
         tre_app.thread_handle().call_soon(self._adopt_os_appearance)  # on the first frame (M53 Q2)
         report = os.environ.get("TESS_UI_FRAMES_REPORT")
         drawn = [0]
@@ -1852,6 +1859,8 @@ class App:
             handle = tre_app.thread_handle()
 
             def count() -> None:  # once a frame, each call queuing the next
+                if closed[0]:
+                    return
                 drawn[0] += 1
                 handle.call_soon(count)
 
@@ -1862,7 +1871,7 @@ class App:
                 tick_handle = tre_app.thread_handle()
 
                 def tick() -> None:  # the sleep lets other threads take the GIL; each call queues the next
-                    if ticking[0]:
+                    if ticking[0] and not closed[0]:
                         time.sleep(interval)
                         tick_handle.call_soon(tick)
 
