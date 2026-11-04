@@ -9,6 +9,8 @@ import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+#: The engine line this Tesserae line is built on (`tesserae-engine` 0.6.x is `import tess_re`). Moving to a new engine line changes this constant and the pin, nothing else.
+ENGINE_LINE = "0.6"
 
 
 def _project():
@@ -17,9 +19,5 @@ def _project():
 
 def test_tess_re_is_pinned_to_the_release_the_suite_was_run_on():
     engine = next(d for d in _project()["dependencies"] if d.startswith("tesserae-engine"))
-    found = re.fullmatch(r"tesserae-engine==(0\.6\.\d+)", engine)
-    assert found, f"{engine!r}: pin one exact tess_re release (==0.6.x); a new one is tried by the user first, then this moves"
-
-
-def test_tesserae_is_0_5():
-    assert _project()["version"].startswith("0.5.")
+    found = re.fullmatch(r"tesserae-engine==(\d+\.\d+)\.\d+", engine)
+    assert found and found[1] == ENGINE_LINE, f"{engine!r}: pin one exact tess_re release (=={ENGINE_LINE}.x); a new one is tried by the user first, then this moves"

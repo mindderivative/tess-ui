@@ -5,7 +5,7 @@ description: 'Use when the user says the project is in "optimization, performanc
 
 # Research mode
 
-The user's own definition (2026-10-03, given in the tess_re project, which shares the maintainer), verbatim:
+The user's own definition (2026-10-03, given in the tre project, which shares the maintainer), verbatim:
 
 > I think we are in optimization, performance, efficiency, feature, and research mode.
 >
@@ -17,7 +17,7 @@ The user's own definition (2026-10-03, given in the tess_re project, which share
 
 (The Feature line is shortened from "of the engine ... for a UI rendering engine"; the rest is unchanged.) Read the goals as one test for every idea: lose no functionality, keep rendering smooth and crisp, run well on all desktop hardware, widen what can be done. "If there is a better way, look at it" is a standing instruction: question the approach, not only the bugs.
 
-## Method (worked in tess_re, Oct 2026)
+## Method (worked in tre, Oct 2026)
 
 Measure and survey first. Change no code until the user picks from ranked findings.
 

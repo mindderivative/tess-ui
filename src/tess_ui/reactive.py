@@ -1,7 +1,7 @@
 """Tesserae's reactivity: `Signal`, `Computed`, `Effect`, `batch`,
 `untrack` and `ViewModel`.
 
-Taken over from `tess_re` (`python/tess_re/__init__.py` at v0.3.4, MIT, same
+Taken over from `tre` (`python/tre/__init__.py` at v0.3.4, MIT, same
 author), which moves reactivity out of the engine (`tess_re` D5) and removes
 its copy in 0.3.5. The behavior is `tess_re`'s exactly:
 
