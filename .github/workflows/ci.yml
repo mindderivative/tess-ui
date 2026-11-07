@@ -73,7 +73,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: mindderivative/tess-re
-          ref: v0.6.4
+          ref: v0.6.5
           path: tess-re
 
       - name: Install tesserae and the docs build
@@ -126,7 +126,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: mindderivative/tess-re
-          ref: v0.6.4
+          ref: v0.6.5
           path: tess-re
 
       # Pulls `tesserae-engine` (tess_re) from PyPI, per pyproject's pin.

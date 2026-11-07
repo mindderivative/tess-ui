@@ -3242,3 +3242,8 @@ The user asked to find the cause, then to add the one-line fix and send the engi
 - Audit: no code or test in `src/` or `tests/` expects `'auto'` for a text node, and none declares an `sd_*` shader helper name. The size, label, widget, layout, overflow, grid, dark-mode, pointer, `ci_plan` and dependency tests passed on 0.6.4 (423 and 187 passed); the full suite was not run.
 - Pin moved in `pyproject.toml`, the tess-re checkout refs in `ci.yml` and `release.yml`, README and DEVELOPING; pushed as `3975745` on the user's word.
 - Mistake: that commit also rewrote the released 0.6.0 changelog bullet and the `To 0.6.0` migration line to say 0.6.4, although 0.6.0 is on PyPI with engine 0.6.0. Restored them; the pin move is under `## Unreleased` in the changelog. Version moved to 0.6.0.1 for it (not released).
+
+## 2026-11-07 Engine pin 0.6.4 to 0.6.5
+
+- tre released 0.6.5 (`PopupWindow(input_region=)`, additive; Tesserae uses no `PopupWindow`). Pin moved in `pyproject.toml`, the tess-re refs in `ci.yml`/`release.yml`, README, DEVELOPING and the 0.6.0.1 changelog entry (still unreleased).
+- 492 tests passed on 0.6.5 (size, label, widget, layout, overflow, grid, dark-mode, pointer, `ci_plan`, dependency and keepalive files); the full suite was not run.
