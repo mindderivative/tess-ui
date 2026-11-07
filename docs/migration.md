@@ -15,7 +15,7 @@ command (`tesserae new`, `tesserae add screen`; `python -m tess_ui` is the same)
 - **The editor schemas** are `tess-ui-*-schema.json` (they were `tesserae-*-schema.json`), in the package (`site-packages/tess_ui/schema/`) and on the docs site. A `yaml.schemas` setting that names them by path or address
   needs the new names; `tesserae schema --project` writes `.tesserae/tess-ui-widget-schema.json`, and leaves the old file in `.tesserae/` for you to delete. [Editor Support](guide/editor-support.md) has the setting.
 - **The logger** is `tess_ui`: `logger.disable("tess_ui")` silences Tesserae (it was `"tesserae"`), and a filter on the module name matches `tess_ui.app`, `tess_ui.spec.watch` and the rest.
-- **Tesserae needs `tesserae-engine` 0.6.0**, one exact release: `pip install --upgrade tesserae-ui` brings it. If your code imports the engine itself, `import tre` is `import tess_re` and `from tre import Window` is
+- **Tesserae needs `tesserae-engine` 0.6.4**, one exact release: `pip install --upgrade tesserae-ui` brings it. If your code imports the engine itself, `import tre` is `import tess_re` and `from tre import Window` is
   `from tess_re import Window`; every name inside is unchanged, so a search and replace is the whole change ([the engine's own table](https://mindderivative.github.io/tess-re/migrating-0.6/)). The engine's messages that
   said `tre` (a shader error, the default window title) say `tess_re`, so a test that matches that text needs the new word.
 - **The engine's environment variables** `TRE_*` are `TESS_RE_*`, and the two Tesserae's own tools read follow: `TRE_SOURCE_DIR` (the engine checkout a font test reads) is `TESS_RE_SOURCE_DIR`, and
