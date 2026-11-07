@@ -3235,3 +3235,10 @@ The user asked to find the cause, then to add the one-line fix and send the engi
 - **Checked from PyPI** in a clean venv: `tesserae --version` says 0.6.0; `tess_ui` and `tess_re` import; `marker.LINE` is `0.6`; `tesserae new` writes `tesserae: 0.6`; `tools/clean_install_smoke.py` exits 0 and the generated app ran. Not checked: real macOS or Windows hardware (CI covers both).
 - #295 and #296 are Done (the user approved). #297 is In review; tess-re#260 is open. #290 and #291 stay on hold.
 - **Not done, the user's:** pushing this entry, then `gh release edit v0.6.0 --prerelease=false --latest`.
+
+## 2026-11-07 Engine pin 0.6.0 to 0.6.4
+
+- tre reported 0.6.2 (an unsized text node fits its text); the user asked to audit the latest engine and bump the pin. Latest on PyPI was 0.6.4.
+- Audit: no code or test in `src/` or `tests/` expects `'auto'` for a text node, and none declares an `sd_*` shader helper name. The size, label, widget, layout, overflow, grid, dark-mode, pointer, `ci_plan` and dependency tests passed on 0.6.4 (423 and 187 passed); the full suite was not run.
+- Pin moved in `pyproject.toml`, the tess-re checkout refs in `ci.yml` and `release.yml`, README and DEVELOPING; pushed as `3975745` on the user's word.
+- Mistake: that commit also rewrote the released 0.6.0 changelog bullet and the `To 0.6.0` migration line to say 0.6.4, although 0.6.0 is on PyPI with engine 0.6.0. Restored them; the pin move is under `## Unreleased` in the changelog. Version moved to 0.6.0.1 for it (not released).
