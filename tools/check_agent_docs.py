@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Keep the agent instructions in one place: AGENTS.md holds them, CLAUDE.md only imports it.
+"""Keep the agent instructions in one place: AGENTS.md holds them, CLAUDE.md only imports the Tesserae Shell Directive (which wins over AGENTS.md) and AGENTS.md.
 
 Tools such as `graphify claude install` append their own section to CLAUDE.md. This check
-fails when CLAUDE.md is anything but the import line, and `--fix` moves such a section into
+fails when CLAUDE.md is anything but the two import lines, and `--fix` moves such a section into
 AGENTS.md (unless AGENTS.md already has a section with the same heading) and restores CLAUDE.md.
 
     python3 tools/check_agent_docs.py          # report, exit 1 on a problem
@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-IMPORT = "@AGENTS.md\n"
+IMPORT = "@~/Projects/Tesserae-Shell-Directive.md\n@AGENTS.md\n"
 
 
 def sections(text):
@@ -31,9 +31,9 @@ def main():
         return 1
     current = claude.read_text() if claude.is_file() else ""
     if current == IMPORT:
-        print("ok: CLAUDE.md only imports AGENTS.md")
+        print("ok: CLAUDE.md only imports the Directive and AGENTS.md")
         return 0
-    print("CLAUDE.md is not just `@AGENTS.md`")
+    print("CLAUDE.md is not just the Directive import and `@AGENTS.md`")
     if not fix:
         print("run with --fix to move its extra sections into AGENTS.md")
         return 1
