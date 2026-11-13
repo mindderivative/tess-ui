@@ -28,6 +28,7 @@ Material Design 3's components, as Tesserae builds them. Each page says what the
 | --- | --- |
 | [Cards](cards.md) | `Card` |
 | [Dialogs](dialogs.md) | `Dialog` |
+| [File dialog](file-dialogs.md) | `FileDialog`, `FileBrowser` |
 | [Dividers](dividers.md) | `Divider` |
 | [Lists](lists.md) | `ListItem` |
 | [Side sheets](side-sheets.md) | `SideSheet`, `SideSheetModal`, `SideSheetPanel` |

@@ -1,0 +1,315 @@
+tesserae: 0.6
+# The file dialog: a modal panel over a scrim for choosing a file to open (`mode: open`, one or, with `multiple`, several), a folder and a name to save under (`mode: save`,
+# which asks before it writes over a file that is there), or a folder (`mode: folder`). A path bar (type a path and press Enter) and the folders of the path as buttons; Back, Forward,
+# Up and Home; a list of the folder's entries, folders first and then files, each sorted without regard to case, with their sizes and times; a switch for the names that start with a dot;
+# the file types (`filters`, each {label, patterns}; an `All files` choice follows them) that hide the files that do not match and never a folder; and, when saving or choosing a folder, a button
+# that makes a new folder. `root` is a folder it never leaves. `value` is two-way and gets the answer when OK is pressed: the path as text, or a list of paths when `multiple`; `on_accept` is
+# called after it is written and `on_cancel` when Escape, Cancel or a press outside closes it instead. Nothing is read from the disk until `open` goes true, and only the folder shown is read.
+# The keyboard in the list: Up, Down, Page Up, Page Down, Home and End move; Enter opens the folder or chooses the file; Backspace goes Up; Alt+Left and Alt+Right are Back and Forward; typing
+# jumps to the next name that starts with it; Ctrl+A picks all when `multiple`; Shift and Ctrl with a press or an arrow extend or flip the picks. The list shows `rows` rows at a time and builds
+# only those (a folder of ten thousand entries opens at once). The disk is read through `tess_ui.filesystem`. What the parts do is in the FileBrowser control (`tess_ui.file_controls`), which this
+# view drives by writing a numbered command to `cmd` and reading what comes back.
+params:
+  open: {type: bool, default: false, model: true, doc: "Whether it is showing; Escape and a press outside write false."}
+  mode: {type: enum, choices: [open, save, folder], default: open, doc: "open picks existing files; save picks a folder and a name; folder picks a folder."}
+  headline: {type: str, default: "", doc: "The title; `Open file`, `Save file` or `Choose folder` when left out."}
+  accept_label: {type: str, default: "", doc: "The label of the OK button; `Open`, `Save` or `Choose` when left out."}
+  multiple: {type: bool, default: false, doc: "More than one file (or folder) may be picked; `value` is then a list."}
+  start: {type: str, default: "", doc: "The folder it opens in; the root, else the working folder, when left out."}
+  root: {type: str, default: "", doc: "A folder it never leaves: nothing above it can be entered."}
+  filters: {type: list, default: [], doc: "The file types, each {label, patterns: [glob, ...]}, such as {label: TDL files, patterns: ['*.tdl']}; `All files` is added after them."}
+  filter: {type: int, default: 0, doc: "The number of the file type it opens with."}
+  show_hidden: {type: bool, default: false, doc: "Whether names that start with a dot are listed when it opens; the person can switch them."}
+  filename: {type: str, default: "", doc: "A save dialog's starting file name. A name typed with no extension gets the one the file type gives (`*.tdl` gives `.tdl`)."}
+  rows: {type: int, default: 8, min: 3, max: 20, doc: "How many rows of the list show at once."}
+  width: {type: float, default: 720, min: 480, max: 1080, doc: "How wide the panel is."}
+  value: {type: any, default: "", model: true, doc: "The answer, written when OK is pressed: the absolute path as text, or a list of paths when `multiple`."}
+  on_accept: {type: handler, doc: "Called after `value` has been written and the dialog has closed."}
+  on_cancel: {type: handler, doc: "Called when the dialog is closed without an answer."}
+widget: Overlay
+open: "{{ open }}"
+modal: true
+dismissible: true
+focus_first: true
+handlers: {on_dismiss: "on_cancel()"}
+children:
+  - widget: Container
+    name: panel
+    a11y: {role: dialog, label: "{{ headline if headline != '' else {'open': 'Open file', 'save': 'Save file', 'folder': 'Choose folder'}[mode] }}"}
+    state:
+      n: 0
+      cmd: ""
+      typed: ""
+      fname: "{{ filename }}"
+      hidden: "{{ show_hidden }}"
+      which: "{{ filter }}"
+      y: 0
+      confirm: false
+      making: false
+      new_name: ""
+      menu_open: false
+      pick: 0
+      entries: []
+      selection: []
+      cursor: -1
+      folder: ""
+      crumbs: []
+      message: ""
+      valid: false
+      target: []
+      chosen: ""
+      exists: false
+      problem: ""
+      can_back: false
+      can_forward: false
+      can_up: false
+      filter_items: []
+    style: {flex_direction: vertical, width: "{{ width }}"}
+    children:
+      - widget: FileBrowser
+        name: browser
+        mode: "{{ mode }}"
+        multiple: "{{ multiple }}"
+        start: "{{ start }}"
+        root: "{{ root }}"
+        filters: "{{ filters }}"
+        open: "{{ open }}"
+        initial: "{{ filename }}"
+        rows: "{{ rows }}"
+        command: "{{ cmd }}"
+        path: "{{ typed }}"
+        filename: "{{ fname }}"
+        hidden: "{{ hidden }}"
+        filter: "{{ which }}"
+        scroll: "{{ y }}"
+        confirm: "{{ confirm }}"
+        entries: "{{ entries }}"
+        selection: "{{ selection }}"
+        cursor: "{{ cursor }}"
+        folder: "{{ folder }}"
+        crumbs: "{{ crumbs }}"
+        message: "{{ message }}"
+        valid: "{{ valid }}"
+        target: "{{ target }}"
+        chosen: "{{ chosen }}"
+        exists: "{{ exists }}"
+        problem: "{{ problem }}"
+        can_back: "{{ can_back }}"
+        can_forward: "{{ can_forward }}"
+        can_up: "{{ can_up }}"
+        filter_items: "{{ filter_items }}"
+        handlers: {on_input: "value = (target if multiple else target[0]); open = False; on_accept()"}
+      - widget: Text
+        name: headline
+        text: "{{ headline if headline != '' else {'open': 'Open file', 'save': 'Save file', 'folder': 'Choose folder'}[mode] }}"
+        typography_role: headline_small
+        heading: 2
+      - widget: Container
+        name: toolbar
+        style: {flex_direction: horizontal, align_content: center, gap: 4}
+        children:
+          - widget: IconButton
+            name: back
+            icon: arrow_back
+            label: Back
+            disabled: "{{ not can_back }}"
+            handlers: {on_click: "n = n + 1; cmd = str(n) + ' back'"}
+          - widget: IconButton
+            name: forward
+            icon: arrow_forward
+            label: Forward
+            disabled: "{{ not can_forward }}"
+            handlers: {on_click: "n = n + 1; cmd = str(n) + ' forward'"}
+          - widget: IconButton
+            name: up
+            icon: arrow_up
+            label: Up
+            disabled: "{{ not can_up }}"
+            handlers: {on_click: "n = n + 1; cmd = str(n) + ' up'"}
+          - widget: IconButton
+            name: home
+            icon: home
+            label: Home
+            handlers: {on_click: "n = n + 1; cmd = str(n) + ' home'"}
+          - widget: IconButton
+            name: refresh
+            icon: refresh
+            label: Refresh
+            handlers: {on_click: "n = n + 1; cmd = str(n) + ' refresh'"}
+          - widget: TextField
+            name: path_field
+            variant: outlined
+            label: Path
+            text: "{{ typed }}"
+            handlers: {on_submit: "n = n + 1; cmd = str(n) + ' goto'"}
+            style: {flex: fill}
+      - widget: Container
+        name: crumbs
+        a11y: {role: group, label: Folders in the path}
+        style: {flex_direction: horizontal, align_content: left, gap: 0, height: 36}
+        children:
+          - widget: Container
+            for: i, c in enumerate(crumbs)
+            key: c['path']
+            name: crumb
+            style: {flex_direction: horizontal, align_content: center}
+            children:
+              - widget: Icon
+                name: crumb_gap
+                if: i > 0
+                icon: chevron_right
+              - widget: Button
+                name: crumb_button
+                variant: text
+                size: xs
+                label: "{{ c['name'] }}"
+                handlers: {on_click: "n = n + 1; cmd = str(n) + ' goto ' + c['path']"}
+      - widget: Container
+        name: columns
+        style: {flex_direction: horizontal, align_content: left, gap: 12, height: 32}
+        children:
+          - widget: Container
+            name: column_icon
+            style: {width: 24, height: 24}
+          - widget: Container
+            name: column_name_cell
+            style: {flex: fill, flex_direction: horizontal, align_content: left}
+            children:
+              - {widget: Text, name: column_name, text: Name, typography_role: label_large}
+          - {widget: Text, name: column_size, text: Size, typography_role: label_large, text_align: end, style: {width: 80, align_self: left}}
+          - {widget: Text, name: column_modified, text: Modified, typography_role: label_large, style: {width: 140, align_self: left}}
+      - widget: Container
+        name: list_group
+        focus_group: vertical
+        style: {flex_direction: vertical}
+        children:
+          - widget: Container
+            name: list_box
+            interaction: false
+            a11y: {role: list, label: "{{ 'Folders' if mode == 'folder' else 'Files and folders' }}"}
+            handlers:
+              on_click: "y = y"
+              on_key: "n = n + 1; cmd = str(n) + ' key ' + event.key + (' shift' if event.shift else '') + (' ctrl' if event.ctrl else '') + (' alt' if event.alt else '')"
+            style: {flex_direction: vertical, height: "{{ rows * 40 }}"}
+            children:
+              - widget: VirtualList
+                name: list
+                item_height: 40
+                scroll_offset: "{{ y }}"
+                style: {flex_direction: vertical, height: "{{ rows * 40 }}"}
+                children:
+                  - widget: Container
+                    for: i, row in enumerate(entries)
+                    key: row['path']
+                    name: row
+                    interaction: true
+                    a11y: {role: listitem, label: "{{ row['name'] }}", selected: "{{ row['path'] in selection }}"}
+                    handlers:
+                      on_press: "n = n + 1; cmd = str(n) + ' click ' + str(i) + (' ctrl' if event.ctrl else '') + (' shift' if event.shift else '')"
+                    style:
+                      flex_direction: horizontal
+                      align_content: left
+                      gap: 12
+                      padding: {left: 8, right: 8, top: 0, bottom: 0}
+                      background: "{{ 'secondary_container' if row['path'] in selection else ('surface_container_highest' if i == cursor else 'transparent') }}"
+                    children:
+                      - {widget: Icon, name: row_icon, icon: "{{ row['icon'] }}"}
+                      - widget: Container
+                        name: row_name_cell
+                        style: {flex: fill, flex_direction: horizontal, align_content: left}
+                        children:
+                          - {widget: Text, name: row_name, text: "{{ row['name'] }}", typography_role: body_large, max_lines: 1, overflow: ellipsis, style: {width: 100%}}
+                      - {widget: Text, name: row_size, text: "{{ row['size'] }}", typography_role: body_medium, text_align: end, style: {width: 80, align_self: left}}
+                      - {widget: Text, name: row_modified, text: "{{ row['modified'] }}", typography_role: body_medium, style: {width: 140, align_self: left}}
+      - widget: Text
+        name: empty
+        if: "len(entries) == 0 and message == ''"
+        text: This folder is empty
+        typography_role: body_medium
+      - widget: Text
+        name: message_text
+        if: "message != '' or problem != ''"
+        text: "{{ message if message != '' else problem }}"
+        typography_role: body_medium
+        a11y: {role: alert, live: polite}
+      - widget: Container
+        name: new_folder_row
+        if: making
+        style: {flex_direction: horizontal, align_content: center, gap: 8}
+        children:
+          - {widget: TextField, name: new_folder_field, variant: outlined, label: New folder name, text: "{{ new_name }}", style: {flex: fill}}
+          - widget: Button
+            name: new_folder_make
+            variant: tonal
+            label: Create
+            disabled: "{{ new_name.strip() == '' }}"
+            handlers: {on_click: "n = n + 1; cmd = str(n) + ' new_folder ' + new_name; making = False; new_name = ''"}
+          - {widget: Button, name: new_folder_cancel, variant: text, label: Cancel, handlers: {on_click: "making = False; new_name = ''"}}
+      - widget: TextField
+        name: filename_field
+        if: "mode == 'save'"
+        variant: outlined
+        label: File name
+        text: "{{ fname }}"
+        handlers: {on_submit: "n = n + 1; cmd = str(n) + ' accept'"}
+      - widget: Container
+        name: options
+        style: {flex_direction: horizontal, align_content: center, gap: 8}
+        children:
+          - {widget: Checkbox, name: show_hidden_box, checked: "{{ hidden }}", label: Show hidden files}
+          - widget: Button
+            name: new_folder_button
+            if: "mode != 'open'"
+            variant: text
+            icon: plus
+            label: New folder
+            handlers: {on_click: "making = True"}
+          - widget: Container
+            name: spacer
+            style: {flex: fill, height: 1}
+          - widget: Button
+            name: filter_button
+            if: len(filter_items) > 1
+            variant: outlined
+            trailing_icon: menu_down
+            label: "{{ filter_items[which]['label'] if len(filter_items) > which else '' }}"
+            handlers: {on_click: "menu_open = not menu_open"}
+          - widget: Menu
+            name: filter_menu
+            if: len(filter_items) > 1
+            open: "{{ menu_open }}"
+            anchor: filter_button
+            placement: above
+            chosen: "{{ pick }}"
+            items: "{{ filter_items }}"
+            width: 240
+            on_pick: "which = pick"
+      - widget: Container
+        name: actions
+        style: {flex_direction: horizontal, align_content: right, gap: 8}
+        children:
+          - {widget: Button, name: cancel, variant: text, label: Cancel, handlers: {on_click: "open = False; on_cancel()"}}
+          - widget: Button
+            name: accept
+            variant: filled
+            label: "{{ accept_label if accept_label != '' else {'open': 'Open', 'save': 'Save', 'folder': 'Choose'}[mode] }}"
+            disabled: "{{ not valid }}"
+            handlers: {on_click: "n = n + 1; cmd = str(n) + ' accept'"}
+      - widget: Overlay
+        name: replace
+        open: "{{ confirm }}"
+        modal: true
+        children:
+          - widget: Container
+            name: replace_panel
+            a11y: {role: dialog, label: Replace file}
+            style: {flex_direction: vertical, width: 360}
+            children:
+              - {widget: Text, name: replace_headline, text: "Replace file?", typography_role: headline_small, heading: 2}
+              - {widget: Text, name: replace_body, text: "{{ chosen + ' is there already. Saving writes over it.' }}", typography_role: body_medium}
+              - widget: Container
+                name: replace_actions
+                style: {flex_direction: horizontal, align_content: right, gap: 8}
+                children:
+                  - {widget: Button, name: replace_cancel, variant: text, label: Cancel, handlers: {on_click: "confirm = False"}}
+                  - {widget: Button, name: replace_yes, variant: filled, label: Replace, handlers: {on_click: "n = n + 1; cmd = str(n) + ' confirmed'"}}

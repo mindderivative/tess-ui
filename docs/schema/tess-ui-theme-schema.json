@@ -2882,6 +2882,7 @@
             "ColourStrip",
             "ColourSwatches",
             "Container",
+            "FileBrowser",
             "GraphNode",
             "Icon",
             "Image",

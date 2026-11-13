@@ -43,6 +43,7 @@ See [The View Language](../guide/view-language.md#style) for the rule syntax and
 
 - **Cards**: [`Card`](cards/card.md)
 - **Dialogs**: [`Dialog`](dialogs/dialog.md)
+- **File dialog**: [`FileDialog`](file-dialogs/file-dialog.md)
 - **Dividers**: [`Divider`](dividers/divider.md)
 - **Lists**: [`ListItem`](lists/list-item.md)
 - **Side sheets**: [`SideSheet`](side-sheets/side-sheet.md), [`SideSheetModal`](side-sheets/side-sheet-modal.md), [`SideSheetPanel`](side-sheets/side-sheet-panel.md)

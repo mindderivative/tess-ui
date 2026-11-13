@@ -195,6 +195,40 @@ declare("ColourSwatches", {"roles": P("list", doc="The theme colour roles to sho
                            "value": _COLOUR_VALUE, "label": P("str", default="Theme colours", doc="What a screen reader calls the row."), "disabled": P("bool")},
         doc="A row of the theme's colour roles; pressing one sets `value` to its colour.")
 
+_FB_OUT = "Output: written to the name it is bound to."
+declare("FileBrowser", {
+    "mode": P("enum", choices=("open", "save", "folder"), default="open", doc="`open` picks existing files, `save` a folder and a name, `folder` a folder."),
+    "multiple": P("bool", doc="More than one file (or folder) may be picked."),
+    "start": P("str", default="", doc="The folder it opens in; the root, else the working folder, when left out."),
+    "root": P("str", default="", doc="A folder it never leaves: nothing above it can be entered."),
+    "filters": P("list", default=[], doc="The file types: each {label, patterns: [glob, ...]}; an `All files` choice is added."),
+    "open": P("bool", doc="Whether the dialog is showing: going true makes a new browser at `start`; nothing is read from the disk before."),
+    "initial": P("str", default="", doc="The file name a save starts with."),
+    "rows": P("int", default=8, doc="How many rows the list shows at once (for Page Up and Page Down and for scrolling the cursor into view)."),
+    "row_height": P("float", default=40.0, doc="How tall a row is, in pixels."),
+    "command": P("str", default="", doc="What to do, written as text that starts with a number that is new each time: `7 click 3 ctrl`, `8 key arrow_down`, `9 up`, `10 back`, "
+                                         "`11 forward`, `12 home`, `13 refresh`, `14 goto` (the text in `path`), `15 open 3`, `16 accept`, `17 new_folder Name`, `18 confirmed`."),
+    "path": P("str", default="", model=True, doc="The text of the path bar: it follows the folder, and `goto` goes to what was typed."),
+    "filename": P("str", default="", model=True, doc="The name typed in a save dialog; picking a file there puts its name here."),
+    "hidden": P("bool", model=True, doc="Whether names that start with a dot are listed."),
+    "filter": P("int", default=0, model=True, doc="The number of the file type in use."),
+    "scroll": P("float", default=0.0, model=True, doc="The list's scroll offset: bind the list's `scroll_offset` to the same name; moving the cursor writes the offset that shows it."),
+    "confirm": P("bool", model=True, doc="A save of a file that is there is waiting for a yes; the view writes false to cancel it."),
+    "entries": P("list", model=True, doc=_FB_OUT + " The rows shown: {name, path, dir, icon, size, modified, hidden}, folders first."),
+    "selection": P("list", model=True, doc=_FB_OUT + " The paths picked."),
+    "cursor": P("int", model=True, doc=_FB_OUT + " The row the keyboard is on, or -1."),
+    "folder": P("str", model=True, doc=_FB_OUT + " The folder being shown."),
+    "crumbs": P("list", model=True, doc=_FB_OUT + " The folder as a trail: each {name, path}."),
+    "message": P("str", model=True, doc=_FB_OUT + " What last went wrong, such as a folder that cannot be read; empty when nothing has."),
+    "valid": P("bool", model=True, doc=_FB_OUT + " Whether OK may be pressed."),
+    "target": P("list", model=True, doc=_FB_OUT + " The paths OK would give."),
+    "chosen": P("str", model=True, doc=_FB_OUT + " The name (the last part) of the first of `target`."),
+    "exists": P("bool", model=True, doc=_FB_OUT + " A save whose file is there already."),
+    "problem": P("str", model=True, doc=_FB_OUT + " Why the save name will not do."),
+    "can_back": P("bool", model=True, doc=_FB_OUT), "can_forward": P("bool", model=True, doc=_FB_OUT), "can_up": P("bool", model=True, doc=_FB_OUT),
+    "filter_items": P("list", model=True, doc=_FB_OUT + " The file types as menu items: {value, label}."),
+}, doc="The file dialog's mind: it draws nothing. It reads folders through `tess_ui.filesystem`, keeps the history, the selection and the rules, and tells the view through the names it is bound to.")
+
 declare("NodeGraph", {"edges": P("list", doc="The links: each {from: id, to: id}, the ids of the GraphNodes."),
                       "snap": P("float", default=0.0, doc="A node the user moves lands on a multiple of this many pixels; 0 is no grid."),
                       "arrows": P("bool", doc="Each edge ends in an arrowhead."),

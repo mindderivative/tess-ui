@@ -99,6 +99,7 @@ nav:
       - Containment:
           - Cards: components/cards.md
           - Dialogs: components/dialogs.md
+          - File dialog: components/file-dialogs.md
           - Dividers: components/dividers.md
           - Lists: components/lists.md
           - Side sheets: components/side-sheets.md
@@ -162,6 +163,8 @@ nav:
               - Card: stylesheets/cards/card.md
           - Dialogs:
               - Dialog: stylesheets/dialogs/dialog.md
+          - File dialog:
+              - FileDialog: stylesheets/file-dialogs/file-dialog.md
           - Dividers:
               - Divider: stylesheets/dividers/divider.md
           - Lists:

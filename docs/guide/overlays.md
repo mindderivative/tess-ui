@@ -133,6 +133,7 @@ does (`dismiss_surface(node)` is the same from Python), and does nothing if ther
 | `Menu` | below its anchor (flipped above if it won't fit), or at a point | closes | closes | no |
 | `Dialog` | centred over a scrim | -- | closes | yes |
 | `ViewDialog` | centred over a scrim, showing a view | -- | closes | yes |
+| `FileDialog` (a view) | centred over a scrim, a panel for choosing files and folders | closes | closes | yes |
 | `SideSheet` | the window's end, over a scrim, sliding in | -- | closes | yes |
 | `NavigationDrawer` | the window's start, over a scrim, sliding in | -- | closes | yes |
 | `Snackbar` | 24 px in, 72 px from the bottom | no | no | no |
@@ -188,6 +189,26 @@ modal overlay keeps Tab inside it.
 
 `tess_ui.widgets`' `dialog`, `snackbar`, `side_sheet(modal=True)`,
 `menu`, `tooltip`, `popover` and `search_view` return these.
+
+## A dialog for choosing files
+
+`widget: FileDialog` is a view Tesserae ships: a modal `Overlay` for choosing a file to open, a folder and a name to save under, or a folder, inside the app and with
+no window of the operating system. It is opened and closed like the `Dialog` above, by a Signal bound to `open`:
+
+```yaml
+- widget: FileDialog
+  open: "{{ choosing }}"
+  mode: open                 # or save, or folder
+  start: ~/Documents
+  filters: [{label: TDL files, patterns: ["*.tdl"]}]
+  value: "{{ plan }}"        # the chosen path, written when OK is pressed
+  on_accept: load_plan
+  on_cancel: stay
+```
+
+From Python, `tess_ui.file_dialog.FileDialogRequest(self)` in a ViewModel makes the names a `FileDialog` call binds and opens it with `show(mode=..., on_accept=fn)`, which
+`fn` gets the chosen paths as a list. [File dialog](../components/file-dialogs.md) has everything it does: the path bar, the types, the hidden names, the root that confines it,
+the keyboard, and the file system layer a test swaps.
 
 ## Not yet covered
 

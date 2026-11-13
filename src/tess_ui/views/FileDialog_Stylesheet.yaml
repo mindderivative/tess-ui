@@ -1,0 +1,26 @@
+tesserae: 0.6
+# The look of FileDialog: a `surface_container_high` panel with 28 pixel corners, 24 pixels of padding and 12 between its parts at level 3, as Dialog has; the title in `on_surface`; the column
+# headings and the list's size and time columns in `on_surface_variant`; a row 40 pixels tall with 12 pixel corners; a message in `error`, or in `on_surface_variant` for the empty folder.
+styles:
+  - widget: FileDialog
+    part: panel
+    style: {background: surface_container_high, corner_radius: 28, padding: 24, gap: 12, elevation: 3}
+  - {widget: FileDialog, part: headline, style: {foreground: on_surface}}
+  - {widget: FileDialog, part: browser, style: {position: absolute, width: 0, height: 0}}
+  - {widget: FileDialog, part: columns, style: {padding: {left: 8, right: 8, top: 0, bottom: 0}}}
+  - {widget: FileDialog, part: column_name, style: {foreground: on_surface_variant}}
+  - {widget: FileDialog, part: column_size, style: {foreground: on_surface_variant}}
+  - {widget: FileDialog, part: column_modified, style: {foreground: on_surface_variant}}
+  - {widget: FileDialog, part: row, style: {corner_radius: 12}}
+  - {widget: FileDialog, part: row_icon, style: {foreground: on_surface_variant, width: 24, height: 24}}
+  - {widget: FileDialog, part: row_name, style: {foreground: on_surface}}
+  - {widget: FileDialog, part: row_size, style: {foreground: on_surface_variant}}
+  - {widget: FileDialog, part: row_modified, style: {foreground: on_surface_variant}}
+  - {widget: FileDialog, part: empty, style: {foreground: on_surface_variant}}
+  - {widget: FileDialog, part: message_text, style: {foreground: error}}
+  - {widget: FileDialog, part: crumb_gap, style: {foreground: on_surface_variant, width: 20, height: 20}}
+  - widget: FileDialog
+    part: replace_panel
+    style: {background: surface_container_high, corner_radius: 28, padding: 24, gap: 16, elevation: 3}
+  - {widget: FileDialog, part: replace_headline, style: {foreground: on_surface}}
+  - {widget: FileDialog, part: replace_body, style: {foreground: on_surface_variant}}

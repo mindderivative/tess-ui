@@ -53,6 +53,7 @@ KINDS = (
     ("ColourStrip", "The colour picker's strip for a hue or an alpha.", "`colour: {channel}`, `value:`, `hue:`"),
     ("ColourField", "A text field for a colour: its hex, or one of its red, green, blue and alpha numbers.", "`colour: {channel}`, `value:`"),
     ("ColourSwatches", "A row of the theme's colour roles; pressing one sets the colour.", "`colour: {roles}`, `value:`"),
+    ("FileBrowser", "The file dialog's mind: it draws nothing, reads one folder at a time and keeps the history, the picks and the rules, and tells the view through the names it is bound to.", "`mode:`, `start:`, `filters:`, `open:`, `command:`"),
     ("NodeGraph", "A pannable canvas of `GraphNode`s joined by edges.", "`edges:`, children that are `GraphNode`s"),
     ("GraphNode", "A node in a `NodeGraph`: a titled box at a place.", "`label:`, `x:`, `y:`"),
     ("TitleBar", "A title bar: an icon, a title, your content and the window's buttons (`App(borderless=True)`), or a close button for a dialog or a sheet (`buttons: [dismiss]`).", "`title:`, `icon:`, `buttons:`"),

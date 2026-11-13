@@ -86,6 +86,9 @@ def lower(inst: Instance) -> dict[str, Any]:
     elif widget in ("ColourArea", "ColourStrip", "ColourField", "ColourSwatches"):
         folded = {"channel", "roles", "label"}
         node["colour"] = {k: values[k] for k in ("channel", "roles") if values.get(k) is not None}
+    elif widget == "FileBrowser":
+        folded = set(values)
+        node["files"] = dict(values)
     elif widget == "SpinBox":
         folded = {"decimals", "prefix", "suffix", "wrap", "label"}
         node["spin"] = {k: values[k] for k in ("decimals", "prefix", "suffix", "wrap") if values.get(k) not in (None, "")}

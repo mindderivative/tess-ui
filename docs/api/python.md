@@ -15,6 +15,9 @@ Every public class, function and constant, with its signature and what it does. 
 - [Widgets](#widgets): One function per MD3 widget, called against a window.
 - [Controls](#controls): MD3's stateful controls.
 - [Overlays](#overlays): Dialogs, menus, snackbars, tooltips, sheets, drawers.
+- [File dialog](#file-dialog): Opening the file dialog from Python and hearing the paths.
+- [File browser](#file-browser): The file dialog's state and rules, with no window.
+- [File system](#file-system): The disk as the file dialog sees it, which a test can swap.
 - [Docking](#docking): Panels the user can drag between zones.
 - [Interaction](#interaction): State layer, ripple and focus ring.
 - [Accessibility](#accessibility): What a node tells assistive technology.
@@ -2027,6 +2030,169 @@ dismiss_surface(node: Any) -> bool
 ```
 
 Closes the overlay (a dialog, a sheet, a menu, ...) that `node` is in, the nearest one up its parents, as its own `close()` does. A `surface.dismiss` handler, such as a `TitleBar`'s `dismiss` button, calls this.
+
+## File dialog
+
+`tess_ui.file_dialog`: Opening the file dialog from Python and hearing the paths.
+
+### `FileDialogRequest`
+
+```python
+class FileDialogRequest(viewmodel: Any, prefix: str = 'file_') -> None
+```
+
+The names a `FileDialog` call binds, and the callbacks for what the person chose. See the module's note.
+
+- `close() -> None`: Closes the dialog with no answer and without calling `on_cancel`.
+- `is_open` *(property)*: Whether the dialog is showing.
+- `show(*, mode: str = 'open', multiple: bool = False, start: str = '', root: str = '', filters: list[Any] | None = None, filter: int = 0, show_hidden: bool = False, filename: str = '', headline: str = '', accept_label: str = '', on_accept: Callable[[list[str]], Any] | None = None, on_cancel: Callable[[], Any] | None = None) -> None`: Opens the dialog.
+
+## File browser
+
+`tess_ui.file_browser`: The file dialog's state and rules, with no window.
+
+### `FileBrowser`
+
+```python
+class FileBrowser(
+    fs: FileSystem | None = None,
+    *,
+    mode: str = 'open',
+    multiple: bool = False,
+    start: str = '',
+    root: str = '',
+    filters: Iterable[Any] | None = None,
+    filter_index: int = 0,
+    show_hidden: bool = False,
+    name: str = '',
+    clock: Callable[[], float] = monotonic
+) -> None
+```
+
+One file dialog's state. See the module's note.
+
+- `activate(index: int) -> str`: Opens the row: a folder is entered (returns `"entered"`), a file is chosen (returns `"accept"`, for the dialog to finish with it).
+- `back() -> bool`: Goes back to the folder before this one.
+- `can_back` *(property)*: Whether there is a folder to go back to.
+- `can_forward` *(property)*: Whether there is a folder to go forward to (after a Back).
+- `can_up` *(property)*: Whether there is a folder above (not at the top of the file system, nor at the root).
+- `click(index: int, *, ctrl: bool = False, shift: bool = False) -> str`: A press on row `index`.
+- `crumbs` *(property)*: The path as a trail: from the root (or the file system's own, `/` or a drive) to the current folder, each `{name, path}`.
+- `current_filter` *(property)*: The file type in use.
+- `exists` *(property)*: A save whose file is there already, which wants the person's yes before it is written over.
+- `filename() -> str`: The save name as it will be written: what was typed, and the extension of the filter when the name has none.
+- `forward() -> bool`: Goes forward again after a Back.
+- `home() -> bool`: Goes to the person's home folder, or to the root when home is outside it.
+- `make_folder(name: str) -> bool`: Makes the folder `name` in the current one and selects it.
+- `move(to: int, *, extend: bool = False) -> None`: Puts the keyboard on row `to` (held to the rows there are) and selects it; `extend` (several allowed) keeps the rows from the anchor to it.
+- `navigate(target: str) -> bool`: Goes to the folder `target` (`~` is home; a relative one is read from the current folder).
+- `on_change(fn: Callable[[], None]) -> Callable[[], None]`: Calls `fn()` after each operation that may have changed anything.
+- `press(key: str, *, shift: bool = False, ctrl: bool = False, alt: bool = False) -> str`: A key pressed in the list (`key` as the engine names it: `arrow_up`, `page_down`, `enter`, `a`).
+- `problem` *(property)*: Why a save name will not do (empty when it will, or when none is typed yet).
+- `refresh() -> bool`: Reads the current folder again, keeping what is selected that is still there.
+- `result() -> list[str] | None`: The answer, or `None` while `valid` is false.
+- `reveal(offset: float) -> float`: The scroll offset (pixels) that shows the cursor row, starting from `offset`: unchanged when it is in view already.
+- `select_all() -> None`: Every selectable row (several allowed).
+- `set_filter(index: int) -> None`: Chooses the type filter `index`; a file it hides stops being selected.
+- `set_show_hidden(shown: bool) -> None`: Shows or hides the entries whose names start with a dot.
+- `submit_path(text: str) -> bool`: What Enter in the path bar does: a folder is entered; an existing file is selected, in its own folder (an open dialog) or has its name taken (a save).
+- `target` *(property)*: The paths OK would give now (empty when there is nothing valid to give).
+- `up() -> bool`: Goes to the folder above, unless this is the top (the file system's, or the root).
+- `valid` *(property)*: Whether OK may be pressed.
+
+### `Filter`
+
+```python
+class Filter(label: str, patterns: tuple[str, ...]) -> None
+```
+
+A choice in the type list: a `label` and the glob `patterns` a file's name must match (case does not count) to be shown.
+
+- `extension` *(property)*: The extension a file saved under this filter gets when its name has none: the first pattern written `*.ext` with nothing wild in `ext`, else empty.
+- `matches(name: str) -> bool`: Whether a file called `name` is of this type.
+
+### `read_filters`
+
+```python
+read_filters(filters: Iterable[Any] | None) -> list[Filter]
+```
+
+The filters a dialog is given (`{label, patterns}` mappings, `(label, patterns)` pairs or `Filter`s), then `All files` unless one already shows everything.
+
+## File system
+
+`tess_ui.filesystem`: The disk as the file dialog sees it, which a test can swap.
+
+### `FileSystem`
+
+```python
+class FileSystem(*args, **kwargs)
+```
+
+What the dialog needs of a file system.
+
+- `cwd() -> str`: The working folder.
+- `exists(path: str) -> bool`: Whether there is anything at `path`, a broken link included.
+- `home() -> str`: The person's home folder.
+- `is_dir(path: str) -> bool`: Whether `path` is a folder (a link to one is).
+- `list_dir(path: str) -> list[Entry]`: The entries of the folder `path`, in no particular order.
+- `make_dir(path: str) -> None`: Makes the folder `path` (its parent must be there).
+- `real_path(path: str) -> str`: `path` with symlinks followed, as a root's check wants it.
+
+### `LocalFileSystem`
+
+```python
+class LocalFileSystem()
+```
+
+The disk.
+
+- `cwd() -> str`: The working folder.
+- `exists(path: str) -> bool`: Whether there is anything at `path`, a broken link included.
+- `home() -> str`: The person's home folder.
+- `is_dir(path: str) -> bool`: Whether `path` is a folder (a link to one is).
+- `list_dir(path: str) -> list[Entry]`: The entries of the folder `path`: one `scandir` and one `stat` for each; a failure is a `FileSystemError` in words.
+- `make_dir(path: str) -> None`: Makes the folder `path`; a name that is taken, or a place that will not take it, is a `FileSystemError`.
+- `real_path(path: str) -> str`: `path` with its symlinks followed.
+
+### `FileSystemError`
+
+```python
+class FileSystemError(message: str, path: str = '') -> None
+```
+
+A file system call that failed in a way to tell the person: `str(error)` is the sentence, `path` the place it is about.
+
+### `Entry`
+
+```python
+class Entry(
+    name: str,
+    path: str,
+    is_dir: bool,
+    size: int | None,
+    modified: float | None,
+    hidden: bool
+) -> None
+```
+
+One thing in a folder: its `name`, full `path`, whether it is a folder (a link to one is), its `size` in bytes and `modified` time (seconds since the epoch; `None` for a folder's size, and for either when the entry cannot be stat'ed, such as a broken link), and whether it is `hidden` (a name that starts with a dot).
+
+### `default`
+
+```python
+default() -> FileSystem
+```
+
+The file system a dialog uses when it is not given one: the disk, unless `use` put another in its place.
+
+### `use`
+
+```python
+use(filesystem: FileSystem | None) -> FileSystem
+```
+
+Makes `filesystem` the default (`None` puts the disk back) and returns the one it replaced, so a test can put that back.
 
 ## Docking
 

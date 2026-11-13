@@ -13,7 +13,7 @@ Each kind maps onto `tess_re`'s building blocks:
 | `TextField` | a `box` (its `background`) holding a `text_input` |
 | `Image` | an `image`, from pixels Tesserae decoded |
 | `Icon` | a `path` from `tess_ui.icons` (needs `foreground`) |
-| `Checkbox`, `RadioButton`, `Switch`, `Slider`, `RangeSlider`, `CircularProgress`, `LinearProgress`, `LoadingIndicator`, `TimePickerDial`, `ColourArea`, `ColourStrip`, `ColourField`, `ColourSwatches` | Tesserae's own MD3 controls (`tess_ui.controls`, M40), whose `.node` goes in the tree; `Built.controls` keeps them |
+| `Checkbox`, `RadioButton`, `Switch`, `Slider`, `RangeSlider`, `CircularProgress`, `LinearProgress`, `LoadingIndicator`, `TimePickerDial`, `ColourArea`, `ColourStrip`, `ColourField`, `ColourSwatches`, `FileBrowser` | Tesserae's own MD3 controls (`tess_ui.controls`, M40), whose `.node` goes in the tree; `Built.controls` keeps them (a `FileBrowser` draws nothing: it is the file dialog's mind) |
 
 Styles resolve through `tess_ui.spec.cascade`; theme roles, shape
 tokens, elevation levels and type roles through `tess_ui.tokens`. Errors
@@ -49,7 +49,7 @@ _TRANSPARENT: RGBA = (0, 0, 0, 0)
 _BASELINE = tokens.BASELINE
 _CONTROL_KINDS = frozenset({
     "Checkbox", "RadioButton", "Switch", "Slider", "RangeSlider", "SpinBox", "CircularProgress", "LinearProgress",
-    "LoadingIndicator", "TimePickerDial", "ColourArea", "ColourStrip", "ColourField", "ColourSwatches",
+    "LoadingIndicator", "TimePickerDial", "ColourArea", "ColourStrip", "ColourField", "ColourSwatches", "FileBrowser",
 })
 #: The colour picker's controls (`tess_ui.colour_controls`): the ones whose `value` is a colour's text.
 _COLOUR_KINDS = frozenset({"ColourArea", "ColourStrip", "ColourField", "ColourSwatches"})
@@ -68,6 +68,7 @@ _NODE_KEYS = frozenset({
     "spin",  # a SpinBox's decimals, prefix, suffix and wrap
     "dial",  # a TimePickerDial's mode and auto_advance
     "colour", "hue",  # a colour control's channel and roles, and the hue its picker remembers
+    "files",  # a FileBrowser's properties, as one mapping
     "graph",  # a NodeGraph's snap, arrows and fit
     "disabled",  # any node's (M70): the View applies it, or a control's own
     "visible",  # any node's (#259): hidden, and out of layout, while false; only a node that says it is touched (`_OPTIONAL_LAYOUT`)
@@ -1309,6 +1310,8 @@ def _control(ctx: _Context, node: dict[str, Any], style: dict[str, Any], built: 
         elif kind in _COLOUR_KINDS:
             common.pop("color")
             control = _colour_control(ctx, node, size, common)
+        elif kind == "FileBrowser":
+            control = _file_browser_control(ctx, node, common)
         else:  # TimePickerDial
             common.pop("color")
             control = controls.TimePickerDial(ctx.window, hour=int(node.get("hour") or 0),
@@ -1321,6 +1324,13 @@ def _control(ctx: _Context, node: dict[str, Any], style: dict[str, Any], built: 
     if placement:
         control.node.set(**placement)
     return control
+
+
+def _file_browser_control(ctx: _Context, node: dict[str, Any], common: dict[str, Any]) -> Any:
+    """The file dialog's control (`tess_ui.file_controls`), which draws nothing; it reads no disk until its `open` goes true."""
+    from tess_ui import file_controls
+
+    return file_controls.FileBrowserControl(ctx.window, node.get("files") or {}, theme=common["theme"], listen=common["listen"])
 
 
 def _colour_text(node: dict[str, Any]) -> str:
@@ -1481,6 +1491,8 @@ def _patch_control(ctx: _Context, node: dict[str, Any], style: dict[str, Any], c
         control.value.set(control._fit(_spin_number(node.get("value") or 0, control.step)))
     elif kind in _COLOUR_KINDS:
         control.follow(_colour_text(node), _colour_hue(node) if kind in ("ColourArea", "ColourStrip") else None)
+    elif kind == "FileBrowser":
+        control.follow(node.get("files") or {})
     elif kind == "TimePickerDial":
         control.hour.set(int(node.get("hour") or 0) % 24)
         control.minute.set(int(node.get("minute") or 0) % 60)

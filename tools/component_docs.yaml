@@ -430,6 +430,81 @@ components:
       confirm.open()
     see: [guide/overlays.md]
 
+  - slug: file-dialogs
+    title: File dialog
+    group: Containment
+    views: [FileDialog]
+    widgets: [FileBrowser]
+    md3: |
+      Material Design 3 has no file dialog: a desktop app needs one, and it is built from the parts MD3 does describe, a modal dialog over a scrim, a list, text fields, buttons and a menu.
+    built: |
+      `widget: FileDialog` is a view Tesserae ships (`FileDialog_View.yaml`): a modal [`Overlay`](../guide/view-language.md#overlays) holding a panel (28 pixel corners, 24 of padding, as a
+      [dialog](dialogs.md) has) for choosing files and folders inside the app, with no window of the operating system. `mode` is `open` (existing files: one, or several with `multiple`),
+      `save` (a folder and a name) or `folder` (a folder). `open` is two-way: Escape and a press on the scrim write `false` back and call `on_cancel`; so does Cancel. OK is off until
+      there is something to give. Pressing it writes `value`, the absolute path as text (a list of paths when `multiple`), closes the dialog and calls `on_accept`. Nothing is read from the disk until
+      `open` goes true, and each opening starts again at `start` with the folder as it is then.
+
+      What it shows. A path bar (a text field: type a path, or `~`, and press Enter; one that is not a folder says so under the list) with Back, Forward, Up, Home and Refresh, and under it the
+      folders of the path as buttons. A list of the folder with a column of names, one of sizes and one of times: folders first, then files, each sorted without regard to case. A switch for the
+      names that start with a dot (off unless `show_hidden`). `filters` is the file types, each `{label, patterns: ["*.tdl"]}`; an `All files` choice always follows them, the first is the one in
+      use (`filter` says another), and a type hides the files that do not match (case does not count) and never a folder. With only `All files` there is no type button. In a `folder` dialog only folders
+      are listed. `New folder` is offered when saving and when choosing a folder: it asks for a name and makes the folder, and it is picked.
+
+      Picking. A press picks a row; Ctrl and Shift (with `multiple`) flip and extend the picks. A folder is entered by pressing it twice (or Enter on it), a file chosen the same way. In an open dialog a
+      folder is never an answer; in a folder dialog nothing picked means the folder shown. When saving, the file name field starts with `filename`, picking a file puts its name there, and a name with no
+      extension gets the one of the file type in use (`*.tdl` gives `.tdl`; `All files` adds none). A name with a `/` or `\`, or the name of a folder, is a problem the dialog says; a name that is a file already asks
+      "Replace file?" before it answers. The dialog never writes the file: it only says which.
+
+      `root` keeps it inside a folder: the path bar, Up, Back, Home and the trail cannot leave it, nor can a link inside it that leads out. `start` is the folder it opens in (`root`, then the working folder, when left
+      out); a start that cannot be read opens the nearest folder above it and says why. A folder that cannot be read (permission denied), has gone, or is a file is a message in red under the list, and the dialog
+      stays where it was, usable; it never raises.
+
+      The keyboard. The list has the focus when the dialog opens. Up, Down, Page Up, Page Down, Home and End move the cursor row and pick it (Shift extends, with `multiple`); Enter opens the row; Backspace goes up;
+      Alt+Left and Alt+Right are Back and Forward; Ctrl+A picks every file (with `multiple`); letters jump to the next name that starts with them. The list scrolls to keep the cursor in view. A screen reader
+      hears a `dialog` named by `headline` (`Open file`, `Save file` or `Choose folder` when left out), a `list` of `listitem`s each named by its file and `selected` when picked, labelled buttons, and an `alert` for a message.
+
+      The list is a `VirtualList`: it builds only the rows in view (`rows` of them, 8 by default, and three past each edge), and a folder is read once, when entered, with one listing and one `stat` for each entry,
+      so a folder of ten thousand files opens at once. The disk is reached only through `tess_ui.filesystem` (`FileSystem`: `list_dir`, `is_dir`, `exists`, `make_dir`, `real_path`, `home`, `cwd`), which `filesystem.use()`
+      swaps for a test or for something that is not a disk. What the dialog keeps (the folder, the history, the picks, the rules above) is `tess_ui.file_browser.FileBrowser`, which has no window and can be used
+      alone; the view reaches it through `widget: FileBrowser`, a control that draws nothing (`tess_ui.file_controls`).
+
+      The look is in `FileDialog_Stylesheet.yaml`: write one in your project to change the panel, the rows and the message. Not built: bookmarks and a places sidebar, a preview, drag and drop, renaming and deleting,
+      sorting by a column, a column for the file type, hidden attributes other than a leading dot (Windows' hidden flag), a folder tree, drives on their own (a Windows drive letter is the first step of the trail).
+    usage_view: |
+      name: documents
+      widget: Container
+      style: {flex_direction: vertical, width: 900, height: 700}
+      children:
+        - widget: Button
+          name: choose
+          label: Open a plan
+          handlers: {on_click: "choosing = True"}
+        - widget: FileDialog
+          open: "{{ choosing }}"
+          mode: open
+          start: ~/Documents
+          filters:
+            - {label: TDL files, patterns: ["*.tdl"]}
+            - {label: Text, patterns: ["*.txt", "*.md"]}
+          value: "{{ plan }}"
+          on_accept: load_plan
+    python: |
+      from tess_ui import Signal, ViewModel
+      from tess_ui.file_dialog import FileDialogRequest
+
+
+      class DocumentsViewModel(ViewModel):
+          views = "documents"
+
+          def __init__(self):
+              super().__init__()
+              self.files = FileDialogRequest(self)      # file_open, file_mode, file_start, ... and file_accepted, file_cancelled
+
+          def save_as(self):
+              self.files.show(mode="save", filters=[{"label": "TDL files", "patterns": ["*.tdl"]}], filename="plan",
+                              on_accept=lambda paths: print("save to", paths[0]))
+    see: [guide/overlays.md, components/dialogs.md]
+
   - slug: dividers
     title: Dividers
     group: Containment
