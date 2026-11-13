@@ -510,8 +510,8 @@ class Form:
             widget = self.registry.create(key, context)
             cells = []
             for column, base, names in columns:
-                chain = tuple(file_name(p) for p in parts[:-1])
-                store: Store = TokenStore(base, (*names, *chain), parts[-1])
+                folders = tuple(file_name(p) for p in parts[:-1])
+                store: Store = TokenStore(base, (*names, *folders), parts[-1])
                 cells.append(self._cell(f"t:{token.name}|{column}", widget, store, document, column, key))
             view.rows.append(Row(f"t:{token.name}", ".".join(rest), token.doc, cells, group, key))
 

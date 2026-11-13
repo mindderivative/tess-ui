@@ -70,7 +70,7 @@ class Shortcuts:
             name = REGIONS[index][0]
             if name == "structure_tree" and not self.viewmodel.has_tree.get():
                 continue
-            if name == "form_pane" and not self.viewmodel.form_items.get():
+            if name == "form_pane" and not getattr(self.viewmodel, "form_items").get():
                 continue
             self._focus(name)
             return

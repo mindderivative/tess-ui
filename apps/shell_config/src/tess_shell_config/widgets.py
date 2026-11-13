@@ -315,7 +315,7 @@ class SidesWidget(Widget):
         if isinstance(value, Number) and 1 in self.arity:
             return self._props([text], True)
         if isinstance(value, List) and len(value.items) == 4 and 4 in self.arity and all(isinstance(i, Number) or (isinstance(i, Word) and self.auto and i.text == "AUTO") for i in value.items):
-            return self._props([i.text for i in value.items], False)
+            return self._props([i.text for i in value.items if isinstance(i, (Number, Word))], False)
         return None
 
     def _side(self, text: str, position: int) -> str:
