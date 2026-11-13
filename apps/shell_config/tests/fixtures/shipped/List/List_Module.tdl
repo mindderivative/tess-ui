@@ -1,0 +1,40 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: List
+---
+
+# A scrolling list (Standard Modules > List): its entries are the call's children, usually a `For`
+# keyed by an id. The wheel scrolls it (it is 240 by 200 pixels unless the call writes a `Width` or
+# a `Height`). An entry has a key (a `For` entry the repeater's key, any other writes `Key: name`);
+# a click chooses it: `Selection: SINGLE` (the default) takes the click, `NONE` ignores it.
+# `Selected` is the chosen entry's key, set from outside (it marks the entry and raises nothing);
+# `On_Changed` fires when the user chooses one (`event.old`, `event.new` and `event.value` are the
+# keys). The chosen entry takes the style state `:selected` (and the role LISTITEM carries
+# `selected`), so give the entries a class and style `.list_item:selected`; the Default stylesheet
+# does for the class `list_item`. The role is LIST. Keys to move the choice are M6.
+#   List { Selected: {{ picked }}, On_Changed: choose, Children { For ... Key {{ w.id }} { ... } } }
+Module {
+    Params {
+        Selected { Type: string, Default: "" }
+        Selection { Type: string, Default: SINGLE }
+        Label { Type: string, Default: "" }
+    }
+    ScrollBox {
+        Name: Root
+        Role: LIST
+        Label: {{ params.Label }}
+        Selection_Mode: {{ params.Selection }}
+        Chosen: {{ params.Selected }}
+        Width: 240
+        Height: 200
+        Children {
+            FlexBox {
+                Name: Items
+                Flex: VERTICAL
+                Align_Items: STRETCH
+                Children { Content { } }
+            }
+        }
+    }
+}

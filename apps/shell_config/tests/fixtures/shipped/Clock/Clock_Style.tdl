@@ -1,0 +1,16 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: Clock_Style
+---
+
+Style {
+    Classes {
+        clock_text {
+            Kind: Text
+            Font_Size: 14
+            Font_Weight: 500
+            Foreground: "#ffffff"
+        }
+    }
+}

@@ -1,0 +1,100 @@
+---
+TDL: 0.1
+Name: Default
+---
+
+# The shell's own theme: a dark blue-grey with steel blue (#4682B4) as its accent. The tokens of
+# the base block are the dark look, which is also what a desktop with no colour-scheme preference
+# gets; Modes override what differs (a light variant, high contrast). Every value is a starting
+# point: copy this file into your Themes folder, change its Name, and set
+# Appearance { Theme: <Name> } in settings.tdl. To follow the desktop's accent colour instead of
+# steel blue, write Accent: DESKTOP.
+
+Theme {
+    Color {
+        Surface: "#12171D"
+        Surface_Raised: "#1B222B"
+        On_Surface: "#E4EAF1"
+        On_Surface_Muted: "#9FAEBF"
+        Primary: "#5B97C9"
+        On_Primary: "#08121C"
+        Accent: "#4682B4"
+        Error: "#F2958C"
+        Warning: "#E6BB6A"
+        Success: "#8CCB9A"
+        Outline: "#55657A"
+        Scrim: "#000000"
+    }
+
+    Type {
+        Caption { Font_Size: 12, Font_Weight: 400, Line_Height: 16 }
+        Label { Font_Size: 13, Font_Weight: 500, Line_Height: 18 }
+        Body { Font_Size: 14, Font_Weight: 400, Line_Height: 20 }
+        Title { Font_Size: 18, Font_Weight: 500, Line_Height: 24 }
+        Display { Font_Size: 28, Font_Weight: 400, Line_Height: 36 }
+    }
+
+    Shape {
+        None: 0
+        Small: 4
+        Medium: 8
+        Large: 16
+        Full: 999
+    }
+
+    Space {
+        Step_1: 2
+        Step_2: 4
+        Step_3: 8
+        Step_4: 12
+        Step_5: 16
+        Step_6: 24
+        Step_7: 32
+        Step_8: 48
+    }
+
+    Elevation {
+        Reach: 64
+        Max {
+            Shadows {
+                Shadow { Color: "#00000066", X: 0, Y: 16, Blur: 48, Spread: 0 }
+            }
+        }
+    }
+
+    Motion {
+        Duration { Short: 100, Medium: 200, Long: 400 }
+        Easing { Standard: standard, Emphasized: emphasized }
+    }
+
+    Modes {
+        Light {
+            Color {
+                Surface: "#F4F7FA"
+                Surface_Raised: "#FFFFFF"
+                On_Surface: "#16202B"
+                On_Surface_Muted: "#4A5967"
+                Primary: "#2F6B9A"
+                On_Primary: "#FFFFFF"
+                Error: "#B3261E"
+                Warning: "#8A5A00"
+                Success: "#2E6B34"
+                Outline: "#7A8896"
+            }
+        }
+        Dark { }
+        High_Contrast {
+            Color {
+                Surface: "#000000"
+                Surface_Raised: "#000000"
+                On_Surface: "#FFFFFF"
+                On_Surface_Muted: "#FFFFFF"
+                Primary: "#8CC4F2"
+                On_Primary: "#000000"
+                Accent: "#8CC4F2"
+                Outline: "#FFFFFF"
+            }
+        }
+        Reduced_Motion { }
+    }
+}

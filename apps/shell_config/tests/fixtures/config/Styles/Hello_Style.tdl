@@ -1,0 +1,8 @@
+---
+TDL: 0.1
+Name: Hello_Style
+---
+
+Style {
+    Foreground: $color.on_surface
+}

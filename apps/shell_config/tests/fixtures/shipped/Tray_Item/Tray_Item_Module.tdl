@@ -1,0 +1,71 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: Tray_Item
+---
+
+# One item of the Tray (Tray Module): its icon with a tooltip (the item's title and its text). The
+# Tray calls it in a `For` and writes the item's handlers on the call, so they run the Tray's
+# actions. `icon` is what the Tray sends: an SVG document or `pixels:...` (an Icon shows both).
+# `attention` gives the root the `:selected` look (the stylesheet's `.tray_item:selected`).
+Module {
+    Style: Tray_Item_Style.tdl
+
+    Params {
+        icon { Type: icon, Default: "" }
+        size { Type: number, Default: 18 }
+        tooltip_title { Type: string, Default: "" }
+        tooltip_text { Type: string, Default: "" }
+        label { Type: string, Default: "" }
+        description { Type: string, Default: "" }
+        # the item needs attention: it takes the `:selected` look
+        attention { Type: boolean, Default: false }
+    }
+
+    FlexBox {
+        Name: Root
+        Class: tray_item
+        Role: BUTTON
+        Selected: {{ params.attention }}
+        Label: {{ params.label }}
+        Description: {{ params.description }}
+        Align_Items: CENTER
+        Justify_Content: CENTER
+        Tooltip {
+            Alignment: CENTER
+            Gap: 4
+            Style {
+                Background: $color.surface_raised
+                Corner_Radius: 8
+                Elevation: 20%
+            }
+            Children {
+                FlexBox {
+                    Padding: [12, 8, 12, 8]
+                    Flex: VERTICAL
+                    Children {
+                        Text {
+                            Text: {{ params.tooltip_title }}
+                            Width: AUTO
+                            Height: AUTO
+                            Font_Size: 14
+                            Font_Weight: 600
+                            Foreground: $color.on_surface
+                        }
+                        Text {
+                            Text: {{ params.tooltip_text }}
+                            Visible: {{ params.tooltip_text != "" }}
+                            Width: AUTO
+                            Height: AUTO
+                            Font_Size: 13
+                            Foreground: $color.on_surface_muted
+                        }
+                    }
+                }
+            }
+        }
+        Children {
+            Icon { Icon: {{ params.icon }}, Size: {{ params.size }} }
+        }
+    }
+}

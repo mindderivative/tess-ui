@@ -1,0 +1,54 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: Workspaces
+---
+
+# KWin's virtual desktops as a row of buttons (Workspaces Module). The Python sends `desktops` (a
+# record per desktop: `id`, `number`, `name`, `label`, `current`), `current` and `ready`; the layer
+# sends `available` (KWin is on the session bus). A click sets KWin's `current`. The current
+# desktop's button takes the style state `:selected` (and the accessible state `selected`): the
+# Default stylesheet colours it with the theme's primary (`.workspace:selected`). With no KWin the
+# module is hidden: its root is `Visible: false`, which takes no space in the Bar (no Spacing
+# beside it).
+Module {
+    Style: Workspaces_Style.tdl
+
+    Params {
+        # name shows each desktop's name (its number when it has none), number shows 1, 2, 3
+        label { Type: string, Default: name }
+    }
+
+    FlexBox {
+        Name: Root
+        Visible: {{ available and ready }}
+        Role: GROUP
+        Label: Workspaces
+        Flex: HORIZONTAL
+        Align_Items: CENTER
+        Spacing: 4
+        Children {
+            For desktop In {{ desktops }} Key {{ desktop.id }} {
+                FlexBox {
+                    Name: Desktop
+                    Class: workspace
+                    Min_Width: 28
+                    Max_Width: 160
+                    Align_Items: CENTER
+                    Justify_Content: CENTER
+                    Role: BUTTON
+                    Label: {{ "Desktop " + str(desktop.number) + ", " + desktop.label }}
+                    Selected: {{ desktop.current }}
+                    On_Click { Action: switch, Id: {{ desktop.id }} }
+                    Children {
+                        Text {
+                            Name: Face
+                            Class: workspace_text
+                            Text: {{ str(desktop.number) if params.label == "number" else desktop.label }}
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

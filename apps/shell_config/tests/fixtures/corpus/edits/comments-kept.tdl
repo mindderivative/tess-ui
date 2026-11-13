@@ -1,0 +1,14 @@
+---
+# the language
+TDL: 0.1
+
+Name: T   # id
+# end
+---
+
+# root
+Shell {
+  # inside
+
+  Width: 1
+}

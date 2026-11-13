@@ -1,0 +1,8 @@
+---
+TDL: 0.1
+Name: Shell_Root
+---
+Shell {
+  Width: 1   # px
+  Height: 2
+}

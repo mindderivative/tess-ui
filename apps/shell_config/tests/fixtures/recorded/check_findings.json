@@ -1,0 +1,17 @@
+{
+  "ok": false,
+  "config_dir": "<config_dir>",
+  "files": 1,
+  "errors": [
+    {
+      "file": "Shells/Foo_Shell.tdl",
+      "line": 5,
+      "column": 7,
+      "severity": "error",
+      "rule": "tdl-unclosed-block",
+      "message": "This block is never closed.",
+      "hint": "Add the missing }"
+    }
+  ],
+  "omitted": 0
+}

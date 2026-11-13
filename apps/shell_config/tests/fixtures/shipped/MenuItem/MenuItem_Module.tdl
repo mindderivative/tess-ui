@@ -1,0 +1,87 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: MenuItem
+---
+
+# A row of a Menu (Standard Modules > Menu and MenuItem): an icon, the text, a key hint at the end
+# (`Shortcut_Text`, display only) and, when it opens a submenu, an arrow. `On_Click` runs the action
+# and then the whole menu closes. `Submenu` is the `Name` of a Popup of the Monitor that is the
+# submenu: it opens to the right of the row (to the left when there is no room) when the pointer has
+# rested on the row for 250 ms or at a click, closes when the pointer rests on another row of this
+# menu for 300 ms, and with this menu; one submenu is open at a time, at most three levels deep. A
+# submenu reads the row as `caller.use.params` (its `Text`, for one; `Id` is a text the row carries
+# for the code that built the menu, shown nowhere: a menu made from a list puts the entry's key
+# there, so the submenu can pick that entry's children). `Separator: true` is a rule
+# between groups that takes no events. Parts `::icon`, `::label`, `::shortcut`, `::arrow` and
+# `::rule`; states `:hovered`, `:pressed` and `:disabled`. The role is MENUITEM (SEPARATOR for a
+# rule), with `expanded` while its submenu is open.
+Module {
+    Params {
+        Text { Type: string, Default: "" }
+        Icon { Type: icon, Default: "" }
+        Shortcut_Text { Type: string, Default: "" }
+        Separator { Type: boolean, Default: false }
+        Submenu { Type: string, Default: "" }
+        Label { Type: string, Default: "" }
+        Id { Type: string, Default: "" }
+    }
+    FlexBox {
+        Name: Root
+        Role: {{ "SEPARATOR" if params.Separator else "MENUITEM" }}
+        Menu_Item: {{ not params.Separator }}
+        Opens: {{ params.Submenu }}
+        Expanded: {{ False if params.Submenu != "" else None }}
+        Label: {{ params.Label if params.Label else params.Text }}
+        Height: {{ 9 if params.Separator else 28 }}
+        Align_Items: CENTER
+        Spacing: 8
+        Padding: {{ [4, 0, 4, 0] if params.Separator else [10, 0, 10, 0] }}
+        Children {
+            Rectangle {
+                Name: Rule
+                Part: rule
+                Visible: {{ params.Separator }}
+                Flex_Grow: 1
+                Height: 1
+            }
+            Box {
+                Name: Glyph_Slot
+                Visible: {{ not params.Separator }}
+                Width: 16
+                Height: 16
+                Flex_Shrink: 0
+                Children {
+                    If {{ params.Icon != "" }} {
+                        SVG { Name: Glyph, Part: icon, Source: {{ params.Icon }}, Width: 16, Height: 16 }
+                    }
+                }
+            }
+            Text {
+                Name: Words
+                Part: label
+                Visible: {{ not params.Separator }}
+                Text: {{ params.Text }}
+                Flex_Grow: 1
+                Width: AUTO
+                Height: AUTO
+            }
+            Text {
+                Name: Hint
+                Part: shortcut
+                Visible: {{ params.Shortcut_Text != "" and not params.Separator }}
+                Text: {{ params.Shortcut_Text }}
+                Width: AUTO
+                Height: AUTO
+            }
+            SVG {
+                Name: Arrow
+                Part: arrow
+                Icon: "mdi:chevron-right"
+                Visible: {{ params.Submenu != "" }}
+                Width: 16
+                Height: 16
+            }
+        }
+    }
+}

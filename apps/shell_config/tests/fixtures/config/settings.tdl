@@ -1,0 +1,14 @@
+---
+TDL: 0.1
+Name: Settings
+---
+
+# Where the shell starts and how it logs.
+Settings {
+    Main_Shell: "Main_Shell.tdl"   # the file the shell starts from
+    Logging { Level: INFO, Retention: 7 }
+
+    Validation {
+        Enabled: true
+    }
+}

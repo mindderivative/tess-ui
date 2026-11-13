@@ -1,0 +1,26 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: TextBox
+---
+
+# Multi-line text, not editable (Standard Modules > TextBox): a Text that wraps by word at its width.
+# Give it a `Width` (a common key of every module call), or put it in a column that sets one.
+# `Wrap: NONE` keeps each line as written and cuts it at the box (scrolling sideways waits for the
+# ScrollBox, M4c); `Max_Lines` shows at most that many lines (0 is no limit); `Selectable: true`
+# lets the pointer select the text and copy it.
+Module {
+    Params {
+        Text { Type: string, Default: "" }
+        Wrap { Type: string, Default: WORD }
+        Max_Lines { Type: number, Default: 0 }
+        Selectable { Type: boolean, Default: false }
+    }
+    Text {
+        Text: {{ params.Text }}
+        Label: {{ params.Text }}
+        Wrap: {{ params.Wrap }}
+        Max_Lines: {{ params.Max_Lines }}
+        Selectable: {{ params.Selectable }}
+    }
+}

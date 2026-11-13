@@ -1,0 +1,15 @@
+---
+# the language
+TDL: 0.1
+UID: 0192d3c4-7a1e-7c2f-9b1a-3f5e2d8a6c10
+
+Name: T   # id
+# end
+---
+
+# root
+Shell {
+  # inside
+
+  Width: 1
+}

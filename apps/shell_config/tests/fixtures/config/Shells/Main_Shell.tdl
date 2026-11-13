@@ -1,0 +1,42 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: Main
+---
+
+# One monitor with a bar and a panel.
+
+Shell {
+    Monitor {
+        Name: Primary
+        Index: 0     # the first monitor
+
+        Bar {
+            Name: Top_Bar
+            Edge: TOP
+            Width: EXPAND
+            Height: 32
+            Style { Background: $color.surface }   # a token, not a colour
+
+            Children {
+                Clock { Name: Clock }
+                Text { Text: "Hello", Width: AUTO }   # inline block with end-of-line comment
+                If {{ battery.present }} {
+                    Battery { }
+                } Else {
+                    Text { Text: "AC" }
+                }
+                For item In {{ tray.items }} Key {{ item.id }} {
+                    Tray_Item { Name: Item }
+                }
+            }
+        }
+
+        # the popup the clock opens
+        Popup {
+            Name: Calendar_Popup
+            Width: 280
+            Height: 240
+        }
+    }
+}

@@ -1,0 +1,127 @@
+---
+TDL: 0.1
+Name: Default
+---
+
+# The shell's own rules: text and icons take the theme's colours and the body type, and the
+# standard modules their look (the parts of a ProgressBar, the pill of a Badge, the faint state of a
+# disabled widget). Name it in settings.tdl, Appearance { Stylesheets: [Default] }, or write your
+# own; a rule of yours that comes later wins over one of these of the same weight.
+
+# Standard modules: the parts of a ProgressBar are a pill-shaped track and fill, a Badge is a pill in
+# the error colour whose digits take the module's Foreground, and a disabled display widget is faint
+# (Accessibility, rule 8: more than colour tells a state).
+# Button, Toggle and Checkbox (Standard Modules > Pointer and Input Controls) show more than colour
+# for their states (Accessibility, rule 8): the Toggle's thumb moves, the Checkbox draws a mark, a
+# Button dims while it is disabled; the Slider's handle takes a wider ring while it is pressed.
+Stylesheet {
+    Rule {
+        Selector: "Text"
+        Foreground: $color.on_surface
+        Font_Size: $type.body.font_size
+    }
+    Rule {
+        Selector: "SVG"
+        Foreground: $color.on_surface
+    }
+
+    Rule { Selector: "ProgressBar::track", Fill: $color.outline, Corner_Radius: $shape.full }
+    Rule { Selector: "ProgressBar::fill", Fill: $color.primary, Corner_Radius: $shape.full }
+    Rule { Selector: "ProgressBar::fill:disabled", Fill: $color.on_surface_muted }
+
+    Rule { Selector: "Badge::dot", Background: $color.error }
+    Rule { Selector: "Badge", Foreground: $color.on_primary }
+
+    Rule {
+        Selector: "Button"
+        Background: $color.surface_raised
+        Border_Width: 1
+        Border_Color: $color.outline
+        Corner_Radius: $shape.medium
+    }
+    Rule { Selector: "Button:hovered", Border_Color: $color.primary }
+    Rule { Selector: "Button:pressed", Background: $color.outline, Border_Color: $color.primary }
+    Rule { Selector: "Button:disabled", Opacity: 0.5 }
+
+    Rule {
+        Selector: "Toggle::track"
+        Fill: $color.surface_raised
+        Border_Width: 2
+        Border_Color: $color.outline
+        Corner_Radius: $shape.full
+    }
+    Rule { Selector: "Toggle::track:checked", Fill: $color.primary, Border_Color: $color.primary }
+    Rule { Selector: "Toggle::thumb", Fill: $color.on_surface_muted, Margin: [3, 3, 0, 0] }
+    Rule { Selector: "Toggle::thumb:checked", Fill: $color.on_primary, Margin: [21, 3, 0, 0] }
+    Rule { Selector: "Toggle:hovered", Opacity: 0.85 }
+    Rule { Selector: "Toggle:pressed", Opacity: 0.7 }
+    Rule { Selector: "Toggle:disabled", Opacity: 0.5 }
+
+    Rule {
+        Selector: "Checkbox::box"
+        Fill: $color.surface_raised
+        Border_Width: 2
+        Border_Color: $color.outline
+        Corner_Radius: $shape.small
+    }
+    Rule { Selector: "Checkbox::box:checked", Fill: $color.primary, Border_Color: $color.primary }
+    Rule { Selector: "Checkbox::mark", Border_Color: $color.on_primary, Border_Width: 2, Opacity: 0 }
+    Rule { Selector: "Checkbox::mark:checked", Opacity: 1 }
+    Rule { Selector: "Checkbox:hovered", Opacity: 0.85 }
+    Rule { Selector: "Checkbox:pressed", Opacity: 0.7 }
+    Rule { Selector: "Checkbox:disabled", Opacity: 0.5 }
+
+    Rule { Selector: "Slider::track", Fill: $color.outline, Corner_Radius: $shape.full }
+    Rule { Selector: "Slider::fill", Fill: $color.primary, Corner_Radius: $shape.full }
+    Rule {
+        Selector: "Slider::handle"
+        Fill: $color.primary
+        Border_Width: 2
+        Border_Color: $color.surface
+    }
+    Rule { Selector: "Slider::handle:hovered", Border_Color: $color.on_surface_muted }
+    Rule { Selector: "Slider::handle:pressed", Border_Color: $color.on_surface, Border_Width: 3 }
+    Rule { Selector: "Slider::track:disabled", Opacity: 0.5 }
+    Rule { Selector: "Slider::fill:disabled", Fill: $color.on_surface_muted }
+    Rule { Selector: "Slider::handle:disabled", Fill: $color.on_surface_muted }
+
+    Rule { Selector: ".list_item", Padding: [10, 6, 10, 6], Corner_Radius: $shape.small }
+    Rule { Selector: ".list_item:hovered", Background: $color.surface_raised }
+    Rule {
+        Selector: ".list_item:selected"
+        Background: $color.surface_raised
+        Border_Width: 2
+        Border_Color: $color.primary
+    }
+    Rule { Selector: ".list_item:disabled", Opacity: 0.5 }
+
+    Rule { Selector: ".workspace:hovered", Background: $color.surface_raised }
+    Rule {
+        Selector: ".workspace:selected"
+        Background: $color.surface_raised
+        Border_Width: 2
+        Border_Color: $color.primary
+    }
+
+    Rule { Selector: ".tray_item:hovered", Background: $color.surface_raised }
+    Rule {
+        Selector: ".tray_item:selected"
+        Border_Width: 2
+        Border_Color: $color.warning
+    }
+
+    Rule { Selector: "MenuItem:hovered", Background: $color.outline }
+    Rule { Selector: "MenuItem:pressed", Background: $color.primary }
+    Rule { Selector: "MenuItem:disabled", Opacity: 0.5 }
+    Rule { Selector: "MenuItem", Corner_Radius: $shape.small }
+    Rule { Selector: "MenuItem::rule", Fill: $color.outline }
+    Rule { Selector: "MenuItem::shortcut", Foreground: $color.on_surface_muted }
+
+    Rule { Selector: "Label:disabled", Opacity: 0.5 }
+    Rule { Selector: "TextBox:disabled", Opacity: 0.5 }
+    Rule { Selector: "Marquee_Text:disabled", Opacity: 0.5 }
+    Rule { Selector: "Icon:disabled", Opacity: 0.5 }
+    Rule { Selector: "Image:disabled", Opacity: 0.5 }
+    Rule { Selector: "ProgressBar:disabled", Opacity: 0.5 }
+    Rule { Selector: "Badge:disabled", Opacity: 0.5 }
+}

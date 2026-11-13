@@ -49,4 +49,5 @@ dev = ["pytest>=8.0", "pyinstaller>=6.10", "jsonschema>=4.17", "ruff>=0.6", "myp
 packages = ["src/tess_ui"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "apps/shell_config/tests"]  # the Configuration Application's own tests (they skip on a Python without tess_dl, which needs 3.14)
+pythonpath = ["apps/shell_config/src"]  # so its tests import tess_shell_config without installing it into the repo's venv

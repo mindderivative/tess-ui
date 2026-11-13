@@ -1,0 +1,8 @@
+---
+TDL: 0.1
+Name: T
+---
+Shell {
+  Children { Label { } }
+  Import: File.tdl
+}

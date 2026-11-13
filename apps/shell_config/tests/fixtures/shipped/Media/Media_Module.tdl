@@ -1,0 +1,112 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: Media
+---
+
+# What an MPRIS media player plays, and its controls (Media Module): previous, play or pause and
+# next as icon Buttons, the title in a Marquee text, optionally the artwork and a position slider,
+# and a tooltip with the title, the artist, the player and its state. The Python sends `has_player`,
+# `status`, `title`, `artist`, `album`, `player`, `art`, `length`, `position`, `can_play_pause`,
+# `can_next`, `can_previous`, `can_seek`, `icon`, `tooltip` and `label`; the layer sends `available`
+# (the session bus can be reached). With no player the module is hidden: its root is
+# `Visible: false`, which takes no space in the Bar and shows no placeholder.
+#
+# The controls call the player and change nothing here: the icon follows the player's own
+# PlaybackStatus signal. A control the player cannot do is disabled. `show_position` adds the slider
+# and, while the player plays, a one-second tick that moves it. The slider's drag sends nothing to
+# the player: the release does (`On_Released`, raised once when the press ends, also when the button
+# is let go outside the slider), with the position the drag ended on.
+#
+# Nothing here is created or removed by a change of state (the Battery's lesson, M5b): the
+# controls, the title and the icon are updated in place; only the `If`s of the params, which never
+# change at run time, decide what exists.
+Module {
+    Params {
+        # the artwork, 24 px (a file:// URL of the player's; a placeholder icon otherwise)
+        show_art { Type: boolean, Default: false }
+        # the title, scrolling when it is wider than max_width
+        show_title { Type: boolean, Default: true }
+        # previous, play or pause, next
+        show_controls { Type: boolean, Default: true }
+        # the seek slider; it turns on the one-second tick while the player plays
+        show_position { Type: boolean, Default: false }
+        # the title's width in pixels
+        max_width { Type: number, Default: 240 }
+    }
+
+    FlexBox {
+        Name: Root
+        Visible: {{ available and has_player }}
+        Role: GROUP
+        Label: {{ label }}
+        Flex: HORIZONTAL
+        Align_Items: CENTER
+        Spacing: 4
+        Tooltip {
+            Alignment: CENTER
+            Gap: 4
+            Style {
+                Background: $color.surface_raised
+                Corner_Radius: 8
+                Elevation: 20%
+            }
+            Children {
+                FlexBox {
+                    Padding: [12, 8, 12, 8]
+                    Children {
+                        Text {
+                            Text: {{ tooltip }}
+                            Width: AUTO
+                            Height: AUTO
+                            Font_Size: 14
+                            Foreground: $color.on_surface
+                        }
+                    }
+                }
+            }
+        }
+        Children {
+            If {{ params.show_art }} {
+                Image { Name: Art, Source: {{ art }}, Placeholder: "mdi:music", Width: 24, Height: 24 }
+            }
+            If {{ params.show_controls }} {
+                Button {
+                    Name: Previous
+                    Icon: "mdi:skip-previous"
+                    Label: "Previous"
+                    Enabled: {{ can_previous }}
+                    On_Click: previous
+                }
+                Button {
+                    Name: Play
+                    Icon: {{ icon }}
+                    Label: {{ "Pause" if status == "PLAYING" else "Play" }}
+                    Enabled: {{ can_play_pause }}
+                    On_Click: play_pause
+                }
+                Button {
+                    Name: Next
+                    Icon: "mdi:skip-next"
+                    Label: "Next"
+                    Enabled: {{ can_next }}
+                    On_Click: next
+                }
+            }
+            If {{ params.show_title }} {
+                Marquee_Text { Name: Title, Text: {{ title }}, Width: {{ params.max_width }} }
+            }
+            If {{ params.show_position }} {
+                Slider {
+                    Name: Position
+                    Label: "Position"
+                    Value: {{ position }}
+                    Max: {{ length }}
+                    Enabled: {{ can_seek }}
+                    On_Changed { Action: drag, position: {{ event.value }} }
+                    On_Released { Action: release, position: {{ event.value }} }
+                }
+            }
+        }
+    }
+}

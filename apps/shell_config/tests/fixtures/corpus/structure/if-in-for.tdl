@@ -1,0 +1,9 @@
+---
+TDL: 0.1
+Name: T
+---
+Shell {
+  For x In {{ xs }} Key {{ x }} {
+    If {{ x.ok }} { Label { } }
+  }
+}

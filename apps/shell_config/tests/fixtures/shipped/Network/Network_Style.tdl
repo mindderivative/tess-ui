@@ -1,0 +1,15 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: Network_Style
+---
+
+Style {
+    Classes {
+        network_text {
+            Kind: Text
+            Font_Size: 14
+            Font_Weight: 500
+        }
+    }
+}

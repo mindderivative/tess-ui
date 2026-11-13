@@ -1,0 +1,36 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: Audio_Outputs
+---
+
+# The outputs menu of the Audio module (Audio Module): the content of a Popup of the shell file
+#   Popup Audio_Outputs { Attach: BOTTOM, Gap: 4,
+#       Style { Background: $color.surface_raised, Corner_Radius: 8 },
+#       Children { Audio_Outputs { } } }
+# One MenuItem per output, with the icon of its kind and a dot on the default one; a click makes
+# that output the default and closes the menu. The Audio module's secondary click opens the Popup
+# with the outputs it knows at that moment (`caller.data.outputs`), so the menu is the list as it
+# was when the click happened.
+Module {
+    FlexBox {
+        Name: Root
+        Flex: VERTICAL
+        Children {
+            Menu {
+                Label: "Outputs"
+                Children {
+                    For o In {{ caller.data.outputs }} Key {{ o.id }} {
+                        MenuItem {
+                            Text: {{ o.name }}
+                            Icon: {{ o.icon }}
+                            Shortcut_Text: {{ "•" if o.current else "" }}
+                            Label: {{ o.name + ", current" if o.current else o.name }}
+                            On_Click { Action: pick, id: {{ o.id }} }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

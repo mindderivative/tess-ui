@@ -1,0 +1,57 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: Tray_Menu
+---
+
+# The menu of a tray item (Tray Module > The Menu): one level of it, as the content of a Popup.
+# The Tray opens the Popup `Tray_Menu` with the item's menu tree in `caller.data`; a row with a
+# submenu opens the Popup `Tray_Menu_2` (and its rows `Tray_Menu_3`) beside it, which read the same
+# data and the row's `Id`. Write the three in the shell file, each with this module as its content:
+#   Popup Tray_Menu   { Attach: BOTTOM, Gap: 4, Max_Height: 600
+#       Style { Background: $color.surface_raised, Corner_Radius: 8 }
+#       Children { Tray_Menu { } } }
+#   Popup Tray_Menu_2 { Max_Height: 600, Style { ... }, Children { Tray_Menu { Level: 2 } } }
+#   Popup Tray_Menu_3 { Max_Height: 600, Style { ... }, Children { Tray_Menu { Level: 3 } } }
+# A row is a MenuItem: its label (an underscore, the mnemonic, is taken out), an icon (a theme icon
+# or the entry's own picture; a check mark or a radio button for a toggle entry), a key hint, an
+# arrow for a submenu, a rule for a separator. A disabled row takes no click. A click on a row sends
+# the application `Event(id, "clicked")` and closes the whole menu (a click on a row that opens a
+# submenu opens it and sends nothing); the tree is not kept after that.
+# A menu longer than the Popup's `Max_Height` scrolls.
+Module {
+    Params {
+        # 1: the menu itself; 2 and 3: the submenu of the row that opened this Popup
+        Level { Type: number, Default: 1 }
+    }
+    FlexBox {
+        Name: Root
+        Flex: VERTICAL
+        Children {
+            Menu {
+                Label: {{ caller.data.title }}
+                Children {
+                    For e In {{ caller.data.menus["0"] if params.Level == 1 else caller.data.menus[caller.use.params.Id] }} Key {{ e.id }} {
+                        MenuItem {
+                            Text: {{ e.text }}
+                            Icon: {{ e.icon }}
+                            Shortcut_Text: {{ e.shortcut }}
+                            Separator: {{ e.separator }}
+                            Submenu: {{ e.submenu }}
+                            Id: {{ e.id }}
+                            Label: {{ e.label }}
+                            Enabled: {{ e.enabled }}
+                            On_Click {
+                                Action: pick
+                                id: {{ e.id }}
+                                submenu: {{ e.submenu }}
+                                service: {{ caller.data.service }}
+                                path: {{ caller.data.path }}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

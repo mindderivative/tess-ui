@@ -1,0 +1,11 @@
+---
+TDL: 0.1
+Name: T
+---
+Shell {
+  If {{ c }} {
+    Label { }
+  } Else {
+    Icon { }
+  }
+}

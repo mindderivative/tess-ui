@@ -1,0 +1,39 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: ProgressBar
+---
+
+# A read-only bar (Standard Modules > ProgressBar): a track with a fill that is as wide as the
+# value is far from Min to Max. The parts are `::track` and `::fill`, styled in a stylesheet
+# (`ProgressBar::fill { Fill: $color.success }`); a change of `Value` eases the fill over the
+# theme's medium duration (nothing eases under reduced motion). The role is PROGRESSBAR with
+# `value`, `value_min` and `value_max`; give the call a `Label` to name it. It is 160 by 8 pixels
+# unless the call writes a `Width` or a `Height`, and the fill follows the track's width.
+Module {
+    Params {
+        Value { Type: number, Default: 0 }
+        Min { Type: number, Default: 0 }
+        Max { Type: number, Default: 100 }
+    }
+    Box {
+        Name: Root
+        Width: 160
+        Height: 8
+        Clip_Children: true
+        Role: PROGRESSBAR
+        Value: {{ params.Value }}
+        Value_Min: {{ params.Min }}
+        Value_Max: {{ params.Max }}
+        Children {
+            Rectangle { Name: Track, Part: track, Width: 100%, Height: 100% }
+            Rectangle {
+                Name: Fill
+                Part: fill
+                Width: {{ str(round(100 * clamp((params.Value - params.Min) / max(params.Max - params.Min, 0.000001), 0, 1))) + "%" }}
+                Height: 100%
+                Transition: [Width]
+            }
+        }
+    }
+}

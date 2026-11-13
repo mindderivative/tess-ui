@@ -1,0 +1,57 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: Clock
+---
+
+Module {
+    Style: Clock_Style.tdl
+
+    Params {
+        # a strftime pattern; empty is chosen by hour_cycle
+        format { Type: string, Default: "" }
+        # a locale name such as de_DE for month and day names; empty is the process's own. The
+        # system must have it (`locale -a`); a missing one is warned about and ignored
+        locale { Type: string, Default: "" }
+        # desktop, 12 or 24
+        hour_cycle { Type: string, Default: desktop }
+        # an IANA zone such as Europe/Berlin; empty is the local zone
+        timezone { Type: string, Default: "" }
+        # a strftime pattern for the text of the tooltip the pointer opens on the clock
+        tooltip_format { Type: string, Default: "%A, %d %B %Y" }
+    }
+
+    # a box takes the pointer, a Text takes none: the tooltip sits on the box around the text
+    FlexBox {
+        Tooltip {
+            Alignment: CENTER
+            Gap: 4
+            Style {
+                Background: $color.surface_raised
+                Corner_Radius: 8
+                Elevation: 20%
+            }
+            Children {
+                FlexBox {
+                    Padding: [12, 8, 12, 8]
+                    Children {
+                        Text {
+                            Text: {{ tooltip }}
+                            Width: AUTO
+                            Height: AUTO
+                            Font_Size: 14
+                            Foreground: $color.on_surface
+                        }
+                    }
+                }
+            }
+        }
+        Children {
+            Text {
+                Name: Face
+                Class: clock_text
+                Text: {{ time }}
+            }
+        }
+    }
+}

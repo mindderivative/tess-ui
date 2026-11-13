@@ -1,0 +1,59 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: Tray
+---
+
+# The system tray (Tray Module): one icon per application that registers a StatusNotifierItem, with
+# a tooltip, a click that activates it, a middle click, the wheel, and the item's own menu drawn by
+# the shell. The Python sends `has_items` and `items` (a record per shown item: `id`, `title`,
+# `status`, `icon`, `tooltip_title`, `tooltip_text`, `attention`, `label`, `description`); the layer
+# sends `available` (a StatusNotifierWatcher is on the session bus). With no watcher, no item or
+# no host registration the module is hidden: its root is `Visible: false`, which takes no space in
+# the Bar (no Spacing beside it). The shell is a second tray host beside Plasma's.
+#
+# The menu of an item is the Popup named `Tray_Menu` of the same Monitor (a Popup with
+# `Tray_Menu { }` as its content, see that module) and, for a submenu, the Popups `Tray_Menu_2` and
+# `Tray_Menu_3` (`Tray_Menu { Level: 2 }` and `Level: 3`): a menu shows its first three levels. The
+# Popup's `Max_Height` makes a long menu scroll. Without these Popups the secondary click logs one
+# error and nothing else happens. An item that needs attention takes the `:selected` look.
+#
+# The tray's Popup opens beside the whole row (the specification's anchor is the icon; a module
+# is not told where an entry's block is), so give the Popup `Alignment: END` or `CENTER`.
+Module {
+    Params {
+        # the icon's size in pixels
+        icon_size { Type: number, Default: 18 }
+        # show the items whose status is Passive
+        show_passive { Type: boolean, Default: false }
+        # the space between two items
+        spacing { Type: number, Default: 6 }
+    }
+
+    FlexBox {
+        Name: Root
+        Visible: {{ available and has_items }}
+        Role: GROUP
+        Label: "Tesserae Shell tray"
+        Flex: HORIZONTAL
+        Align_Items: CENTER
+        Spacing: {{ params.spacing }}
+        Children {
+            For item In {{ items }} Key {{ item.id }} {
+                Tray_Item {
+                    icon: {{ item.icon }}
+                    size: {{ params.icon_size }}
+                    tooltip_title: {{ item.tooltip_title }}
+                    tooltip_text: {{ item.tooltip_text }}
+                    label: {{ item.label }}
+                    description: {{ item.description }}
+                    attention: {{ item.attention }}
+                    On_Click { Action: activate, id: {{ item.id }} }
+                    On_Middle_Click { Action: secondary, id: {{ item.id }} }
+                    On_Secondary_Click { Action: menu, id: {{ item.id }} }
+                    On_Scroll { Action: scroll, id: {{ item.id }}, delta: {{ event.delta }} }
+                }
+            }
+        }
+    }
+}

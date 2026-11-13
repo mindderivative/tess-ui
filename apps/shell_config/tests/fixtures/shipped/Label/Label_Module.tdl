@@ -1,0 +1,22 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: Label
+---
+
+# A single line of text, not editable (Standard Modules > Label). It is a Text, so its look is the
+# Text's: `Label { Foreground: ..., Font_Size: ..., Overflow: ELLIPSIS }` in a stylesheet restyles
+# it, and `Label:disabled` styles it while `Enabled: false`. A text wider than the Label is cut
+# (`Overflow: CLIP`, the default) or ends with an ellipsis; give the Label a `Width` (a common key
+# of every module call) to make it narrower than its text. The text is also the Label's accessible
+# name. A slot updates the text in place, with no rebuild.
+Module {
+    Params {
+        Text { Type: string, Default: "" }
+    }
+    Text {
+        Text: {{ params.Text }}
+        Label: {{ params.Text }}
+        Wrap: NONE
+    }
+}

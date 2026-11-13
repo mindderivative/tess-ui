@@ -1,0 +1,11 @@
+---
+TDL: 0.1
+Name: Shell_Root
+---
+Shell {
+  Monitor {
+    Name: Main
+    Width: 10
+    Height: 40
+  }
+}

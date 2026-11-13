@@ -1,0 +1,35 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: Marquee_Text
+---
+
+# A long text scrolling in a small space (Standard Modules > Marquee text). It scrolls only while
+# the text is wider than its box (160 pixels unless the call writes a `Width`); the engine moves the
+# text (no Python per frame), one leg at `Speed` pixels a second, waiting `Pause` milliseconds at each
+# end. `Loop` is RESTART (jump back to the start) or BOUNCE (scroll back); `Direction` is LEFT or
+# RIGHT. Disabled, or under reduced motion, it does not scroll: a text that does not fit ends with an
+# ellipsis and the tooltip shows the whole text (a Marquee's tooltip opens although the block is
+# disabled, but only while its text is cut: the automatic exception to "no tooltip over a disabled
+# block"; the module also writes `Tooltip_When_Disabled`). The whole text is also the accessible
+# name.
+Module {
+    Params {
+        Text { Type: string, Default: "" }
+        Speed { Type: number, Default: 30 }
+        Pause { Type: number, Default: 1500 }
+        Direction { Type: string, Default: LEFT }
+        Loop { Type: string, Default: RESTART }
+    }
+    Marquee {
+        Name: Root
+        Width: 160
+        Text: {{ params.Text }}
+        Speed: {{ params.Speed }}
+        Pause: {{ params.Pause }}
+        Direction: {{ params.Direction }}
+        Loop: {{ params.Loop }}
+        Tooltip: {{ params.Text }}
+        Tooltip_When_Disabled: true
+    }
+}

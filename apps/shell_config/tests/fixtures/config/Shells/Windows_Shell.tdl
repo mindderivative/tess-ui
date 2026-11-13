@@ -1,0 +1,10 @@
+---
+TDL: 0.1
+Name: Windows
+---
+
+Shell {
+    Monitor {
+        Name: Primary   # CRLF file
+    }
+}

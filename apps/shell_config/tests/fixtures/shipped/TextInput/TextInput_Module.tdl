@@ -1,0 +1,35 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: TextInput
+---
+
+# A single-line text field (Standard Modules > TextInput): a TextField, so its look is the
+# TextField's own (the theme's tokens: it follows light and dark), restyled by a stylesheet rule
+# such as `TextInput { Overflow: ELLIPSIS }` or `TextInput::placeholder { Foreground: ... }`.
+# `Overflow` is SCROLL unless a rule says ELLIPSIS or CLIP.
+#
+# The call takes the events On_Changed (every edit the user makes: event.old and event.new),
+# On_Submit (Enter) and On_Text_Commit (event.text); the TextField raises them. `Text` is data in:
+# a value the module sets never raises On_Changed.
+Module {
+    Params {
+        Text { Type: string, Default: "" }
+        Placeholder { Type: string, Default: "" }
+        Read_Only { Type: boolean, Default: false }
+        # the most characters the field takes; 0 is no limit
+        Max_Length { Type: number, Default: 0 }
+        Password { Type: boolean, Default: false }
+        Enabled { Type: boolean, Default: true }
+        Width { Type: number, Default: 240 }
+    }
+    TextField {
+        Text: {{ params.Text }}
+        Placeholder: {{ params.Placeholder }}
+        Read_Only: {{ params.Read_Only }}
+        Max_Length: {{ params.Max_Length }}
+        Password: {{ params.Password }}
+        Enabled: {{ params.Enabled }}
+        Width: {{ params.Width }}
+    }
+}

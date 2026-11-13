@@ -1,0 +1,37 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: TextEditor
+---
+
+# A multi-line text field (Standard Modules > TextEditor): a TextField with Multiline. Enter adds a
+# line and there is no On_Submit. `Wrap` is WORD (break lines at the width, by word) or NONE (keep
+# each line whole and scroll sideways); `Lines` is the height in lines when no Height is given.
+# The look is the TextField's own (theme tokens); a stylesheet rule restyles it, and
+# `TextEditor::placeholder { Foreground: ... }` colours the hint.
+#
+# The call takes On_Changed (event.old, event.new) and On_Text_Commit (event.text).
+Module {
+    Params {
+        Text { Type: string, Default: "" }
+        Placeholder { Type: string, Default: "" }
+        Read_Only { Type: boolean, Default: false }
+        # the most characters the field takes; 0 is no limit
+        Max_Length { Type: number, Default: 0 }
+        Wrap { Type: string, Default: WORD }
+        Lines { Type: number, Default: 4 }
+        Enabled { Type: boolean, Default: true }
+        Width { Type: number, Default: 320 }
+    }
+    TextField {
+        Multiline: true
+        Text: {{ params.Text }}
+        Placeholder: {{ params.Placeholder }}
+        Read_Only: {{ params.Read_Only }}
+        Max_Length: {{ params.Max_Length }}
+        Wrap: {{ params.Wrap }}
+        Lines: {{ params.Lines }}
+        Enabled: {{ params.Enabled }}
+        Width: {{ params.Width }}
+    }
+}

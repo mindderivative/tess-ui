@@ -1,0 +1,46 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: Expander
+---
+
+# Shows or hides its children with an animation (Standard Modules > Expander):
+#   Expander { Expanded: true, Children { ... } }
+# `Expanded` is the state, set from outside (from a module's slot: `Expanded: {{ open }}` inside a
+# module). `Direction` is the edge the content grows from: DOWN (the default) and UP size its height,
+# LEFT and RIGHT its width. A change of `Expanded` eases the size and the opacity of the content
+# together, over `Duration` milliseconds (-1, the default, is the theme's medium duration; nothing
+# eases under reduced motion), and an animation that is interrupted turns round from where it is. At
+# rest the Expander draws no frame. `Content_Fade: false` keeps the content opaque, so only the size
+# eases. The collapsed content is hidden from assistive technology; the button that controls the
+# Expander carries the `expanded` state.
+Module {
+    Params {
+        Expanded { Type: boolean, Default: false }
+        Direction { Type: string, Default: DOWN }
+        Duration { Type: number, Default: -1 }
+        Content_Fade { Type: boolean, Default: true }
+    }
+    FlexBox {
+        Name: Root
+        Clip_Children: true
+        Flex: {{ "HORIZONTAL" if params.Direction in ("LEFT", "RIGHT") else "VERTICAL" }}
+        Justify_Content: {{ "END" if params.Direction in ("UP", "LEFT") else "START" }}
+        Height: {{ "AUTO" if params.Expanded or params.Direction in ("LEFT", "RIGHT") else 0 }}
+        Width: {{ "AUTO" if params.Expanded or params.Direction in ("UP", "DOWN") else 0 }}
+        Duration: {{ params.Duration if params.Duration >= 0 else None }}
+        Transition: [Width, Height]
+        Children {
+            FlexBox {
+                Name: Body
+                Flex: {{ "HORIZONTAL" if params.Direction in ("LEFT", "RIGHT") else "VERTICAL" }}
+                Flex_Shrink: 0
+                A11y_Hidden: {{ not params.Expanded }}
+                Opacity: {{ 1 if params.Expanded or not params.Content_Fade else 0 }}
+                Duration: {{ params.Duration if params.Duration >= 0 else None }}
+                Transition: [Opacity]
+                Children { Content { } }
+            }
+        }
+    }
+}

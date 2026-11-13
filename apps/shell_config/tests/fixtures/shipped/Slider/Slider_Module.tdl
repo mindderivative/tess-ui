@@ -1,0 +1,65 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: Slider
+---
+
+# A draggable value (Standard Modules > Slider). `Value` is set from outside (it moves the handle and
+# raises nothing); a press on the track jumps the handle to the pointer, and a drag with the pointer
+# captured moves it, in steps of `Step`, between `Min` and `Max`. `On_Changed` fires for each new
+# value the user makes (`event.old`, `event.new`, `event.value`), never for one the module set. The
+# user's value stays until `Value` is set to a different one. `Orientation: VERTICAL` runs the
+# slider upwards (Max at the top). Parts `::track`, `::fill` and `::handle`, with `:hovered`,
+# `:pressed` and `:disabled`. The role is SLIDER with `value`, `value_min`, `value_max` and
+# `value_step`; give the call a `Label` to name it. It is 160 by 20 pixels (20 by 160 upright)
+# unless the call writes a `Width` or a `Height`. The pointer operates it; the keys are M6.
+Module {
+    Params {
+        Value { Type: number, Default: 0 }
+        Min { Type: number, Default: 0 }
+        Max { Type: number, Default: 100 }
+        Step { Type: number, Default: 1 }
+        Orientation { Type: string, Default: HORIZONTAL }
+        Label { Type: string, Default: "" }
+    }
+    Box {
+        Name: Root
+        Role: SLIDER
+        Slides: {{ params.Orientation }}
+        Value: {{ params.Value }}
+        Value_Min: {{ params.Min }}
+        Value_Max: {{ params.Max }}
+        Value_Step: {{ params.Step }}
+        Label: {{ params.Label }}
+        Width: {{ 160 if params.Orientation == "HORIZONTAL" else 20 }}
+        Height: {{ 20 if params.Orientation == "HORIZONTAL" else 160 }}
+        Children {
+            Rectangle {
+                Name: Track
+                Part: track
+                Position: ABSOLUTE
+                Left: {{ 0 if params.Orientation == "HORIZONTAL" else 8 }}
+                Top: {{ 8 if params.Orientation == "HORIZONTAL" else 0 }}
+                Width: {{ "100%" if params.Orientation == "HORIZONTAL" else 4 }}
+                Height: {{ 4 if params.Orientation == "HORIZONTAL" else "100%" }}
+            }
+            Rectangle {
+                Name: Fill
+                Part: fill
+                Position: ABSOLUTE
+                Left: {{ 0 if params.Orientation == "HORIZONTAL" else 8 }}
+                Top: {{ 8 if params.Orientation == "HORIZONTAL" else 0 }}
+                Width: {{ 0 if params.Orientation == "HORIZONTAL" else 4 }}
+                Height: {{ 4 if params.Orientation == "HORIZONTAL" else 0 }}
+            }
+            Circle {
+                Name: Handle
+                Part: handle
+                Diameter: 16
+                Position: ABSOLUTE
+                Left: {{ 0 if params.Orientation == "HORIZONTAL" else 2 }}
+                Top: {{ 2 if params.Orientation == "HORIZONTAL" else 0 }}
+            }
+        }
+    }
+}

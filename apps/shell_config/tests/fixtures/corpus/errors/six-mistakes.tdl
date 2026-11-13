@@ -1,0 +1,13 @@
+---
+TDL: 0.1
+Name: T
+---
+Shell {
+  Width 32
+  Color: #fff
+  Text: "abc
+  Height: 1
+  Height: 2
+  Icon: {{ }}
+  Font: "a\q"
+}

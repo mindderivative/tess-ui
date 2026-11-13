@@ -1,0 +1,46 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: Toggle
+---
+
+# A switch (Standard Modules > Toggle): a track and a thumb that slides. `Checked` is the state, set
+# from outside (it moves the thumb and raises nothing); a click flips it and raises `On_Changed`
+# once, with `event.old`, `event.new` and `event.value` (true or false). The user's flip stays until
+# `Checked` is set to a different value. The look is the stylesheet's: the parts `::track` and
+# `::thumb`, with `:checked`, `:hovered`, `:pressed` and `:disabled` (the thumb and the track ease
+# over the theme's motion duration, and at once under reduced motion). The role is SWITCH with the
+# state `checked`; give the call a `Label` to name it.
+Module {
+    Params {
+        Checked { Type: boolean, Default: false }
+        Label { Type: string, Default: "" }
+    }
+    Box {
+        Name: Root
+        Role: SWITCH
+        Toggles: true
+        Checked: {{ params.Checked }}
+        Label: {{ params.Label }}
+        Width: 40
+        Height: 22
+        Children {
+            Rectangle {
+                Name: Track
+                Part: track
+                Width: 100%
+                Height: 100%
+                Transition: [Fill, Border_Color]
+            }
+            Circle {
+                Name: Thumb
+                Part: thumb
+                Diameter: 16
+                Position: ABSOLUTE
+                Left: 0
+                Top: 0
+                Transition: [Margin, Fill]
+            }
+        }
+    }
+}

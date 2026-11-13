@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tesserae-shell-config"  # the import name is `tess_shell_config`
+version = "0.1.0.dev0"
+description = "The configuration application of Tesserae Shell: a graphical editor for its .tdl files, built on Tesserae UI."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.14"  # tess_dl's floor
+authors = [{ name = "Phil Hodgins", email = "philip.a.hodgins@gmail.com" }]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.14",
+]
+
+dependencies = [
+    "tesserae-ui>=0.6.0.1",  # the toolkit: this repository's root; for development install it editable first (`pip install -e ../..`)
+    # tess_dl, pinned to a full commit while its edit functions and formatter are unreleased; a version pin once tess-dl publishes them.
+    "tesserae-dl @ git+https://github.com/mindderivative/tess-dl@ad57b0a047afb8aae19cee06ea8f4d02017ea2d5",
+]
+
+[project.scripts]
+tesserae-shell-config = "tess_shell_config.cli:main"
+
+[project.urls]
+Repository = "https://github.com/mindderivative/tess-ui"
+
+[tool.hatch.metadata]
+allow-direct-references = true  # the pinned tess-dl commit
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tess_shell_config"]

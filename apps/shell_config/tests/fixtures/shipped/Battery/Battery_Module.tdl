@@ -1,0 +1,139 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: Battery
+---
+
+# The charge of the machine's battery (Battery Module): an icon, the percentage and a tooltip with the
+# state and the time left. The Python sends `present`, `percent`, `state`, `icon`, `icon_alert`, `low`,
+# `critical`, `tooltip` and `label`; the layer sends `available` (UPower is on the bus). With UPower absent or
+# no battery the module is hidden: its root is `Visible: false`, which takes no space in the Bar
+# (no Spacing beside it) and shows no placeholder.
+#
+# `low` and `critical` come from UPower's own warning level: the icon, its dot and the number take
+# the theme's warning and error colour (the icon also changes shape with the level: the colour is
+# never the only sign). The icon is the name the Python sends in `icon`, looked up in the icon sets
+# when it changes; at `low` and `critical` it is `icon_alert`, the same icon with a dot beside it in
+# ONE document (the name plus `+dot`, Block Reference > Icons), so the dot is no node of its own.
+#
+# The three looks (normal, low, critical) are three boxes that exist from the start, one shown at a
+# time with `Visible:`. A level change therefore creates no node and changes no icon's colour:
+# only which box is shown and the document of each icon. (Building a new box with a coloured icon
+# and a Circle beside it when the level changed left the icon undrawn on the maintainer's KWin,
+# 2026-11-13; a headless tree and a private sway drew it. The Root keeps its size from the box that
+# is shown, so the tooltip's hover area never depends on the icon.)
+Module {
+    Style: Battery_Style.tdl
+
+    Params {
+        # the number next to the icon
+        show_percent { Type: boolean, Default: true }
+    }
+
+    FlexBox {
+        Name: Root
+        Visible: {{ available and present }}
+        Role: GROUP
+        Label: {{ label }}
+        Flex: HORIZONTAL
+        Align_Items: CENTER
+        Tooltip {
+            Alignment: CENTER
+            Gap: 4
+            Style {
+                Background: $color.surface_raised
+                Corner_Radius: 8
+                Elevation: 20%
+            }
+            Children {
+                FlexBox {
+                    Padding: [12, 8, 12, 8]
+                    Children {
+                        Text {
+                            Text: {{ tooltip }}
+                            Width: AUTO
+                            Height: AUTO
+                            Font_Size: 14
+                            Foreground: $color.on_surface
+                        }
+                    }
+                }
+            }
+        }
+        Children {
+            FlexBox {
+                Name: Level
+                Visible: {{ not low and not critical }}
+                Flex: HORIZONTAL
+                Align_Items: CENTER
+                Spacing: 4
+                Children {
+                    SVG {
+                        Name: Glyph
+                        Icon: {{ icon }}
+                        Width: 16
+                        Height: 16
+                        A11y_Hidden: true
+                    }
+                    If {{ params.show_percent }} {
+                        Text {
+                            Name: Percent
+                            Class: battery_text
+                            Text: {{ percent }} %
+                        }
+                    }
+                }
+            }
+            FlexBox {
+                Name: Level_Low
+                Visible: {{ low and not critical }}
+                Flex: HORIZONTAL
+                Align_Items: CENTER
+                Spacing: 4
+                Children {
+                    SVG {
+                        Name: Glyph_Low
+                        Icon: {{ icon_alert }}
+                        Width: 24
+                        Height: 16
+                        A11y_Hidden: true
+                        Foreground: $color.warning
+                    }
+                    If {{ params.show_percent }} {
+                        Text {
+                            Name: Percent_Low
+                            Class: battery_text
+                            Text: {{ percent }} %
+                            Foreground: $color.warning
+                        }
+                    }
+                }
+            }
+            FlexBox {
+                Name: Level_Critical
+                Visible: {{ critical }}
+                Flex: HORIZONTAL
+                Align_Items: CENTER
+                Spacing: 4
+                Children {
+                    SVG {
+                        Name: Glyph_Critical
+                        Icon: {{ icon_alert }}
+                        Width: 24
+                        Height: 16
+                        A11y_Hidden: true
+                        Foreground: $color.error
+                    }
+                    If {{ params.show_percent }} {
+                        Text {
+                            Name: Percent_Critical
+                            Class: battery_text
+                            Text: {{ percent }} %
+                            Foreground: $color.error
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

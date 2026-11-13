@@ -1,0 +1,11 @@
+---
+TDL: 0.1
+Name: Shell_Root
+---
+Shell {
+  # keep
+  Bar {
+    Name: B
+  }   # gone
+  Label { }
+}

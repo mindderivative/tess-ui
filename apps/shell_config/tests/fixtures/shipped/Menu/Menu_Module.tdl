@@ -1,0 +1,27 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: Menu
+---
+
+# The content of a Popup that is a menu (Standard Modules > Menu and MenuItem): a column of
+# MenuItems with the role MENU. The Popup is the surface (its `Attach`, `Gap`, `Style`...); the Menu
+# takes the Popup's width from its items (at least 160 pixels).
+#   Popup File_Menu { Style { Background: $color.surface_raised, Corner_Radius: 8 }
+#       Children { Menu { MenuItem { Text: "New", On_Click: ... } MenuItem { Separator: true } } } }
+# A Button opens it with `On_Click { Action: Show, Target: File_Menu, Data { Id: 7 } }`; the items
+# read `caller.data`. A click on an item runs its action and closes the menu.
+Module {
+    Params {
+        Label { Type: string, Default: "" }
+    }
+    FlexBox {
+        Name: Root
+        Role: MENU
+        Label: {{ params.Label }}
+        Flex: VERTICAL
+        Min_Width: 160
+        Padding: 4
+        Children { Content { } }
+    }
+}

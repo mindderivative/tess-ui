@@ -1,0 +1,13 @@
+---
+TDL: 0.1
+Name: Shell_Root
+---
+Shell {
+  Monitor {
+    Name: Main
+    Bar { }
+    Icon {
+      Name: Ok
+    }
+  }
+}

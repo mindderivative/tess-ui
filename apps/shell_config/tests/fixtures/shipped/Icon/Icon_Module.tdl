@@ -1,0 +1,36 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: Icon
+---
+
+# A named or file icon (Standard Modules > Icon). `Icon` is a name (`mdi:home`; the shipped set, then
+# the desktop's theme, the config Icons folder and the folders of settings.tdl), or a file written
+# relative to the file that names it: a `.svg` (it follows the colour) or a `.png`, `.jpg`, `.gif` or
+# `.webp` (drawn as it is). A name no set has shows the broken-image icon, with one warning. `Size`
+# is the width and the height. `Icon { Foreground: ... }` colours an SVG (one that uses
+# currentColor). An icon is decoration, hidden from assistive technology, unless the call has a
+# `Label`.
+Module {
+    Params {
+        Icon { Type: icon, Default: "" }
+        Size { Type: number, Default: 16 }
+    }
+    FlexBox {
+        Name: Root
+        A11y_Hidden: true
+        Width: {{ params.Size }}
+        Height: {{ params.Size }}
+        Align_Items: CENTER
+        Justify_Content: CENTER
+        Children {
+            If {{ params.Icon[:1] == "<" }} {
+                SVG { Source: {{ params.Icon }}, Width: {{ params.Size }}, Height: {{ params.Size }} }
+            } Else {
+                If {{ params.Icon != "" }} {
+                    Bitmap { Source: {{ params.Icon }}, Width: {{ params.Size }}, Height: {{ params.Size }} }
+                }
+            }
+        }
+    }
+}

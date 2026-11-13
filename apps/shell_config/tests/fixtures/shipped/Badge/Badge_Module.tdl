@@ -1,0 +1,42 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: Badge
+---
+
+# A count or a dot on an icon (Standard Modules > Badge). It is a pill (a dot is a pill of 8 by 8
+# pixels), the part `::dot`, with the count in it. `Count` shows nothing when it is 0 (unless
+# `Show_Zero`), and a count above `Max` reads `99+`. Place it at a corner of its parent with the
+# common keys of the call: `Badge { Count: 3, Position: ABSOLUTE, Right: 0, Top: 0 }`. A Badge is
+# decoration (hidden from assistive technology): name the thing it sits on, "Mail, 3 unread".
+# `Badge { Foreground: ... }` colours the digits and `Badge::dot { Background: ... }` the pill.
+Module {
+    Params {
+        Count { Type: number, Default: 0 }
+        Show_Zero { Type: boolean, Default: false }
+        Max { Type: number, Default: 99 }
+        Dot { Type: boolean, Default: false }
+    }
+    FlexBox {
+        Name: Root
+        Part: dot
+        A11y_Hidden: true
+        Visible: {{ params.Dot or params.Count > 0 or (params.Show_Zero and params.Count == 0) }}
+        Height: {{ 8 if params.Dot else 18 }}
+        Width: {{ 8 if params.Dot else "AUTO" }}
+        Min_Width: {{ 8 if params.Dot else 18 }}
+        Padding: {{ 0 if params.Dot else [5, 0, 5, 0] }}
+        Align_Items: CENTER
+        Justify_Content: CENTER
+        Style { Corner_Radius: $shape.full }
+        Children {
+            Text {
+                Name: Digits
+                Visible: {{ not params.Dot }}
+                Text: {{ str(params.Count) if params.Count <= params.Max else str(params.Max) + "+" }}
+                Font_Size: 11
+                Font_Weight: 600
+            }
+        }
+    }
+}

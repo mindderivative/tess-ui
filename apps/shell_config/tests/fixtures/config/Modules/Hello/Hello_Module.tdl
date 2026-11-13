@@ -1,0 +1,17 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: Hello
+---
+
+Module {
+    Params {
+        who { Type: string, Default: "world" }   # whom to greet
+    }
+
+    FlexBox {
+        Children {
+            Text { Text: {{ who }} }
+        }
+    }
+}

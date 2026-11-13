@@ -1,0 +1,48 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: Image
+---
+
+# An image from a png, jpeg, gif or webp file (Standard Modules > Image). The shell decodes it
+# (the first frame of a gif) and hands tre the pixels, cached by path and modification time; a file
+# larger than 4096 by 4096 pixels, or one that cannot be read or decoded, shows the error image,
+# with one warning. `Source` is a path relative to the file that names it. `Fit` is CONTAIN (all of
+# it, in the box), COVER (the box is full, the picture cropped), FILL (stretched to the box) or NONE
+# (its own size). `Placeholder` shows while there is no `Source`: a colour (`"#334455"`) or an icon
+# name. The box is 96 by 96 pixels unless the call writes a `Width` or a `Height`. It is decoration,
+# hidden from assistive technology, unless the call has a `Label`.
+Module {
+    Params {
+        Source { Type: path, Default: "" }
+        Fit { Type: string, Default: CONTAIN }
+        Placeholder { Type: icon, Default: "" }
+    }
+    FlexBox {
+        Name: Root
+        A11y_Hidden: true
+        Width: 96
+        Height: 96
+        Clip_Children: true
+        Align_Items: CENTER
+        Justify_Content: CENTER
+        Children {
+            If {{ params.Source != "" }} {
+                Bitmap {
+                    Source: {{ params.Source }}
+                    Fit: {{ params.Fit }}
+                    Width: {{ "AUTO" if params.Fit == "NONE" else "100%" }}
+                    Height: {{ "AUTO" if params.Fit == "NONE" else "100%" }}
+                }
+            } Else {
+                If {{ params.Placeholder[:1] == "#" }} {
+                    Rectangle { Fill: {{ params.Placeholder }}, Width: 100%, Height: 100% }
+                } Else {
+                    If {{ params.Placeholder != "" }} {
+                        SVG { Source: {{ params.Placeholder }}, Width: 50%, Height: 50% }
+                    }
+                }
+            }
+        }
+    }
+}

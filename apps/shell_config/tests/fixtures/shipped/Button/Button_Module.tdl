@@ -1,0 +1,50 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: Button
+---
+
+# A pressable control (Standard Modules > Button): a box with an optional icon and a label.
+#   Button { Text: "Save", Icon: "mdi:content-save", On_Click: save }
+# `Icon_Position` puts the icon before (START, the default) or after (END) the text. A press that
+# starts on the Button and ends outside it is no click (tre sends the click only when both are on
+# the block). The states `:hovered`, `:pressed` and `:disabled` and the parts `::icon` and `::label`
+# are styled in a stylesheet (`Button:hovered { Border_Color: $color.primary }`); `Enabled: false`
+# shows `:disabled` and ignores the pointer. The role is BUTTON and its name is `Label`, else `Text`;
+# an icon-only Button has no name unless the call gives a `Label` (the shell warns at load).
+Module {
+    Params {
+        Text { Type: string, Default: "" }
+        Icon { Type: icon, Default: "" }
+        Icon_Position { Type: string, Default: START }
+        Label { Type: string, Default: "" }
+    }
+    FlexBox {
+        Name: Root
+        Role: BUTTON
+        Label: {{ params.Label if params.Label else params.Text }}
+        Height: 32
+        Min_Width: 32
+        Align_Items: CENTER
+        Justify_Content: CENTER
+        Padding: {{ [8, 0, 8, 0] if params.Text == "" else ([36, 0, 12, 0] if params.Icon != "" and params.Icon_Position == "START" else ([12, 0, 36, 0] if params.Icon != "" else [12, 0, 12, 0])) }}
+        Children {
+            If {{ params.Icon != "" }} {
+                SVG {
+                    Name: Glyph
+                    Part: icon
+                    Source: {{ params.Icon }}
+                    Width: 16
+                    Height: 16
+                    Position: ABSOLUTE
+                    Top: 8
+                    Left: {{ 8 if params.Text == "" else (10 if params.Icon_Position == "START" else "AUTO") }}
+                    Right: {{ 10 if params.Text != "" and params.Icon_Position == "END" else "AUTO" }}
+                }
+            }
+            If {{ params.Text != "" }} {
+                Text { Name: Words, Part: label, Text: {{ params.Text }}, Width: AUTO, Height: AUTO }
+            }
+        }
+    }
+}

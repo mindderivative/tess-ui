@@ -1,0 +1,13 @@
+---
+TDL: 0.1
+Name: Dark
+---
+
+Theme {
+    Color {
+        Surface: "#101418"
+        Primary: "#5B97C9"   # steel blue
+    }
+
+    Shape { Small: 4, Medium: 8 }
+}

@@ -1,0 +1,58 @@
+---
+TDL: 0.1
+Shell: 0.1
+Name: Checkbox
+---
+
+# A check box (Standard Modules > Checkbox): a box with a check mark and, if `Text` is written, a
+# label beside it; a click on the label flips it too. `Checked` is the state, set from outside; a
+# click flips it and raises `On_Changed` once (`event.old`, `event.new`, `event.value`). A mixed
+# state is not in v1. Parts `::box`, `::mark` and `::label`; states `:checked`, `:hovered`, `:pressed`
+# and `:disabled`. The role is CHECKBOX with the state `checked`; its name is `Label`, else `Text`.
+Module {
+    Params {
+        Checked { Type: boolean, Default: false }
+        Text { Type: string, Default: "" }
+        Label { Type: string, Default: "" }
+    }
+    FlexBox {
+        Name: Root
+        Role: CHECKBOX
+        Toggles: true
+        Checked: {{ params.Checked }}
+        Label: {{ params.Label if params.Label else params.Text }}
+        Align_Items: CENTER
+        Spacing: 8
+        Height: 22
+        Children {
+            Box {
+                Name: Frame
+                Width: 18
+                Height: 18
+                Flex_Shrink: 0
+                Children {
+                    Rectangle {
+                        Name: Box
+                        Part: box
+                        Width: 100%
+                        Height: 100%
+                        Transition: [Fill, Border_Color]
+                    }
+                    Path {
+                        Name: Mark
+                        Part: mark
+                        Data: "M4.5,9.5 L7.8,12.8 L13.5,5.5"
+                        View_Box: [0, 0, 18, 18]
+                        Width: 18
+                        Height: 18
+                        Fill: "#00000000"
+                        Transition: [Opacity]
+                    }
+                }
+            }
+            If {{ params.Text != "" }} {
+                Text { Name: Words, Part: label, Text: {{ params.Text }}, Width: AUTO, Height: AUTO }
+            }
+        }
+    }
+}

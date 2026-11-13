@@ -1,6 +1,6 @@
-"""A bare local test run keeps the person's own session out of reach (tests/conftest.py)."""
+"""A bare local test run keeps the person's own session out of reach (tests/real_session.py, applied by tests/conftest.py and apps/shell_config/tests/conftest.py)."""
 
-from conftest import REAL_SESSION_VARIABLES, keep_off_the_real_session
+from real_session import REAL_SESSION_VARIABLES, keep_off_the_real_session
 
 REAL = {"DISPLAY": ":0", "WAYLAND_DISPLAY": "wayland-1", "DBUS_SESSION_BUS_ADDRESS": "unix:path=/run/user/1000/bus", "XDG_RUNTIME_DIR": "/run/user/1000", "XDG_CONFIG_HOME": "/home/x/.config", "OTHER": "kept"}
 

@@ -1,0 +1,17 @@
+---
+TDL: 0.1
+Name: Main
+---
+
+Stylesheet {
+    Rule {
+        Selector: "Text"
+        Style { Foreground: $color.on_surface }
+    }
+
+    # buttons look raised
+    Rule {
+        Selector: ".raised"
+        Style { Background: $color.surface_raised }
+    }
+}
