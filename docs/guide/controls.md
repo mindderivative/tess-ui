@@ -54,6 +54,8 @@ children:
   They are sized by `style: {width, height}` (a square of 256 by 176, a strip of 256 by 24, a field of 256 or 58 wide).
 - **The icon picker's mind** (`IconBrowser`) is a control that draws nothing, made for [the icon picker](../components/icon-pickers.md): it keeps the list, the search and the cursor, and the view reaches it through
   names it binds (`value` and `scroll` are two-way; `grid`, `cursor`, `count`, `current` and `message` are its outputs; `command` asks it to do something). You call `IconPicker`, not this.
+- **The font list's mind** (`FontBrowser`) is a control that draws nothing, made for [the font list](../components/font-lists.md): it asks for the installed families and keeps the search and the cursor; the view
+  reaches it through names it binds (`value` and `scroll` are two-way; `entries`, `cursor_name`, `count`, `mode` and `message` are its outputs; `command` asks it to do something). You call `FontList`, not this.
 - **Size:** `style: {width, height}` sets the control's touch target;
   it's MD3's 48 px when not given. A slider's `width` is its track's
   length, a dial's is its face, and a progress bar's is its track.

@@ -249,6 +249,23 @@ declare("IconBrowser", {
     "disabled": P("bool"),
 }, doc="The icon picker's mind: it draws nothing. It lists the built-in icons and the files of a folder, searches them, keeps the cursor, reads the previews of the files in view and tells the view through the names it is bound to.")
 
+declare("FontBrowser", {
+    "value": P("str", default="", model=True, doc="The font family: a pick writes it."),
+    "open": P("bool", default=True, doc="Whether the list is built: going true makes it; nothing is listed before. `mode` and `current` are kept either way."),
+    "query": P("str", default="", doc="The search text: a family is kept when its name has every word of it, without regard to case."),
+    "rows": P("int", default=8, doc="How many rows show at once (for Page Up and Page Down and for scrolling the cursor into view)."),
+    "row_height": P("float", default=40.0, doc="How tall a row is, in pixels."),
+    "command": P("str", default="", doc=_MIND_COMMAND + "`key arrow_down`, `key arrow_up field` (from the search field), `click Fira Sans`."),
+    "scroll": P("float", default=0.0, model=True, doc="The list's scroll offset: bind the list's `scroll_offset` to the same name; moving the cursor writes the offset that shows it."),
+    "entries": P("list", model=True, doc=_MIND_OUT + " The families that match the search, each {family, loadable}: `loadable` says the engine can draw text in that family."),
+    "cursor_name": P("str", model=True, doc=_MIND_OUT + " The family the keyboard is on, or empty."),
+    "count": P("int", model=True, doc=_MIND_OUT + " How many families the search found."),
+    "mode": P("str", model=True, doc=_MIND_OUT + " Empty until it has asked for the families, then `list`, or `text` when they cannot be listed (no `fc-list`, or it failed): the view then offers a text field."),
+    "message": P("str", model=True, doc=_MIND_OUT + " Why the families cannot be listed; empty when they can."),
+    "current": P("any", model=True, doc=_MIND_OUT + " The row of `value`: {family, loadable}, for the button of a closed popup."),
+    "disabled": P("bool"),
+}, doc="The font list's mind: it draws nothing. It asks `tess_ui.font_families` for the installed families, searches them, keeps the cursor and tells the view through the names it is bound to.")
+
 declare("NodeGraph", {"edges": P("list", doc="The links: each {from: id, to: id}, the ids of the GraphNodes."),
                       "snap": P("float", default=0.0, doc="A node the user moves lands on a multiple of this many pixels; 0 is no grid."),
                       "arrows": P("bool", doc="Each edge ends in an arrowhead."),

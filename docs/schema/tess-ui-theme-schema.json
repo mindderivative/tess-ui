@@ -2883,6 +2883,7 @@
             "ColourSwatches",
             "Container",
             "FileBrowser",
+            "FontBrowser",
             "GraphNode",
             "Icon",
             "IconBrowser",

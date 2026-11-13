@@ -1,0 +1,71 @@
+tesserae: 0.6
+# The font list: a searchable list of the installed font families, each in its own face where the engine can draw it, either inline or (`popup: true`) behind a button that shows the family
+# (in its own face) and opens the list in a layer under it. The families come from `tess_ui.font_families` (`fc-list : family`, once; swap the source with `font_families.use`). `value` is
+# two-way: the family's name. Escape and a press outside close the popup (writing false to `open`); a pick closes it too, unless `close_on_pick` is false. When the installed families cannot
+# be listed there is a text field in place of the list (and of the button). `on_change` is called after each pick. What the list does is in FontListPanel.
+params:
+  value: {type: str, default: "", model: true, doc: "The font family."}
+  popup: {type: bool, default: false, doc: "Show a button with the family that opens the list in a layer, instead of the list itself."}
+  open: {type: bool, default: false, model: true, doc: "A popup list: whether it is showing; Escape, a pick and a press outside write false."}
+  close_on_pick: {type: bool, default: true, doc: "A popup list closes when a family is picked."}
+  rows: {type: int, default: 8, min: 3, max: 16, doc: "How many rows show at once."}
+  width: {type: float, default: 280, min: 160, max: 640, doc: "How wide the list is."}
+  label: {type: str, default: Font, doc: "What a screen reader calls the list and the button that opens it."}
+  placeholder: {type: str, default: Choose a font, doc: "What the button says while there is no family."}
+  disabled: {type: bool, default: false, doc: "Dimmed and not editable; a popup does not open."}
+  on_change: {type: handler, doc: "Called after each pick."}
+widget: Container
+state: {current: {}, mode: "", message: ""}
+style: {flex_direction: vertical, align_content: top_left}
+children:
+  - widget: FontBrowser
+    name: swatch
+    if: popup
+    open: false
+    value: "{{ value }}"
+    current: "{{ current }}"
+    mode: "{{ mode }}"
+    message: "{{ message }}"
+    disabled: "{{ disabled }}"
+  - widget: TextField
+    name: free
+    if: "popup and mode == 'text'"
+    variant: outlined
+    label: "{{ label }}"
+    text: "{{ value }}"
+    supporting: "{{ message }}"
+    disabled: "{{ disabled }}"
+    on_edit: "on_change()"
+  - widget: Container
+    name: field
+    if: "popup and mode == 'list'"
+    a11y: {hidden: true}
+    style: {flex_direction: horizontal, align_content: center, gap: 8}
+    children:
+      - widget: Text
+        name: trigger_text
+        text: "{{ value if value != '' else placeholder }}"
+        typography_role: body_large
+        font_family: "{{ value if current.get('loadable') else '' }}"
+        style: {foreground: "{{ 'on_surface' if value != '' else 'on_surface_variant' }}"}
+      - {widget: Icon, name: trigger_chevron, icon: expand_more, style: {width: 24, height: 24, foreground: on_surface_variant}}
+      - widget: Container
+        name: trigger
+        a11y: {role: button, label: "{{ label + ': ' + value if value != '' else label }}", expanded: "{{ open }}"}
+        disabled: "{{ disabled }}"
+        handlers: {on_click: "open = not open"}
+        style: {position: absolute, x: 0, y: 0, width: 100%, height: 100%}
+  - widget: Overlay
+    name: layer
+    if: "popup and mode == 'list'"
+    open: "{{ open }}"
+    anchor: field
+    placement: below
+    focus_first: true
+    children:
+      - widget: Container
+        name: surface
+        style: {flex_direction: vertical}
+        children:
+          - {widget: FontListPanel, name: popup_panel, value: "{{ value }}", open: "{{ open }}", rows: "{{ rows }}", width: "{{ width }}", label: "{{ label }}", disabled: "{{ disabled }}", on_change: "open = open and not close_on_pick; on_change()"}
+  - {widget: FontListPanel, name: panel, if: "not popup", value: "{{ value }}", rows: "{{ rows }}", width: "{{ width }}", label: "{{ label }}", disabled: "{{ disabled }}", on_change: "on_change()"}

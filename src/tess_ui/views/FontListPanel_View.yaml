@@ -1,0 +1,103 @@
+tesserae: 0.6
+# The inside of a font list, with no surface and no button: a search field over a list of the installed font families, each shown in its own face when the engine can draw it (and
+# in the ordinary one when it cannot). `value` is two-way: the family's name. A press picks a family; in the list the Up and Down arrows, Page Up, Page Down, Home and End move the cursor
+# and Enter or Space pick it; in the search field Up, Down, Page Up and Page Down move the cursor in the list and Enter picks it. The list is a `VirtualList` that builds the rows in view and a few
+# past them. When the installed families cannot be listed (a machine with no `fc-list`), there is no list: a text field takes the family's name, and says why. `on_change` is called after each
+# pick. Nothing is listed until `open` is true. What the parts do is in the FontBrowser control (`tess_ui.font_controls`), which this view drives by writing a numbered command to `cmd`.
+params:
+  value: {type: str, default: "", model: true, doc: "The font family."}
+  rows: {type: int, default: 8, min: 3, max: 16, doc: "How many rows show at once."}
+  width: {type: float, default: 280, min: 160, max: 640, doc: "How wide it is."}
+  open: {type: bool, default: true, doc: "Whether the list is built and answers; a popup's panel is open while the popup shows."}
+  label: {type: str, default: Font, doc: "What a screen reader calls the list, and the text field that stands in for it."}
+  disabled: {type: bool, default: false, doc: "Dimmed and not editable."}
+  on_change: {type: handler, doc: "Called after each pick."}
+widget: Container
+a11y: {role: group, label: "{{ label }}"}
+state: {n: 0, cmd: "", q: "", y: 0, entries: [], cursor_name: "", count: 0, mode: "", message: "", current: {}}
+style: {flex_direction: vertical, gap: 8, width: "{{ width }}"}
+children:
+  - widget: FontBrowser
+    name: browser
+    value: "{{ value }}"
+    open: "{{ open }}"
+    query: "{{ q }}"
+    rows: "{{ rows }}"
+    command: "{{ cmd }}"
+    scroll: "{{ y }}"
+    disabled: "{{ disabled }}"
+    entries: "{{ entries }}"
+    cursor_name: "{{ cursor_name }}"
+    count: "{{ count }}"
+    mode: "{{ mode }}"
+    message: "{{ message }}"
+    current: "{{ current }}"
+    handlers: {on_input: "on_change()"}
+  - widget: TextField
+    name: free
+    if: "mode == 'text'"
+    variant: outlined
+    label: "{{ label }}"
+    text: "{{ value }}"
+    supporting: "{{ message }}"
+    disabled: "{{ disabled }}"
+    on_edit: "on_change()"
+  - widget: TextField
+    name: search
+    if: "mode == 'list'"
+    variant: outlined
+    label: Search fonts
+    leading: search
+    text: "{{ q }}"
+    disabled: "{{ disabled }}"
+    style: {width: 100%}
+    handlers:
+      on_submit: "n = n + 1; cmd = str(n) + ' key enter field'"
+      on_key: "n = n + 1; cmd = (str(n) + ' key ' + event.key + ' field') if event.key in ['arrow_up', 'arrow_down', 'page_up', 'page_down'] else cmd"
+  - widget: Container
+    name: list_group
+    if: "mode == 'list'"
+    style: {flex_direction: vertical}
+    children:
+      - widget: Container
+        name: list_box
+        interaction: true
+        a11y: {role: list, label: "{{ label + ' families' }}"}
+        handlers:
+          on_click: "y = y"
+          on_key: "n = n + 1; cmd = str(n) + ' key ' + event.key"
+        style: {flex_direction: vertical, height: "{{ rows * 40 }}"}
+        children:
+          - widget: VirtualList
+            name: list
+            item_height: 40
+            scroll_offset: "{{ y }}"
+            style: {flex_direction: vertical, height: "{{ rows * 40 }}"}
+            children:
+              - widget: Container
+                for: row in entries
+                key: row['family']
+                name: row
+                interaction: false
+                a11y: {role: listitem, label: "{{ row['family'] }}", selected: "{{ row['family'] == value }}"}
+                handlers: {on_press: "n = n + 1; cmd = str(n) + ' click ' + row['family']"}
+                style:
+                  flex_direction: horizontal
+                  align_content: left
+                  padding: {left: 12, right: 12, top: 0, bottom: 0}
+                  background: "{{ 'secondary_container' if row['family'] == value else ('surface_container_highest' if row['family'] == cursor_name else 'transparent') }}"
+                children:
+                  - widget: Text
+                    name: row_name
+                    text: "{{ row['family'] }}"
+                    typography_role: body_large
+                    font_family: "{{ row['family'] if row['loadable'] else '' }}"
+                    max_lines: 1
+                    overflow: ellipsis
+                    style: {foreground: "{{ 'on_secondary_container' if row['family'] == value else 'on_surface' }}"}
+  - widget: Text
+    name: empty
+    if: "mode == 'list' and count == 0"
+    text: No font matches
+    typography_role: body_medium
+    a11y: {role: alert, live: polite}

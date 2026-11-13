@@ -19,6 +19,8 @@ Every public class, function and constant, with its signature and what it does. 
 - [File browser](#file-browser): The file dialog's state and rules, with no window.
 - [File system](#file-system): The disk as the file dialog sees it, which a test can swap.
 - [Icon browser](#icon-browser): The icon picker's list, search and cursor, with no window.
+- [Font families](#font-families): The installed font families the font list shows, and the provider that can be swapped.
+- [Font browser](#font-browser): The font list's search and cursor, with no window.
 - [Docking](#docking): Panels the user can drag between zones.
 - [Interaction](#interaction): State layer, ripple and focus ring.
 - [Accessibility](#accessibility): What a node tells assistive technology.
@@ -2233,6 +2235,78 @@ class IconEntry(name: str, kind: str, path: str = '') -> None
 ```
 
 One icon: its `name` (what `value` holds), its `kind` (`glyph`, `svg` or `png`) and the `path` of its file (empty for a built-in one).
+
+## Font families
+
+`tess_ui.font_families`: The installed font families the font list shows, and the provider that can be swapped.
+
+### `FontListError`
+
+```python
+class FontListError
+```
+
+The installed families cannot be listed: `str(error)` says why.
+
+### `families`
+
+```python
+families() -> list[str]
+```
+
+The installed families, sorted without regard to case, each once. Raises `FontListError` when the provider cannot say (the failure is kept as well, so a machine without `fc-list` is not asked again).
+
+### `refresh`
+
+```python
+refresh() -> None
+```
+
+Forgets the kept answer: the next `families()` asks the provider again.
+
+### `use`
+
+```python
+use(provider: Callable[[], Iterable[str]] | None) -> Callable[[], Iterable[str]]
+```
+
+Makes `provider` the one `families()` asks (`None` puts `fc-list` back), forgets the kept answer, and returns the provider it replaced so a test can put that back.
+
+### `parse`
+
+```python
+parse(text: str) -> list[str]
+```
+
+The families in the output of `fc-list : family`: split on newlines and commas, trimmed, with the empty ones and the repeats left out (a family differing only in case is a repeat), sorted without regard to case. A comma or a backslash inside a name is escaped by `fc-list` with a backslash and is kept.
+
+### `default_provider`
+
+```python
+default_provider() -> list[str]
+```
+
+Runs `fc-list : family` and returns its families (see `parse`). Raises `FontListError` when there is no `fc-list`, it fails, it takes more than `TIMEOUT` seconds or it lists none.
+
+## Font browser
+
+`tess_ui.font_controls`: The font list's search and cursor, with no window.
+
+### `FontBrowser`
+
+```python
+class FontBrowser(families: list[str], page_rows: int = 8) -> None
+```
+
+The families, a search and a cursor. `families` must be sorted already (`tess_ui.font_families.families()` is); `page_rows` shapes Page Up and Page Down.
+
+- `click(index: int) -> str | None`: A press on row `index` (-1 is none): it is picked.
+- `index_of(family: str) -> int`: The place of `family` in the results, or -1.
+- `move(to: int) -> None`: Puts the cursor on `to`, kept inside the results.
+- `picked` *(property)*: The family under the cursor.
+- `press(key: str, *, in_field: bool = False) -> str | None`: A key.
+- `reveal(offset: float, row_height: float, rows: int | None = None) -> float`: The scroll offset that keeps the cursor's row in a window of `rows` rows (`page_rows` when not given), as near to `offset` as it can be.
+- `set_query(query: str) -> None`: Keeps the families that have every word of `query` in them (without regard to case), the ones that start with the first word first; the cursor goes to the first.
 
 ## Docking
 

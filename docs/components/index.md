@@ -63,6 +63,7 @@ Material Design 3's components, as Tesserae builds them. Each page says what the
 | [Time picker](time-pickers.md) | `TimePicker`, `PeriodSelector`, `TimePickerDial` |
 | [Colour picker](colour-pickers.md) | `ColourPicker`, `ColourPickerPanel`, `ColourArea`, `ColourStrip`, `ColourField`, `ColourSwatches` |
 | [Icon picker](icon-pickers.md) | `IconPicker`, `IconPickerPanel`, `IconBrowser` |
+| [Font list](font-lists.md) | `FontList`, `FontListPanel`, `FontBrowser` |
 | [Segmented buttons](segmented-buttons.md) | `SegmentedButton` |
 | [Time input](time-input.md) | `TimeInput` |
 

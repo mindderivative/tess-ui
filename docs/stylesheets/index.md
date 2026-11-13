@@ -68,6 +68,7 @@ See [The View Language](../guide/view-language.md#style) for the rule syntax and
 - **Time picker**: [`TimePicker`](time-pickers/time-picker.md), [`PeriodSelector`](time-pickers/period-selector.md)
 - **Colour picker**: [`ColourPicker`](colour-pickers/colour-picker.md)
 - **Icon picker**: [`IconPicker`](icon-pickers/icon-picker.md), [`IconPickerPanel`](icon-pickers/icon-picker-panel.md)
+- **Font list**: [`FontList`](font-lists/font-list.md), [`FontListPanel`](font-lists/font-list-panel.md)
 - **Time input**: [`TimeInput`](time-input/time-input.md)
 
 ## Content

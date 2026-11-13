@@ -27,6 +27,7 @@ __all__ = ["KINDS", "Mind", "control_class"]
 #: The widget kinds that are one of these controls, and where each one lives (`module:Class`; imported when one is built).
 KINDS: dict[str, str] = {
     "IconBrowser": "tess_ui.icon_controls:IconBrowserControl",
+    "FontBrowser": "tess_ui.font_controls:FontBrowserControl",
 }
 
 

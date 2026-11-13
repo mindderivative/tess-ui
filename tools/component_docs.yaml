@@ -1475,6 +1475,53 @@ components:
         - {widget: IconPicker, value: "{{ icon }}", columns: 6, rows: 4}
     see: [guide/controls.md, components/colour-pickers.md]
 
+  - slug: font-lists
+    title: Font list
+    group: Selection and input
+    views: [FontList, FontListPanel]
+    widgets: [FontBrowser]
+    md3: |
+      Material Design 3 has no font picker: an app's type is chosen by its designers. An app whose people pick a typeface for something (a launcher, a terminal, a block of a configuration)
+      needs one, and it is built from what MD3 does describe: an outlined text field for the search and a list of selectable rows on a menu-like surface.
+    built: |
+      Two views and one control. `FontList` is the view you use: the list inline, or (`popup: true`) a 48 pixel button that shows the family, in its own face, and opens the list in a layer under it.
+      `FontListPanel` is the inside of it, with no surface and no button. `FontBrowser` is the control that draws nothing and is the list's mind (`tess_ui.font_controls`): the families, the search and the cursor,
+      which the view reaches through the names it binds to it.
+
+      The families come from `tess_ui.font_families`: by default `fc-list : family`, a read-only subprocess given five seconds, whose lines are split on newlines and commas (each line holds a family and its names
+      in other languages), trimmed, de-duplicated (a name that differs only in case is the same family) and sorted without regard to case. It runs once, when the first list is built, and the answer is
+      kept (`font_families.refresh()` asks again). `font_families.use(provider)` swaps the source: `provider()` returns the names or raises `FontListError`, which a test or an app that knows its fonts uses.
+      The list is the families installed on the machine: the faces the engine ships (`Roboto`, `Noto Sans Arabic`, `Hack Nerd Font Mono`) are in it only where the machine has them too. A machine with no `fc-list`,
+      or one where it fails, takes more than five seconds or lists nothing has no list: the view shows an outlined text field for the family's name, with the reason under it, in place of the search, the list
+      and (with `popup`) the button and the layer.
+
+      A row is the family's name, drawn in that family when the engine can draw it (a family `tess_ui.fonts.available_families()` knows: the bundled ones and any registered with `register_font`) and in the ordinary
+      face when it cannot, since the engine does not look for system fonts. `value` is two-way text: the family's name. A value that is not an installed family is kept as it is and nothing is selected. The search
+      field keeps the families whose name has every word typed, in any order, without regard to case; a name that starts with the first word comes first. The list is a `VirtualList` of `rows` rows (8 by default): it
+      builds the rows in view and three past each edge, however many families there are (seven thousand open at once), and opens scrolled so that `value` shows, with the cursor on it.
+
+      The keyboard. The search field has the focus when a popup opens: Up, Down, Page Up and Page Down move the cursor in the list and Enter picks the family under it (Left, Right, Home, End and Space are the text's).
+      Tab goes on to the list, where Up and Down move by a row, Page Up and Page Down by `rows`, Home and End go to the ends, and Enter and Space pick. A press picks too. A pick writes `value`, calls `on_change`
+      and closes a popup unless `close_on_pick` is false. Escape and a press outside close a popup (writing false to `open`), and the focus goes back to the button. A screen reader hears a group named by `label`,
+      a `list` of `listitem`s each named by its family and `selected` when it is the value, the search field, a button that says "label: family" and is `expanded` while the layer is open, and an alert for a search
+      that finds nothing.
+
+      The look is in `FontList_Stylesheet.yaml` and `FontListPanel_Stylesheet.yaml`: write one in your project to change the button, the layer and the rows. Not built: a sample sentence in each row, favourites or
+      recently used families, grouping by foundry or script, weights and styles of a family, and system fonts the engine cannot draw (they are listed, in the ordinary face).
+    usage_view: |
+      name: terminal
+      widget: Container
+      style: {flex_direction: vertical, gap: 16, width: 480, height: 560, padding: 16}
+      children:
+        - {widget: FontList, popup: true, open: "{{ choosing }}", value: "{{ family }}", label: Terminal font, on_change: font_changed}
+        - {widget: FontList, value: "{{ family }}", rows: 6, width: 320}
+    python: |
+      from tess_ui import font_families
+
+      # the default asks `fc-list : family` once; an app that knows where its fonts are can say so
+      font_families.use(lambda: ["Alegreya", "Fira Code", "Hack Nerd Font Mono"])
+    see: [guide/controls.md, components/icon-pickers.md]
+
   - slug: segmented-buttons
     title: Segmented buttons
     group: Selection and input
