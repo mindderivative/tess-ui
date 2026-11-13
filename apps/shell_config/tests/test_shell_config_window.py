@@ -226,8 +226,7 @@ def test_typing_text_that_does_not_parse_turns_the_structure_off_and_deleting_it
     w.key("home", ctrl=True)
     w.type("}")  # a stray brace before the metadata block
     assert not w.vm.has_tree.get() and w.vm.error_rows.get() and w.session.model.errors
-    w.vm.text.set((folder / "Shells" / "Main_Shell.tdl").read_text())  # the text put back (what deleting the brace does)
-    w.vm.text_edited()
+    w.key("backspace")  # the caret is just after the brace it typed: the toolkit keeps it there (it used to jump to the end after each typed character)
     assert w.vm.has_tree.get() and w.vm.error_rows.get() == [] and w.session.model.text == (folder / "Shells" / "Main_Shell.tdl").read_text()
     assert not w.session.model.dirty
 

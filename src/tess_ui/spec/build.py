@@ -1150,6 +1150,8 @@ def patch(
         if kind == "Canvas":
             outer.redraw()  # the new commands replace what it shows
         if inner_props is not None:
+            if kind == "TextField" and "text" in inner_props and inner_props["text"] == inner.get("text"):
+                del inner_props["text"]  # the engine moves the caret to the end when it is given the text it already shows: typed in the middle, the next character would land at the end
             inner.set(**inner_props)
         for target, prop, value, ms, easing in eased:
             try:
