@@ -229,6 +229,54 @@ declare("FileBrowser", {
     "filter_items": P("list", model=True, doc=_FB_OUT + " The file types as menu items: {value, label}."),
 }, doc="The file dialog's mind: it draws nothing. It reads folders through `tess_ui.filesystem`, keeps the history, the selection and the rules, and tells the view through the names it is bound to.")
 
+_MIND_OUT = "Output: written to the name it is bound to."
+_MIND_COMMAND = "What to do, written as text that starts with a number that is new each time (`7 key arrow_down`): "
+declare("IconBrowser", {
+    "value": P("str", default="", model=True, doc="The icon: a built-in icon's name, or the file name (with its extension) of one in `folder`. A pick writes it."),
+    "open": P("bool", default=True, doc="Whether the grid is listed: going true reads `folder`; nothing is read before. `current` is kept either way."),
+    "folder": P("str", default="", doc="A folder of `.svg` and `.png` files to offer besides the built-in icons; read through `tess_ui.filesystem`."),
+    "query": P("str", default="", doc="The search text: an icon is kept when its name has every word of it (`arrow back` finds `arrow_back`)."),
+    "columns": P("int", default=8, doc="How many icons are in a row (for the arrow keys and the rows of `grid`)."),
+    "rows": P("int", default=6, doc="How many rows show at once (for Page Up and Page Down and for scrolling the cursor into view)."),
+    "row_height": P("float", default=48.0, doc="How tall a row is, in pixels."),
+    "command": P("str", default="", doc=_MIND_COMMAND + "`key arrow_down ctrl`, `key arrow_up field` (from the search field), `click 12`, `refresh`."),
+    "scroll": P("float", default=0.0, model=True, doc="The grid's scroll offset: bind the list's `scroll_offset` to the same name; moving the cursor writes the offset that shows it."),
+    "grid": P("list", model=True, doc=_MIND_OUT + " The results in rows; each row {key, cells}, a cell {index, name, kind (glyph, svg, png or file), icon, svg, frame}."),
+    "cursor": P("int", model=True, doc=_MIND_OUT + " The cell the keyboard is on, or -1."),
+    "count": P("int", model=True, doc=_MIND_OUT + " How many icons the search found."),
+    "current": P("any", model=True, doc=_MIND_OUT + " The cell of `value`, for the swatch that opens the picker (kind `none` when it is not an icon the picker knows)."),
+    "message": P("str", model=True, doc=_MIND_OUT + " What last went wrong, such as a folder that cannot be read; empty when nothing has."),
+    "disabled": P("bool"),
+}, doc="The icon picker's mind: it draws nothing. It lists the built-in icons and the files of a folder, searches them, keeps the cursor, reads the previews of the files in view and tells the view through the names it is bound to.")
+
+declare("FontBrowser", {
+    "value": P("str", default="", model=True, doc="The font family: a pick writes it."),
+    "open": P("bool", default=True, doc="Whether the list is built: going true makes it; nothing is listed before. `mode` and `current` are kept either way."),
+    "query": P("str", default="", doc="The search text: a family is kept when its name has every word of it, without regard to case."),
+    "rows": P("int", default=8, doc="How many rows show at once (for Page Up and Page Down and for scrolling the cursor into view)."),
+    "row_height": P("float", default=40.0, doc="How tall a row is, in pixels."),
+    "command": P("str", default="", doc=_MIND_COMMAND + "`key arrow_down`, `key arrow_up field` (from the search field), `click Fira Sans`."),
+    "scroll": P("float", default=0.0, model=True, doc="The list's scroll offset: bind the list's `scroll_offset` to the same name; moving the cursor writes the offset that shows it."),
+    "entries": P("list", model=True, doc=_MIND_OUT + " The families that match the search, each {family, loadable}: `loadable` says the engine can draw text in that family."),
+    "cursor_name": P("str", model=True, doc=_MIND_OUT + " The family the keyboard is on, or empty."),
+    "count": P("int", model=True, doc=_MIND_OUT + " How many families the search found."),
+    "mode": P("str", model=True, doc=_MIND_OUT + " Empty until it has asked for the families, then `list`, or `text` when they cannot be listed (no `fc-list`, or it failed): the view then offers a text field."),
+    "message": P("str", model=True, doc=_MIND_OUT + " Why the families cannot be listed; empty when they can."),
+    "current": P("any", model=True, doc=_MIND_OUT + " The row of `value`: {family, loadable}, for the button of a closed popup."),
+    "disabled": P("bool"),
+}, doc="The font list's mind: it draws nothing. It asks `tess_ui.font_families` for the installed families, searches them, keeps the cursor and tells the view through the names it is bound to.")
+
+declare("ChordRecorder", {
+    "value": P("str", default="", model=True, doc="The key chord as text, `Ctrl+Alt+Shift+Meta+Key` (modifiers in that order, the key last, a named key in title case): `Ctrl+Shift+F1`. Empty is no shortcut. Recording and a committed typed text write it, in that form."),
+    "draft": P("str", default="", model=True, doc="The text of the field the chord is typed in: the control sets it to the chord after a recording or a commit, and the view's field writes it as the person types. Nothing is read from it until `typed`."),
+    "recording": P("bool", default=False, model=True, doc="Whether the next key press is recorded as the chord. The view sets it true to start; a finished or cancelled recording writes false."),
+    "command": P("str", default="", doc=_MIND_COMMAND + "`key arrow_left ctrl shift` (a key the button heard, then the modifiers held), `typed ctrl+shift+f1` (a text committed in the field), `record`, `stop`."),
+    "preview": P("str", model=True, doc=_MIND_OUT + " While recording, the modifiers held so far, such as `Ctrl+Shift+`; otherwise empty."),
+    "invalid": P("bool", model=True, doc=_MIND_OUT + " The value is not a key chord, or the text typed was not one."),
+    "message": P("str", model=True, doc=_MIND_OUT + " Why `invalid`, or why a key could not be recorded; empty when nothing is wrong."),
+    "disabled": P("bool"),
+}, doc="The key-chord field's mind: it draws nothing. It records a key press as a chord, reads a typed chord and writes it in the canonical form, and tells the view through the names it is bound to.")
+
 declare("NodeGraph", {"edges": P("list", doc="The links: each {from: id, to: id}, the ids of the GraphNodes."),
                       "snap": P("float", default=0.0, doc="A node the user moves lands on a multiple of this many pixels; 0 is no grid."),
                       "arrows": P("bool", doc="Each edge ends in an arrowhead."),

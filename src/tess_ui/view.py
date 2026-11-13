@@ -108,7 +108,7 @@ def _props_equal(a: dict[str, Any], b: dict[str, Any]) -> bool:
             "handlers", "a11y", "component_of", "min", "max", "step", "label", "x", "y",  # M57, M58, M60
             "disabled",  # M70: a control's is its own
             "visible",  # #259: a node's own
-            "spin", "dial", "colour", "hue", "files", "graph", "tooltip",  # a SpinBox's options, a dial's mode, a colour control's options and hue, a file browser's properties, a generated node's tooltip
+            "spin", "dial", "colour", "hue", "files", "mind", "graph", "tooltip",  # a SpinBox's options, a dial's mode, a colour control's options and hue, a file browser's properties, a generated node's tooltip
             "window_region")  # 0.3.0 M3
     return all(a.get(k) == b.get(k) for k in keys)
 

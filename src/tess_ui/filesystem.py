@@ -1,7 +1,7 @@
 """The file system as the file dialog sees it: a handful of calls, so a test (or an app that browses something that is not the disk) can swap it.
 
 `FileSystem` is the whole interface: `list_dir` (one folder, not its subfolders, each entry with the size and time it has), `is_dir`, `exists`, `make_dir`,
-`real_path` (where a path really leads, symlinks followed, so a root can confine browsing) and the two places a dialog starts from, `home` and `cwd`. `LocalFileSystem`
+`real_path` (where a path really leads, symlinks followed, so a root can confine browsing), `read_bytes` (the start of a file, for a preview) and the two places a dialog starts from, `home` and `cwd`. `LocalFileSystem`
 is the disk. Every failure that a person can cause or meet (a folder that is not readable, has gone, or is a file; a name that is taken) is a `FileSystemError` whose text
 is fit to show, and nothing else leaks out of a listing.
 
@@ -60,6 +60,10 @@ class FileSystem(Protocol):
 
     def real_path(self, path: str) -> str:
         """`path` with symlinks followed, as a root's check wants it."""
+        ...
+
+    def read_bytes(self, path: str, limit: int) -> bytes:
+        """The first `limit` bytes of the file `path` (a preview reads a little of a file, never all of a big one). Raises `FileSystemError` when it cannot be read."""
         ...
 
     def home(self) -> str:
@@ -131,6 +135,14 @@ class LocalFileSystem:
     def real_path(self, path: str) -> str:
         """`path` with its symlinks followed."""
         return os.path.realpath(path)
+
+    def read_bytes(self, path: str, limit: int) -> bytes:
+        """The first `limit` bytes of the file `path`; a file that cannot be read is a `FileSystemError` in words."""
+        try:
+            with open(path, "rb") as handle:
+                return handle.read(limit)
+        except OSError as error:
+            raise _explain(error, path, "read") from None
 
     def home(self) -> str:
         """The person's home folder."""

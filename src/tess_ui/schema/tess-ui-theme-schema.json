@@ -2876,6 +2876,7 @@
           "enum": [
             "Canvas",
             "Checkbox",
+            "ChordRecorder",
             "CircularProgress",
             "ColourArea",
             "ColourField",
@@ -2883,8 +2884,10 @@
             "ColourSwatches",
             "Container",
             "FileBrowser",
+            "FontBrowser",
             "GraphNode",
             "Icon",
+            "IconBrowser",
             "Image",
             "LinearProgress",
             "Link",

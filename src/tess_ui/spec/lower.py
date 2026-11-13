@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from tess_ui import mind
 from tess_ui.spec.compose import Instance
 
 __all__ = ["lower"]
@@ -89,6 +90,9 @@ def lower(inst: Instance) -> dict[str, Any]:
     elif widget == "FileBrowser":
         folded = set(values)
         node["files"] = dict(values)
+    elif widget in mind.KINDS:  # a control that draws nothing: its properties go as one mapping, except the ones every node has
+        folded = set(values) - {"disabled"}
+        node["mind"] = {k: v for k, v in values.items() if k != "disabled"}
     elif widget == "SpinBox":
         folded = {"decimals", "prefix", "suffix", "wrap", "label"}
         node["spin"] = {k: values[k] for k in ("decimals", "prefix", "suffix", "wrap") if values.get(k) not in (None, "")}

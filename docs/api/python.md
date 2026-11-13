@@ -18,6 +18,10 @@ Every public class, function and constant, with its signature and what it does. 
 - [File dialog](#file-dialog): Opening the file dialog from Python and hearing the paths.
 - [File browser](#file-browser): The file dialog's state and rules, with no window.
 - [File system](#file-system): The disk as the file dialog sees it, which a test can swap.
+- [Icon browser](#icon-browser): The icon picker's list, search and cursor, with no window.
+- [Font families](#font-families): The installed font families the font list shows, and the provider that can be swapped.
+- [Font browser](#font-browser): The font list's search and cursor, with no window.
+- [Key chords](#key-chords): Key chords as text, `Ctrl+Alt+Shift+Meta+Key`.
 - [Docking](#docking): Panels the user can drag between zones.
 - [Interaction](#interaction): State layer, ripple and focus ring.
 - [Accessibility](#accessibility): What a node tells assistive technology.
@@ -2137,6 +2141,7 @@ What the dialog needs of a file system.
 - `is_dir(path: str) -> bool`: Whether `path` is a folder (a link to one is).
 - `list_dir(path: str) -> list[Entry]`: The entries of the folder `path`, in no particular order.
 - `make_dir(path: str) -> None`: Makes the folder `path` (its parent must be there).
+- `read_bytes(path: str, limit: int) -> bytes`: The first `limit` bytes of the file `path` (a preview reads a little of a file, never all of a big one).
 - `real_path(path: str) -> str`: `path` with symlinks followed, as a root's check wants it.
 
 ### `LocalFileSystem`
@@ -2153,6 +2158,7 @@ The disk.
 - `is_dir(path: str) -> bool`: Whether `path` is a folder (a link to one is).
 - `list_dir(path: str) -> list[Entry]`: The entries of the folder `path`: one `scandir` and one `stat` for each; a failure is a `FileSystemError` in words.
 - `make_dir(path: str) -> None`: Makes the folder `path`; a name that is taken, or a place that will not take it, is a `FileSystemError`.
+- `read_bytes(path: str, limit: int) -> bytes`: The first `limit` bytes of the file `path`; a file that cannot be read is a `FileSystemError` in words.
 - `real_path(path: str) -> str`: `path` with its symlinks followed.
 
 ### `FileSystemError`
@@ -2193,6 +2199,170 @@ use(filesystem: FileSystem | None) -> FileSystem
 ```
 
 Makes `filesystem` the default (`None` puts the disk back) and returns the one it replaced, so a test can put that back.
+
+## Icon browser
+
+`tess_ui.icon_controls`: The icon picker's list, search and cursor, with no window.
+
+### `IconBrowser`
+
+```python
+class IconBrowser(
+    fs: FileSystem,
+    folder: str = '',
+    columns: int = 8,
+    page_rows: int = 6,
+    builtin: Iterable[str] | None = None
+) -> None
+```
+
+The icons, a search and a cursor. `folder` is read once, here (and again by `refresh`); `columns` and `page_rows` shape the keys.
+
+- `click(index: int) -> str | None`: A press on cell `index`: it is picked.
+- `entry_named(name: str) -> IconEntry | None`: The icon `name` among all of them (not only the results), or `None`.
+- `index_of(name: str) -> int`: The place of the icon `name` in the results, or -1.
+- `move(to: int) -> None`: Puts the cursor on `to`, kept inside the results.
+- `picked` *(property)*: The icon under the cursor.
+- `press(key: str, *, ctrl: bool = False, in_field: bool = False) -> str | None`: A key.
+- `refresh() -> None`: Reads the folder again (the files first, then the built-in icons, each by name without regard to case) and searches again.
+- `reveal(offset: float, row_height: float, rows: int | None = None) -> float`: The scroll offset that keeps the cursor's row in a window of `rows` rows (`page_rows` when not given), as near to `offset` as it can be.
+- `rows` *(property)*: The results in rows of `columns`.
+- `set_query(query: str) -> None`: Keeps the icons whose name has every word of `query` in it (`arrow back` finds `arrow_back`), the ones whose name starts with the first word first; the cursor goes to the first.
+
+### `IconEntry`
+
+```python
+class IconEntry(name: str, kind: str, path: str = '') -> None
+```
+
+One icon: its `name` (what `value` holds), its `kind` (`glyph`, `svg` or `png`) and the `path` of its file (empty for a built-in one).
+
+## Font families
+
+`tess_ui.font_families`: The installed font families the font list shows, and the provider that can be swapped.
+
+### `FontListError`
+
+```python
+class FontListError
+```
+
+The installed families cannot be listed: `str(error)` says why.
+
+### `families`
+
+```python
+families() -> list[str]
+```
+
+The installed families, sorted without regard to case, each once. Raises `FontListError` when the provider cannot say (the failure is kept as well, so a machine without `fc-list` is not asked again).
+
+### `refresh`
+
+```python
+refresh() -> None
+```
+
+Forgets the kept answer: the next `families()` asks the provider again.
+
+### `use`
+
+```python
+use(provider: Callable[[], Iterable[str]] | None) -> Callable[[], Iterable[str]]
+```
+
+Makes `provider` the one `families()` asks (`None` puts `fc-list` back), forgets the kept answer, and returns the provider it replaced so a test can put that back.
+
+### `parse`
+
+```python
+parse(text: str) -> list[str]
+```
+
+The families in the output of `fc-list : family`: split on newlines and commas, trimmed, with the empty ones and the repeats left out (a family differing only in case is a repeat), sorted without regard to case. A comma or a backslash inside a name is escaped by `fc-list` with a backslash and is kept.
+
+### `default_provider`
+
+```python
+default_provider() -> list[str]
+```
+
+Runs `fc-list : family` and returns its families (see `parse`). Raises `FontListError` when there is no `fc-list`, it fails, it takes more than `TIMEOUT` seconds or it lists none.
+
+## Font browser
+
+`tess_ui.font_controls`: The font list's search and cursor, with no window.
+
+### `FontBrowser`
+
+```python
+class FontBrowser(families: list[str], page_rows: int = 8) -> None
+```
+
+The families, a search and a cursor. `families` must be sorted already (`tess_ui.font_families.families()` is); `page_rows` shapes Page Up and Page Down.
+
+- `click(index: int) -> str | None`: A press on row `index` (-1 is none): it is picked.
+- `index_of(family: str) -> int`: The place of `family` in the results, or -1.
+- `move(to: int) -> None`: Puts the cursor on `to`, kept inside the results.
+- `picked` *(property)*: The family under the cursor.
+- `press(key: str, *, in_field: bool = False) -> str | None`: A key.
+- `reveal(offset: float, row_height: float, rows: int | None = None) -> float`: The scroll offset that keeps the cursor's row in a window of `rows` rows (`page_rows` when not given), as near to `offset` as it can be.
+- `set_query(query: str) -> None`: Keeps the families that have every word of `query` in them (without regard to case), the ones that start with the first word first; the cursor goes to the first.
+
+## Key chords
+
+`tess_ui.key_chords`: Key chords as text, `Ctrl+Alt+Shift+Meta+Key`.
+
+### `normalise`
+
+```python
+normalise(text: str) -> str | None
+```
+
+`text` as the canonical chord, or `None` when it is not one: parts joined by `+` (spaces around them are fine), zero or more modifiers then exactly one key, a modifier named once at most. Any case is read.
+
+### `from_event`
+
+```python
+from_event(
+    key: str,
+    *,
+    ctrl: bool = False,
+    alt: bool = False,
+    shift: bool = False,
+    meta: bool = False
+) -> str | None
+```
+
+The chord for the key press `key` (the engine's name for it) with the modifiers held, or `None` when `key` is a modifier of its own or a key a chord cannot have.
+
+### `canonical_key`
+
+```python
+canonical_key(name: str) -> str | None
+```
+
+The canonical name of the key `name` (as typed or as the engine reports it), or `None` when it is not a key a chord can have.
+
+### `is_modifier_key`
+
+```python
+is_modifier_key(name: str) -> bool
+```
+
+Whether the engine's key `name` is a modifier or a lock, which is no key of a chord (`shift`, `control_left`, `alt_graph`, `caps_lock`, ...).
+
+### `modifier_of`
+
+```python
+modifier_of(name: str) -> str | None
+```
+
+The modifier (`Ctrl`, `Alt`, `Shift` or `Meta`) the engine's key `name` is, or `None` for any other key, a lock included (`control_left` is `Ctrl`, `caps_lock` is `None`).
+
+**Constants**
+
+- `MODIFIERS` = `('Ctrl', 'Alt', 'Shift', 'Meta')`
 
 ## Docking
 

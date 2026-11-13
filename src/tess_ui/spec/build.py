@@ -29,7 +29,7 @@ import math
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 
-from tess_ui import a11y, tokens
+from tess_ui import a11y, mind, tokens
 from tess_ui.icons import ICON_VIEW_BOX, icon_path, icon_view_box
 from tess_ui.spec.cascade import STYLE_FIELDS, Sheet, resolve_style
 from tess_ui.spec import effects, layout, richtext, transition
@@ -49,7 +49,7 @@ _TRANSPARENT: RGBA = (0, 0, 0, 0)
 _BASELINE = tokens.BASELINE
 _CONTROL_KINDS = frozenset({
     "Checkbox", "RadioButton", "Switch", "Slider", "RangeSlider", "SpinBox", "CircularProgress", "LinearProgress",
-    "LoadingIndicator", "TimePickerDial", "ColourArea", "ColourStrip", "ColourField", "ColourSwatches", "FileBrowser",
+    "LoadingIndicator", "TimePickerDial", "ColourArea", "ColourStrip", "ColourField", "ColourSwatches", "FileBrowser", *mind.KINDS,
 })
 #: The colour picker's controls (`tess_ui.colour_controls`): the ones whose `value` is a colour's text.
 _COLOUR_KINDS = frozenset({"ColourArea", "ColourStrip", "ColourField", "ColourSwatches"})
@@ -69,6 +69,7 @@ _NODE_KEYS = frozenset({
     "dial",  # a TimePickerDial's mode and auto_advance
     "colour", "hue",  # a colour control's channel and roles, and the hue its picker remembers
     "files",  # a FileBrowser's properties, as one mapping
+    "mind",  # the properties of one of the controls that draw nothing (`tess_ui.mind`), as one mapping
     "graph",  # a NodeGraph's snap, arrows and fit
     "disabled",  # any node's (M70): the View applies it, or a control's own
     "visible",  # any node's (#259): hidden, and out of layout, while false; only a node that says it is touched (`_OPTIONAL_LAYOUT`)
@@ -1312,6 +1313,8 @@ def _control(ctx: _Context, node: dict[str, Any], style: dict[str, Any], built: 
             control = _colour_control(ctx, node, size, common)
         elif kind == "FileBrowser":
             control = _file_browser_control(ctx, node, common)
+        elif kind in mind.KINDS:
+            control = _mind_control(ctx, node, common)
         else:  # TimePickerDial
             common.pop("color")
             control = controls.TimePickerDial(ctx.window, hour=int(node.get("hour") or 0),
@@ -1331,6 +1334,11 @@ def _file_browser_control(ctx: _Context, node: dict[str, Any], common: dict[str,
     from tess_ui import file_controls
 
     return file_controls.FileBrowserControl(ctx.window, node.get("files") or {}, theme=common["theme"], listen=common["listen"])
+
+
+def _mind_control(ctx: _Context, node: dict[str, Any], common: dict[str, Any]) -> Any:
+    """One of the controls that draw nothing (`tess_ui.mind`); it reads nothing until the window's next turn."""
+    return mind.control_class(node["kind"])(ctx.window, node.get("mind") or {}, theme=common["theme"], listen=common["listen"])
 
 
 def _colour_text(node: dict[str, Any]) -> str:
@@ -1493,6 +1501,8 @@ def _patch_control(ctx: _Context, node: dict[str, Any], style: dict[str, Any], c
         control.follow(_colour_text(node), _colour_hue(node) if kind in ("ColourArea", "ColourStrip") else None)
     elif kind == "FileBrowser":
         control.follow(node.get("files") or {})
+    elif kind in mind.KINDS:
+        control.follow(node.get("mind") or {})
     elif kind == "TimePickerDial":
         control.hour.set(int(node.get("hour") or 0) % 24)
         control.minute.set(int(node.get("minute") or 0) % 60)

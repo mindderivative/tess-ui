@@ -1,0 +1,56 @@
+tesserae: 0.6
+# A field for a keyboard shortcut: the chord as text in an outlined text field (`Ctrl+Shift+F1`: the modifiers Ctrl, Alt, Shift and Meta in that order, then one key, a named key in title case),
+# and a button that records it. Press the button (or focus it and press Enter or Space) and the next key press is the chord (the `on_click: n = n` below changes nothing: a box with no click handler cannot take the focus, and the pointer starts a recording on its press, so a key press that is also a click cannot start one again after it has ended it): Escape cancels, Backspace clears, and a modifier on its own (Shift,
+# Control, Alt, Meta) only shows the modifiers held so far and does not finish it. A chord can also be typed: it is read when Enter is pressed or the field is left, in any case (`ctrl+shift+f1`,
+# `Control+Return`), and written in the canonical form; text that is not a chord is refused, in the error colours, and `value` is left as it was. `value` is two-way text and is never rewritten
+# for a value the app sets. `on_change` is called after each change the person makes. What the parts do is in the ChordRecorder control (`tess_ui.chord_controls`), which this view drives by
+# writing a numbered command to `cmd`.
+params:
+  value: {type: str, default: "", model: true, doc: "The key chord, `Ctrl+Alt+Shift+Meta+Key`; empty is no shortcut."}
+  recording: {type: bool, default: false, model: true, doc: "Whether the next key press is recorded as the chord. The button sets it; a finished or cancelled recording writes false."}
+  label: {type: str, default: Shortcut, doc: "What a screen reader calls the field, and its label."}
+  placeholder: {type: str, default: Not set, doc: "What the field says while it is empty and not being edited."}
+  disabled: {type: bool, default: false, doc: "Dimmed and not editable."}
+  on_change: {type: handler, doc: "Called after each change the person makes."}
+widget: Container
+state: {n: 0, cmd: "", draft: "", preview: "", invalid: false, message: ""}
+a11y: {role: group, label: "{{ label }}"}
+style: {flex_direction: horizontal, align_content: center, gap: 8}
+children:
+  - widget: ChordRecorder
+    name: recorder
+    value: "{{ value }}"
+    draft: "{{ draft }}"
+    recording: "{{ recording }}"
+    command: "{{ cmd }}"
+    preview: "{{ preview }}"
+    invalid: "{{ invalid }}"
+    message: "{{ message }}"
+    disabled: "{{ disabled }}"
+    handlers: {on_input: "on_change()"}
+  - widget: TextField
+    name: field
+    variant: outlined
+    label: "{{ label }}"
+    placeholder: "{{ placeholder }}"
+    text: "{{ draft }}"
+    error: "{{ message if invalid else '' }}"
+    disabled: "{{ disabled }}"
+    style: {flex: fill}
+    handlers:
+      on_submit: "n = n + 1; cmd = str(n) + ' typed ' + draft"
+      on_focus_exit: "n = n + 1; cmd = str(n) + ' typed ' + draft"
+  - widget: Container
+    name: record
+    interaction: true
+    disabled: "{{ disabled }}"
+    a11y: {role: button, label: "{{ ('Recording ' + label + ': press the keys, Escape cancels, Backspace clears') if recording else ('Record ' + label) }}", pressed: "{{ recording }}"}
+    handlers:
+      on_press: "recording = True"
+      on_click: "n = n"
+      on_key: "n = n + 1; cmd = str(n) + ' key ' + event.key + (' ctrl' if event.ctrl else '') + (' alt' if event.alt else '') + (' shift' if event.shift else '') + (' meta' if event.meta else '')"
+      on_focus_exit: "recording = False"
+    style: {flex_direction: horizontal, align_content: center, gap: 8, min_height: 56, background: "{{ 'primary_container' if recording else 'transparent' }}"}
+    children:
+      - {widget: Icon, name: record_icon, icon: keyboard, style: {width: 24, height: 24, foreground: "{{ 'on_primary_container' if recording else 'on_surface_variant' }}"}}
+      - {widget: Text, name: record_text, text: "{{ ('Press keys ' + preview if preview != '' else 'Press keys') if recording else 'Record' }}", typography_role: label_large, style: {foreground: "{{ 'on_primary_container' if recording else 'on_surface_variant' }}"}}
