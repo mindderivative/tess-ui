@@ -1566,6 +1566,50 @@ components:
       key_chords.from_event("arrow_left", alt=True)            # 'Alt+Left'
     see: [guide/controls.md, components/text-fields.md]
 
+  - slug: list-editors
+    title: List editor
+    group: Selection and input
+    views: [ListEditor, ListEditorRow]
+    widgets: [ListModel]
+    md3: |
+      Material Design 3 has no editor for a list of values. An app whose people keep a list (the words of a launcher's filter, the outputs of a layout, the colours of a palette) needs one, and it is built from what MD3
+      does describe: a column of rows, each with a field of its own kind and icon buttons to move and remove it, and a button that adds.
+    built: |
+      Two views and one control. `ListEditor` is the view you use. `ListEditorRow` is one of its rows, and `ListModel` is the control that draws nothing and is the editor's mind (`tess_ui.list_controls`: the items,
+      the edits and the identity of each item, which the view reaches through the names it binds to it).
+
+      `value` is a Python list, two-way. `item_kind` says what every item is, and each row has the widget of that kind: `text` an outlined text field, `number` a spin box (bounded by `least` and `most`, stepped by `step`;
+      a whole number stays an `int` when the step is whole, else it is a `float`), `bool` a switch, `enum` a button that shows the item's label and opens a menu of `choices` (plain values, or `{value, label}`) and `colour`
+      a swatch that opens the colour picker in a popup (`'#rrggbb'` or `'#rrggbbaa'` text). A row also has Move up, Move down and Remove buttons (the first row cannot move up, the last cannot move down), and the Add
+      button under the rows appends an item of the kind: empty text, the least number (or 0), false, the first choice, black. `min_items` stops Remove (and says why under the list), `max_items` (0 is no limit)
+      stops Add; an empty list says "No items".
+
+      Writing. A text row writes when Enter is pressed or the field is left, never per key; a spin box, a switch, a menu and a colour picker write when they change. An edit writes a new list in which only the edited item differs,
+      and `on_change` is called after it. A list the app sets is shown as it is and never rewritten: an item that does not fit the kind (`"x"` among numbers, a choice that is not one, a colour that is not one) is
+      shown as the kind's nearest value (0, the first choice, black) and left exactly as it was until the person edits that row. Each item has an identity of its own that stays with it when it is moved, so a row keeps
+      what is in it (a field being typed in, an open menu) when other rows move or go, and a list the app sets has new rows. Turning a list into text and back (a TDL list `[a, b, c]`) is not the editor's job.
+
+      The keyboard. Tab goes through each row's field or button, then Move up, Move down and Remove, and on to the next row and the Add button; Enter or Space press a button, the arrows are the spin box's and the menu's,
+      Escape closes a menu or a colour popup. A screen reader hears a group named by `label`, a `list` of `listitem`s named by it and their place (`Shortcuts 2`), each widget with the same name, and buttons that say
+      "Move up", "Move down", "Remove" and the Add button's label; the message under the list is an alert. A disabled editor edits nothing. The look is in `ListEditor_Stylesheet.yaml` (the empty note and the message); the
+      rows' widgets look as their own do. Not built: dragging a row to move it, Alt+arrow keys to move one (a handler cannot yet choose between three calls by the key), items of mixed kinds, and items that are themselves lists.
+    usage_view: |
+      name: launcher
+      widget: Container
+      style: {flex_direction: vertical, gap: 16, width: 520, height: 420, padding: 16}
+      children:
+        - {widget: ListEditor, value: "{{ words }}", label: Filter words, add_label: Add word, on_change: words_changed}
+        - {widget: ListEditor, value: "{{ levels }}", item_kind: enum, choices: [{value: low, label: Low}, {value: high, label: High}], max_items: 4}
+        - {widget: ListEditor, value: "{{ sizes }}", item_kind: number, least: 0, most: 64}
+    python: |
+      from tess_ui.list_controls import ListModel
+
+      model = ListModel("number", [1, 2, 3], least=0, most=10)
+      model.set(1, "50")        # a row sends the new item as text: 2 becomes 10
+      model.move(2, -1)         # the item keeps its identity: [1, 3, 10]
+      model.values              # [1, 3, 10]
+    see: [guide/controls.md, components/spin-boxes.md, components/colour-pickers.md]
+
   - slug: segmented-buttons
     title: Segmented buttons
     group: Selection and input

@@ -22,6 +22,7 @@ Every public class, function and constant, with its signature and what it does. 
 - [Font families](#font-families): The installed font families the font list shows, and the provider that can be swapped.
 - [Font browser](#font-browser): The font list's search and cursor, with no window.
 - [Key chords](#key-chords): Key chords as text, `Ctrl+Alt+Shift+Meta+Key`.
+- [List editor](#list-editor): The list editor's items and edits, with no window.
 - [Docking](#docking): Panels the user can drag between zones.
 - [Interaction](#interaction): State layer, ripple and focus ring.
 - [Accessibility](#accessibility): What a node tells assistive technology.
@@ -2363,6 +2364,53 @@ The modifier (`Ctrl`, `Alt`, `Shift` or `Meta`) the engine's key `name` is, or `
 **Constants**
 
 - `MODIFIERS` = `('Ctrl', 'Alt', 'Shift', 'Meta')`
+
+## List editor
+
+`tess_ui.list_controls`: The list editor's items and edits, with no window.
+
+### `ListModel`
+
+```python
+class ListModel(
+    kind: str = 'text',
+    values: list[Any] | None = None,
+    *,
+    choices: Any = None,
+    least: float | None = None,
+    most: float | None = None,
+    step: float | None = None,
+    min_items: int = 0,
+    max_items: int = 0
+) -> None
+```
+
+The items of one kind, and the edits. `least`, `most` and `step` bound a number; `choices` are an enum's; `min_items` and `max_items` (0 for none) bound the length.
+
+- `add() -> bool`: Appends the default item of the kind; does nothing at `max_items`.
+- `can_add` *(property)*: Whether `add` would add: the list is below `max_items` (or has no bound).
+- `can_remove` *(property)*: Whether `remove` would remove: the list is above `min_items`.
+- `default() -> Any`: The item `add` makes: empty text, the least number (or 0), false, the first choice, black.
+- `move(place: int, by: int) -> bool`: Moves item `place` by `by` places (kept inside the list); the item keeps its identity.
+- `parse(text: str) -> Any`: The item `text` stands for (the text a row sends), or raises `ValueError`.
+- `remove(place: int) -> bool`: Takes item `place` out; does nothing at `min_items` or for a place that is not there.
+- `rows` *(property)*: For the view: each item as `{uid, value}`, the value as `shown` has it.
+- `set(place: int, text: str) -> bool`: Changes item `place` to the item `text` stands for.
+- `set_values(values: list[Any]) -> None`: Takes `values` as the list (the app's): every item is a new one.
+- `shown(raw: Any) -> Any`: What a row shows for `raw`: the item as its kind has it, or the kind's nearest value.
+- `values` *(property)*: The list: each item as it was set or as the person made it.
+
+### `choices_of`
+
+```python
+choices_of(raw: Any) -> list[tuple[Any, str]]
+```
+
+The `(value, label)` pairs of `choices`: each a plain value (its label is its text) or a mapping with `value` and optionally `label`.
+
+**Constants**
+
+- `KINDS` = `('text', 'number', 'bool', 'enum', 'colour')`
 
 ## Docking
 

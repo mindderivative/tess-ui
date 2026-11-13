@@ -1,0 +1,5 @@
+tesserae: 0.6
+# The look of ListEditor: the empty note in `on_surface_variant` and a message in `error`; the rows, the text fields, the spin boxes, the switches, the menus and the colour pickers in them look as their own widgets do.
+styles:
+  - {widget: ListEditor, part: empty, style: {foreground: on_surface_variant}}
+  - {widget: ListEditor, part: message_text, style: {foreground: error}}

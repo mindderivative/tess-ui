@@ -1,0 +1,85 @@
+tesserae: 0.6
+# A list editor: the items of a list as rows, each with the widget of the item kind (`item_kind`: `text` a text field, `number` a spin box bounded by `least` and `most`, `bool` a switch, `enum` a button that
+# opens a menu of `choices`, `colour` a colour picker in a popup), and buttons to move a row up or down and to remove it, and an Add button that appends an item of the kind (empty text, the least number or 0,
+# false, the first choice, black). `value` is the list and is two-way: an edit writes a new list in which only the edited item differs, and `on_change` is called after each edit the person makes; a list the
+# app sets is shown as it is, with new rows, and never rewritten. `min_items` and `max_items` bound the length. The keyboard: Tab goes through each row's widget and buttons, Enter or Space press a button. Turning a list into TDL text and back is not its job. What the parts do is in the ListModel control (`tess_ui.list_controls`), which this
+# view drives by writing a numbered command to `cmd`.
+params:
+  value: {type: list, default: [], model: true, doc: "The list: its items are all of `item_kind`."}
+  item_kind: {type: enum, choices: [text, number, bool, enum, colour], default: text, doc: "The kind of every item."}
+  choices: {type: list, default: [], doc: "An enum's choices: plain values, or {value, label}."}
+  least: {type: float, default: null, doc: "A number's least."}
+  most: {type: float, default: null, doc: "A number's most."}
+  step: {type: float, default: 1, doc: "A number's step; whole numbers stay ints when it is whole."}
+  min_items: {type: int, default: 0, min: 0, doc: "The fewest items: the remove buttons stop at it."}
+  max_items: {type: int, default: 0, min: 0, doc: "The most items (0 for no limit): the Add button stops at it."}
+  label: {type: str, default: Items, doc: "What a screen reader calls the list; an item is called by it and its place."}
+  add_label: {type: str, default: Add, doc: "The Add button's label."}
+  disabled: {type: bool, default: false, doc: "Dimmed and not editable."}
+  on_change: {type: handler, doc: "Called after each edit the person makes."}
+widget: Container
+state: {n: 0, cmd: "", typed: "", rows: [], options: [], count: 0, can_add: true, can_remove: true, message: ""}
+a11y: {role: group, label: "{{ label }}"}
+style: {flex_direction: vertical, gap: 8}
+children:
+  - widget: ListModel
+    name: model
+    value: "{{ value }}"
+    item_kind: "{{ item_kind }}"
+    choices: "{{ choices }}"
+    least: "{{ least }}"
+    most: "{{ most }}"
+    step: "{{ step }}"
+    min_items: "{{ min_items }}"
+    max_items: "{{ max_items }}"
+    command: "{{ cmd }}"
+    disabled: "{{ disabled }}"
+    rows: "{{ rows }}"
+    options: "{{ options }}"
+    count: "{{ count }}"
+    can_add: "{{ can_add }}"
+    can_remove: "{{ can_remove }}"
+    message: "{{ message }}"
+    handlers: {on_input: "on_change()"}
+  - widget: Container
+    name: rows
+    a11y: {role: list, label: "{{ label }}"}
+    style: {flex_direction: vertical, gap: 8}
+    children:
+      - widget: ListEditorRow
+        for: i, row in enumerate(rows)
+        key: row['uid']
+        name: item
+        kind: "{{ item_kind }}"
+        item: "{{ row['value'] }}"
+        options: "{{ options }}"
+        least: "{{ least }}"
+        most: "{{ most }}"
+        step: "{{ step }}"
+        label: "{{ label }}"
+        position: "{{ i + 1 }}"
+        first: "{{ i == 0 }}"
+        last: "{{ i == count - 1 }}"
+        can_remove: "{{ can_remove }}"
+        disabled: "{{ disabled }}"
+        typed: "{{ typed }}"
+        on_commit: "n = n + 1; cmd = str(n) + ' set ' + str(i) + ' ' + str(typed)"
+        on_up: "n = n + 1; cmd = str(n) + ' up ' + str(i)"
+        on_down: "n = n + 1; cmd = str(n) + ' down ' + str(i)"
+        on_remove: "n = n + 1; cmd = str(n) + ' remove ' + str(i)"
+  - widget: Text
+    name: empty
+    if: "count == 0"
+    text: No items
+    typography_role: body_medium
+  - widget: Text
+    name: message_text
+    if: "message != ''"
+    text: "{{ message }}"
+    typography_role: body_medium
+    a11y: {role: alert, live: polite}
+  - widget: Container
+    name: actions
+    style: {flex_direction: horizontal, align_content: left}
+    children:
+      - {widget: Button, name: add, variant: tonal, icon: plus, label: "{{ add_label }}", disabled: "{{ not can_add or disabled }}", handlers: {on_click: "n = n + 1; cmd = str(n) + ' add'"}}

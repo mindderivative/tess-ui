@@ -277,6 +277,23 @@ declare("ChordRecorder", {
     "disabled": P("bool"),
 }, doc="The key-chord field's mind: it draws nothing. It records a key press as a chord, reads a typed chord and writes it in the canonical form, and tells the view through the names it is bound to.")
 
+declare("ListModel", {
+    "value": P("list", default=[], model=True, doc="The list. An edit writes a new list in which only the edited item differs; a list the app sets is never normalised."),
+    "item_kind": P("str", default="text", doc="The kind of every item: `text`, `number`, `bool`, `enum` or `colour`."),
+    "choices": P("list", default=[], doc="An `enum`'s choices: plain values, or {value, label}."),
+    "least": P("float", doc="A `number`'s least."), "most": P("float", doc="A `number`'s most."), "step": P("float", doc="A `number`'s step; a whole number stays an int when the step is one."),
+    "min_items": P("int", default=0, doc="The fewest items: `remove` does nothing at it."),
+    "max_items": P("int", default=0, doc="The most items (0 for no limit): `add` does nothing at it."),
+    "command": P("str", default="", doc=_MIND_COMMAND + "`set 2 new text` (item 2 is now that text; a number, `true` or `false`, a choice's value or a colour as its text), `add`, `remove 2`, `up 2`, `down 2`."),
+    "rows": P("list", model=True, doc=_MIND_OUT + " The items as {uid, value}: the uid stays with an item when it is moved, and the value is as the item kind has it."),
+    "options": P("list", model=True, doc=_MIND_OUT + " An `enum`'s choices as {value, label}."),
+    "count": P("int", model=True, doc=_MIND_OUT + " How many items."),
+    "can_add": P("bool", model=True, doc=_MIND_OUT + " Whether `add` would add."),
+    "can_remove": P("bool", model=True, doc=_MIND_OUT + " Whether `remove` would remove."),
+    "message": P("str", model=True, doc=_MIND_OUT + " Why the last edit did nothing (the list is at its fewest, or `item_kind` is not a kind); empty when nothing is wrong."),
+    "disabled": P("bool"),
+}, doc="The list editor's mind: it draws nothing. It holds the items of one kind, does the edits a row sends as commands, and tells the view through the names it is bound to.")
+
 declare("NodeGraph", {"edges": P("list", doc="The links: each {from: id, to: id}, the ids of the GraphNodes."),
                       "snap": P("float", default=0.0, doc="A node the user moves lands on a multiple of this many pixels; 0 is no grid."),
                       "arrows": P("bool", doc="Each edge ends in an arrowhead."),

@@ -1,0 +1,96 @@
+tesserae: 0.6
+# One row of a list editor: the widget of the item kind (a text field, a spin box, a switch, a button that opens a menu of choices, or a colour picker in a popup) and the buttons that move the row up and
+# down and remove it. It does not hold the list: when the person changes the item it writes the new value to `typed` (a number, `true` or `false`, or a choice as text) and calls `on_commit`, which is the list
+# editor's to answer. A text field commits on Enter and when it is left, the others when they change. The row keeps what the person
+# has typed and not yet committed, which is why the list editor gives each item a row of its own that follows it when it moves.
+params:
+  kind: {type: enum, choices: [text, number, bool, enum, colour], default: text, doc: "The kind of the item: which widget the row has."}
+  item: {type: any, default: "", doc: "The item, as its kind has it (it seeds what the row shows; a change the app makes is a new row)."}
+  options: {type: list, default: [], doc: "An enum's choices, as {value, label}."}
+  least: {type: float, default: null, doc: "A number's least."}
+  most: {type: float, default: null, doc: "A number's most."}
+  step: {type: float, default: 1, doc: "A number's step."}
+  label: {type: str, default: Item, doc: "What a screen reader calls the item."}
+  position: {type: int, default: 1, doc: "The row's place in the list, from 1, for a screen reader."}
+  first: {type: bool, default: false, doc: "The first row: it cannot move up."}
+  last: {type: bool, default: false, doc: "The last row: it cannot move down."}
+  can_remove: {type: bool, default: true, doc: "Whether the remove button works."}
+  disabled: {type: bool, default: false, doc: "Dimmed and not editable."}
+  typed: {type: any, default: "", model: true, doc: "Written when the item is changed: its new value as text."}
+  on_commit: {type: handler, doc: "Called after `typed` has been written."}
+  on_up: {type: handler, doc: "Called by the move up button."}
+  on_down: {type: handler, doc: "Called by the move down button."}
+  on_remove: {type: handler, doc: "Called by the remove button."}
+widget: Container
+state:
+  draft: "{{ str(item) if kind == 'text' else '' }}"
+  ndraft: "{{ item if kind == 'number' else 0 }}"
+  bdraft: "{{ bool(item) if kind == 'bool' else False }}"
+  edraft: "{{ item if kind == 'enum' else '' }}"
+  cdraft: "{{ item if kind == 'colour' else '#000000' }}"
+  menu_open: false
+  colour_open: false
+a11y: {role: listitem, label: "{{ label + ' ' + str(position) }}"}
+style: {flex_direction: horizontal, align_content: center, gap: 8}
+children:
+  - widget: Container
+    name: cell
+    style: {flex: fill, flex_direction: horizontal, align_content: left}
+    children:
+      - widget: TextField
+        name: text
+        if: "kind == 'text'"
+        variant: outlined
+        label: "{{ label + ' ' + str(position) }}"
+        text: "{{ draft }}"
+        disabled: "{{ disabled }}"
+        style: {flex: fill}
+        handlers:
+          on_submit: "typed = draft; on_commit()"
+          on_focus_exit: "typed = draft; on_commit()"
+      - widget: SpinBox
+        name: number
+        if: "kind == 'number'"
+        value: "{{ ndraft }}"
+        min: "{{ least }}"
+        max: "{{ most }}"
+        step: "{{ step }}"
+        disabled: "{{ disabled }}"
+        a11y: {label: "{{ label + ' ' + str(position) }}"}
+        handlers: {on_change: "typed = ndraft; on_commit()"}
+      - widget: Switch
+        name: flag
+        if: "kind == 'bool'"
+        selected: "{{ bdraft }}"
+        label: "{{ label + ' ' + str(position) }}"
+        disabled: "{{ disabled }}"
+        handlers: {on_change: "typed = 'true' if bdraft else 'false'; on_commit()"}
+      - widget: Button
+        name: choice
+        if: "kind == 'enum'"
+        variant: outlined
+        trailing_icon: menu_down
+        label: "{{ ([o['label'] for o in options if o['value'] == edraft] + [str(edraft)])[0] }}"
+        disabled: "{{ disabled }}"
+        handlers: {on_click: "menu_open = not menu_open"}
+      - widget: Menu
+        name: choices
+        if: "kind == 'enum'"
+        open: "{{ menu_open }}"
+        anchor: choice
+        chosen: "{{ edraft }}"
+        items: "{{ options }}"
+        width: 240
+        on_pick: "typed = edraft; on_commit()"
+      - widget: ColourPicker
+        name: colour
+        if: "kind == 'colour'"
+        popup: true
+        open: "{{ colour_open }}"
+        value: "{{ cdraft }}"
+        label: "{{ label + ' ' + str(position) }}"
+        disabled: "{{ disabled }}"
+        on_change: "typed = cdraft; on_commit()"
+  - {widget: IconButton, name: up, icon: arrow_up, label: Move up, disabled: "{{ first or disabled }}", handlers: {on_click: "on_up()"}}
+  - {widget: IconButton, name: down, icon: arrow_down, label: Move down, disabled: "{{ last or disabled }}", handlers: {on_click: "on_down()"}}
+  - {widget: IconButton, name: remove, icon: delete, label: Remove, disabled: "{{ not can_remove or disabled }}", handlers: {on_click: "on_remove()"}}
