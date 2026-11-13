@@ -4,7 +4,7 @@
 
 ### Changed
 
-- **Tesserae needs `tesserae-engine` 0.6.5**, one exact release (it was 0.6.0). 0.6.2 sizes an unsized text node to its text (`get("width")` reads `"fit-content"`, not `"auto"`, and a fit width is the text plus 2 px), and 0.6.4 rejects a shader that declares a function named `sd_circle`, `sd_box`, `sd_round_box`, `sd_round_union`, `sd_smooth_union` or `sd_coverage`. 0.6.3 and 0.6.5 add `PopupWindow` options Tesserae does not use. The size, label, widget, layout, overflow and keepalive tests passed on 0.6.5; the full suite is run by CI.
+- **Tesserae needs `tesserae-engine` 0.6.7**, one exact release (it was 0.6.0). 0.6.2 sizes an unsized text node to its text (`get("width")` reads `"fit-content"`, not `"auto"`, and a fit width is the text plus 2 px), and 0.6.4 rejects a shader that declares a function named `sd_circle`, `sd_box`, `sd_round_box`, `sd_round_union`, `sd_smooth_union` or `sd_coverage`. 0.6.3 and 0.6.5 add `PopupWindow` options Tesserae does not use. 0.6.6 adds `wrap` and `overflow` to a `text_input`. 0.6.7 changes every text input's keys: Ctrl+Left/Right and Ctrl+Backspace/Delete act by word, Ctrl+Home/End in a multiline input go to the start or end of the text, and a double click selects a word (a headless test that clicks one input twice must `window.advance(1000)` between the clicks). The size, label, widget, layout, overflow and keepalive tests passed on 0.6.5; the full suite passed on 0.6.7.
 
 ## 0.6.0
 

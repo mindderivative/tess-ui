@@ -3247,3 +3247,9 @@ The user asked to find the cause, then to add the one-line fix and send the engi
 
 - tre released 0.6.5 (`PopupWindow(input_region=)`, additive; Tesserae uses no `PopupWindow`). Pin moved in `pyproject.toml`, the tess-re refs in `ci.yml`/`release.yml`, README, DEVELOPING and the 0.6.0.1 changelog entry (still unreleased).
 - 492 tests passed on 0.6.5 (size, label, widget, layout, overflow, grid, dark-mode, pointer, `ci_plan`, dependency and keepalive files); the full suite was not run.
+
+## 2026-11-13 Engine pin 0.6.5 to 0.6.7
+
+- Task from `tess-shell-vault` under the Tesserae Shell Directive (the shell runs 0.6.7). Pin moved in `pyproject.toml`, the tess-re refs in `ci.yml`/`release.yml`, README, DEVELOPING and the 0.6.0.1 changelog entry (still unreleased). Read tre's `migrating-0.6.md` for 0.6.6 and 0.6.7 first: word keys, Ctrl+Home/End, double-click word selection, `wrap`/`overflow` on `text_input`.
+- Full suite on 0.6.7: 8760 passed, 4 skipped (173 s). No test needed a change: none clicks one text input twice, so the `window.advance(1000)` rule did not bite.
+- Full suite also ran green on main at 0.6.5 (exit 0) before the move.
