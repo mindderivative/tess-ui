@@ -242,7 +242,7 @@ class DocumentModel:
 
             def across() -> Document:
                 without = parent.without_child(child)
-                added_document, added = without.at(tuple(shifted)).with_child(source, index)  # type: ignore[union-attr]
+                added_document, added = without.at(tuple(shifted or ())).with_child(source, index)  # type: ignore[union-attr]
                 new_path.append(added.index_path)
                 return added_document
 

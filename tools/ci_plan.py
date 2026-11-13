@@ -35,7 +35,7 @@ DOC_DIRS = ("docs/", "design/", ".agents/", "spike-results/")
 DOC_FILES = ("mkdocs.yml", "AGENTS.md", "CLAUDE.md")
 #: Run when no test covers a change. `test_examples_run.py` runs six example apps end to end, so it is the cross-platform smoke test of the whole.
 SMOKE = ("tests/test_app.py", "tests/test_build.py", "tests/test_composed.py", "tests/test_pixels.py", "tests/test_examples_run.py")
-PACKAGING = ("tools/clean_install_smoke.py", "src/tess_ui/templates/*", "src/tess_ui/cli.py", "src/tess_ui/build.py",
+PACKAGING = ("tools/clean_install_smoke.py", "apps/*/pyproject.toml", "src/tess_ui/templates/*", "src/tess_ui/cli.py", "src/tess_ui/build.py",
              ".github/workflows/ci.yml")
 OUTPUTS = ("mode", "reason", "tests", "doc_tests", "packaging")  # what `plan` declares in .github/workflows/ci.yml
 FULL_MARKS = ("[full-ci]", "[full ci]", "[full test]")

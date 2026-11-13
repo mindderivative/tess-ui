@@ -150,6 +150,34 @@ jobs:
           echo "mode $MODE: $REASON"
           if [ "$MODE" = full ]; then pytest tests/; else pytest $TESTS; fi
 
+  # The Configuration Application (`apps/shell_config`): its tests need Python 3.14 (`tess_dl`), which the suite's 3.12 job lacks, so they run here. They use a fake
+  # `tesserae-shell` script and recorded fixtures; the real shell is never started.
+  shell-config:
+    needs: plan
+    if: needs.plan.outputs.mode != 'docs'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: tesserae
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y mesa-vulkan-drivers libfontconfig1-dev
+
+      - name: Install tesserae and the application
+        working-directory: tesserae
+        run: pip install -e ".[dev]" -e apps/shell_config
+
+      - name: Run the application's tests
+        working-directory: tesserae
+        env:
+          PYTHONUTF8: "1"
+        run: pytest apps/shell_config/tests tests/test_apps_tooling.py
+
   # M76: one `pip install` is enough, on every supported platform. Only the
   # built wheel goes into a fresh venv; its dependencies come from PyPI as
   # wheels only (`--only-binary=:all:`), so one that would need compiling

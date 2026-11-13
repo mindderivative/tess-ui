@@ -183,7 +183,7 @@ class Offload:
             try:
                 value = fn()
             except BaseException as error:  # the loop thread is told; a worker never dies silently
-                self._post(lambda error=error: on_error(error))
+                self._post(lambda error=error: on_error(error))  # type: ignore[misc]
             else:
                 self._post(lambda: on_result(value))
 

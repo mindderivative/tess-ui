@@ -88,11 +88,8 @@ def classify(path: Path, raw: bytes, rel: str) -> ConfigFile:
     parsed = parse_text(decode(raw), rel)
     if parsed.document is not None:
         document = parsed.document
-        meta = document.metadata
-        try:
-            name = str(meta["Name"].text)  # type: ignore[attr-defined]
-        except (KeyError, AttributeError, TypeError):
-            name = path.stem
+        value = document.metadata.get("Name")
+        name = str(getattr(value, "text", None) or path.stem)  # a Name is always a bare word
         return ConfigFile(path, rel, FileType.for_root(document.root.type), name, 0)
     return ConfigFile(path, rel, FileType.for_name(path.name), path.stem, max(1, len(parsed.errors)))
 

@@ -1,0 +1,91 @@
+tesserae: 0.6
+# The configuration application's window: a toolbar, three areas side by side (Files, Structure, Text) and a status line. The ViewModel (viewmodel.py) holds every value
+# and action; this file only says where they show. Tab moves through the toolbar, the Files tree, the Structure tree and the text; each tree takes the arrow keys.
+name: main
+widget: Container
+style: {flex_direction: vertical, width: 100%, height: 100%, background: surface}
+a11y: {role: group, label: Tesserae Shell configuration}
+handlers: {on_key: "key_pressed(event.key, event.ctrl, event.shift, event.alt)"}
+children:
+  - widget: Container
+    name: toolbar
+    a11y: {role: group, label: Actions}
+    style: {flex_direction: horizontal, align_content: left, gap: 8, padding: 8, width: 100%}
+    children:
+      - {widget: Button, name: save_button, label: Save, variant: filled, disabled: "{{ not dirty }}", handlers: {on_click: save}}
+      - {widget: Button, name: undo_button, label: Undo, variant: tonal, disabled: "{{ not can_undo }}", handlers: {on_click: undo}}
+      - {widget: Button, name: redo_button, label: Redo, variant: tonal, disabled: "{{ not can_redo }}", handlers: {on_click: redo}}
+      - {widget: Button, name: format_button, label: Format file, variant: outlined, disabled: "{{ not has_tree }}", handlers: {on_click: format_file}}
+      - {widget: Text, name: title, text: "{{ title }}", typography_role: title_small, max_lines: 1, overflow: ellipsis, style: {flex: expand_horizontal, min_width: 0}}
+  - widget: Container
+    name: panes
+    style: {flex_direction: horizontal, gap: 8, padding: {left: 8, right: 8, top: 0, bottom: 0}, width: 100%, flex: expand_vertical, min_height: 0}
+    children:
+      - widget: Container
+        name: files_pane
+        a11y: {role: group, label: Files}
+        style: {flex_direction: vertical, width: 300, gap: 4, background: surface_container_low, corner_radius: 12, padding: 8}
+        children:
+          - {widget: Text, name: files_heading, text: Files, typography_role: title_small}
+          - {widget: Text, name: folder_text, text: "{{ folder }}", typography_role: body_small, max_lines: 1, overflow: ellipsis, style: {foreground: on_surface_variant}}
+          - widget: ScrollView
+            name: files_scroll
+            style: {flex: expand_vertical, width: 100%, min_height: 0}
+            children:
+              - {widget: Tree, name: files_tree, nodes: "{{ file_nodes }}", expanded: "{{ file_expanded }}", selected: "{{ file_selected }}", compact: true}
+      - widget: Container
+        name: structure_pane
+        a11y: {role: group, label: Structure}
+        style: {flex_direction: vertical, width: 340, gap: 4, background: surface_container_low, corner_radius: 12, padding: 8}
+        children:
+          - {widget: Text, name: structure_heading, text: Structure, typography_role: title_small}
+          - {widget: Text, name: selection_text, text: "{{ selected_label }}", typography_role: body_small, max_lines: 1, overflow: ellipsis, style: {foreground: on_surface_variant}}
+          - widget: Text
+            name: structure_off
+            if: "has_file and not has_tree"
+            text: "The structure is off: this file has syntax errors. It follows when the text parses."
+            typography_role: body_medium
+            style: {width: 100%}
+          - widget: ScrollView
+            name: structure_scroll
+            if: has_tree
+            style: {flex: expand_vertical, width: 100%, min_height: 0}
+            children:
+              - {widget: Tree, name: structure_tree, nodes: "{{ structure_nodes }}", expanded: "{{ structure_expanded }}", selected: "{{ structure_selected }}", compact: true}
+      - widget: Container
+        name: text_pane
+        a11y: {role: group, label: Text}
+        style: {flex_direction: vertical, gap: 4, background: surface_container_low, corner_radius: 12, padding: 8, flex: expand_horizontal, min_width: 0}
+        children:
+          - {widget: Text, name: text_heading, text: Text, typography_role: title_small}
+          - widget: TextInput
+            name: editor
+            text: "{{ text }}"
+            multiline: true
+            read_only: "{{ read_only or not has_file }}"
+            typography_role: body_medium
+            handlers: {on_change: text_edited}
+            a11y: {label: "TDL text of the open file"}
+            style: {flex: expand_vertical, width: 100%, min_height: 120}
+          - widget: Container
+            name: errors
+            if: "len(error_rows) > 0"
+            a11y: {role: group, label: Syntax errors}
+            style: {flex_direction: vertical, gap: 2, width: 100%, background: error_container, corner_radius: 8, padding: 8}
+            children:
+              - {widget: Text, name: errors_heading, text: "{{ len(error_rows) }} syntax error(s): the structure is off until the text parses", typography_role: label_large, style: {foreground: on_error_container}}
+              - widget: Container
+                for: row in error_rows
+                key: row['text']
+                name: error_row
+                style: {flex_direction: horizontal, align_content: left, gap: 8, width: 100%}
+                children:
+                  - {widget: Icon, name: error_icon, icon: error, style: {width: 18, height: 18, foreground: on_error_container}}
+                  - {widget: Text, name: error_text, text: "{{ row['text'] }}", typography_role: body_small, style: {foreground: on_error_container, flex: expand_horizontal, min_width: 0}}
+  - widget: Container
+    name: status_bar
+    a11y: {role: group, label: Status}
+    style: {flex_direction: horizontal, align_content: left, gap: 8, padding: 8, width: 100%}
+    children:
+      - {widget: Icon, name: status_icon, if: status_is_error, icon: error, style: {width: 18, height: 18, foreground: error}}
+      - {widget: Text, name: status_text, text: "{{ status }}", typography_role: body_small, a11y: {live: polite}, style: {flex: expand_horizontal, min_width: 0, foreground: "{{ 'error' if status_is_error else 'on_surface_variant' }}"}}

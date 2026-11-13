@@ -44,9 +44,9 @@ def label_of(node: Node) -> str:
     if isinstance(node, Block):
         return f"{node.type}  {node.name}" if node.name else node.type
     if isinstance(node, If):
-        return f"If {{{{{_clip(node.condition.text)}}}}}"
+        return f"If {{{{ {_clip(node.condition.text)} }}}}"
     assert isinstance(node, For)
-    return f"For {node.variable} In {{{{{_clip(node.items.text)}}}}}"
+    return f"For {node.variable} In {{{{ {_clip(node.items.text)} }}}}"
 
 
 def _entries(node: Node, path: IndexPath) -> list[dict[str, Any]]:

@@ -10,6 +10,7 @@
 The full suite takes about three minutes and is run only when the user calls for it (`tools/check.py --full`); this picks the tests that cover a change so a step takes seconds:
 
   * a changed test file is itself the test;
+  * a changed `apps/<app>/src/**.py` module (the Configuration Application) is read the same way against `apps/<app>/tests/`, whose tests need Python 3.14 and `tess_dl`;
   * a changed `src/tess_ui/**.py` module gives the tests that import it (read with `ast`: `import a.b`, `from a import b`,
     `from a.b import c`), and the tests whose file name matches the module's (`widgets/buttons.py` -> `test_button*.py`);
   * the tests that mention a public function, class or constant the module defines (compound names only, and not ones found in over a tenth of the tests);
@@ -66,7 +67,16 @@ def norm(stem):
     return stem[:-1] if stem.endswith("s") and len(stem) > 3 else stem
 
 
+APP_SOURCE = re.compile(r"^apps/[^/]+/src/")  # an application in this repository (`apps/shell_config/src/tess_shell_config/...`): its tests are `apps/<app>/tests/`
+
+
+def is_test_path(f):
+    """A path of the repository's tests or of an application's own tests."""
+    return f.startswith("tests/") or bool(re.match(r"^apps/[^/]+/tests/", f))
+
+
 def module_name(path):
+    path = APP_SOURCE.sub("src/", str(path))
     parts = Path(path).relative_to("src").with_suffix("").parts
     return ".".join(parts[:-1] if parts[-1] == "__init__" else parts)
 
@@ -109,7 +119,7 @@ def public_names(path):
 
 def load_tests():
     tests = {}
-    for path in sorted((ROOT / "tests").rglob("test_*.py")):
+    for path in sorted([*(ROOT / "tests").rglob("test_*.py"), *ROOT.glob("apps/*/tests/test_*.py")]):
         text = path.read_text(encoding="utf-8", errors="replace")
         tests[path.relative_to(ROOT).as_posix()] = (text, imports_of(text))  # git and pytest say `tests/x.py` on every platform
     return tests
@@ -126,13 +136,13 @@ def pick(files, tests, include_core=False):
 
     for f in files:
         path = Path(f)
-        if f.startswith("tests/") and path.name.startswith("test_") and f in tests:
+        if is_test_path(f) and path.name.startswith("test_") and f in tests:
             add(f, f"changed: {f}")
-        elif f.startswith("tests/") and path.suffix == ".py":
+        elif is_test_path(f) and path.suffix == ".py":
             users = [t for t, (text, _) in tests.items() if re.search(rf"\b{re.escape(path.stem)}\b", text)]
             for t in users:
                 add(t, f"uses the changed test helper {f}")
-        elif f.startswith("src/") and path.suffix == ".py":
+        elif (f.startswith("src/") or APP_SOURCE.match(f)) and path.suffix == ".py":
             module = module_name(f)
             direct = [t for t, (_, imps) in tests.items() if module in imps]
             named = [t for t in tests if norm(path.stem) and norm(path.stem) in norm(Path(t).stem)]
@@ -152,7 +162,7 @@ def pick(files, tests, include_core=False):
                 add(t, f"mentions {name}")
             if not direct and not named and not by_name and not any("core module" in n for n in notes if f in n):
                 notes.append(f"{f}: no test imports {module} or matches its name; look for one by hand")
-        elif f.startswith("src/") and path.suffix in (".yaml", ".yml"):
+        elif (f.startswith("src/") or APP_SOURCE.match(f)) and path.suffix in (".yaml", ".yml"):
             key = norm(path.stem)
             for t, (text, _) in tests.items():
                 if path.name in text:

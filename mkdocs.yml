@@ -79,6 +79,7 @@ nav:
       - Naming Convention: guide/naming-convention.md
       - Editor Support: guide/editor-support.md
       - The tesserae Command: guide/cli.md
+      - The Shell Configuration App: guide/shell-config.md
       - Releasing Your App: guide/releasing.md
   - Themes: themes/index.md
   # >>> components (written by tools/generate_component_docs.py)
