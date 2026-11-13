@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
+from fnmatch import fnmatchcase
 from typing import Any
 
 __all__ = [
@@ -55,6 +56,12 @@ def _tuple(value: Any) -> tuple[Any, ...]:
 
 def _strings(value: Any) -> tuple[str, ...]:
     return tuple(str(v) for v in value) if isinstance(value, (list, tuple)) else ()
+
+
+def _kind(raw: Mapping[str, Any]) -> str:
+    """A record's kind: `string` when the record names none at all, `""` when the schema says `null` (a key that is not built has no kind)."""
+    kind = raw.get("kind", "string")
+    return "" if kind is None else str(kind)
 
 
 def _mapping(value: Any, what: str) -> Mapping[str, Any]:
@@ -121,7 +128,7 @@ class KeyInfo:
         raw = _mapping(raw, f"key {name}")
         choices = raw.get("choices")
         return cls(
-            name=name, kind=str(raw.get("kind", "string")), doc=str(raw.get("doc") or ""),
+            name=name, kind=_kind(raw), doc=str(raw.get("doc") or ""),
             default=None if raw.get("default") is None else str(raw["default"]),
             choices=tuple(choices) if isinstance(choices, (list, tuple)) else None,
             enum=None if raw.get("enum") is None else str(raw["enum"]),
@@ -162,7 +169,7 @@ class ParamInfo:
     @classmethod
     def read(cls, name: str, raw: Mapping[str, Any]) -> ParamInfo:
         raw = _mapping(raw, f"param {name}")
-        return cls(name=name, type=str(raw.get("type", "")), kind=str(raw.get("kind", "string")), doc=str(raw.get("doc") or ""),
+        return cls(name=name, type=str(raw.get("type", "")), kind=_kind(raw), doc=str(raw.get("doc") or ""),
                    default=None if raw.get("default") is None else str(raw["default"]), required=bool(raw.get("required", False)),
                    extra={k: v for k, v in raw.items() if k not in ("type", "kind", "doc", "default", "required")})
 
@@ -227,7 +234,7 @@ class TokenInfo:
     @classmethod
     def read(cls, group: str, name: str, raw: Mapping[str, Any]) -> TokenInfo:
         raw = _mapping(raw, f"token {group}.{name}")
-        return cls(group=group, name=name, kind=str(raw.get("kind", "string")), ref=str(raw.get("ref") or f"${group}.{name}"),
+        return cls(group=group, name=name, kind=_kind(raw), ref=str(raw.get("ref") or f"${group}.{name}"),
                    default=None if raw.get("default") is None else str(raw["default"]), doc=str(raw.get("doc") or ""), modes=_strings(raw.get("modes")),
                    extra={k: v for k, v in raw.items() if k not in ("kind", "ref", "default", "doc", "modes")})
 
@@ -373,12 +380,14 @@ class Schema:
         return tuple(self.tokens)
 
     def tokens_for(self, key: KeyInfo) -> list[TokenInfo]:
-        """The tokens a key accepts: those of the groups its `tokens` names, the ones its `preferred_tokens` name first. A preferred entry is a group (`color`) or one token (`elevation.max`)."""
+        """The tokens a key accepts: those of the groups its `tokens` names, the ones its `preferred_tokens` name first. A preferred entry is a group (`color`), one token (`elevation.max`) or a pattern
+        over the dotted name (`type.*.font_weight`)."""
         found = [t for group in key.tokens for t in self.tokens.get(group, {}).values()]
         none = len(key.preferred_tokens)
 
         def rank(token: TokenInfo) -> int:
-            return next((i for i, p in enumerate(key.preferred_tokens) if p in (token.group, f"{token.group}.{token.name}")), none)
+            dotted = f"{token.group}.{token.name}"
+            return next((i for i, p in enumerate(key.preferred_tokens) if p == token.group or fnmatchcase(dotted, p)), none)
 
         return sorted(found, key=rank)
 
