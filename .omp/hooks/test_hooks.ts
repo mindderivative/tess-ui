@@ -79,26 +79,24 @@ assert.equal(insideProject("/q/src/a.py", "/p"), null);
 assert.equal(insideProject("/p2/src/a.py", "/p"), null, "a sibling with the same prefix is outside");
 assert.deepEqual(withReport({ content: [{ type: "text", text: "ok" }] }, "problem").content, [{ type: "text", text: "ok" }, { type: "text", text: "\nproblem" }]);
 
-// -- git push is the user's: asked when there is someone to ask, blocked when there is not
+// -- git push runs without asking; a force push and a push of tags are blocked
 {
-	const asked: string[] = [];
-	const yes = { cwd: "/p", hasUI: true, ui: { confirm: async (_t: string, m: string) => (asked.push(m), true) } };
-	const no = { cwd: "/p", hasUI: true, ui: { confirm: async () => false } };
-	assert.equal(await guardBash("git push origin main", yes), undefined, "an allowed push runs");
-	assert.match(asked[0], /git push origin main/, "the question shows the command");
-	const refused = await guardBash("cd x && git -C y push", no);
-	assert.equal(refused?.block, true);
-	assert.match(refused!.reason, new RegExp(PUSH_BLOCKED.slice(0, 30)));
-	assert.match(refused!.reason, /did not allow/);
-	const headless = await guardBash("git push", { cwd: "/p", hasUI: false });
-	assert.equal(headless?.block, true);
-	assert.match(headless!.reason, /no one to ask/);
-	await assert.rejects(guardBash("git push", { cwd: "/p", hasUI: true, ui: { confirm: async () => { throw new Error("dialog closed"); } } }), /dialog closed/, "a push that cannot be asked about is not run");
+	const headless = { cwd: "/p", hasUI: false };
+	for (const command of ["git push", "git push origin main", "git push -u origin feat/colour-picker", "cd x && git -C y push origin main", "git push origin main feat/x"]) {
+		assert.equal(await guardBash(command, headless), undefined, `${command} runs, with no one to ask`);
+	}
+	for (const command of ["git push --force", "git push -f origin main", "git push --force-with-lease", "git push origin +main", "git push --tags", "git push --follow-tags", "git push origin v1.0.0 --tag", "git push origin tag v1.0", "git push origin refs/tags/v1", "git push --delete origin x", "git push --mirror"]) {
+		const refused = await guardBash(command, { cwd: "/p", hasUI: true });
+		assert.equal(refused?.block, true, `${command} is blocked`);
+		assert.match(refused!.reason, new RegExp(PUSH_BLOCKED.slice(0, 30)));
+	}
 	assert.equal(await guardBash("git status", headless as any), undefined);
+	assert.equal(await guardBash("git log --grep=force", headless as any), undefined);
 	assert.equal(await guardBash("ls -la", { cwd: "/p" }), undefined);
 	const guard = load(gitGuard).tool_call[0];
-	assert.equal(await guard({ toolName: "read", input: { path: "git push" } }, { cwd: "/p" }), undefined, "only bash is looked at");
-	assert.equal((await guard({ toolName: "bash", input: { command: "git push" } }, { cwd: "/p", hasUI: false })).block, true);
+	assert.equal(await guard({ toolName: "read", input: { path: "git push --force" } }, { cwd: "/p" }), undefined, "only bash is looked at");
+	assert.equal((await guard({ toolName: "bash", input: { command: "git push --force" } }, { cwd: "/p", hasUI: false })).block, true);
+	assert.equal(await guard({ toolName: "bash", input: { command: "git push origin main" } }, { cwd: "/p", hasUI: false }), undefined);
 }
 
 // -- git commit: the Python files the commit would hold are checked at pyflakes level

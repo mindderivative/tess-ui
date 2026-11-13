@@ -1,14 +1,14 @@
 /**
  * Before a bash call: the one rule AGENTS.md sets for git, made a real check (the Claude Code hook `bash_guard.sh` did not run under omp).
  *
- *  - `git push` is the user's separate decision. With a person to ask, the call waits for a yes; without one (a subagent, `omp -p`) it is blocked.
+ *  - `git push` runs without asking (the Tesserae Shell Directive, maintainer 2026-11-13), except a force push and a push of tags, which stay blocked: no releases, no rewritten history.
  *  - `git commit` first checks the Python files the commit will hold at pyflakes level (syntax errors, unused or undefined names), so an old finding
  *    elsewhere does not block it; a finding blocks the commit and the report is the reason. The files are the staged ones, the ones a `git add` in the
  *    same command line would stage (`git add -n` says which: `git add x && git commit` is how commits are made, and nothing is staged when the hook
  *    runs), and with `commit -a` the tracked files that changed. The Claude Code hook checked only what was already staged, so it never saw those.
  *
  * Every `bash` call passes through here, a nested one (`tools.bash` in an eval cell) too. A throw in a `tool_call` handler blocks the tool,
- * so the lint half catches its own errors and lets the commit through; the push half does not: a push that cannot be asked about is blocked.
+ * so the lint half catches its own errors and lets the commit through.
  */
 
 import type { ExtensionAPI } from "@oh-my-pi/pi-coding-agent";
@@ -16,7 +16,11 @@ import { gitSubcommands, ruffBin, run } from "../lib.ts";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-export const PUSH_BLOCKED = "Blocked: pushing needs a separate, human-gated instruction (AGENTS.md). Commit locally only.";
+export const PUSH_BLOCKED = "Blocked: a force push or a push of tags needs the maintainer (Tesserae Shell Directive: no releases, no rewritten history).";
+/** `git [options] push <arguments up to the end of the command>`. */
+const PUSH = /\bgit\s+(?:(?:-C|-c)\s+\S+\s+|-\S+\s+)*push\b([^;&|\n]*)/g;
+/** A force (`-f`, `--force*`, `--mirror`, `--delete`, a `+ref` spec) or tags (`--tags`, `--follow-tags`, `--tag`, `tag NAME`, `refs/tags/`). */
+const RISKY_PUSH = /(?:^|\s)(?:-[a-zA-Z]*f[a-zA-Z]*|--force\S*|--mirror|--delete|--tags|--follow-tags|--tag|tag\s+\S+|\+\S+|\S*refs\/tags\/\S*)(?=\s|$)/;
 
 /** What a shell would expand, quote or substitute: an argument list with any of it cannot be given to `git add -n` as written. */
 const SHELL_SPECIAL = /[$`(){}<>*?[\]"'\\]/;
@@ -72,13 +76,8 @@ export async function commitProblems(command: string, cwd: string): Promise<stri
 
 export async function guardBash(command: string, ctx: { cwd: string; hasUI?: boolean; ui?: { confirm: (title: string, message: string) => Promise<boolean> } }): Promise<{ block: true; reason: string } | undefined> {
 	const subcommands = gitSubcommands(command);
-	if (subcommands.includes("push")) {
-		if (ctx.hasUI && ctx.ui) {
-			const allowed = await ctx.ui.confirm("git push", `${command}\n\nPushing is a separate, human-gated step (AGENTS.md). Allow this push?`);
-			if (allowed === true) return undefined;
-			return { block: true, reason: `${PUSH_BLOCKED} The user did not allow this push.` };
-		}
-		return { block: true, reason: `${PUSH_BLOCKED} There is no one to ask in this session.` };
+	if (subcommands.includes("push") && [...command.matchAll(PUSH)].some((push) => RISKY_PUSH.test(push[1]))) {
+		return { block: true, reason: PUSH_BLOCKED };
 	}
 	if (subcommands.includes("commit")) {
 		try {
