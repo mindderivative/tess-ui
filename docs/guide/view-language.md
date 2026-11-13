@@ -81,6 +81,7 @@ Every widget declares its properties: a type, a default, the values it allows, w
 | `IconBrowser` | the icon picker's mind, which draws nothing: see [Icon picker](../components/icon-pickers.md) (`IconPicker` is the view you call) |
 | `FontBrowser` | the font list's mind, which draws nothing: see [Font list](../components/font-lists.md) (`FontList` is the view you call) |
 | `ChordRecorder` | the key-chord field's mind, which draws nothing: see [Key chord field](../components/key-chord-fields.md) (`KeyChordField` is the view you call) |
+| `TokenList` | the token button's mind, which draws nothing: see [Token button](../components/token-buttons.md) (`TokenButton` is the view you call) |
 | `ColourArea`, `ColourStrip`, `ColourField`, `ColourSwatches` | `value` (model, a colour as `'#rrggbb'` or `'#rrggbbaa'` text; the picker's parts), `hue` (model; the area and the strip), `channel` (strip and field), `roles` (swatches), `label`, `disabled`: see [Colour picker](../components/colour-pickers.md) |
 | `Splitter`, `Canvas`, `VirtualList`, `Overlay` | their own sections below |
 | `ScrollView`, `NodeGraph`, `GraphNode` | a scrolling box; a canvas of linked nodes; a node of it |

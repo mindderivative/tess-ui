@@ -2904,7 +2904,8 @@
             "Switch",
             "Text",
             "TextField",
-            "TimePickerDial"
+            "TimePickerDial",
+            "TokenList"
           ],
           "description": "Every node of this kind."
         },

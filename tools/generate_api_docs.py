@@ -47,6 +47,7 @@ SECTIONS = (
     ("tess_ui.font_families", "Font families", "The installed font families the font list shows, and the provider that can be swapped.", ("families", "refresh", "use", "parse", "default_provider", "FontListError")),
     ("tess_ui.font_controls", "Font browser", "The font list's search and cursor, with no window.", ("FontBrowser",)),
     ("tess_ui.key_chords", "Key chords", "Key chords as text, `Ctrl+Alt+Shift+Meta+Key`.", ("normalise", "from_event", "canonical_key", "is_modifier_key", "modifier_of", "MODIFIERS")),
+    ("tess_ui.token_controls", "Token list", "The token button's tokens, search and cursor, with no window.", ("TokenList", "rows_of")),
     ("tess_ui.docking", "Docking", "Panels the user can drag between zones."),
     ("tess_ui.interaction", "Interaction", "State layer, ripple and focus ring."),
     ("tess_ui.a11y", "Accessibility", "What a node tells assistive technology."),

@@ -277,6 +277,24 @@ declare("ChordRecorder", {
     "disabled": P("bool"),
 }, doc="The key-chord field's mind: it draws nothing. It records a key press as a chord, reads a typed chord and writes it in the canonical form, and tells the view through the names it is bound to.")
 
+declare("TokenList", {
+    "value": P("str", default="", model=True, doc="The ref of the token, such as `$color.primary`: a pick writes it. A ref that is none of the tokens is kept as it is."),
+    "tokens": P("list", default=[], doc="The tokens, each {name, ref, kind, value, doc}: `ref` is what a pick writes (`$` and the name when left out), `kind` is `colour` for a colour (its `value` is then drawn as a swatch when it is `'#rrggbb'` or `'#rrggbbaa'` text), `doc` a line about it."),
+    "groups": P("list", default=[], doc="More tokens in named sets, each {name, tokens}: they follow `tokens`, and each token is told its group."),
+    "preferred": P("list", default=[], doc="Names (or refs) of tokens to list first, in this order."),
+    "open": P("bool", default=True, doc="Whether the list is built and answers; the current token is kept either way."),
+    "query": P("str", default="", model=True, doc="The search text: a token is kept when its name, ref, group or doc has every word of it, without regard to case. The view's search field writes it; the control empties it each time the list opens."),
+    "rows": P("int", default=7, doc="How many rows show at once (for Page Up and Page Down and for scrolling the cursor into view)."),
+    "row_height": P("float", default=56.0, doc="How tall a row is, in pixels."),
+    "command": P("str", default="", doc=_MIND_COMMAND + "`key arrow_down`, `key arrow_up field` (from the search field), `click $color.primary`."),
+    "scroll": P("float", default=0.0, model=True, doc="The list's scroll offset: bind the list's `scroll_offset` to the same name; moving the cursor writes the offset that shows it."),
+    "entries": P("list", model=True, doc=_MIND_OUT + " The tokens that match the search, each {ref, name, kind, value, shown, doc, group, detail, swatch, label}: `swatch` is a colour token's colour as text (empty for any other), `shown` the value as text, `detail` the group and the doc."),
+    "cursor_ref": P("str", model=True, doc=_MIND_OUT + " The ref of the token the keyboard is on, or empty."),
+    "count": P("int", model=True, doc=_MIND_OUT + " How many tokens the search found."),
+    "current": P("any", model=True, doc=_MIND_OUT + " The token of `value`: {ref, name, kind, swatch, shown, known}, for the button of a closed popup; `known` is false when `value` is none of the tokens."),
+    "disabled": P("bool"),
+}, doc="The token button's mind: it draws nothing. It takes the tokens as data, searches them, keeps the cursor and tells the view through the names it is bound to.")
+
 declare("NodeGraph", {"edges": P("list", doc="The links: each {from: id, to: id}, the ids of the GraphNodes."),
                       "snap": P("float", default=0.0, doc="A node the user moves lands on a multiple of this many pixels; 0 is no grid."),
                       "arrows": P("bool", doc="Each edge ends in an arrowhead."),

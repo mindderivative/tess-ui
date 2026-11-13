@@ -129,6 +129,7 @@ nav:
           - Icon picker: components/icon-pickers.md
           - Font list: components/font-lists.md
           - Key chord field: components/key-chord-fields.md
+          - Token button: components/token-buttons.md
           - Segmented buttons: components/segmented-buttons.md
           - Time input: components/time-input.md
       - Content:
@@ -224,6 +225,8 @@ nav:
               - FontListPanel: stylesheets/font-lists/font-list-panel.md
           - Key chord field:
               - KeyChordField: stylesheets/key-chord-fields/key-chord-field.md
+          - Token button:
+              - TokenButton: stylesheets/token-buttons/token-button.md
           - Time input:
               - TimeInput: stylesheets/time-input/time-input.md
       - Content:

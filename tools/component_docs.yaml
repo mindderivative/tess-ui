@@ -1566,6 +1566,57 @@ components:
       key_chords.from_event("arrow_left", alt=True)            # 'Alt+Left'
     see: [guide/controls.md, components/text-fields.md]
 
+  - slug: token-buttons
+    title: Token button
+    group: Selection and input
+    views: [TokenButton]
+    widgets: [TokenList]
+    md3: |
+      Material Design 3 has no control for choosing a design token. An app whose people point a setting at a token of the theme (`$color.primary`, `$space.md`) needs one, and it is built from what MD3 does
+      describe: an outlined button that shows the choice, and a searchable list of rows on a menu-like surface.
+    built: |
+      One view and one control. `TokenButton` is the view you use: a 48 pixel button that shows the token it holds and opens the list of tokens in a layer under it. `TokenList` is the control that draws nothing and is the
+      list's mind (`tess_ui.token_controls`: the tokens as rows, the search and the cursor, which the view reaches through the names it binds to it).
+
+      The tokens are data you give it, not read from anywhere. `tokens` is a list of `{name, ref, kind, value, doc}`: `name` is what a person looks for (`color.primary`), `ref` is the text a pick writes
+      (`$color.primary`; a `$` and the name when it is left out), `kind` says what the value is, `value` is the token's value and `doc` one line about it. `groups` is more tokens in named sets,
+      `[{name, tokens}]`, which come after `tokens`; each row then says its group before its doc. `preferred` is a list of names or refs to list first, in that order. A token with no name, or with the ref of
+      an earlier one, is left out. Nothing here knows what a token is: a colour kind is `colour` or `color`, and any other kind is shown as text.
+
+      A row is the token's name, a line under it with its group and doc, and its value: a swatch of the colour for a colour token whose value is `'#rrggbb'` or `'#rrggbbaa'` text, the value as text for any other
+      (a colour token whose value is not such text shows the text). The button shows the ref in `value` with a swatch when the token is a colour it knows; a ref that is none of the tokens is shown as it is and
+      is kept. `value` is two-way text: a pick writes the token's `ref`, calls `on_pick` and closes the layer unless `close_on_pick` is false. The search keeps the tokens that have every word typed in their name,
+      ref, group or doc, in any order and without regard to case; a name that starts with the first word comes first, and the preferred ones stay first among equals. The search is empty each time the list opens, and
+      the list opens scrolled so that the held token shows, with the cursor on it. The list is a `VirtualList` of `rows` rows (7 by default) and builds only the rows in view and three past each edge, however
+      many tokens there are.
+
+      The keyboard. Enter on the button, or Down, opens the layer with the search field focused. Up, Down, Page Up and Page Down in the field move the cursor and Enter picks the token under it (Left, Right, Home,
+      End and Space are the text's). Tab goes on to the list, where Up and Down move by a row, Page Up and Page Down by `rows`, Home and End go to the ends, and Enter and Space pick. A press picks too. Escape and a
+      press outside close the layer (writing false to `open`), and the focus goes back to the button. A screen reader hears a button named "label: ref" that is `expanded` while the layer is open, a group, the
+      search field, a `list` of `listitem`s each named "name: value" and `selected` when it is the token held, and an alert for a search that finds nothing.
+
+      The look is in `TokenButton_Stylesheet.yaml`: write one in your project to change the button, the layer and the rows. Not built: a tree of the tokens by their dotted names, tokens that are aliases of
+      others (an alias is a token whose value is another ref, shown as text), a preview for kinds other than colour (a spacing bar, a font sample), and reading the tokens from the theme or from the Shell's
+      schema (the app passes them).
+    usage_view: |
+      name: accent
+      widget: Container
+      style: {flex_direction: vertical, gap: 16, width: 480, height: 640, padding: 16}
+      children:
+        - {widget: TokenButton, label: Accent, tokens: "{{ tokens }}", preferred: ["$color.primary"], value: "{{ accent }}", on_pick: accent_picked}
+        - {widget: TokenButton, label: Gap, tokens: "{{ tokens }}", value: "{{ gap }}", open: "{{ choosing }}"}
+    python: |
+      from tess_ui.token_controls import TokenList
+
+      tokens = [
+          {"name": "color.primary", "ref": "$color.primary", "kind": "colour", "value": "#6750a4", "doc": "The brand colour"},
+          {"name": "space.md", "ref": "$space.md", "kind": "dimension", "value": 16, "doc": "A medium gap"},
+      ]
+      found = TokenList(tokens, preferred=["space.md"])
+      found.set_query("brand")                  # name, ref, group or doc, every word, any case
+      [row["ref"] for row in found.results]     # ['$color.primary']
+    see: [guide/controls.md, components/colour-pickers.md, components/font-lists.md]
+
   - slug: segmented-buttons
     title: Segmented buttons
     group: Selection and input

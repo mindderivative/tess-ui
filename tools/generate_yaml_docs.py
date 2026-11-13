@@ -57,6 +57,7 @@ KINDS = (
     ("IconBrowser", "The icon picker's mind: it draws nothing, lists the built-in icons and the files of a folder, searches them, keeps the cursor and reads the previews, and tells the view through the names it is bound to.", "`folder:`, `query:`, `open:`, `command:`"),
     ("FontBrowser", "The font list's mind: it draws nothing, asks for the installed families, searches them, keeps the cursor, and tells the view through the names it is bound to.", "`query:`, `open:`, `command:`"),
     ("ChordRecorder", "The key-chord field's mind: it draws nothing, records a key press as a chord, reads a typed one, and tells the view through the names it is bound to.", "`value:`, `recording:`, `command:`"),
+    ("TokenList", "The token button's mind: it draws nothing, takes the tokens as data, searches them, keeps the cursor, and tells the view through the names it is bound to.", "`value:`, `tokens:`, `groups:`, `preferred:`, `open:`, `command:`"),
     ("NodeGraph", "A pannable canvas of `GraphNode`s joined by edges.", "`edges:`, children that are `GraphNode`s"),
     ("GraphNode", "A node in a `NodeGraph`: a titled box at a place.", "`label:`, `x:`, `y:`"),
     ("TitleBar", "A title bar: an icon, a title, your content and the window's buttons (`App(borderless=True)`), or a close button for a dialog or a sheet (`buttons: [dismiss]`).", "`title:`, `icon:`, `buttons:`"),

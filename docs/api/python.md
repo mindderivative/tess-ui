@@ -22,6 +22,7 @@ Every public class, function and constant, with its signature and what it does. 
 - [Font families](#font-families): The installed font families the font list shows, and the provider that can be swapped.
 - [Font browser](#font-browser): The font list's search and cursor, with no window.
 - [Key chords](#key-chords): Key chords as text, `Ctrl+Alt+Shift+Meta+Key`.
+- [Token list](#token-list): The token button's tokens, search and cursor, with no window.
 - [Docking](#docking): Panels the user can drag between zones.
 - [Interaction](#interaction): State layer, ripple and focus ring.
 - [Accessibility](#accessibility): What a node tells assistive technology.
@@ -2363,6 +2364,44 @@ The modifier (`Ctrl`, `Alt`, `Shift` or `Meta`) the engine's key `name` is, or `
 **Constants**
 
 - `MODIFIERS` = `('Ctrl', 'Alt', 'Shift', 'Meta')`
+
+## Token list
+
+`tess_ui.token_controls`: The token button's tokens, search and cursor, with no window.
+
+### `TokenList`
+
+```python
+class TokenList(
+    tokens: Any = None,
+    groups: Any = None,
+    preferred: Any = None,
+    page_rows: int = 7
+) -> None
+```
+
+The tokens, a search and a cursor. `page_rows` shapes Page Up and Page Down.
+
+- `click(index: int) -> str | None`: A press on row `index` (-1 is none): it is picked.
+- `index_of(ref: str) -> int`: The place of `ref` in the results, or -1.
+- `move(to: int) -> None`: Puts the cursor on `to`, kept inside the results.
+- `picked` *(property)*: The token under the cursor.
+- `press(key: str, *, in_field: bool = False) -> str | None`: A key.
+- `reveal(offset: float, row_height: float, rows: int | None = None) -> float`: The scroll offset that keeps the cursor's row in a window of `rows` rows (`page_rows` when not given), as near to `offset` as it can be.
+- `row_of(ref: str) -> dict[str, Any] | None`: The token with the ref `ref`, whether or not the search keeps it.
+- `set_query(query: str) -> None`: Keeps the tokens that have every word of `query` in their name, ref, group or doc (without regard to case), the ones whose name starts with the first word first; the cursor goes to the first.
+
+### `rows_of`
+
+```python
+rows_of(
+    tokens: Any = None,
+    groups: Any = None,
+    preferred: Any = None
+) -> list[dict[str, Any]]
+```
+
+The rows for `tokens` and `groups` (see the module's note): the preferred first, in the order of `preferred`, then the rest in the order given.
 
 ## Docking
 

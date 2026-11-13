@@ -58,6 +58,8 @@ children:
   reaches it through names it binds (`value` and `scroll` are two-way; `entries`, `cursor_name`, `count`, `mode` and `message` are its outputs; `command` asks it to do something). You call `FontList`, not this.
 - **The key-chord field's mind** (`ChordRecorder`) is a control that draws nothing, made for [the key chord field](../components/key-chord-fields.md): it records the key presses its view sends it and reads typed chords;
   the view reaches it through names it binds (`value`, `draft` and `recording` are two-way; `preview`, `invalid` and `message` are its outputs; `command` sends it a key or a typed text). You call `KeyChordField`, not this.
+- **The token button's mind** (`TokenList`) is a control that draws nothing, made for [the token button](../components/token-buttons.md): it takes the tokens as data, searches them and keeps the cursor; the view
+  reaches it through names it binds (`value`, `query` and `scroll` are two-way; `entries`, `cursor_ref`, `count` and `current` are its outputs; `command` sends it a key or a click). You call `TokenButton`, not this.
 - **Size:** `style: {width, height}` sets the control's touch target;
   it's MD3's 48 px when not given. A slider's `width` is its track's
   length, a dial's is its face, and a progress bar's is its track.
