@@ -22,6 +22,7 @@ from tess_shell_config.tdl import (
     Node,
     Parsed,
     child_entries,
+    child_named,
     node_source,
     parse_text,
 )
@@ -173,6 +174,33 @@ class DocumentModel:
         """Remove the property `key` of the block at `path` (the key goes back to the schema's default)."""
         block = self._need_block(path)
         self._edit(lambda: block.without_property(key), selection=tuple(path))
+
+    def set_nested_value(self, path: IndexPath, chain: tuple[str, ...], key: str, value_text: str) -> None:
+        """Set the property `key` of the block reached from the block at `path` through the child blocks named in `chain` (compared without regard to case), adding each block that is not there yet
+        (written `Name { }`, after the last entry). It is one edit, so one undo step: a theme token whose group and name blocks are missing is written in a single step."""
+        root = self._need_block(path)
+
+        def make() -> Document:
+            block: Block = root
+            for name in chain:
+                found = child_named(block, name)
+                if found is None:
+                    _, found = block.with_child(f"{name} {{ }}")
+                block = found
+            return block.with_property(key, value_text)
+
+        self._edit(make, selection=self.selection)  # the block that is edited is not the one that is selected (a mode's block of a theme): the selection stays where it was
+
+    def clear_nested_value(self, path: IndexPath, chain: tuple[str, ...], key: str) -> None:
+        """Remove the property `key` of the block reached through `chain` (see `set_nested_value`); the blocks stay."""
+        block = self._need_block(path)
+        for name in chain:
+            found = child_named(block, name)
+            if found is None:
+                raise EditError(f"There is no {name} block to remove {key} from.")
+            block = found
+        target = block
+        self._edit(lambda: target.without_property(key), selection=self.selection)
 
     def add_block(self, parent: IndexPath, block_text: str, index: int | None = None, *, select: bool = False) -> IndexPath:
         """Add the block written in `block_text` to the block at `parent`, at entry `index` (`None`: last). Returns the new block's index path. The selection stays on the block

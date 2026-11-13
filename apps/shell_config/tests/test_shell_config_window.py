@@ -173,7 +173,7 @@ def test_every_step_from_open_to_save_works_from_the_keyboard_alone(folder, tmp_
     assert w.vm.selected_label.get() == "Selected: Bar  Top_Bar" and w.session.model.selected.name == "Top_Bar"
     # F6 moves to Text: typing goes into the file
     w.key("F6")
-    assert w.region() == 2 and w.focused()[0].endswith("editor")
+    assert w.region() == 3 and w.focused()[0].endswith("editor")
     w.key("end", ctrl=True)
     w.type("\n# written from the keyboard\n")
     assert w.session.model.dirty and w.session.model.text.endswith("# written from the keyboard\n") and w.vm.dirty.get()
@@ -203,8 +203,8 @@ def test_f6_and_shift_f6_cycle_the_three_areas_and_skip_the_structure_while_it_i
     for _ in range(4):
         w.key("F6")
         seen.append(w.region())
-    assert seen == [1, 2, 0, 1]
-    for expected in (0, 2, 1):
+    assert seen == [1, 3, 0, 1], "with no schema the form has nothing to show, so F6 passes it by"
+    for expected in (0, 3, 1):
         w.key("F6", shift=True)
         assert w.region() == expected
     w.vm.open_file("Shells/Broken_Shell.tdl")
@@ -214,7 +214,7 @@ def test_f6_and_shift_f6_cycle_the_three_areas_and_skip_the_structure_while_it_i
     for _ in range(4):
         w.key("F6")
         regions.append(w.region())
-    assert 1 not in regions and regions == [0, 2, 0, 2]
+    assert 1 not in regions and regions == [0, 3, 0, 3]
 
 
 def test_typing_text_that_does_not_parse_turns_the_structure_off_and_deleting_it_turns_it_on(folder, tmp_path):
@@ -222,12 +222,11 @@ def test_typing_text_that_does_not_parse_turns_the_structure_off_and_deleting_it
     w.vm.open_file("Shells/Main_Shell.tdl")
     w.settle()
     w.built.shortcuts.move_focus(-1)  # Text
-    assert w.region() == 2
+    assert w.region() == 3
     w.key("home", ctrl=True)
     w.type("}")  # a stray brace before the metadata block
     assert not w.vm.has_tree.get() and w.vm.error_rows.get() and w.session.model.errors
-    w.vm.text.set((folder / "Shells" / "Main_Shell.tdl").read_text())  # the text put back (what deleting the brace does)
-    w.vm.text_edited()
+    w.key("backspace")  # the caret is just after the brace it typed: the toolkit keeps it there (it used to jump to the end after each typed character)
     assert w.vm.has_tree.get() and w.vm.error_rows.get() == [] and w.session.model.text == (folder / "Shells" / "Main_Shell.tdl").read_text()
     assert not w.session.model.dirty
 

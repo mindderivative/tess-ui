@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import tess_dl
 from tess_dl import Block, Document, For, If, Property
 
-__all__ = ["IndexPath", "Node", "Mark", "Parsed", "parse_text", "child_entries", "properties_of", "node_type", "node_source", "walk"]
+__all__ = ["IndexPath", "Node", "Mark", "Parsed", "parse_text", "child_entries", "properties_of", "child_named", "node_type", "node_source", "walk"]
 
 type IndexPath = tuple[int, ...]
 #: What a selection points at: a block, or an `If` or `For` node.
@@ -75,6 +75,12 @@ def properties_of(block: Block) -> dict[str, Property]:
         if isinstance(entry, Property):
             found.setdefault(entry.key, entry)
     return found
+
+
+def child_named(block: Block, name: str) -> Block | None:
+    """The first block directly inside `block` whose type is `name`, compared without regard to case (a theme's `Color` block, a token group `color`)."""
+    wanted = name.lower()
+    return next((e for e in block.entries if isinstance(e, Block) and e.type.lower() == wanted), None)
 
 
 def node_type(node: Node) -> str:

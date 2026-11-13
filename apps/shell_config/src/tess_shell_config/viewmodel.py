@@ -9,10 +9,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from tess_ui import Effect, Signal, ViewModel, untrack
+from tess_ui import Effect, Signal, ViewModel, batch, untrack
 
 from tess_shell_config.files import SaveError
 from tess_shell_config.folder import FileType
+from tess_shell_config.formcontrol import FormController
 from tess_shell_config.model import DocumentModel, EditError
 from tess_shell_config.session import ConfigSession
 from tess_shell_config.structure import ancestors, label_of, nodes_for, path_of, value_of
@@ -54,6 +55,7 @@ class ShellConfigViewModel(ViewModel):
         self.selected_label = Signal("")
         self._known_branches: set[str] = set()
         self.shortcuts: Any = None  # a `Shortcuts`, set by `build`, which has the view to move the focus in
+        self.form = FormController(self)  # the form's Signals and handlers (`form_*`, `picker_*`, `file_*`) are put on this ViewModel
         self._effects = [Effect(self._file_picked), Effect(self._structure_picked)]
         self.refresh_files()
 
@@ -112,7 +114,7 @@ class ShellConfigViewModel(ViewModel):
             path = path_of(value)
         except ValueError:
             return
-        untrack(lambda: self._select(model, path))
+        untrack(lambda: batch(lambda: self._select(model, path)))
 
     def _select(self, model: DocumentModel, path: tuple[int, ...]) -> None:
         if model.selection == path:
@@ -123,6 +125,7 @@ class ShellConfigViewModel(ViewModel):
             self._say(str(error), error=True)
             return
         self._describe_selection(model)
+        self.form.refresh()
 
     # -- the Text area -----------------------------------------------------------------------------------------------------------
 
@@ -197,8 +200,11 @@ class ShellConfigViewModel(ViewModel):
 
     # -- showing the model -------------------------------------------------------------------------------------------------------
 
-    def _show(self, model: DocumentModel, *, new_file: bool, set_text: bool | None = None) -> None:
-        """Bring every Signal in step with the model. The text is written back to the editor only when the model changed it (a new file, undo, format), never while the person types."""
+    def _show(self, model: DocumentModel, *, new_file: bool, set_text: bool | None = None, refresh_form: bool = True) -> None:
+        """Bring every Signal in step with the model, in one batch so the window is composed once. The text is written back to the editor only when the model changed it (a new file, undo, format), never while the person types."""
+        batch(lambda: self._show_now(model, new_file=new_file, set_text=set_text, refresh_form=refresh_form))
+
+    def _show_now(self, model: DocumentModel, *, new_file: bool, set_text: bool | None, refresh_form: bool) -> None:
         if new_file or set_text:
             self.text.set(model.display_text)
         self.has_file.set(True)
@@ -212,6 +218,8 @@ class ShellConfigViewModel(ViewModel):
         wanted = FILE + model.relative
         if self.file_selected.get() != wanted:
             self.file_selected.set(wanted)
+        if refresh_form:
+            self.form.refresh()
 
     def _structure(self, model: DocumentModel) -> None:
         rows = nodes_for(model.document)

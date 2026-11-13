@@ -24,7 +24,7 @@ children:
       - widget: Container
         name: files_pane
         a11y: {role: group, label: Files}
-        style: {flex_direction: vertical, width: 300, gap: 4, background: surface_container_low, corner_radius: 12, padding: 8}
+        style: {flex_direction: vertical, width: 200, gap: 4, background: surface_container_low, corner_radius: 12, padding: 8}
         children:
           - {widget: Text, name: files_heading, text: Files, typography_role: title_small}
           - {widget: Text, name: folder_text, text: "{{ folder }}", typography_role: body_small, max_lines: 1, overflow: ellipsis, style: {foreground: on_surface_variant}}
@@ -36,7 +36,7 @@ children:
       - widget: Container
         name: structure_pane
         a11y: {role: group, label: Structure}
-        style: {flex_direction: vertical, width: 340, gap: 4, background: surface_container_low, corner_radius: 12, padding: 8}
+        style: {flex_direction: vertical, width: 230, gap: 4, background: surface_container_low, corner_radius: 12, padding: 8}
         children:
           - {widget: Text, name: structure_heading, text: Structure, typography_role: title_small}
           - {widget: Text, name: selection_text, text: "{{ selected_label }}", typography_role: body_small, max_lines: 1, overflow: ellipsis, style: {foreground: on_surface_variant}}
@@ -52,6 +52,217 @@ children:
             style: {flex: expand_vertical, width: 100%, min_height: 0}
             children:
               - {widget: Tree, name: structure_tree, nodes: "{{ structure_nodes }}", expanded: "{{ structure_expanded }}", selected: "{{ structure_selected }}", compact: true}
+      - widget: Container
+        name: form_pane
+        a11y: {role: group, label: Form}
+        style: {flex_direction: vertical, width: 440, gap: 4, background: surface_container_low, corner_radius: 12, padding: 8}
+        children:
+          - {widget: Text, name: form_heading, text: Form, typography_role: title_small}
+          - {widget: Text, name: form_title, text: "{{ form_title }}", typography_role: body_small, max_lines: 1, overflow: ellipsis, style: {foreground: on_surface_variant}}
+          - widget: Text
+            for: note in form_notes
+            key: note
+            name: form_note
+            text: "{{ note }}"
+            typography_role: body_small
+            style: {width: 100%, foreground: on_surface_variant}
+          - widget: ScrollView
+            name: form_scroll
+            style: {flex: expand_vertical, width: 100%, min_height: 0}
+            children:
+              - widget: Container
+                name: form_list
+                style: {flex_direction: vertical, width: 100%, gap: 2}
+                children:
+                  - widget: Container
+                    for: item in form_items
+                    key: item['key']
+                    name: form_item
+                    state: {active: false}
+                    style: {flex_direction: vertical, width: 100%, gap: 2}
+                    children:
+                      - widget: Container
+                        name: group_header
+                        if: "item['type'] == 'group'"
+                        interaction: true
+                        a11y: {role: button, label: "{{ item['label'] }}", expanded: "{{ item['open'] }}", description: "{{ item['present'] }} of {{ item['count'] }} keys set"}
+                        handlers: {on_click: "form_group(item['label'])"}
+                        style: {flex_direction: horizontal, align_content: left, gap: 4, width: 100%, padding: {left: 0, right: 0, top: 4, bottom: 4}}
+                        children:
+                          - {widget: Icon, name: chevron, icon: "{{ 'chevron_down' if item['open'] else 'chevron_right' }}", style: {width: 20, height: 20, foreground: primary}}
+                          - {widget: Text, name: group_label, text: "{{ item['label'] }}", typography_role: label_large, style: {foreground: primary}}
+                          - {widget: Text, name: group_count, text: "{{ item['present'] }} of {{ item['count'] }} set", typography_role: label_small, style: {foreground: on_surface_variant}}
+                      - widget: Container
+                        name: row
+                        if: "item['type'] == 'row'"
+                        tooltip: "{{ item['doc'] }}"
+                        style: {flex_direction: horizontal, align_content: left, gap: 8, width: 100%}
+                        children:
+                          - widget: Container
+                            name: label_box
+                            style: {flex_direction: vertical, width: 120, gap: 0}
+                            children:
+                              - {widget: Text, name: label, text: "{{ item['label'] }}", typography_role: body_medium, max_lines: 2, style: {width: 100%}}
+                              - {widget: Text, name: required, if: "item['missing']", text: "required", typography_role: label_small, style: {foreground: error}}
+                              - widget: Text
+                                name: marker_text
+                                for: "marker in item['markers']"
+                                key: marker
+                                text: "{{ marker }}"
+                                typography_role: label_small
+                                style: {foreground: on_surface_variant}
+                          - widget: Container
+                            name: cells
+                            style: {flex_direction: vertical, flex: expand_horizontal, min_width: 0, gap: 2}
+                            children:
+                              - widget: Container
+                                for: cell in item['cells']
+                                key: cell['id']
+                                name: cell
+                                state:
+                                  draft: "{{ cell.get('field', '') }}"
+                                  unit: "{{ cell.get('unit', '') }}"
+                                  on: "{{ cell.get('checked', False) }}"
+                                  colour: "{{ cell.get('colour', '#808080') }}"
+                                  linked: "{{ cell.get('linked', True) }}"
+                                  d0: "{{ (cell.get('fields', []) + ['', '', '', ''])[0] }}"
+                                  d1: "{{ (cell.get('fields', []) + ['', '', '', ''])[1] }}"
+                                  d2: "{{ (cell.get('fields', []) + ['', '', '', ''])[2] }}"
+                                  d3: "{{ (cell.get('fields', []) + ['', '', '', ''])[3] }}"
+                                  lastkey: ""
+                                style: {flex_direction: horizontal, align_content: left, gap: 4, width: 100%}
+                                children:
+                                  - {widget: Text, name: column, if: "item['many']", text: "{{ cell['column'] }}", typography_role: label_small, style: {width: 56, foreground: on_surface_variant}}
+                                  - widget: Switch
+                                    name: switch
+                                    if: "cell['ui'] == 'switch'"
+                                    selected: "{{ on }}"
+                                    a11y: {label: "{{ item['label'] }}"}
+                                    handlers: {on_change: "form_commit(cell['id'], {'checked': on})", on_focus_enter: "active = True", on_focus_exit: "active = False"}
+                                  - widget: Button
+                                    name: choose
+                                    if: "cell['ui'] == 'choice'"
+                                    label: "{{ cell['shown'] }}"
+                                    variant: "{{ 'tonal' if cell['present'] else 'outlined' }}"
+                                    size: xs
+                                    a11y: {label: "{{ item['label'] }}", description: "{{ item['doc'] }}"}
+                                    handlers: {on_click: "form_choices(cell['id'])", on_focus_enter: "active = True", on_focus_exit: "active = False"}
+                                  - widget: Container
+                                    name: field_box
+                                    if: "cell['ui'] in ('field', 'length')"
+                                    style: {flex_direction: horizontal, align_content: left, gap: 4, flex: expand_horizontal, min_width: 0}
+                                    children:
+                                      - widget: TextInput
+                                        name: field
+                                        if: "cell['ui'] == 'field' or cell['number_enabled']"
+                                        text: "{{ draft }}"
+                                        placeholder: "{{ cell['placeholder'] }}"
+                                        read_only: "{{ cell['readonly'] }}"
+                                        typography_role: body_medium
+                                        a11y: {label: "{{ item['label'] }}", description: "{{ item['doc'] }}"}
+                                        style: {flex: expand_horizontal, min_width: 48, height: 32, padding: {left: 8, right: 8, top: 4, bottom: 4}}
+                                        handlers:
+                                          on_submit: "form_commit(cell['id'], {'text': draft, 'unit': unit})"
+                                          on_focus_exit: "form_commit(cell['id'], {'text': draft, 'unit': unit}); active = False"
+                                          on_focus_enter: "active = True"
+                                          on_key: "lastkey = event.key; after(0, \"form_key(cell['id'], lastkey, draft)\", 'step')"
+                                      - {widget: Text, name: suffix, if: "cell['suffix'] != ''", text: "{{ cell['suffix'] }}", typography_role: body_small, style: {foreground: on_surface_variant}}
+                                      - widget: Button
+                                        name: unit_button
+                                        if: "cell['ui'] == 'length'"
+                                        label: "{{ unit }}"
+                                        variant: outlined
+                                        size: xs
+                                        a11y: {label: "{{ item['label'] }} unit"}
+                                        handlers: {on_click: "form_units(cell['id'], draft)", on_focus_enter: "active = True", on_focus_exit: "active = False"}
+                                      - widget: Button
+                                        name: browse
+                                        if: "cell['browse']"
+                                        label: Browse
+                                        variant: outlined
+                                        size: xs
+                                        handlers: {on_click: "form_browse(cell['id'])", on_focus_enter: "active = True", on_focus_exit: "active = False"}
+                                  - widget: Container
+                                    name: sides_box
+                                    if: "cell['ui'] == 'sides'"
+                                    style: {flex_direction: horizontal, align_content: left, gap: 4, flex: expand_horizontal, min_width: 0}
+                                    children:
+                                      - widget: TextInput
+                                        name: side_0
+                                        text: "{{ d0 }}"
+                                        placeholder: "{{ cell['placeholder'] }}"
+                                        typography_role: body_medium
+                                        a11y: {label: "{{ item['label'] }} {{ cell['labels'][0] }}"}
+                                        style: {flex: expand_horizontal, min_width: 36, height: 32, padding: {left: 8, right: 8, top: 4, bottom: 4}}
+                                        handlers: {on_submit: "form_commit(cell['id'], {'fields': [d0, d1, d2, d3], 'linked': linked})", on_focus_exit: "form_commit(cell['id'], {'fields': [d0, d1, d2, d3], 'linked': linked}); active = False", on_focus_enter: "active = True"}
+                                      - widget: TextInput
+                                        name: side_1
+                                        if: "not linked"
+                                        text: "{{ d1 }}"
+                                        placeholder: "{{ cell['placeholder'] }}"
+                                        typography_role: body_medium
+                                        a11y: {label: "{{ item['label'] }} {{ cell['labels'][1] }}"}
+                                        style: {flex: expand_horizontal, min_width: 36, height: 32, padding: {left: 8, right: 8, top: 4, bottom: 4}}
+                                        handlers: {on_submit: "form_commit(cell['id'], {'fields': [d0, d1, d2, d3], 'linked': linked})", on_focus_exit: "form_commit(cell['id'], {'fields': [d0, d1, d2, d3], 'linked': linked}); active = False", on_focus_enter: "active = True"}
+                                      - widget: TextInput
+                                        name: side_2
+                                        if: "not linked"
+                                        text: "{{ d2 }}"
+                                        placeholder: "{{ cell['placeholder'] }}"
+                                        typography_role: body_medium
+                                        a11y: {label: "{{ item['label'] }} {{ cell['labels'][2] }}"}
+                                        style: {flex: expand_horizontal, min_width: 36, height: 32, padding: {left: 8, right: 8, top: 4, bottom: 4}}
+                                        handlers: {on_submit: "form_commit(cell['id'], {'fields': [d0, d1, d2, d3], 'linked': linked})", on_focus_exit: "form_commit(cell['id'], {'fields': [d0, d1, d2, d3], 'linked': linked}); active = False", on_focus_enter: "active = True"}
+                                      - widget: TextInput
+                                        name: side_3
+                                        if: "not linked"
+                                        text: "{{ d3 }}"
+                                        placeholder: "{{ cell['placeholder'] }}"
+                                        typography_role: body_medium
+                                        a11y: {label: "{{ item['label'] }} {{ cell['labels'][3] }}"}
+                                        style: {flex: expand_horizontal, min_width: 36, height: 32, padding: {left: 8, right: 8, top: 4, bottom: 4}}
+                                        handlers: {on_submit: "form_commit(cell['id'], {'fields': [d0, d1, d2, d3], 'linked': linked})", on_focus_exit: "form_commit(cell['id'], {'fields': [d0, d1, d2, d3], 'linked': linked}); active = False", on_focus_enter: "active = True"}
+                                      - widget: Button
+                                        name: link_button
+                                        if: "cell['can_link']"
+                                        label: "{{ 'Linked' if linked else 'Separate' }}"
+                                        variant: text
+                                        size: xs
+                                        a11y: {label: "{{ item['label'] }}: one value for all sides, or one for each"}
+                                        handlers: {on_click: "d1 = d0; d2 = d0; d3 = d0; linked = not linked"}
+                                  - widget: ColourPicker
+                                    name: colour_picker
+                                    if: "cell['ui'] == 'colour'"
+                                    popup: true
+                                    value: "{{ colour }}"
+                                    label: "{{ item['label'] }}"
+                                    handlers: {on_change: "after(300, \"form_colour(cell['id'], colour)\", 'colour')"}
+                                  - {widget: Text, name: colour_text, if: "cell['ui'] == 'colour'", text: "{{ cell['text'] if cell['present'] else cell['placeholder'] }}", typography_role: body_small, style: {flex: expand_horizontal, min_width: 0, foreground: on_surface_variant}}
+                                  - widget: Button
+                                    name: token_button
+                                    if: "cell['tokens']"
+                                    label: "$"
+                                    variant: text
+                                    size: xs
+                                    a11y: {label: "Theme token for {{ item['label'] }}"}
+                                    handlers: {on_click: "form_tokens(cell['id'])", on_focus_enter: "active = True", on_focus_exit: "active = False"}
+                                  - widget: Button
+                                    name: expression_button
+                                    if: "cell['slot']"
+                                    label: "{ }"
+                                    variant: "{{ 'tonal' if cell['expression'] else 'text' }}"
+                                    size: xs
+                                    a11y: {label: "Expression for {{ item['label'] }}", pressed: "{{ cell['expression'] }}"}
+                                    handlers: {on_click: "form_expression(cell['id'])", on_focus_enter: "active = True", on_focus_exit: "active = False"}
+                                  - widget: IconButton
+                                    name: reset_button
+                                    icon: undo
+                                    size: xs
+                                    label: "Reset {{ item['label'] }} to its default"
+                                    disabled: "{{ not cell['present'] }}"
+                                    handlers: {on_click: "form_reset(cell['id'])", on_focus_enter: "active = True", on_focus_exit: "active = False"}
+                      - {widget: Text, name: row_error, if: "item['type'] == 'row' and item['error'] != ''", text: "{{ item['error'] }}", typography_role: body_small, a11y: {live: polite}, style: {width: 100%, foreground: error}}
+                      - {widget: Text, name: doc_line, if: "item['type'] == 'row' and active and item['doc'] != ''", text: "{{ item['doc'] }}", typography_role: body_small, style: {width: 100%, foreground: on_surface_variant}}
       - widget: Container
         name: text_pane
         a11y: {role: group, label: Text}
@@ -89,3 +300,45 @@ children:
     children:
       - {widget: Icon, name: status_icon, if: status_is_error, icon: error, style: {width: 18, height: 18, foreground: error}}
       - {widget: Text, name: status_text, text: "{{ status }}", typography_role: body_small, a11y: {live: polite}, style: {flex: expand_horizontal, min_width: 0, foreground: "{{ 'error' if status_is_error else 'on_surface_variant' }}"}}
+  - widget: Dialog
+    name: picker
+    if: picker_open
+    open: "{{ picker_open }}"
+    headline: "{{ picker_title }}"
+    width: 440
+    max_height: 400
+    actions: [{label: Cancel, value: cancel}]
+    children:
+      - widget: Container
+        name: picker_list
+        a11y: {role: list, label: "{{ picker_title }}"}
+        style: {flex_direction: vertical, width: 100%}
+        children:
+          - widget: Container
+            for: option in picker_items
+            key: option['value']
+            name: option
+            interaction: true
+            a11y: {role: listitem, label: "{{ option['label'] }}", selected: "{{ option['value'] == picker_current }}"}
+            handlers: {on_click: "pick_option(option['value'])"}
+            style: {flex_direction: horizontal, align_content: left, gap: 8, padding: 8, width: 100%, corner_radius: 8, background: "{{ 'secondary_container' if option['value'] == picker_current else 'transparent' }}"}
+            children:
+              - {widget: Rect, name: swatch, if: "option['colour'] != ''", style: {width: 20, height: 20, corner_radius: 4, background: "{{ option['colour'] }}", border_width: 1, border_color: outline}}
+              - {widget: Text, name: option_label, text: "{{ option['label'] }}", typography_role: body_medium, style: {width: 150}}
+              - {widget: Text, name: option_hint, text: "{{ option['hint'] }}", typography_role: body_small, max_lines: 2, style: {flex: expand_horizontal, min_width: 0, foreground: on_surface_variant}}
+  - widget: FileDialog
+    name: files_dialog
+    if: file_open
+    open: "{{ file_open }}"
+    mode: "{{ file_mode }}"
+    start: "{{ file_start }}"
+    root: "{{ file_root }}"
+    filters: "{{ file_filters }}"
+    filename: "{{ file_filename }}"
+    multiple: "{{ file_multiple }}"
+    headline: "{{ file_headline }}"
+    accept_label: "{{ file_accept_label }}"
+    show_hidden: "{{ file_show_hidden }}"
+    value: "{{ file_value }}"
+    on_accept: file_accepted
+    on_cancel: file_cancelled
