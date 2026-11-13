@@ -266,6 +266,17 @@ declare("FontBrowser", {
     "disabled": P("bool"),
 }, doc="The font list's mind: it draws nothing. It asks `tess_ui.font_families` for the installed families, searches them, keeps the cursor and tells the view through the names it is bound to.")
 
+declare("ChordRecorder", {
+    "value": P("str", default="", model=True, doc="The key chord as text, `Ctrl+Alt+Shift+Meta+Key` (modifiers in that order, the key last, a named key in title case): `Ctrl+Shift+F1`. Empty is no shortcut. Recording and a committed typed text write it, in that form."),
+    "draft": P("str", default="", model=True, doc="The text of the field the chord is typed in: the control sets it to the chord after a recording or a commit, and the view's field writes it as the person types. Nothing is read from it until `typed`."),
+    "recording": P("bool", default=False, model=True, doc="Whether the next key press is recorded as the chord. The view sets it true to start; a finished or cancelled recording writes false."),
+    "command": P("str", default="", doc=_MIND_COMMAND + "`key arrow_left ctrl shift` (a key the button heard, then the modifiers held), `typed ctrl+shift+f1` (a text committed in the field), `record`, `stop`."),
+    "preview": P("str", model=True, doc=_MIND_OUT + " While recording, the modifiers held so far, such as `Ctrl+Shift+`; otherwise empty."),
+    "invalid": P("bool", model=True, doc=_MIND_OUT + " The value is not a key chord, or the text typed was not one."),
+    "message": P("str", model=True, doc=_MIND_OUT + " Why `invalid`, or why a key could not be recorded; empty when nothing is wrong."),
+    "disabled": P("bool"),
+}, doc="The key-chord field's mind: it draws nothing. It records a key press as a chord, reads a typed chord and writes it in the canonical form, and tells the view through the names it is bound to.")
+
 declare("NodeGraph", {"edges": P("list", doc="The links: each {from: id, to: id}, the ids of the GraphNodes."),
                       "snap": P("float", default=0.0, doc="A node the user moves lands on a multiple of this many pixels; 0 is no grid."),
                       "arrows": P("bool", doc="Each edge ends in an arrowhead."),

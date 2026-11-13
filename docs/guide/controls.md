@@ -56,6 +56,8 @@ children:
   names it binds (`value` and `scroll` are two-way; `grid`, `cursor`, `count`, `current` and `message` are its outputs; `command` asks it to do something). You call `IconPicker`, not this.
 - **The font list's mind** (`FontBrowser`) is a control that draws nothing, made for [the font list](../components/font-lists.md): it asks for the installed families and keeps the search and the cursor; the view
   reaches it through names it binds (`value` and `scroll` are two-way; `entries`, `cursor_name`, `count`, `mode` and `message` are its outputs; `command` asks it to do something). You call `FontList`, not this.
+- **The key-chord field's mind** (`ChordRecorder`) is a control that draws nothing, made for [the key chord field](../components/key-chord-fields.md): it records the key presses its view sends it and reads typed chords;
+  the view reaches it through names it binds (`value`, `draft` and `recording` are two-way; `preview`, `invalid` and `message` are its outputs; `command` sends it a key or a typed text). You call `KeyChordField`, not this.
 - **Size:** `style: {width, height}` sets the control's touch target;
   it's MD3's 48 px when not given. A slider's `width` is its track's
   length, a dial's is its face, and a progress bar's is its track.

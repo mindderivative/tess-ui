@@ -21,6 +21,7 @@ Every public class, function and constant, with its signature and what it does. 
 - [Icon browser](#icon-browser): The icon picker's list, search and cursor, with no window.
 - [Font families](#font-families): The installed font families the font list shows, and the provider that can be swapped.
 - [Font browser](#font-browser): The font list's search and cursor, with no window.
+- [Key chords](#key-chords): Key chords as text, `Ctrl+Alt+Shift+Meta+Key`.
 - [Docking](#docking): Panels the user can drag between zones.
 - [Interaction](#interaction): State layer, ripple and focus ring.
 - [Accessibility](#accessibility): What a node tells assistive technology.
@@ -2307,6 +2308,61 @@ The families, a search and a cursor. `families` must be sorted already (`tess_ui
 - `press(key: str, *, in_field: bool = False) -> str | None`: A key.
 - `reveal(offset: float, row_height: float, rows: int | None = None) -> float`: The scroll offset that keeps the cursor's row in a window of `rows` rows (`page_rows` when not given), as near to `offset` as it can be.
 - `set_query(query: str) -> None`: Keeps the families that have every word of `query` in them (without regard to case), the ones that start with the first word first; the cursor goes to the first.
+
+## Key chords
+
+`tess_ui.key_chords`: Key chords as text, `Ctrl+Alt+Shift+Meta+Key`.
+
+### `normalise`
+
+```python
+normalise(text: str) -> str | None
+```
+
+`text` as the canonical chord, or `None` when it is not one: parts joined by `+` (spaces around them are fine), zero or more modifiers then exactly one key, a modifier named once at most. Any case is read.
+
+### `from_event`
+
+```python
+from_event(
+    key: str,
+    *,
+    ctrl: bool = False,
+    alt: bool = False,
+    shift: bool = False,
+    meta: bool = False
+) -> str | None
+```
+
+The chord for the key press `key` (the engine's name for it) with the modifiers held, or `None` when `key` is a modifier of its own or a key a chord cannot have.
+
+### `canonical_key`
+
+```python
+canonical_key(name: str) -> str | None
+```
+
+The canonical name of the key `name` (as typed or as the engine reports it), or `None` when it is not a key a chord can have.
+
+### `is_modifier_key`
+
+```python
+is_modifier_key(name: str) -> bool
+```
+
+Whether the engine's key `name` is a modifier or a lock, which is no key of a chord (`shift`, `control_left`, `alt_graph`, `caps_lock`, ...).
+
+### `modifier_of`
+
+```python
+modifier_of(name: str) -> str | None
+```
+
+The modifier (`Ctrl`, `Alt`, `Shift` or `Meta`) the engine's key `name` is, or `None` for any other key, a lock included (`control_left` is `Ctrl`, `caps_lock` is `None`).
+
+**Constants**
+
+- `MODIFIERS` = `('Ctrl', 'Alt', 'Shift', 'Meta')`
 
 ## Docking
 

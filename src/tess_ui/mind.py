@@ -28,6 +28,7 @@ __all__ = ["KINDS", "Mind", "control_class"]
 KINDS: dict[str, str] = {
     "IconBrowser": "tess_ui.icon_controls:IconBrowserControl",
     "FontBrowser": "tess_ui.font_controls:FontBrowserControl",
+    "ChordRecorder": "tess_ui.chord_controls:ChordRecorder",
 }
 
 

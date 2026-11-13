@@ -3495,6 +3495,7 @@
           "enum": [
             "Canvas",
             "Checkbox",
+            "ChordRecorder",
             "CircularProgress",
             "ColourArea",
             "ColourField",
@@ -9630,6 +9631,7 @@
           "enum": [
             "Canvas",
             "Checkbox",
+            "ChordRecorder",
             "CircularProgress",
             "ColourArea",
             "ColourField",

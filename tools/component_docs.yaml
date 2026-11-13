@@ -1522,6 +1522,50 @@ components:
       font_families.use(lambda: ["Alegreya", "Fira Code", "Hack Nerd Font Mono"])
     see: [guide/controls.md, components/icon-pickers.md]
 
+  - slug: key-chord-fields
+    title: Key chord field
+    group: Selection and input
+    views: [KeyChordField]
+    widgets: [ChordRecorder]
+    md3: |
+      Material Design 3 has no field for a keyboard shortcut. An app whose people set their own shortcuts needs one, and it is built from an outlined text field and a button that records.
+    built: |
+      `widget: KeyChordField` is a view Tesserae ships (`KeyChordField_View.yaml`): an outlined text field that holds the chord as text, and a button beside it that records one. `ChordRecorder` is the
+      control that draws nothing and is its mind (`tess_ui.chord_controls`), and `tess_ui.key_chords` has the rules for the text.
+
+      The text is `Ctrl+Alt+Shift+Meta+Key`: the modifiers that are held, always in the order Ctrl, Alt, Shift, Meta, and then one key, last, the parts joined by `+`: `Ctrl+Shift+F1`, `Alt+Left`, `Meta+Space`. A named
+      key is in title case (`Escape`, `Enter`, `Backspace`, `Tab`, `Space`, `Delete`, `Insert`, `Home`, `End`, `PageUp`, `PageDown`, `Left`, `Right`, `Up`, `Down`, and `Plus`, `Minus`, `Comma`, `Period` for
+      the characters that cannot be written in a `+`-joined text); a function key is `F1` to `F24`; a letter is a capital; any other single character is itself. `value` is two-way text; empty is no shortcut.
+
+      Recording. Press the button (or Tab to it and press Enter or Space) and it takes the next key press as the chord: it says "Press keys", and shows the modifiers held so far (`Press keys Ctrl+Shift+`) while the
+      person holds them. A modifier on its own (Shift, Control, Alt, Meta, a lock) never finishes the chord. A key that is not one finishes it: the chord is written to `value`, `on_change` is called, and the field
+      shows it. Escape on its own cancels and leaves the chord as it was; Backspace on its own clears it (`value` is empty and `on_change` is called); with a modifier they are chords like any other
+      (`Ctrl+Escape`). While recording, Enter and Space are chords too. A key that no chord can have (`print_screen`) is named under the field and the recording goes on. Leaving the button ends a recording. `recording` is
+      two-way: set it true to start one from the app, and a finished or cancelled recording writes false.
+
+      Typing. The text in the field is read when Enter is pressed or the field is left, never per key. It is read in any case and in the usual names (`ctrl+shift+f1`, `Control + Return`, `super+pgup`, `Esc`,
+      `Del`, `arrow_left`): a chord is written back in the canonical form (`Ctrl+Enter`). Anything else is refused: `value` stays as it was, the field is drawn in the error colours with the reason under it, and what was typed
+      stays to be mended. Typing nothing clears the shortcut. A value the app sets is shown as it is and never rewritten: `ctrl+shift+f1` stays so until the person commits it, and a value that is not a chord is shown in
+      the error colours and kept. The disabled field records and reads nothing.
+
+      A screen reader hears a group named by `label`, the field with that label (and the error), and a button that says "Record label", or while recording "Recording label: press the keys, Escape cancels, Backspace clears",
+      and is `pressed` while it does. The field and the button are in the Tab order. The look is in `KeyChordField_Stylesheet.yaml`: write one in your project to change the button, which is `primary_container` while it records.
+      Not built: several chords for one action, a chord of two steps (`Ctrl+K Ctrl+S`), a list of the chords already taken, and key names for the keys the engine reports but this table does not know (a keypad, the media keys).
+    usage_view: |
+      name: shortcuts
+      widget: Container
+      style: {flex_direction: vertical, gap: 16, width: 560, height: 240, padding: 16}
+      children:
+        - {widget: KeyChordField, value: "{{ reveal }}", label: Reveal key, on_change: reveal_changed}
+        - {widget: KeyChordField, value: "{{ cycle }}", label: Cycle surface}
+    python: |
+      from tess_ui import key_chords
+
+      key_chords.normalise("control + return")                 # 'Ctrl+Enter'
+      key_chords.normalise("Ctrl+Shift")                       # None: no key
+      key_chords.from_event("arrow_left", alt=True)            # 'Alt+Left'
+    see: [guide/controls.md, components/text-fields.md]
+
   - slug: segmented-buttons
     title: Segmented buttons
     group: Selection and input
