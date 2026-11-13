@@ -6,7 +6,7 @@ focus is; the text editor takes Tab and the arrow keys itself, so a shortcut is 
 | Ctrl+S | Save the open file |
 | Ctrl+Z | Undo |
 | Ctrl+Y, Ctrl+Shift+Z | Redo |
-| F6, Shift+F6 | Move the focus to the next, or the previous, of the three areas: Files, Structure, Text |
+| F6, Shift+F6 | Move the focus to the next, or the previous, of the four areas: Files, Structure, Form, Text |
 
 Every one of these is also a button or a tree on the window, so nothing needs the pointer.
 """
@@ -19,8 +19,8 @@ from tess_shell_config.viewmodel import ShellConfigViewModel
 
 __all__ = ["REGIONS", "Shortcuts"]
 
-#: The three areas in the order F6 visits them: (the node that takes the focus, the pane it is in).
-REGIONS = (("files_tree", "files_pane"), ("structure_tree", "structure_pane"), ("editor", "text_pane"))
+#: The four areas in the order F6 visits them: (the node that takes the focus, the pane it is in).
+REGIONS = (("files_tree", "files_pane"), ("structure_tree", "structure_pane"), ("form_pane", "form_pane"), ("editor", "text_pane"))
 
 
 class Shortcuts:
@@ -70,11 +70,18 @@ class Shortcuts:
             name = REGIONS[index][0]
             if name == "structure_tree" and not self.viewmodel.has_tree.get():
                 continue
+            if name == "form_pane" and not self.viewmodel.form_items.get():
+                continue
             self._focus(name)
             return
 
     def _focus(self, name: str) -> None:
-        """Give the focus to an area. A tree is one tab stop whose arrow keys work from a row, so the focus goes to the chosen row (else the first); the editor takes it itself."""
+        """Give the focus to an area. A tree is one tab stop whose arrow keys work from a row, so the focus goes to the chosen row (else the first); the form takes it at its first group header; the editor takes it itself."""
+        if name == "form_pane":
+            headers = [inst.id for inst in self.view.handle.composition.walk() if inst.name == "group_header"]
+            if headers:
+                self.view.node(headers[0]).focus()
+            return
         if not name.endswith("_tree"):
             self.view.focus(None, name)
             return

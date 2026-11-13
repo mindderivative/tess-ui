@@ -13,7 +13,7 @@ What a row can be:
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
@@ -123,6 +123,42 @@ class PropertyStore(Store):
     def remove(self, model: DocumentModel) -> None:
         model.clear_value(self.path, self.key)
 
+
+@dataclass(frozen=True)
+class StyleKeyStore(PropertyStore):
+    """A style key: written on the block (the shorthand) or inside the block's `Style { }`. A key that is already in the `Style` block is read and changed there, because writing it in both places is an
+    error in the shell (Block Reference, R2); a key that is in neither is added on the block."""
+
+    def _style(self, document: Document) -> Block | None:
+        block = self._block(document)
+        return child_named(block, "Style") if block is not None else None
+
+    def _in_style(self, document: Document | None) -> bool:
+        if document is None:
+            return False
+        direct = PropertyStore.read(self, document)
+        style = self._style(document)
+        return direct.value is None and direct.block is None and style is not None and (self.key in properties_of(style) or child_named(style, self.key) is not None)
+
+    def read(self, document: Document) -> Found:
+        if not self._in_style(document):
+            return PropertyStore.read(self, document)
+        style = self._style(document)
+        assert style is not None
+        prop = properties_of(style).get(self.key)
+        return Found(value=prop.value, key=self.key) if prop is not None else Found(block=child_named(style, self.key), key=self.key)
+
+    def write(self, model: DocumentModel, text: str) -> None:
+        if self._in_style(model.document):
+            model.set_nested_value(self.path, ("Style",), self.key, text)
+        else:
+            model.set_value(self.path, self.key, text)
+
+    def remove(self, model: DocumentModel) -> None:
+        if self._in_style(model.document):
+            model.clear_nested_value(self.path, ("Style",), self.key)
+        else:
+            model.clear_value(self.path, self.key)
 
 @dataclass(frozen=True)
 class TokenStore(Store):
@@ -332,7 +368,8 @@ class Form:
         module = schema.modules.get(block.type)
         info = schema.block(block.type)
         if module is not None and info is None:
-            self._fill_keys(view, document, block, path, context, self._module_keys(module))
+            root_info = schema.block(module.root_block)
+            self._fill_keys(view, document, block, path, context, self._module_keys(module), set(root_info.style) if root_info is not None else ())
             view.notes.append(module.doc)
             return
         if info is None:
@@ -343,7 +380,7 @@ class Form:
             self._fill_unknown(view, document, block, path, context, ())
             return
         keys = list(info.all_keys().values())
-        self._fill_keys(view, document, block, path, context, keys)
+        self._fill_keys(view, document, block, path, context, keys, set(info.style))
         if info.doc:
             view.notes.append(info.doc)
         satisfied = [group for group in info.required if all(self._has(block, name) for name in group)]
@@ -363,9 +400,9 @@ class Form:
             keys.append(_regrouped(found, COMMON) if found is not None else KeyInfo(name, "", "", None, None, None, False, False, True, COMMON, (), ()))
         return keys
 
-    def _fill_keys(self, view: FormView, document: Document, block: Block, path: IndexPath, context: Context, keys: Sequence[KeyInfo]) -> None:
+    def _fill_keys(self, view: FormView, document: Document, block: Block, path: IndexPath, context: Context, keys: Sequence[KeyInfo], style: Collection[str] = ()) -> None:
         for key in keys:
-            row = self._key_row(document, path, key, context)
+            row = self._key_row(document, path, key, context, key.name in style)
             view.rows.append(row)
         self._fill_unknown(view, document, block, path, context, [k.name for k in keys])
         order: dict[str, int] = {}
@@ -384,10 +421,11 @@ class Form:
             cell = self._cell(f"k:{name}|", TdlWidget(key, context, "the schema does not name this key"), PropertyStore(path, name), document, "", key)
             view.rows.append(Row(f"k:{name}", name.replace("_", " "), key.doc, [cell], NOT_IN_SCHEMA, key))
 
-    def _key_row(self, document: Document | None, path: IndexPath, key: KeyInfo, context: Context) -> Row:
+    def _key_row(self, document: Document | None, path: IndexPath, key: KeyInfo, context: Context, styled: bool = False) -> Row:
         widget = self.registry.create(key, context)
         group = NOT_BUILT if not key.built else (key.group or "Other")
-        cell = self._cell(f"k:{key.name}|", widget, PropertyStore(path, key.name), document, "", key)
+        store = StyleKeyStore(path, key.name) if styled else PropertyStore(path, key.name)
+        cell = self._cell(f"k:{key.name}|", widget, store, document, "", key)
         markers = []
         if not key.built:
             markers.append("not built in this shell version")
@@ -550,7 +588,7 @@ class Form:
             if not (raw.startswith("{{") and raw.endswith("}}")):
                 raise Refused("An expression is written {{ ... }}.")
             return raw
-        if cell.tdl:
+        if cell.tdl and "text" in edit:
             return raw or None
         return cell.widget.write(edit)
 

@@ -211,12 +211,11 @@ class NumberWidget(Widget):
         return format_number(number) + ("%" if self.percent else "")
 
     def step(self, text: str, direction: int) -> str | None:
-        """The text one step up (`direction` 1) or down (-1) from `text` (the default when the field is empty), kept inside the range; `None` when there is nothing to step from."""
+        """The text one step up (`direction` 1) or down (-1) from `text`, kept inside the range. An empty field steps from the default, or from the minimum (else 0) when the default is not a number."""
         step = Decimal(str(self.key.step)) if self.key.step else Decimal(1)
         number = parse_number(text) if text.strip() else parse_number(self.default.rstrip("%"))
         if number is None:
             number = Decimal(str(self.key.minimum)) if self.key.minimum is not None else Decimal(0)
-            direction = 0
         moved = number + step * direction
         low, high = self.key.minimum, self.key.maximum
         if low is not None:
