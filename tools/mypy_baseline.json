@@ -30,7 +30,7 @@
 "src/tess_ui/composed.py|func-returns-value|\"_hide_tip\" of \"ComposedView\" does not return a value (it only ever returns None)": 1,
 "src/tess_ui/composed.py|func-returns-value|\"_run_handler\" of \"ComposedView\" does not return a value (it only ever returns None)": 1,
 "src/tess_ui/composed.py|index|Invalid index type \"int\" for \"dict[str, Any]\"; expected type \"str\"": 1,
-"src/tess_ui/composed.py|misc|Cannot infer type of lambda": 11,
+"src/tess_ui/composed.py|misc|Cannot infer type of lambda": 10,
 "src/tess_ui/composed.py|union-attr|Item \"None\" of \"Any | None\" has no attribute \"get\"": 2,
 "src/tess_ui/composed.py|union-attr|Item \"None\" of \"Any | None\" has no attribute \"navigate\"": 1,
 "src/tess_ui/composed.py|union-attr|Item \"None\" of \"Any | None\" has no attribute \"navigate_to\"": 1,

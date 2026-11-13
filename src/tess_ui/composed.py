@@ -1057,8 +1057,18 @@ class ComposedView(View):
             node = self._built.outer[inst.id]
             signals = inst._istates
 
-            def setter(name: str, value: Any, signals: dict = signals) -> Callable[[Any], None]:
-                return lambda event=None: signals[name].set(value(event) if callable(value) else value) if name in signals else None
+            def setter(name: str, value: Any, signals: dict = signals, key: str = inst.id) -> Callable[[Any], None]:
+                def write(event=None) -> None:
+                    if name not in signals:
+                        return
+                    state = signals[name]
+                    new = value(event) if callable(value) else value
+                    if state._notifying:  # the event came out of this very Signal's own notification (a recompose moved the focus): write it after
+                        self.timers.after(0, lambda: state.set(new), name=f"state:{key}:{name}")
+                    else:
+                        state.set(new)
+
+                return write
 
             for event, name, value in (("pointer_enter", "hovered", True), ("pointer_leave", "hovered", False),
                                        ("pointer_down", "pressed", True), ("pointer_up", "pressed", False), ("pointer_cancel", "pressed", False),

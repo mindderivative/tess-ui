@@ -2,6 +2,10 @@
 
 ## 0.6.0.1
 
+### Fixed
+
+- **A state rule on a popup view no longer makes Escape fail.** A stylesheet rule with `state: focused` or `state: focus_visible` on a view whose root holds an anchored `Overlay` (`ColourPicker`, `Menu`) wrote the `focused` state again while that state was still notifying, when closing the layer moved the focus back to the trigger; the engine logged `was written to again while still notifying` and the write was lost. A state written during its own notification is now applied on the next turn.
+
 ### Added
 
 - **`ColourPicker`** ([#298](https://github.com/mindderivative/tess-ui/issues/298)): a colour picker, inline or (`popup: true`) behind a swatch that opens it in a layer. A square of saturation and value, a hue strip, an alpha strip, a hex field (`#rrggbb` or `#rrggbbaa`), red, green, blue and alpha number fields and a row of the theme's colour roles. `value` is two-way text, `'#rrggbb'` (or `'#rrggbbaa'` when the alpha is below 1, lowercase): a value set and read back is the same text, and the hue is kept through a grey or a black, so a drag to a corner and back does not drift. Text typed in the hex field that is not a colour leaves the value as it was and draws the field in the error colours. `on_change` runs after each change the user makes; `open` is two-way; Escape and a press outside close the popup. The arrow, Page Up, Page Down, Home and End keys move the square and the strips, Tab goes square, hue, alpha, the fields, the swatches, and a screen reader gets sliders in percent and degrees. The pieces are also widgets of their own (`ColourArea`, `ColourStrip`, `ColourField`, `ColourSwatches`, and `colour_area`, `colour_strip`, `colour_field` and `colour_swatches` in `tess_ui.widgets`), and `tess_ui.colour` has the text and hue, saturation, value conversions.
