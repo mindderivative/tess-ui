@@ -1,0 +1,14 @@
+tesserae: 0.6
+# The look of TokenButton: the button (`field`, with `trigger` pressable over it) is 48 pixels tall with 12 pixel corners, 12 pixels of padding and a 1 pixel `outline` border, and the layer is a
+# `surface_container` surface with 12 pixel corners and 8 pixels of padding at level 2; a row has 12 pixel corners (the token held in `secondary_container`, the one the keyboard is on in
+# `surface_container_highest`) and the empty note is in `on_surface_variant`. The button has the state layer, ripple and focus ring of any pressable node, and a disabled one fades to 38%.
+styles:
+  - widget: TokenButton
+    part: field
+    style: {min_height: 48, corner_radius: 12, border_width: 1, border_color: outline, padding: {left: 12, right: 12, top: 0, bottom: 0}}
+  - {widget: TokenButton, part: trigger, style: {corner_radius: 12}}
+  - widget: TokenButton
+    part: surface
+    style: {background: surface_container, corner_radius: 12, padding: 8, elevation: 2}
+  - {widget: TokenButton, part: row, style: {corner_radius: 12}}
+  - {widget: TokenButton, part: empty, style: {foreground: on_surface_variant}}

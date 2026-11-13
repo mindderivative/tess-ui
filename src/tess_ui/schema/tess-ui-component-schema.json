@@ -3524,7 +3524,8 @@
             "Switch",
             "Text",
             "TextField",
-            "TimePickerDial"
+            "TimePickerDial",
+            "TokenList"
           ],
           "description": "What this node is."
         },
@@ -9665,6 +9666,7 @@
             "TextField",
             "TimePickerDial",
             "TitleBar",
+            "TokenList",
             "Window"
           ],
           "description": "What this node is."

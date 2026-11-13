@@ -71,6 +71,7 @@ See [The View Language](../guide/view-language.md#style) for the rule syntax and
 - **Font list**: [`FontList`](font-lists/font-list.md), [`FontListPanel`](font-lists/font-list-panel.md)
 - **Key chord field**: [`KeyChordField`](key-chord-fields/key-chord-field.md)
 - **List editor**: [`ListEditor`](list-editors/list-editor.md)
+- **Token button**: [`TokenButton`](token-buttons/token-button.md)
 - **Time input**: [`TimeInput`](time-input/time-input.md)
 
 ## Content

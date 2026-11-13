@@ -1,0 +1,154 @@
+tesserae: 0.6
+# The token button: a button that shows the theme token it holds (its ref, such as `$color.primary`, with a swatch when the token is a colour the view knows) and opens a list of tokens in a layer
+# under it. The tokens are data you give it (`tokens`: each {name, ref, kind, value, doc}; `groups`: more in named sets, each {name, tokens}), and `preferred` names are listed first. A row is the
+# token's name, a line under it with its group and doc, and its value: a swatch for a colour token (`kind: colour` with a `'#rrggbb'` or `'#rrggbbaa'` value), the value as text for any other.
+# The search keeps the tokens that have every word typed in their name, ref, group or doc. `value` is two-way text: a pick writes the token's `ref` and calls `on_pick`, and closes the layer unless
+# `close_on_pick` is false. Enter or Space on the button, or Down, opens the layer with the search field focused; Up and Down in the field move the cursor and Enter picks; Tab goes on to the
+# list, where the arrows, Page Up, Page Down, Home and End move and Enter or Space pick. Escape and a press outside close it (writing false to `open`), and the focus goes back to the button.
+# What the list does is in the TokenList control (`tess_ui.token_controls`), which this view drives by writing a numbered command to `cmd`.
+params:
+  value: {type: str, default: "", model: true, doc: "The token's ref, such as `$color.primary`. A ref that is none of the tokens is kept and shown as it is."}
+  tokens: {type: list, default: [], doc: "The tokens, each {name, ref, kind, value, doc}: `ref` is what a pick writes (`$` and the name when left out), `kind: colour` draws a `'#rrggbb'` or `'#rrggbbaa'` value as a swatch, `doc` is a line about it."}
+  groups: {type: list, default: [], doc: "More tokens in named sets, each {name, tokens}: they come after `tokens` and each row says its group."}
+  preferred: {type: list, default: [], doc: "Names (or refs) of tokens to list first, in this order."}
+  open: {type: bool, default: false, model: true, doc: "Whether the list is showing; Escape, a pick and a press outside write false."}
+  close_on_pick: {type: bool, default: true, doc: "The list closes when a token is picked."}
+  rows: {type: int, default: 7, min: 3, max: 12, doc: "How many rows show at once."}
+  width: {type: float, default: 360, min: 240, max: 640, doc: "How wide the list is."}
+  label: {type: str, default: Token, doc: "What a screen reader calls the button and the list."}
+  placeholder: {type: str, default: Choose a token, doc: "What the button says while there is no token."}
+  disabled: {type: bool, default: false, doc: "Dimmed and not editable; the list does not open."}
+  on_pick: {type: handler, doc: "Called after each pick."}
+widget: Container
+state: {n: 0, cmd: "", q: "", y: 0, entries: [], cursor_ref: "", count: 0, current: {}}
+style: {flex_direction: vertical, align_content: top_left}
+children:
+  - widget: TokenList
+    name: mind
+    value: "{{ value }}"
+    tokens: "{{ tokens }}"
+    groups: "{{ groups }}"
+    preferred: "{{ preferred }}"
+    open: "{{ open }}"
+    query: "{{ q }}"
+    rows: "{{ rows }}"
+    command: "{{ cmd }}"
+    scroll: "{{ y }}"
+    disabled: "{{ disabled }}"
+    entries: "{{ entries }}"
+    cursor_ref: "{{ cursor_ref }}"
+    count: "{{ count }}"
+    current: "{{ current }}"
+    handlers: {on_input: "open = open and not close_on_pick; on_pick()"}
+  - widget: Container
+    name: field
+    a11y: {hidden: true}
+    style: {flex_direction: horizontal, align_content: center, gap: 12}
+    children:
+      - widget: Container
+        name: current_swatch
+        if: "current.get('swatch', '') != ''"
+        style: {width: 24, height: 24, corner_radius: 6, border_width: 1, border_color: outline, background: "{{ current.get('swatch') or 'transparent' }}"}
+      - widget: Text
+        name: trigger_text
+        text: "{{ value if value != '' else placeholder }}"
+        typography_role: body_large
+        style: {foreground: "{{ 'on_surface' if value != '' else 'on_surface_variant' }}"}
+      - {widget: Icon, name: trigger_chevron, icon: expand_more, style: {width: 24, height: 24, foreground: on_surface_variant}}
+      - widget: Container
+        name: trigger
+        a11y: {role: button, label: "{{ label + ': ' + value if value != '' else label }}", expanded: "{{ open }}"}
+        disabled: "{{ disabled }}"
+        handlers:
+          on_click: "open = not open"
+          on_key: "open = True if event.key == 'arrow_down' else open"
+        style: {position: absolute, x: 0, y: 0, width: 100%, height: 100%}
+  - widget: Overlay
+    name: layer
+    open: "{{ open }}"
+    anchor: field
+    placement: below
+    focus_first: true
+    children:
+      - widget: Container
+        name: surface
+        a11y: {role: group, label: "{{ label }}"}
+        style: {flex_direction: vertical, gap: 8, width: "{{ width }}"}
+        children:
+          - widget: TextField
+            name: search
+            variant: outlined
+            label: Search tokens
+            leading: search
+            text: "{{ q }}"
+            disabled: "{{ disabled }}"
+            style: {width: 100%}
+            handlers:
+              on_submit: "n = n + 1; cmd = str(n) + ' key enter field'"
+              on_key: "n = n + 1; cmd = (str(n) + ' key ' + event.key + ' field') if event.key in ['arrow_up', 'arrow_down', 'page_up', 'page_down'] else cmd"
+          - widget: Container
+            name: list_box
+            interaction: true
+            a11y: {role: list, label: "{{ label + ' tokens' }}"}
+            handlers:
+              on_click: "y = y"
+              on_key: "n = n + 1; cmd = str(n) + ' key ' + event.key"
+            style: {flex_direction: vertical, height: "{{ rows * 56 }}"}
+            children:
+              - widget: VirtualList
+                name: list
+                item_height: 56
+                scroll_offset: "{{ y }}"
+                style: {flex_direction: vertical, height: "{{ rows * 56 }}"}
+                children:
+                  - widget: Container
+                    for: row in entries
+                    key: row['ref']
+                    name: row
+                    interaction: false
+                    a11y: {role: listitem, label: "{{ row['label'] }}", selected: "{{ row['ref'] == value }}"}
+                    handlers: {on_press: "n = n + 1; cmd = str(n) + ' click ' + row['ref']"}
+                    style:
+                      flex_direction: horizontal
+                      align_content: left
+                      gap: 12
+                      padding: {left: 12, right: 12, top: 0, bottom: 0}
+                      background: "{{ 'secondary_container' if row['ref'] == value else ('surface_container_highest' if row['ref'] == cursor_ref else 'transparent') }}"
+                    children:
+                      - widget: Container
+                        name: swatch
+                        if: "row['swatch'] != ''"
+                        style: {width: 32, height: 32, corner_radius: 8, border_width: 1, border_color: outline, background: "{{ row['swatch'] }}"}
+                      - widget: Container
+                        name: texts
+                        style: {flex: fill, flex_direction: vertical, align_content: left}
+                        children:
+                          - widget: Text
+                            name: row_name
+                            text: "{{ row['name'] }}"
+                            typography_role: body_large
+                            max_lines: 1
+                            overflow: ellipsis
+                            style: {foreground: "{{ 'on_secondary_container' if row['ref'] == value else 'on_surface' }}"}
+                          - widget: Text
+                            name: row_detail
+                            if: "row['detail'] != ''"
+                            text: "{{ row['detail'] }}"
+                            typography_role: body_small
+                            max_lines: 1
+                            overflow: ellipsis
+                            style: {foreground: "{{ 'on_secondary_container' if row['ref'] == value else 'on_surface_variant' }}"}
+                      - widget: Text
+                        name: row_value
+                        if: "row['swatch'] == '' and row['shown'] != ''"
+                        text: "{{ row['shown'] }}"
+                        typography_role: label_medium
+                        max_lines: 1
+                        overflow: ellipsis
+                        style: {max_width: 120, foreground: "{{ 'on_secondary_container' if row['ref'] == value else 'on_surface_variant' }}"}
+          - widget: Text
+            name: empty
+            if: "count == 0"
+            text: No token matches
+            typography_role: body_medium
+            a11y: {role: alert, live: polite}

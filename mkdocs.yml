@@ -130,6 +130,7 @@ nav:
           - Font list: components/font-lists.md
           - Key chord field: components/key-chord-fields.md
           - List editor: components/list-editors.md
+          - Token button: components/token-buttons.md
           - Segmented buttons: components/segmented-buttons.md
           - Time input: components/time-input.md
       - Content:
@@ -227,6 +228,8 @@ nav:
               - KeyChordField: stylesheets/key-chord-fields/key-chord-field.md
           - List editor:
               - ListEditor: stylesheets/list-editors/list-editor.md
+          - Token button:
+              - TokenButton: stylesheets/token-buttons/token-button.md
           - Time input:
               - TimeInput: stylesheets/time-input/time-input.md
       - Content:
