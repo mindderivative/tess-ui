@@ -40,7 +40,10 @@
         "FileDialog",
         "GraphNode",
         "Icon",
+        "IconBrowser",
         "IconButton",
+        "IconPicker",
+        "IconPickerPanel",
         "Image",
         "LinearProgress",
         "Link",
@@ -6862,6 +6865,324 @@
       "if": {
         "properties": {
           "widget": {
+            "const": "IconBrowser"
+          }
+        },
+        "required": [
+          "widget"
+        ]
+      },
+      "then": {
+        "properties": {
+          "widget": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          },
+          "if": {
+            "type": "string"
+          },
+          "for": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "slot": {
+            "type": "string"
+          },
+          "state": {
+            "type": "object"
+          },
+          "style": {
+            "$ref": "#/definitions/style"
+          },
+          "classes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "handlers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "a11y": {
+            "type": "object"
+          },
+          "interaction": {
+            "type": [
+              "boolean",
+              "string"
+            ]
+          },
+          "visible": {
+            "type": [
+              "boolean",
+              "string"
+            ]
+          },
+          "window_region": {
+            "enum": [
+              "drag",
+              "none"
+            ]
+          },
+          "route": {
+            "type": "string"
+          },
+          "focus_group": {
+            "enum": [
+              "horizontal",
+              "vertical",
+              "both"
+            ]
+          },
+          "tooltip": {
+            "type": [
+              "string",
+              "object"
+            ]
+          },
+          "params": {
+            "type": [
+              "array",
+              "object"
+            ]
+          },
+          "expects": {
+            "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "The icon: a built-in icon's name, or the file name (with its extension) of one in `folder`. A pick writes it."
+          },
+          "open": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "Whether the grid is listed: going true reads `folder`; nothing is read before. `current` is kept either way."
+          },
+          "folder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "A folder of `.svg` and `.png` files to offer besides the built-in icons; read through `tess_ui.filesystem`."
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "The search text: an icon is kept when its name has every word of it (`arrow back` finds `arrow_back`)."
+          },
+          "columns": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "How many icons are in a row (for the arrow keys and the rows of `grid`)."
+          },
+          "rows": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "How many rows show at once (for Page Up and Page Down and for scrolling the cursor into view)."
+          },
+          "row_height": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "How tall a row is, in pixels."
+          },
+          "command": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "What to do, written as text that starts with a number that is new each time (`7 key arrow_down`): `key arrow_down ctrl`, `key arrow_up field` (from the search field), `click 12`, `refresh`."
+          },
+          "scroll": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "The grid's scroll offset: bind the list's `scroll_offset` to the same name; moving the cursor writes the offset that shows it."
+          },
+          "grid": {
+            "anyOf": [
+              {
+                "type": "array"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "Output: written to the name it is bound to. The results in rows; each row {key, cells}, a cell {index, name, kind (glyph, svg, png or file), icon, svg, frame}."
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "Output: written to the name it is bound to. The cell the keyboard is on, or -1."
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "Output: written to the name it is bound to. How many icons the search found."
+          },
+          "current": {
+            "description": "Output: written to the name it is bound to. The cell of `value`, for the swatch that opens the picker (kind `none` when it is not an icon the picker knows)."
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "Output: written to the name it is bound to. What last went wrong, such as a folder that cannot be read; empty when nothing has."
+          },
+          "disabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ]
+          }
+        },
+        "required": [
+          "widget"
+        ],
+        "propertyNames": {
+          "enum": [
+            "widget",
+            "name",
+            "if",
+            "for",
+            "key",
+            "slot",
+            "state",
+            "style",
+            "classes",
+            "handlers",
+            "a11y",
+            "interaction",
+            "visible",
+            "window_region",
+            "route",
+            "focus_group",
+            "tooltip",
+            "params",
+            "expects",
+            "tesserae",
+            "value",
+            "open",
+            "folder",
+            "query",
+            "columns",
+            "rows",
+            "row_height",
+            "command",
+            "scroll",
+            "grid",
+            "cursor",
+            "count",
+            "current",
+            "message",
+            "disabled"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "widget": {
             "const": "IconButton"
           }
         },
@@ -7155,6 +7476,541 @@
             "toggle",
             "selected",
             "tint"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "widget": {
+            "const": "IconPicker"
+          }
+        },
+        "required": [
+          "widget"
+        ]
+      },
+      "then": {
+        "properties": {
+          "widget": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          },
+          "if": {
+            "type": "string"
+          },
+          "for": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "slot": {
+            "type": "string"
+          },
+          "state": {
+            "type": "object"
+          },
+          "style": {
+            "$ref": "#/definitions/style"
+          },
+          "classes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "handlers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "a11y": {
+            "type": "object"
+          },
+          "interaction": {
+            "type": [
+              "boolean",
+              "string"
+            ]
+          },
+          "visible": {
+            "type": [
+              "boolean",
+              "string"
+            ]
+          },
+          "window_region": {
+            "enum": [
+              "drag",
+              "none"
+            ]
+          },
+          "route": {
+            "type": "string"
+          },
+          "focus_group": {
+            "enum": [
+              "horizontal",
+              "vertical",
+              "both"
+            ]
+          },
+          "tooltip": {
+            "type": [
+              "string",
+              "object"
+            ]
+          },
+          "params": {
+            "type": [
+              "array",
+              "object"
+            ]
+          },
+          "expects": {
+            "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#"
+            }
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "The icon: a built-in icon's name, or a file's name with its extension."
+          },
+          "popup": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "Show a button with the icon that opens the grid in a layer, instead of the grid itself."
+          },
+          "open": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "A popup picker: whether it is showing; Escape, a pick and a press outside write false."
+          },
+          "close_on_pick": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "A popup picker closes when an icon is picked."
+          },
+          "icons_folder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "A folder of .svg and .png files offered besides the built-in icons."
+          },
+          "columns": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 3,
+                "maximum": 16
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "How many icons are in a row."
+          },
+          "rows": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 2,
+                "maximum": 12
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "How many rows show at once."
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "What a screen reader calls the picker, and the button that opens it."
+          },
+          "placeholder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "What the button says while there is no icon."
+          },
+          "disabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "Dimmed and not editable; a popup does not open."
+          },
+          "on_change": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "Called after each pick."
+          }
+        },
+        "required": [
+          "widget"
+        ],
+        "propertyNames": {
+          "enum": [
+            "widget",
+            "name",
+            "if",
+            "for",
+            "key",
+            "slot",
+            "state",
+            "style",
+            "classes",
+            "handlers",
+            "a11y",
+            "interaction",
+            "visible",
+            "window_region",
+            "route",
+            "focus_group",
+            "tooltip",
+            "params",
+            "expects",
+            "tesserae",
+            "children",
+            "value",
+            "popup",
+            "open",
+            "close_on_pick",
+            "icons_folder",
+            "columns",
+            "rows",
+            "label",
+            "placeholder",
+            "disabled",
+            "on_change"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "widget": {
+            "const": "IconPickerPanel"
+          }
+        },
+        "required": [
+          "widget"
+        ]
+      },
+      "then": {
+        "properties": {
+          "widget": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          },
+          "if": {
+            "type": "string"
+          },
+          "for": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "slot": {
+            "type": "string"
+          },
+          "state": {
+            "type": "object"
+          },
+          "style": {
+            "$ref": "#/definitions/style"
+          },
+          "classes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "handlers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "a11y": {
+            "type": "object"
+          },
+          "interaction": {
+            "type": [
+              "boolean",
+              "string"
+            ]
+          },
+          "visible": {
+            "type": [
+              "boolean",
+              "string"
+            ]
+          },
+          "window_region": {
+            "enum": [
+              "drag",
+              "none"
+            ]
+          },
+          "route": {
+            "type": "string"
+          },
+          "focus_group": {
+            "enum": [
+              "horizontal",
+              "vertical",
+              "both"
+            ]
+          },
+          "tooltip": {
+            "type": [
+              "string",
+              "object"
+            ]
+          },
+          "params": {
+            "type": [
+              "array",
+              "object"
+            ]
+          },
+          "expects": {
+            "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#"
+            }
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "The icon: a built-in icon's name, or a file's name with its extension."
+          },
+          "icons_folder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "A folder of .svg and .png files offered besides the built-in icons."
+          },
+          "columns": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 3,
+                "maximum": 16
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "How many icons are in a row."
+          },
+          "rows": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 2,
+                "maximum": 12
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "How many rows show at once."
+          },
+          "open": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "Whether the grid is listed and answers; a popup's panel is open while the popup shows."
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "What a screen reader calls the picker."
+          },
+          "disabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "Dimmed and not editable."
+          },
+          "on_change": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "Called after each pick."
+          }
+        },
+        "required": [
+          "widget"
+        ],
+        "propertyNames": {
+          "enum": [
+            "widget",
+            "name",
+            "if",
+            "for",
+            "key",
+            "slot",
+            "state",
+            "style",
+            "classes",
+            "handlers",
+            "a11y",
+            "interaction",
+            "visible",
+            "window_region",
+            "route",
+            "focus_group",
+            "tooltip",
+            "params",
+            "expects",
+            "tesserae",
+            "children",
+            "value",
+            "icons_folder",
+            "columns",
+            "rows",
+            "open",
+            "label",
+            "disabled",
+            "on_change"
           ]
         }
       }

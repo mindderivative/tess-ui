@@ -78,6 +78,7 @@ Every widget declares its properties: a type, a default, the values it allows, w
 | `CircularProgress`, `LinearProgress`, `LoadingIndicator` | `value`, `track`, `thickness`, `wavy` and more: see [Progress indicators](../components/progress-indicators.md) |
 | `TimePickerDial` | `hour`, `minute`, `mode` (model), `auto_advance`, `label` |
 | `FileBrowser` | the file dialog's mind, which draws nothing: see [File dialog](../components/file-dialogs.md) (`FileDialog` is the view you call) |
+| `IconBrowser` | the icon picker's mind, which draws nothing: see [Icon picker](../components/icon-pickers.md) (`IconPicker` is the view you call) |
 | `ColourArea`, `ColourStrip`, `ColourField`, `ColourSwatches` | `value` (model, a colour as `'#rrggbb'` or `'#rrggbbaa'` text; the picker's parts), `hue` (model; the area and the strip), `channel` (strip and field), `roles` (swatches), `label`, `disabled`: see [Colour picker](../components/colour-pickers.md) |
 | `Splitter`, `Canvas`, `VirtualList`, `Overlay` | their own sections below |
 | `ScrollView`, `NodeGraph`, `GraphNode` | a scrolling box; a canvas of linked nodes; a node of it |

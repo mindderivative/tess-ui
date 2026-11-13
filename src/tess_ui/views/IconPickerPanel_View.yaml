@@ -1,0 +1,102 @@
+tesserae: 0.6
+# The inside of an icon picker, with no surface and no trigger: a search field over a grid of icons (the built-in set, and the `.svg` and `.png` files of `icons_folder`). `value` is two-way:
+# the icon's name, or a file's name with its extension. A press picks an icon; in the grid the arrow keys, Home and End (with Ctrl, of the whole grid), Page Up and Page Down move the
+# cursor and Enter or Space pick it; in the search field Up, Down, Page Up and Page Down move the cursor in the grid and Enter picks it. The grid is a `VirtualList` of rows of `columns`
+# icons that builds the rows in view and a few past them, and a file is read (for its preview) only when its row comes into view. `on_change` is called after each pick. Nothing is listed until
+# `open` is true (a popup's panel is open while the popup shows). What the parts do is in the IconBrowser control (`tess_ui.icon_controls`), which this view drives by writing a numbered command to `cmd`.
+params:
+  value: {type: str, default: "", model: true, doc: "The icon: a built-in icon's name, or a file's name with its extension."}
+  icons_folder: {type: str, default: "", doc: "A folder of .svg and .png files offered besides the built-in icons."}
+  columns: {type: int, default: 8, min: 3, max: 16, doc: "How many icons are in a row."}
+  rows: {type: int, default: 6, min: 2, max: 12, doc: "How many rows show at once."}
+  open: {type: bool, default: true, doc: "Whether the grid is listed and answers; a popup's panel is open while the popup shows."}
+  label: {type: str, default: Icon, doc: "What a screen reader calls the picker."}
+  disabled: {type: bool, default: false, doc: "Dimmed and not editable."}
+  on_change: {type: handler, doc: "Called after each pick."}
+widget: Container
+a11y: {role: group, label: "{{ label }}"}
+state: {n: 0, cmd: "", q: "", y: 0, grid: [], cursor: -1, count: 0, current: {}, message: ""}
+style: {flex_direction: vertical, gap: 8, width: "{{ columns * 48 + 16 }}"}
+children:
+  - widget: IconBrowser
+    name: browser
+    value: "{{ value }}"
+    open: "{{ open }}"
+    folder: "{{ icons_folder }}"
+    query: "{{ q }}"
+    columns: "{{ columns }}"
+    rows: "{{ rows }}"
+    command: "{{ cmd }}"
+    scroll: "{{ y }}"
+    disabled: "{{ disabled }}"
+    grid: "{{ grid }}"
+    cursor: "{{ cursor }}"
+    count: "{{ count }}"
+    current: "{{ current }}"
+    message: "{{ message }}"
+    handlers: {on_input: "on_change()"}
+  - widget: TextField
+    name: search
+    variant: outlined
+    label: Search icons
+    leading: search
+    text: "{{ q }}"
+    style: {width: 100%}
+    disabled: "{{ disabled }}"
+    handlers:
+      on_submit: "n = n + 1; cmd = str(n) + ' key enter field'"
+      on_key: "n = n + 1; cmd = (str(n) + ' key ' + event.key + ' field') if event.key in ['arrow_up', 'arrow_down', 'page_up', 'page_down'] else cmd"
+  - widget: Container
+    name: list_group
+    style: {flex_direction: vertical}
+    children:
+      - widget: Container
+        name: list_box
+        interaction: true
+        a11y: {role: list, label: "{{ label + ' icons' }}"}
+        handlers:
+          on_click: "y = y"
+          on_key: "n = n + 1; cmd = str(n) + ' key ' + event.key + (' ctrl' if event.ctrl else '')"
+        style: {flex_direction: vertical, height: "{{ rows * 48 }}"}
+        children:
+          - widget: VirtualList
+            name: list
+            item_height: 48
+            scroll_offset: "{{ y }}"
+            style: {flex_direction: vertical, height: "{{ rows * 48 }}"}
+            children:
+              - widget: Container
+                for: row in grid
+                key: row['key']
+                name: row
+                style: {flex_direction: horizontal, align_content: left}
+                children:
+                  - widget: Container
+                    for: cell in row['cells']
+                    key: cell['index']
+                    name: cell
+                    interaction: false
+                    a11y: {role: listitem, label: "{{ cell['name'] }}", selected: "{{ cell['name'] == value }}"}
+                    handlers: {on_press: "n = n + 1; cmd = str(n) + ' click ' + str(cell['index'])"}
+                    style:
+                      width: 48
+                      height: 48
+                      flex_direction: horizontal
+                      align_content: center
+                      background: "{{ 'secondary_container' if cell['name'] == value else ('surface_container_highest' if cell['index'] == cursor else 'transparent') }}"
+                    children:
+                      - {widget: Icon, name: cell_icon, if: "cell['kind'] == 'glyph' or cell['kind'] == 'file'", icon: "{{ cell['icon'] }}", style: {width: 24, height: 24, foreground: "{{ 'on_secondary_container' if cell['name'] == value else 'on_surface' }}"}}
+                      - {widget: Svg, name: cell_svg, if: "cell['kind'] == 'svg'", content: "{{ cell['svg'] }}", style: {width: 32, height: 32, foreground: "{{ 'on_secondary_container' if cell['name'] == value else 'on_surface' }}"}}
+                      - {widget: Image, name: cell_image, if: "cell['kind'] == 'png'", frame: "{{ cell['frame'] }}", fit: contain, style: {width: 32, height: 32}}
+  - widget: Text
+    name: empty
+    if: "count == 0 and message == ''"
+    text: No icon matches
+    typography_role: body_medium
+    a11y: {role: alert, live: polite}
+  - widget: Text
+    name: message_text
+    if: "message != ''"
+    text: "{{ message }}"
+    typography_role: body_medium
+    a11y: {role: alert, live: polite}

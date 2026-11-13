@@ -1,0 +1,60 @@
+tesserae: 0.6
+# The icon picker: a searchable grid of icons, either inline or (`popup: true`) behind a button that shows the icon and its name and opens the grid in a layer next to it. The icons are the
+# curated set of `tess_ui.icons` and the `.svg` and `.png` files of `icons_folder` (read through `tess_ui.filesystem`, and only when the grid opens). `value` is two-way: the icon's name, or a
+# file's name with its extension. Escape and a press outside close the popup (writing false to `open`); a pick closes it too, unless `close_on_pick` is false. `on_change` is called after each pick.
+# What the grid does is in IconPickerPanel.
+params:
+  value: {type: str, default: "", model: true, doc: "The icon: a built-in icon's name, or a file's name with its extension."}
+  popup: {type: bool, default: false, doc: "Show a button with the icon that opens the grid in a layer, instead of the grid itself."}
+  open: {type: bool, default: false, model: true, doc: "A popup picker: whether it is showing; Escape, a pick and a press outside write false."}
+  close_on_pick: {type: bool, default: true, doc: "A popup picker closes when an icon is picked."}
+  icons_folder: {type: str, default: "", doc: "A folder of .svg and .png files offered besides the built-in icons."}
+  columns: {type: int, default: 8, min: 3, max: 16, doc: "How many icons are in a row."}
+  rows: {type: int, default: 6, min: 2, max: 12, doc: "How many rows show at once."}
+  label: {type: str, default: Icon, doc: "What a screen reader calls the picker, and the button that opens it."}
+  placeholder: {type: str, default: Choose an icon, doc: "What the button says while there is no icon."}
+  disabled: {type: bool, default: false, doc: "Dimmed and not editable; a popup does not open."}
+  on_change: {type: handler, doc: "Called after each pick."}
+widget: Container
+state: {current: {}}
+style: {flex_direction: vertical, align_content: top_left}
+children:
+  - widget: IconBrowser
+    name: swatch
+    if: popup
+    open: false
+    value: "{{ value }}"
+    folder: "{{ icons_folder }}"
+    current: "{{ current }}"
+    disabled: "{{ disabled }}"
+  - widget: Container
+    name: field
+    if: popup
+    a11y: {hidden: true}
+    style: {flex_direction: horizontal, align_content: center, gap: 8}
+    children:
+      - {widget: Icon, name: trigger_icon, if: "current.get('kind') == 'glyph' or current.get('kind') == 'file'", icon: "{{ current['icon'] }}", style: {width: 24, height: 24, foreground: on_surface}}
+      - {widget: Svg, name: trigger_svg, if: "current.get('kind') == 'svg'", content: "{{ current['svg'] }}", style: {width: 24, height: 24, foreground: on_surface}}
+      - {widget: Image, name: trigger_image, if: "current.get('kind') == 'png'", frame: "{{ current['frame'] }}", fit: contain, style: {width: 24, height: 24}}
+      - {widget: Text, name: trigger_text, text: "{{ value if value != '' else placeholder }}", typography_role: body_large, style: {foreground: on_surface}}
+      - {widget: Icon, name: trigger_chevron, icon: expand_more, style: {width: 24, height: 24, foreground: on_surface_variant}}
+      - widget: Container
+        name: trigger
+        a11y: {role: button, label: "{{ label + ': ' + value if value != '' else label }}", expanded: "{{ open }}"}
+        disabled: "{{ disabled }}"
+        handlers: {on_click: "open = not open"}
+        style: {position: absolute, x: 0, y: 0, width: 100%, height: 100%}
+  - widget: Overlay
+    name: layer
+    if: popup
+    open: "{{ open }}"
+    anchor: field
+    placement: below
+    focus_first: true
+    children:
+      - widget: Container
+        name: surface
+        style: {flex_direction: vertical}
+        children:
+          - {widget: IconPickerPanel, name: popup_panel, value: "{{ value }}", open: "{{ open }}", icons_folder: "{{ icons_folder }}", columns: "{{ columns }}", rows: "{{ rows }}", label: "{{ label }}", disabled: "{{ disabled }}", on_change: "open = open and not close_on_pick; on_change()"}
+  - {widget: IconPickerPanel, name: panel, if: "not popup", value: "{{ value }}", icons_folder: "{{ icons_folder }}", columns: "{{ columns }}", rows: "{{ rows }}", label: "{{ label }}", disabled: "{{ disabled }}", on_change: "on_change()"}

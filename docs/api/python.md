@@ -18,6 +18,7 @@ Every public class, function and constant, with its signature and what it does. 
 - [File dialog](#file-dialog): Opening the file dialog from Python and hearing the paths.
 - [File browser](#file-browser): The file dialog's state and rules, with no window.
 - [File system](#file-system): The disk as the file dialog sees it, which a test can swap.
+- [Icon browser](#icon-browser): The icon picker's list, search and cursor, with no window.
 - [Docking](#docking): Panels the user can drag between zones.
 - [Interaction](#interaction): State layer, ripple and focus ring.
 - [Accessibility](#accessibility): What a node tells assistive technology.
@@ -2137,6 +2138,7 @@ What the dialog needs of a file system.
 - `is_dir(path: str) -> bool`: Whether `path` is a folder (a link to one is).
 - `list_dir(path: str) -> list[Entry]`: The entries of the folder `path`, in no particular order.
 - `make_dir(path: str) -> None`: Makes the folder `path` (its parent must be there).
+- `read_bytes(path: str, limit: int) -> bytes`: The first `limit` bytes of the file `path` (a preview reads a little of a file, never all of a big one).
 - `real_path(path: str) -> str`: `path` with symlinks followed, as a root's check wants it.
 
 ### `LocalFileSystem`
@@ -2153,6 +2155,7 @@ The disk.
 - `is_dir(path: str) -> bool`: Whether `path` is a folder (a link to one is).
 - `list_dir(path: str) -> list[Entry]`: The entries of the folder `path`: one `scandir` and one `stat` for each; a failure is a `FileSystemError` in words.
 - `make_dir(path: str) -> None`: Makes the folder `path`; a name that is taken, or a place that will not take it, is a `FileSystemError`.
+- `read_bytes(path: str, limit: int) -> bytes`: The first `limit` bytes of the file `path`; a file that cannot be read is a `FileSystemError` in words.
 - `real_path(path: str) -> str`: `path` with its symlinks followed.
 
 ### `FileSystemError`
@@ -2193,6 +2196,43 @@ use(filesystem: FileSystem | None) -> FileSystem
 ```
 
 Makes `filesystem` the default (`None` puts the disk back) and returns the one it replaced, so a test can put that back.
+
+## Icon browser
+
+`tess_ui.icon_controls`: The icon picker's list, search and cursor, with no window.
+
+### `IconBrowser`
+
+```python
+class IconBrowser(
+    fs: FileSystem,
+    folder: str = '',
+    columns: int = 8,
+    page_rows: int = 6,
+    builtin: Iterable[str] | None = None
+) -> None
+```
+
+The icons, a search and a cursor. `folder` is read once, here (and again by `refresh`); `columns` and `page_rows` shape the keys.
+
+- `click(index: int) -> str | None`: A press on cell `index`: it is picked.
+- `entry_named(name: str) -> IconEntry | None`: The icon `name` among all of them (not only the results), or `None`.
+- `index_of(name: str) -> int`: The place of the icon `name` in the results, or -1.
+- `move(to: int) -> None`: Puts the cursor on `to`, kept inside the results.
+- `picked` *(property)*: The icon under the cursor.
+- `press(key: str, *, ctrl: bool = False, in_field: bool = False) -> str | None`: A key.
+- `refresh() -> None`: Reads the folder again (the files first, then the built-in icons, each by name without regard to case) and searches again.
+- `reveal(offset: float, row_height: float, rows: int | None = None) -> float`: The scroll offset that keeps the cursor's row in a window of `rows` rows (`page_rows` when not given), as near to `offset` as it can be.
+- `rows` *(property)*: The results in rows of `columns`.
+- `set_query(query: str) -> None`: Keeps the icons whose name has every word of `query` in it (`arrow back` finds `arrow_back`), the ones whose name starts with the first word first; the cursor goes to the first.
+
+### `IconEntry`
+
+```python
+class IconEntry(name: str, kind: str, path: str = '') -> None
+```
+
+One icon: its `name` (what `value` holds), its `kind` (`glyph`, `svg` or `png`) and the `path` of its file (empty for a built-in one).
 
 ## Docking
 

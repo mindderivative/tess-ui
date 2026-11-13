@@ -125,6 +125,7 @@ nav:
           - Date picker: components/date-pickers.md
           - Time picker: components/time-pickers.md
           - Colour picker: components/colour-pickers.md
+          - Icon picker: components/icon-pickers.md
           - Segmented buttons: components/segmented-buttons.md
           - Time input: components/time-input.md
       - Content:
@@ -212,6 +213,9 @@ nav:
               - PeriodSelector: stylesheets/time-pickers/period-selector.md
           - Colour picker:
               - ColourPicker: stylesheets/colour-pickers/colour-picker.md
+          - Icon picker:
+              - IconPicker: stylesheets/icon-pickers/icon-picker.md
+              - IconPickerPanel: stylesheets/icon-pickers/icon-picker-panel.md
           - Time input:
               - TimeInput: stylesheets/time-input/time-input.md
       - Content:

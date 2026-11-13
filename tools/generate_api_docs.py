@@ -43,6 +43,7 @@ SECTIONS = (
     ("tess_ui.file_dialog", "File dialog", "Opening the file dialog from Python and hearing the paths.", ("FileDialogRequest",)),
     ("tess_ui.file_browser", "File browser", "The file dialog's state and rules, with no window.", ("FileBrowser", "Filter", "read_filters")),
     ("tess_ui.filesystem", "File system", "The disk as the file dialog sees it, which a test can swap.", ("FileSystem", "LocalFileSystem", "FileSystemError", "Entry", "default", "use")),
+    ("tess_ui.icon_controls", "Icon browser", "The icon picker's list, search and cursor, with no window.", ("IconBrowser", "IconEntry")),
     ("tess_ui.docking", "Docking", "Panels the user can drag between zones."),
     ("tess_ui.interaction", "Interaction", "State layer, ripple and focus ring."),
     ("tess_ui.a11y", "Accessibility", "What a node tells assistive technology."),

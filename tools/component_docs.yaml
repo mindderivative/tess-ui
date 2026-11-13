@@ -1435,6 +1435,46 @@ components:
       area.on_input(lambda text: hex_field.value.set(text))
     see: [guide/controls.md, guide/widget-catalog.md]
 
+  - slug: icon-pickers
+    title: Icon picker
+    group: Selection and input
+    views: [IconPicker, IconPickerPanel]
+    widgets: [IconBrowser]
+    md3: |
+      Material Design 3 has no icon picker: icons are chosen by the people who design an app. An app whose people pick an icon for something (a launcher, a button, a block of a configuration)
+      needs one, and it is built from what MD3 does describe: an outlined text field for the search, a grid of selectable items, and a menu-like surface that holds them.
+    built: |
+      Two views and one control. `IconPicker` is the view you use: the picker inline, or (`popup: true`) a 48 pixel button that shows the icon and its name and opens the picker in a layer under it.
+      `IconPickerPanel` is the inside of it, with no surface and no button. `IconBrowser` is the control that draws nothing and is the picker's mind (`tess_ui.icon_controls`): the list, the search,
+      the cursor and the previews, which the view reaches through the names it binds to it.
+
+      The icons are the curated set of `tess_ui.icons` (Material Symbols and Material Design Icons, by name) and, when `icons_folder` is given, the `.svg` and `.png` files in that folder, which come
+      first. `value` is two-way text: a built-in icon's name (`home`), or a file's name with its extension (`logo.svg`). A value that is not an icon the picker knows is kept as it is and nothing is
+      selected. The folder is read through `tess_ui.filesystem`, once when the grid opens (a popup reads nothing until it does); a folder that cannot be read is a message under the grid, and the built-in
+      icons stay. A file is shown as its picture: an SVG is drawn in the text colour where it says `currentColor`, a PNG is scaled down to fit. A file is read only when its row comes into view, a file
+      that is not an SVG or a picture is shown as a plain file glyph, and a document type or entity declaration in an SVG is refused.
+
+      The search field keeps the icons whose name has every word of what is typed, in any order, without regard to case, with `_`, `-` and `.` counted as spaces (`arrow back` finds `arrow_back`, `svg`
+      finds `logo.svg`); a name that starts with the first word comes first. The grid is a `VirtualList` of rows of `columns` icons (8 by default), `rows` of them in view (6): it builds the rows in view and
+      three past each edge, however many icons there are, and a new search makes new rows rather than patching the old ones. It opens scrolled so that `value` shows, with the cursor on it.
+
+      The keyboard. The search field has the focus when a popup opens: Up, Down, Page Up and Page Down move the cursor in the grid and Enter picks the icon under it (Left, Right, Home, End and Space are the
+      text's). Tab goes on to the grid, where the arrow keys move by an icon and by a row, Home and End go to the start and end of the row (with Ctrl, of the whole grid), Page Up and Page Down go `rows` rows,
+      and Enter and Space pick. The grid scrolls to keep the cursor in view. A press picks too. A pick writes `value`, calls `on_change`, and closes a popup unless `close_on_pick` is false. Escape and a
+      press outside close a popup (writing false to `open`), and the focus goes back to the button. A screen reader hears a group named by `label`, a `list` of `listitem`s each named by its icon and
+      `selected` when it is the value, the search field, a button that says "label: icon" and is `expanded` while the layer is open, and an alert for a folder that cannot be read or a search that finds nothing.
+
+      The look is in `IconPicker_Stylesheet.yaml` and `IconPickerPanel_Stylesheet.yaml`: write one in your project to change the button, the layer and the cells. Not built: icon categories or
+      tags, recently used icons, other file types (`.jpg`, `.webp`), an icon's own colour for a PNG, sizes other than 24 pixels.
+    usage_view: |
+      name: blocks
+      widget: Container
+      style: {flex_direction: vertical, gap: 16, width: 480, height: 640, padding: 16}
+      children:
+        - {widget: IconPicker, popup: true, open: "{{ choosing }}", value: "{{ icon }}", icons_folder: ~/.config/myapp/Icons, label: Launcher icon, on_change: icon_changed}
+        - {widget: IconPicker, value: "{{ icon }}", columns: 6, rows: 4}
+    see: [guide/controls.md, components/colour-pickers.md]
+
   - slug: segmented-buttons
     title: Segmented buttons
     group: Selection and input
