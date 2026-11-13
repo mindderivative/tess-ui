@@ -111,3 +111,7 @@ CI gotchas: a leading-slash path is not absolute on Windows; the macOS runner as
 
 Real windows can be opened from a shell; the person at the machine drives them. Wayland lets an app neither place nor centre a window and ignores `always_on_top`, so
 window position code is a no-op there. Resizing a window on tre 0.5.4 stalls frames; 0.5.5 and later do not.
+
+### A bare test run stays off your session
+
+Some tests open a window (`App.run(max_frames=...)`, the example apps, the built executable) and write the OS clipboard through `tess_re`. `tests/conftest.py` therefore drops `DISPLAY`, `WAYLAND_DISPLAY`, `WAYLAND_SOCKET`, `DBUS_SESSION_BUS_ADDRESS` and `XDG_SESSION_*` from a local run, and points the `XDG_*` folders and `TESS_UI_STATE_DIR` at a private temporary folder; the tests that need a display skip, as on CI's Linux. The pytest header says what was dropped. `TESS_UI_ALLOW_REAL_SESSION=1` allows the real session, for a run by hand on purpose. A run with `CI` set is left alone, since CI's jobs run under their own `xvfb-run` display. A test must never use a system-wide input device (`/dev/uinput`), the real pointer or clipboard, or a state-changing call to the person's bus or services; if it must, mark it opt-in with a stated reason.
