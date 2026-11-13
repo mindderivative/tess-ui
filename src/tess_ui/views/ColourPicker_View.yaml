@@ -1,0 +1,37 @@
+tesserae: 0.6
+# The colour picker: a square of saturation and value, hue and alpha strips, a hex field, red, green, blue and alpha numbers, and a row of the theme's colour roles, either
+# inline or (`popup: true`) behind a swatch of the colour that opens it in a layer next to it. `value` is two-way: '#rrggbb' text, or '#rrggbbaa' when the alpha is below 1
+# (lowercase). Escape and a press outside close the popup (writing false to `open`). `on_change` is called after each change the user makes, while a drag is still going.
+# What the parts do is in ColourPickerPanel.
+params:
+  value: {type: str, default: "#000000", model: true, doc: "The colour: '#rrggbb', or '#rrggbbaa' when its alpha is below 1 (lowercase)."}
+  popup: {type: bool, default: false, doc: "Show a swatch of the colour that opens the picker in a layer, instead of the picker itself."}
+  open: {type: bool, default: false, model: true, doc: "A popup picker: whether it is showing; Escape and a press outside write false."}
+  roles: {type: list, default: [], doc: "The theme colour roles in the row of swatches, in order; empty for primary, secondary, tertiary, error, surface, on_surface, primary_container and secondary_container."}
+  label: {type: str, default: Colour, doc: "What a screen reader calls the picker, and the swatch that opens it."}
+  disabled: {type: bool, default: false, doc: "Dimmed and not editable; a popup does not open."}
+  on_change: {type: handler, doc: "Called after each change the user makes."}
+widget: Container
+style: {flex_direction: vertical, align_content: top_left}
+children:
+  - widget: Container
+    name: trigger
+    if: popup
+    a11y: {role: button, label: "{{ label }}", expanded: "{{ open }}"}
+    disabled: "{{ disabled }}"
+    handlers: {on_click: "open = not open"}
+    style: {background: "{{ value }}"}
+  - widget: Overlay
+    name: layer
+    if: popup
+    open: "{{ open }}"
+    anchor: trigger
+    placement: below
+    focus_first: true
+    children:
+      - widget: Container
+        name: surface
+        style: {flex_direction: vertical}
+        children:
+          - {widget: ColourPickerPanel, name: popup_panel, value: "{{ value }}", roles: "{{ roles }}", label: "{{ label }}", disabled: "{{ disabled }}", on_change: "on_change()"}
+  - {widget: ColourPickerPanel, name: panel, if: "not popup", value: "{{ value }}", roles: "{{ roles }}", label: "{{ label }}", disabled: "{{ disabled }}", on_change: "on_change()"}

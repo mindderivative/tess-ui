@@ -83,6 +83,9 @@ def lower(inst: Instance) -> dict[str, Any]:
     elif widget == "TimePickerDial":
         folded = {"mode", "auto_advance", "label"}
         node["dial"] = {k: values[k] for k in ("mode", "auto_advance") if values.get(k) is not None}
+    elif widget in ("ColourArea", "ColourStrip", "ColourField", "ColourSwatches"):
+        folded = {"channel", "roles", "label"}
+        node["colour"] = {k: values[k] for k in ("channel", "roles") if values.get(k) is not None}
     elif widget == "SpinBox":
         folded = {"decimals", "prefix", "suffix", "wrap", "label"}
         node["spin"] = {k: values[k] for k in ("decimals", "prefix", "suffix", "wrap") if values.get(k) not in (None, "")}
@@ -102,7 +105,7 @@ def lower(inst: Instance) -> dict[str, Any]:
     if inst.classes:
         node["classes"] = list(inst.classes)
     a11y: dict[str, Any] = {}
-    if widget in ("LinearProgress", "CircularProgress", "LoadingIndicator", "Checkbox", "RadioButton", "Switch", "Slider", "RangeSlider", "SpinBox", "TimePickerDial") and values.get("label"):
+    if widget in ("LinearProgress", "CircularProgress", "LoadingIndicator", "Checkbox", "RadioButton", "Switch", "Slider", "RangeSlider", "SpinBox", "TimePickerDial", "ColourArea", "ColourStrip", "ColourField", "ColourSwatches") and values.get("label"):
         a11y = {"label": values["label"]}
     if widget == "Text" and values.get("heading"):
         a11y = {"role": "heading", "level": values["heading"]}

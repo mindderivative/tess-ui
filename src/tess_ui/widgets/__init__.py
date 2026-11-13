@@ -58,6 +58,7 @@ from tess_ui.widgets.search import search_bar, search_view
 from tess_ui.widgets.progress import circular_progress, linear_progress, loading_indicator
 from tess_ui.widgets.media import graph_node, icon, image, node_graph, svg, video
 from tess_ui.widgets.containment import carousel, splitter
+from tess_ui.widgets.colour import colour_area, colour_field, colour_strip, colour_swatches
 from tess_ui.widgets.date_time import date_picker_day, period_selector, time_input_field, time_picker_dial
 
 __all__ = [
@@ -69,6 +70,10 @@ __all__ = [
     "carousel",
     "checkbox",
     "chip",
+    "colour_area",
+    "colour_field",
+    "colour_strip",
+    "colour_swatches",
     "circular_progress",
     "date_picker_day",
     "dialog",

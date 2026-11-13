@@ -62,7 +62,8 @@ which.
 `checkbox`, `radio_button`, `switch`, `slider`, `spin_box`,
 `circular_progress`, `linear_progress`, `loading_indicator` and
 `time_picker_dial` return a Tesserae control (`tess_ui.controls`) rather
-than a `Widget`. Its state is a `Signal`:
+than a `Widget`, and so do the colour picker's parts, `colour_area`, `colour_strip`,
+`colour_field` and `colour_swatches` (`tess_ui.colour_controls`). Its state is a `Signal`:
 
 ```python
 from tess_ui.widgets import checkbox

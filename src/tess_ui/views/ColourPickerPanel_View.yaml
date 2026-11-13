@@ -1,0 +1,62 @@
+tesserae: 0.6
+# The inside of a colour picker, with no surface and no trigger: a square of saturation and value for the hue, a hue strip, an alpha strip, the hex text, the red, green, blue
+# and alpha numbers, and a row of the theme's colour roles. `value` is two-way and holds the colour as '#rrggbb' text, or '#rrggbbaa' when its alpha is below 1 (lowercase). Every
+# part reads and writes `value`, so they stay in step, and the hue the picker remembers (kept in `hue`, for a grey or a black, which have none of their own) is shared by the
+# square and the hue strip. `on_change` is called after each change the user makes, while a drag is still going. Tab goes square, hue, alpha, hex, red, green, blue, alpha, swatches.
+params:
+  value: {type: str, default: "#000000", model: true, doc: "The colour: '#rrggbb', or '#rrggbbaa' when its alpha is below 1 (lowercase)."}
+  roles: {type: list, default: [], doc: "The theme colour roles in the row of swatches, in order; empty for primary, secondary, tertiary, error, surface, on_surface, primary_container and secondary_container."}
+  label: {type: str, default: Colour, doc: "What a screen reader calls the picker."}
+  disabled: {type: bool, default: false, doc: "Dimmed and not editable."}
+  on_change: {type: handler, doc: "Called after each change the user makes."}
+widget: Container
+state: {hue: 0}
+a11y: {role: group, label: "{{ label }}"}
+style: {flex_direction: vertical, gap: 12, width: 256}
+children:
+  - widget: ColourArea
+    name: square
+    value: "{{ value }}"
+    hue: "{{ hue }}"
+    disabled: "{{ disabled }}"
+    handlers: {on_input: "on_change()"}
+    style: {width: 256, height: 176}
+  - widget: ColourStrip
+    name: hue_strip
+    channel: hue
+    label: Hue
+    value: "{{ value }}"
+    hue: "{{ hue }}"
+    disabled: "{{ disabled }}"
+    handlers: {on_input: "on_change()"}
+    style: {width: 256, height: 24}
+  - widget: ColourStrip
+    name: alpha_strip
+    channel: alpha
+    label: Alpha
+    value: "{{ value }}"
+    hue: "{{ hue }}"
+    disabled: "{{ disabled }}"
+    handlers: {on_input: "on_change()"}
+    style: {width: 256, height: 24}
+  - widget: ColourField
+    name: hex
+    channel: hex
+    value: "{{ value }}"
+    disabled: "{{ disabled }}"
+    handlers: {on_input: "on_change()"}
+    style: {width: 256}
+  - widget: Container
+    name: channels
+    style: {flex_direction: horizontal, gap: 8}
+    children:
+      - {widget: ColourField, name: red, channel: red, value: "{{ value }}", disabled: "{{ disabled }}", handlers: {on_input: "on_change()"}, style: {width: 58}}
+      - {widget: ColourField, name: green, channel: green, value: "{{ value }}", disabled: "{{ disabled }}", handlers: {on_input: "on_change()"}, style: {width: 58}}
+      - {widget: ColourField, name: blue, channel: blue, value: "{{ value }}", disabled: "{{ disabled }}", handlers: {on_input: "on_change()"}, style: {width: 58}}
+      - {widget: ColourField, name: alpha, channel: alpha, value: "{{ value }}", disabled: "{{ disabled }}", handlers: {on_input: "on_change()"}, style: {width: 58}}
+  - widget: ColourSwatches
+    name: swatches
+    roles: "{{ roles if len(roles) > 0 else None }}"
+    value: "{{ value }}"
+    disabled: "{{ disabled }}"
+    handlers: {on_input: "on_change()"}

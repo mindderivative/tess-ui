@@ -13,7 +13,7 @@ Each kind maps onto `tess_re`'s building blocks:
 | `TextField` | a `box` (its `background`) holding a `text_input` |
 | `Image` | an `image`, from pixels Tesserae decoded |
 | `Icon` | a `path` from `tess_ui.icons` (needs `foreground`) |
-| `Checkbox`, `RadioButton`, `Switch`, `Slider`, `RangeSlider`, `CircularProgress`, `LinearProgress`, `LoadingIndicator`, `TimePickerDial` | Tesserae's own MD3 controls (`tess_ui.controls`, M40), whose `.node` goes in the tree; `Built.controls` keeps them |
+| `Checkbox`, `RadioButton`, `Switch`, `Slider`, `RangeSlider`, `CircularProgress`, `LinearProgress`, `LoadingIndicator`, `TimePickerDial`, `ColourArea`, `ColourStrip`, `ColourField`, `ColourSwatches` | Tesserae's own MD3 controls (`tess_ui.controls`, M40), whose `.node` goes in the tree; `Built.controls` keeps them |
 
 Styles resolve through `tess_ui.spec.cascade`; theme roles, shape
 tokens, elevation levels and type roles through `tess_ui.tokens`. Errors
@@ -49,8 +49,10 @@ _TRANSPARENT: RGBA = (0, 0, 0, 0)
 _BASELINE = tokens.BASELINE
 _CONTROL_KINDS = frozenset({
     "Checkbox", "RadioButton", "Switch", "Slider", "RangeSlider", "SpinBox", "CircularProgress", "LinearProgress",
-    "LoadingIndicator", "TimePickerDial",
+    "LoadingIndicator", "TimePickerDial", "ColourArea", "ColourStrip", "ColourField", "ColourSwatches",
 })
+#: The colour picker's controls (`tess_ui.colour_controls`): the ones whose `value` is a colour's text.
+_COLOUR_KINDS = frozenset({"ColourArea", "ColourStrip", "ColourField", "ColourSwatches"})
 #: Kinds built with a `tess_ui.widgets` widget (M60): a node graph and its nodes.
 _WIDGET_KINDS = frozenset({"NodeGraph", "GraphNode"})
 _KINDS = _CONTROL_KINDS | _WIDGET_KINDS | {"Rect", "Container", "Text", "Link", "TextField", "Image", "Icon", "Svg",
@@ -65,6 +67,7 @@ _NODE_KEYS = frozenset({
     "min", "max", "step",  # a SpinBox's (M58)
     "spin",  # a SpinBox's decimals, prefix, suffix and wrap
     "dial",  # a TimePickerDial's mode and auto_advance
+    "colour", "hue",  # a colour control's channel and roles, and the hue its picker remembers
     "graph",  # a NodeGraph's snap, arrows and fit
     "disabled",  # any node's (M70): the View applies it, or a control's own
     "visible",  # any node's (#259): hidden, and out of layout, while false; only a node that says it is touched (`_OPTIONAL_LAYOUT`)
@@ -1303,6 +1306,9 @@ def _control(ctx: _Context, node: dict[str, Any], style: dict[str, Any], built: 
             control = controls.SpinBox(ctx.window, value=_spin_number(node.get("value") or 0, node.get("step") or 1),
                                        min=node.get("min"), max=node.get("max"), step=node.get("step") or 1,
                                        **(node.get("spin") or {}), **common)
+        elif kind in _COLOUR_KINDS:
+            common.pop("color")
+            control = _colour_control(ctx, node, size, common)
         else:  # TimePickerDial
             common.pop("color")
             control = controls.TimePickerDial(ctx.window, hour=int(node.get("hour") or 0),
@@ -1315,6 +1321,53 @@ def _control(ctx: _Context, node: dict[str, Any], style: dict[str, Any], built: 
     if placement:
         control.node.set(**placement)
     return control
+
+
+def _colour_text(node: dict[str, Any]) -> str:
+    """A colour control's `value:`: `'#rrggbb'` or `'#rrggbbaa'` (read in either case, held in lowercase); black when the node says none."""
+    from tess_ui import colour
+
+    value = node.get("value")
+    if value is None:
+        return "#000000"
+    if not isinstance(value, str) or not colour.is_valid(value):
+        raise SpecBuildError(f'widget {_q(node["id"])}: value is a colour written #rrggbb or #rrggbbaa, got {value!r}')
+    return value.lower()
+
+
+def _colour_hue(node: dict[str, Any]) -> Optional[float]:
+    hue = node.get("hue")
+    if hue is None:
+        return None
+    if isinstance(hue, bool) or not isinstance(hue, (int, float)) or not 0 <= hue <= 360:
+        raise SpecBuildError(f'widget {_q(node["id"])}: hue is a number of degrees from 0 to 360, got {hue!r}')
+    return float(hue)
+
+
+def _colour_control(ctx: _Context, node: dict[str, Any], size: dict[str, float], common: dict[str, Any]) -> Any:
+    """One of the colour picker's four controls (`tess_ui.colour_controls`), at the `width` and `height` the style gives."""
+    from tess_ui import colour_controls
+
+    kind, options = node["kind"], node.get("colour") or {}
+    label = (node.get("a11y") or {}).get("label")
+    value = _colour_text(node)
+    try:
+        if kind == "ColourArea":
+            return colour_controls.ColourArea(ctx.window, value=value, hue=_colour_hue(node), label=label, **size, **common)
+        if kind == "ColourStrip":
+            return colour_controls.ColourStrip(ctx.window, channel=options.get("channel") or "hue", value=value, hue=_colour_hue(node), label=label,
+                                               **size, **common)
+        if kind == "ColourField":
+            return colour_controls.ColourField(ctx.window, channel=options.get("channel") or "hex", value=value, label=label, width=size.get("width"),
+                                               theme=common["theme"], listen=common["listen"])
+        roles = options.get("roles")
+        if roles is not None and (not isinstance(roles, (list, tuple)) or not roles or not all(isinstance(r, str) for r in roles)):
+            raise SpecBuildError(f"widget {_q(node['id'])}: roles is a list of theme colour roles, got {roles!r}")
+        return colour_controls.ColourSwatches(ctx.window, value=value, roles=roles or colour_controls.SWATCH_ROLES, label=label, **common)
+    except ValueError as exc:  # an unknown role or channel: named with the widget
+        if isinstance(exc, SpecBuildError):
+            raise
+        raise SpecBuildError(f"widget {_q(node['id'])}: {exc}") from None
 
 
 def _spin_number(value: Any, step: Any) -> Any:
@@ -1426,6 +1479,8 @@ def _patch_control(ctx: _Context, node: dict[str, Any], style: dict[str, Any], c
         control.relabel((node.get("a11y") or {}).get("label"))
     elif kind == "SpinBox":
         control.value.set(control._fit(_spin_number(node.get("value") or 0, control.step)))
+    elif kind in _COLOUR_KINDS:
+        control.follow(_colour_text(node), _colour_hue(node) if kind in ("ColourArea", "ColourStrip") else None)
     elif kind == "TimePickerDial":
         control.hour.set(int(node.get("hour") or 0) % 24)
         control.minute.set(int(node.get("minute") or 0) % 60)
@@ -1439,4 +1494,5 @@ def control_shape(node: dict[str, Any], layers: tuple[Optional[Sheet], ...]) -> 
     style = resolve_style(node, layers)
     return (node.get("kind"), style.get("width"), style.get("height"), node.get("group"),
             node.get("min"), node.get("max"), node.get("step"), repr(node.get("spin")), node.get("track"), node.get("stop_indicator"), node.get("icons"), node.get("ticks"), node.get("value_indicator"),
-            node.get("vertical"), node.get("size"), node.get("icon"), node.get("thickness"), node.get("two_bar"), node.get("contained"), node.get("wavy"))  # a SpinBox's bounds are built in (M58)
+            node.get("vertical"), node.get("size"), node.get("icon"), node.get("thickness"), node.get("two_bar"), node.get("contained"), node.get("wavy"),
+            repr(node.get("colour")))  # a SpinBox's bounds are built in (M58)

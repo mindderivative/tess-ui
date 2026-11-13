@@ -49,6 +49,10 @@ KINDS = (
     ("LinearProgress", "A linear progress indicator; no `value:` means indeterminate.", "`value:`"),
     ("LoadingIndicator", "MD3's loading indicator, always indeterminate.", ""),
     ("TimePickerDial", "MD3's time picker dial.", "`hour:`, `minute:`"),
+    ("ColourArea", "The colour picker's square of saturation and value for a hue.", "`value:` (`'#rrggbb'` text), `hue:`"),
+    ("ColourStrip", "The colour picker's strip for a hue or an alpha.", "`colour: {channel}`, `value:`, `hue:`"),
+    ("ColourField", "A text field for a colour: its hex, or one of its red, green, blue and alpha numbers.", "`colour: {channel}`, `value:`"),
+    ("ColourSwatches", "A row of the theme's colour roles; pressing one sets the colour.", "`colour: {roles}`, `value:`"),
     ("NodeGraph", "A pannable canvas of `GraphNode`s joined by edges.", "`edges:`, children that are `GraphNode`s"),
     ("GraphNode", "A node in a `NodeGraph`: a titled box at a place.", "`label:`, `x:`, `y:`"),
     ("TitleBar", "A title bar: an icon, a title, your content and the window's buttons (`App(borderless=True)`), or a close button for a dialog or a sheet (`buttons: [dismiss]`).", "`title:`, `icon:`, `buttons:`"),
@@ -252,7 +256,6 @@ def render() -> str:
            "| `<Name>_Stylesheet.yaml` | Style rules for a view. | [Theme and stylesheet](#theme-and-stylesheet) |",
            "| `<Name>_Style.yaml` | One node's `style:`, shared. | [The style](#the-style) |", ""]
 
-    node = view.resolve(view.defs["node"])
     widget = view.resolve(view.defs["widget"])
     out += ["## The node", "",
             "A view is one node, with its children inside it. A node is a widget (`kind:`), a fragment used in place "

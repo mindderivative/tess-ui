@@ -65,6 +65,7 @@ See [The View Language](../guide/view-language.md#style) for the rule syntax and
 - **Spin box**: [`SpinBoxField`](spin-boxes/spin-box-field.md)
 - **Date picker**: [`DatePicker`](date-pickers/date-picker.md), [`DatePickerDay`](date-pickers/date-picker-day.md)
 - **Time picker**: [`TimePicker`](time-pickers/time-picker.md), [`PeriodSelector`](time-pickers/period-selector.md)
+- **Colour picker**: [`ColourPicker`](colour-pickers/colour-picker.md)
 - **Time input**: [`TimeInput`](time-input/time-input.md)
 
 ## Content

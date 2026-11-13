@@ -49,6 +49,9 @@ children:
   `two_bar` (an endless wait sweeps as two bars); a `CircularProgress` has `wavy`; a `LoadingIndicator` has `contained`.
 - **A `TimePickerDial`** has `hour` (0 to 23), `minute` (0 to 59), `mode` (`hour` or `minute`, which hand the face shows and sets) and `auto_advance`
   (`true`: letting go in hour mode moves on to the minutes).
+- **The colour picker's parts** (`ColourArea`, `ColourStrip`, `ColourField`, `ColourSwatches`) are controls too, made for [the colour picker](../components/colour-pickers.md) and usable alone.
+  Their `value` is a colour as text, `'#rrggbb'` or `'#rrggbbaa'` when its alpha is below 1, and is two-way; `on_input` runs on every change the user makes while a drag is going.
+  They are sized by `style: {width, height}` (a square of 256 by 176, a strip of 256 by 24, a field of 256 or 58 wide).
 - **Size:** `style: {width, height}` sets the control's touch target;
   it's MD3's 48 px when not given. A slider's `width` is its track's
   length, a dial's is its face, and a progress bar's is its track.

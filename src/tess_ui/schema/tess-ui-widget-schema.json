@@ -22,6 +22,12 @@
         "Chip",
         "ChipGroup",
         "CircularProgress",
+        "ColourArea",
+        "ColourField",
+        "ColourPicker",
+        "ColourPickerPanel",
+        "ColourStrip",
+        "ColourSwatches",
         "Container",
         "DatePicker",
         "DatePickerDay",
@@ -2806,6 +2812,1200 @@
             "wavy",
             "thickness",
             "label"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "widget": {
+            "const": "ColourArea"
+          }
+        },
+        "required": [
+          "widget"
+        ]
+      },
+      "then": {
+        "properties": {
+          "widget": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          },
+          "if": {
+            "type": "string"
+          },
+          "for": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "slot": {
+            "type": "string"
+          },
+          "state": {
+            "type": "object"
+          },
+          "style": {
+            "$ref": "#/definitions/style"
+          },
+          "classes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "handlers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "a11y": {
+            "type": "object"
+          },
+          "interaction": {
+            "type": [
+              "boolean",
+              "string"
+            ]
+          },
+          "visible": {
+            "type": [
+              "boolean",
+              "string"
+            ]
+          },
+          "window_region": {
+            "enum": [
+              "drag",
+              "none"
+            ]
+          },
+          "route": {
+            "type": "string"
+          },
+          "focus_group": {
+            "enum": [
+              "horizontal",
+              "vertical",
+              "both"
+            ]
+          },
+          "tooltip": {
+            "type": [
+              "string",
+              "object"
+            ]
+          },
+          "params": {
+            "type": [
+              "array",
+              "object"
+            ]
+          },
+          "expects": {
+            "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "The colour: '#rrggbb', or '#rrggbbaa' when its alpha is below 1 (lowercase; capitals are read and written back lowercase)."
+          },
+          "hue": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "The hue in degrees the picker remembers for a colour with none of its own (a grey, a black), so a drag to a corner and back keeps the hue; bind a `state:` name shared by the area and the hue strip."
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "What a screen reader calls it."
+          },
+          "disabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ]
+          }
+        },
+        "required": [
+          "widget"
+        ],
+        "propertyNames": {
+          "enum": [
+            "widget",
+            "name",
+            "if",
+            "for",
+            "key",
+            "slot",
+            "state",
+            "style",
+            "classes",
+            "handlers",
+            "a11y",
+            "interaction",
+            "visible",
+            "window_region",
+            "route",
+            "focus_group",
+            "tooltip",
+            "params",
+            "expects",
+            "tesserae",
+            "value",
+            "hue",
+            "label",
+            "disabled"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "widget": {
+            "const": "ColourField"
+          }
+        },
+        "required": [
+          "widget"
+        ]
+      },
+      "then": {
+        "properties": {
+          "widget": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          },
+          "if": {
+            "type": "string"
+          },
+          "for": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "slot": {
+            "type": "string"
+          },
+          "state": {
+            "type": "object"
+          },
+          "style": {
+            "$ref": "#/definitions/style"
+          },
+          "classes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "handlers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "a11y": {
+            "type": "object"
+          },
+          "interaction": {
+            "type": [
+              "boolean",
+              "string"
+            ]
+          },
+          "visible": {
+            "type": [
+              "boolean",
+              "string"
+            ]
+          },
+          "window_region": {
+            "enum": [
+              "drag",
+              "none"
+            ]
+          },
+          "route": {
+            "type": "string"
+          },
+          "focus_group": {
+            "enum": [
+              "horizontal",
+              "vertical",
+              "both"
+            ]
+          },
+          "tooltip": {
+            "type": [
+              "string",
+              "object"
+            ]
+          },
+          "params": {
+            "type": [
+              "array",
+              "object"
+            ]
+          },
+          "expects": {
+            "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
+          },
+          "channel": {
+            "anyOf": [
+              {
+                "enum": [
+                  "hex",
+                  "red",
+                  "green",
+                  "blue",
+                  "alpha"
+                ]
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "`hex` takes '#rrggbb' or '#rrggbbaa'; the others take a whole number from 0 to 255."
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "The colour: '#rrggbb', or '#rrggbbaa' when its alpha is below 1 (lowercase; capitals are read and written back lowercase)."
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "What a screen reader calls it."
+          },
+          "disabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ]
+          }
+        },
+        "required": [
+          "widget"
+        ],
+        "propertyNames": {
+          "enum": [
+            "widget",
+            "name",
+            "if",
+            "for",
+            "key",
+            "slot",
+            "state",
+            "style",
+            "classes",
+            "handlers",
+            "a11y",
+            "interaction",
+            "visible",
+            "window_region",
+            "route",
+            "focus_group",
+            "tooltip",
+            "params",
+            "expects",
+            "tesserae",
+            "channel",
+            "value",
+            "label",
+            "disabled"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "widget": {
+            "const": "ColourPicker"
+          }
+        },
+        "required": [
+          "widget"
+        ]
+      },
+      "then": {
+        "properties": {
+          "widget": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          },
+          "if": {
+            "type": "string"
+          },
+          "for": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "slot": {
+            "type": "string"
+          },
+          "state": {
+            "type": "object"
+          },
+          "style": {
+            "$ref": "#/definitions/style"
+          },
+          "classes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "handlers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "a11y": {
+            "type": "object"
+          },
+          "interaction": {
+            "type": [
+              "boolean",
+              "string"
+            ]
+          },
+          "visible": {
+            "type": [
+              "boolean",
+              "string"
+            ]
+          },
+          "window_region": {
+            "enum": [
+              "drag",
+              "none"
+            ]
+          },
+          "route": {
+            "type": "string"
+          },
+          "focus_group": {
+            "enum": [
+              "horizontal",
+              "vertical",
+              "both"
+            ]
+          },
+          "tooltip": {
+            "type": [
+              "string",
+              "object"
+            ]
+          },
+          "params": {
+            "type": [
+              "array",
+              "object"
+            ]
+          },
+          "expects": {
+            "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#"
+            }
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "The colour: '#rrggbb', or '#rrggbbaa' when its alpha is below 1 (lowercase)."
+          },
+          "popup": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "Show a swatch of the colour that opens the picker in a layer, instead of the picker itself."
+          },
+          "open": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "A popup picker: whether it is showing; Escape and a press outside write false."
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "type": "array"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "The theme colour roles in the row of swatches, in order; empty for primary, secondary, tertiary, error, surface, on_surface, primary_container and secondary_container."
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "What a screen reader calls the picker, and the swatch that opens it."
+          },
+          "disabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "Dimmed and not editable; a popup does not open."
+          },
+          "on_change": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "Called after each change the user makes."
+          }
+        },
+        "required": [
+          "widget"
+        ],
+        "propertyNames": {
+          "enum": [
+            "widget",
+            "name",
+            "if",
+            "for",
+            "key",
+            "slot",
+            "state",
+            "style",
+            "classes",
+            "handlers",
+            "a11y",
+            "interaction",
+            "visible",
+            "window_region",
+            "route",
+            "focus_group",
+            "tooltip",
+            "params",
+            "expects",
+            "tesserae",
+            "children",
+            "value",
+            "popup",
+            "open",
+            "roles",
+            "label",
+            "disabled",
+            "on_change"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "widget": {
+            "const": "ColourPickerPanel"
+          }
+        },
+        "required": [
+          "widget"
+        ]
+      },
+      "then": {
+        "properties": {
+          "widget": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          },
+          "if": {
+            "type": "string"
+          },
+          "for": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "slot": {
+            "type": "string"
+          },
+          "state": {
+            "type": "object"
+          },
+          "style": {
+            "$ref": "#/definitions/style"
+          },
+          "classes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "handlers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "a11y": {
+            "type": "object"
+          },
+          "interaction": {
+            "type": [
+              "boolean",
+              "string"
+            ]
+          },
+          "visible": {
+            "type": [
+              "boolean",
+              "string"
+            ]
+          },
+          "window_region": {
+            "enum": [
+              "drag",
+              "none"
+            ]
+          },
+          "route": {
+            "type": "string"
+          },
+          "focus_group": {
+            "enum": [
+              "horizontal",
+              "vertical",
+              "both"
+            ]
+          },
+          "tooltip": {
+            "type": [
+              "string",
+              "object"
+            ]
+          },
+          "params": {
+            "type": [
+              "array",
+              "object"
+            ]
+          },
+          "expects": {
+            "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#"
+            }
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "The colour: '#rrggbb', or '#rrggbbaa' when its alpha is below 1 (lowercase)."
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "type": "array"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "The theme colour roles in the row of swatches, in order; empty for primary, secondary, tertiary, error, surface, on_surface, primary_container and secondary_container."
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "What a screen reader calls the picker."
+          },
+          "disabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "Dimmed and not editable."
+          },
+          "on_change": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "Called after each change the user makes."
+          }
+        },
+        "required": [
+          "widget"
+        ],
+        "propertyNames": {
+          "enum": [
+            "widget",
+            "name",
+            "if",
+            "for",
+            "key",
+            "slot",
+            "state",
+            "style",
+            "classes",
+            "handlers",
+            "a11y",
+            "interaction",
+            "visible",
+            "window_region",
+            "route",
+            "focus_group",
+            "tooltip",
+            "params",
+            "expects",
+            "tesserae",
+            "children",
+            "value",
+            "roles",
+            "label",
+            "disabled",
+            "on_change"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "widget": {
+            "const": "ColourStrip"
+          }
+        },
+        "required": [
+          "widget"
+        ]
+      },
+      "then": {
+        "properties": {
+          "widget": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          },
+          "if": {
+            "type": "string"
+          },
+          "for": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "slot": {
+            "type": "string"
+          },
+          "state": {
+            "type": "object"
+          },
+          "style": {
+            "$ref": "#/definitions/style"
+          },
+          "classes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "handlers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "a11y": {
+            "type": "object"
+          },
+          "interaction": {
+            "type": [
+              "boolean",
+              "string"
+            ]
+          },
+          "visible": {
+            "type": [
+              "boolean",
+              "string"
+            ]
+          },
+          "window_region": {
+            "enum": [
+              "drag",
+              "none"
+            ]
+          },
+          "route": {
+            "type": "string"
+          },
+          "focus_group": {
+            "enum": [
+              "horizontal",
+              "vertical",
+              "both"
+            ]
+          },
+          "tooltip": {
+            "type": [
+              "string",
+              "object"
+            ]
+          },
+          "params": {
+            "type": [
+              "array",
+              "object"
+            ]
+          },
+          "expects": {
+            "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
+          },
+          "channel": {
+            "anyOf": [
+              {
+                "enum": [
+                  "hue",
+                  "alpha"
+                ]
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "`hue` is the rainbow, 0 to 360 degrees; `alpha` is clear to the colour over a chequerboard, 0 to 100 percent."
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "The colour: '#rrggbb', or '#rrggbbaa' when its alpha is below 1 (lowercase; capitals are read and written back lowercase)."
+          },
+          "hue": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "The hue in degrees the picker remembers for a colour with none of its own (a grey, a black), so a drag to a corner and back keeps the hue; bind a `state:` name shared by the area and the hue strip."
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "What a screen reader calls it."
+          },
+          "disabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ]
+          }
+        },
+        "required": [
+          "widget"
+        ],
+        "propertyNames": {
+          "enum": [
+            "widget",
+            "name",
+            "if",
+            "for",
+            "key",
+            "slot",
+            "state",
+            "style",
+            "classes",
+            "handlers",
+            "a11y",
+            "interaction",
+            "visible",
+            "window_region",
+            "route",
+            "focus_group",
+            "tooltip",
+            "params",
+            "expects",
+            "tesserae",
+            "channel",
+            "value",
+            "hue",
+            "label",
+            "disabled"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "widget": {
+            "const": "ColourSwatches"
+          }
+        },
+        "required": [
+          "widget"
+        ]
+      },
+      "then": {
+        "properties": {
+          "widget": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          },
+          "if": {
+            "type": "string"
+          },
+          "for": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "slot": {
+            "type": "string"
+          },
+          "state": {
+            "type": "object"
+          },
+          "style": {
+            "$ref": "#/definitions/style"
+          },
+          "classes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "handlers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "a11y": {
+            "type": "object"
+          },
+          "interaction": {
+            "type": [
+              "boolean",
+              "string"
+            ]
+          },
+          "visible": {
+            "type": [
+              "boolean",
+              "string"
+            ]
+          },
+          "window_region": {
+            "enum": [
+              "drag",
+              "none"
+            ]
+          },
+          "route": {
+            "type": "string"
+          },
+          "focus_group": {
+            "enum": [
+              "horizontal",
+              "vertical",
+              "both"
+            ]
+          },
+          "tooltip": {
+            "type": [
+              "string",
+              "object"
+            ]
+          },
+          "params": {
+            "type": [
+              "array",
+              "object"
+            ]
+          },
+          "expects": {
+            "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "type": "array"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "The theme colour roles to show, in order (primary, secondary, tertiary, error, surface, on_surface, primary_container and secondary_container when left out)."
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "The colour: '#rrggbb', or '#rrggbbaa' when its alpha is below 1 (lowercase; capitals are read and written back lowercase)."
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "What a screen reader calls the row."
+          },
+          "disabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ]
+          }
+        },
+        "required": [
+          "widget"
+        ],
+        "propertyNames": {
+          "enum": [
+            "widget",
+            "name",
+            "if",
+            "for",
+            "key",
+            "slot",
+            "state",
+            "style",
+            "classes",
+            "handlers",
+            "a11y",
+            "interaction",
+            "visible",
+            "window_region",
+            "route",
+            "focus_group",
+            "tooltip",
+            "params",
+            "expects",
+            "tesserae",
+            "roles",
+            "value",
+            "label",
+            "disabled"
           ]
         }
       }

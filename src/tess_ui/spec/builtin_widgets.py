@@ -178,6 +178,23 @@ declare("TimePickerDial", {"hour": P("float", default=0.0, model=True, doc="0 to
                            "label": P("str", doc="What a screen reader calls it.")},
         doc="The clock face of a time picker.")
 
+_COLOUR_VALUE = P("str", default="#000000", model=True, doc="The colour: '#rrggbb', or '#rrggbbaa' when its alpha is below 1 (lowercase; capitals are read and written back lowercase).")
+_COLOUR_HUE = P("float", model=True, doc="The hue in degrees the picker remembers for a colour with none of its own (a grey, a black), so a drag to a corner and back keeps the hue; "
+                                         "bind a `state:` name shared by the area and the hue strip.")
+_COLOUR_LABEL = P("str", doc="What a screen reader calls it.")
+declare("ColourArea", {"value": _COLOUR_VALUE, "hue": _COLOUR_HUE, "label": P("str", default="Saturation and value", doc="What a screen reader calls it."), "disabled": P("bool")},
+        doc="A square of saturation (across) and value (up) for the colour's hue, with a handle: drag it, or move it with the arrow keys (Shift for a bigger step).")
+declare("ColourStrip", {"channel": P("enum", choices=("hue", "alpha"), default="hue", doc="`hue` is the rainbow, 0 to 360 degrees; `alpha` is clear to the colour over a chequerboard, 0 to 100 percent."),
+                        "value": _COLOUR_VALUE, "hue": _COLOUR_HUE, "label": _COLOUR_LABEL, "disabled": P("bool")},
+        doc="A strip with a handle that picks a colour's hue or its alpha: drag it, or use the arrow, Page Up, Page Down, Home and End keys.")
+declare("ColourField", {"channel": P("enum", choices=("hex", "red", "green", "blue", "alpha"), default="hex",
+                                     doc="`hex` takes '#rrggbb' or '#rrggbbaa'; the others take a whole number from 0 to 255."),
+                        "value": _COLOUR_VALUE, "label": _COLOUR_LABEL, "disabled": P("bool")},
+        doc="A text field for the colour. A valid entry sets `value` at once; an invalid one leaves it and shows the field in the error colours.")
+declare("ColourSwatches", {"roles": P("list", doc="The theme colour roles to show, in order (primary, secondary, tertiary, error, surface, on_surface, primary_container and secondary_container when left out)."),
+                           "value": _COLOUR_VALUE, "label": P("str", default="Theme colours", doc="What a screen reader calls the row."), "disabled": P("bool")},
+        doc="A row of the theme's colour roles; pressing one sets `value` to its colour.")
+
 declare("NodeGraph", {"edges": P("list", doc="The links: each {from: id, to: id}, the ids of the GraphNodes."),
                       "snap": P("float", default=0.0, doc="A node the user moves lands on a multiple of this many pixels; 0 is no grid."),
                       "arrows": P("bool", doc="Each edge ends in an arrowhead."),

@@ -1301,6 +1301,65 @@ components:
       dial = time_picker_dial(app.window, hour=9, minute=30)
     see: [guide/controls.md]
 
+  - slug: colour-pickers
+    title: Colour picker
+    group: Selection and input
+    views: [ColourPicker, ColourPickerPanel]
+    widgets: [ColourArea, ColourStrip, ColourField, ColourSwatches]
+    md3: |
+      Material Design 3 has no colour picker of its own: it chooses colours for an app's theme, not for the content in it. A colour picker is how a person chooses a colour for
+      something they make, here from a square of saturation and value, a strip of hues and a strip of alpha, as colour editors do, and from the colours of the theme.
+    built: |
+      Two views and four controls. `ColourPicker` is the view you use: the picker inline, or (`popup: true`) a 40 pixel swatch of the colour that opens it in a layer next to it.
+      `ColourPickerPanel` is the inside of it, with no surface and no trigger, for an app that lays the parts out itself. `ColourArea`, `ColourStrip`, `ColourField` and
+      `ColourSwatches` are Tesserae controls (`tess_ui.colour_controls`): the parts of the panel, each of which can be used alone.
+
+      `value` is the colour as text, and is two-way: `'#rrggbb'`, or `'#rrggbbaa'` when the alpha is below 1 (lowercase; a fully opaque colour never has the alpha digits). Capitals
+      are read and written back in lowercase, and anything else (`#fff`, `red`) is an error that names the widget. Every part reads and writes the one text, so they stay in step, and
+      setting a value and reading it back gives the same text. The square and the strips are drawn with the engine's gradients.
+
+      The square (`ColourArea`) is saturation across and value up, for the hue; a press or a drag sets both and keeps the hue and the alpha. The hue strip (`ColourStrip` with
+      `channel: hue`) runs through the rainbow from 0 to 360 degrees and the alpha strip (`channel: alpha`) from clear to the colour over a chequerboard, from 0 to 100 percent.
+      A grey and a black have no hue of their own, so the picker remembers the hue (`hue`, a number of degrees the square and the hue strip share) and keeps it while the text still
+      agrees with it: a drag to a corner and back, or through white or black, ends at the hue it began with, and a drag of the hue strip leaves the saturation and value as they were.
+
+      The hex field (`ColourField` with `channel: hex`) takes `#rrggbb` or `#rrggbbaa`, and the red, green, blue and alpha fields a whole number from 0 to 255. What is typed sets the value
+      at once while it is a colour; while it is not, the value stays as it was and the field is drawn in the error colours and tells a screen reader it is invalid. Leaving the field, or
+      Escape, puts back the text of the value. The up and down arrows step a number by one, by ten with Shift. The swatches (`ColourSwatches`) are the theme's colour roles, by default
+      `primary`, `secondary`, `tertiary`, `error`, `surface`, `on_surface`, `primary_container` and `secondary_container` (`roles` names others); pressing one sets the value to that
+      role's colour, opaque, and the swatch whose colour is the value's is drawn selected.
+
+      With `popup: true`, `open` is two-way: pressing the swatch opens the picker, and Escape or a press outside closes it and writes false to `open` (pressing the swatch again closes it too).
+      A disabled picker does not open. `on_change` is called after each change the user makes, while a drag is still going; changes the app makes by setting the value do not call it.
+
+      The keyboard: Tab goes square, hue, alpha, the hex field, red, green, blue, alpha, then each swatch. The arrow keys move the point of the square by a hundredth of saturation or
+      value, by a tenth with Shift; Page Up and Page Down move the value by a tenth; Home and End take the saturation to its ends. On a strip the arrows move a degree or a percent (ten
+      with Shift), Page Up and Page Down ten, and Home and End go to the ends. Left and Right move between swatches. For a screen reader the square is a slider that says "saturation 40 percent,
+      value 80 percent", the hue strip one in degrees and the alpha strip one in percent, each can be incremented, decremented and set, and the whole picker is a group named by `label`.
+
+      The look is in `ColourPicker_Stylesheet.yaml`: write one in your project to change the swatch and the layer. The swatch has the state layer, ripple and focus ring of a pressable node and
+      a disabled picker fades to 38%. Not built: a picker that follows a drag to the alpha digits of a colour written with `rgb()`, other colour spaces (HSL, OKLCH), an eyedropper,
+      a recent-colours row, and a swatch row that shows the theme's colours of the other mode.
+    usage_view: |
+      name: paint
+      widget: Container
+      style: {flex_direction: horizontal, gap: 24, width: 640, height: 560, padding: 16}
+      children:
+        - {widget: ColourPicker, value: "{{ fill }}", on_change: recolour}
+        - widget: Container
+          style: {flex_direction: vertical, gap: 8}
+          children:
+            - {widget: ColourPicker, popup: true, open: "{{ choosing }}", value: "{{ fill }}", label: Fill colour}
+            - {widget: ColourPicker, popup: true, open: "{{ choosing_line }}", value: "{{ line }}", label: Line colour, roles: [primary, error, on_surface]}
+    python: |
+      from tess_ui.widgets import colour_area, colour_field, colour_strip
+
+      area = colour_area(app.window, "#3366cc", x=16, y=16)
+      hue = colour_strip(app.window, "hue", "#3366cc", x=16, y=204)
+      hex_field = colour_field(app.window, "hex", "#3366cc", x=16, y=240)
+      area.on_input(lambda text: hex_field.value.set(text))
+    see: [guide/controls.md, guide/widget-catalog.md]
+
   - slug: segmented-buttons
     title: Segmented buttons
     group: Selection and input

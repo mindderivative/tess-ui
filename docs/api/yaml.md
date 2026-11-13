@@ -18,7 +18,7 @@ A view is one node, with its children inside it. A node is a widget (`kind:`), a
 
 ```yaml
 id: <text>
-kind: <one of 23 names>
+kind: <one of 27 names>
 classes: <a list>
 style: <a style mapping or text>
 text: <a mapping>
@@ -176,6 +176,10 @@ children: <a list>
 | `LinearProgress` | A linear progress indicator; no `value:` means indeterminate. | `value:` |
 | `LoadingIndicator` | MD3's loading indicator, always indeterminate. | Only the common keys. |
 | `TimePickerDial` | MD3's time picker dial. | `hour:`, `minute:` |
+| `ColourArea` | The colour picker's square of saturation and value for a hue. | `value:` (`'#rrggbb'` text), `hue:` |
+| `ColourStrip` | The colour picker's strip for a hue or an alpha. | `colour: {channel}`, `value:`, `hue:` |
+| `ColourField` | A text field for a colour: its hex, or one of its red, green, blue and alpha numbers. | `colour: {channel}`, `value:` |
+| `ColourSwatches` | A row of the theme's colour roles; pressing one sets the colour. | `colour: {roles}`, `value:` |
 | `NodeGraph` | A pannable canvas of `GraphNode`s joined by edges. | `edges:`, children that are `GraphNode`s |
 | `GraphNode` | A node in a `NodeGraph`: a titled box at a place. | `label:`, `x:`, `y:` |
 | `TitleBar` | A title bar: an icon, a title, your content and the window's buttons (`App(borderless=True)`), or a close button for a dialog or a sheet (`buttons: [dismiss]`). | `title:`, `icon:`, `buttons:` |

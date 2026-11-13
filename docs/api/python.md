@@ -663,6 +663,64 @@ chip(
 
 MD3's chip: assist, filter, input or suggestion, 32 px tall, with an optional leading `icon`.
 
+### `colour_area`
+
+```python
+colour_area(
+    window: Window,
+    value: str = '#000000',
+    x: float | None = None,
+    y: float | None = None,
+    **kwargs: Any
+) -> colour_controls.ColourArea
+```
+
+The square of saturation (across) and value (up) for the colour's hue; `width=` and `height=` size it (256 by 176). `.hue` is the hue the picker remembers for a colour with none of its own.
+
+### `colour_field`
+
+```python
+colour_field(
+    window: Window,
+    channel: str = 'hex',
+    value: str = '#000000',
+    x: float | None = None,
+    y: float | None = None,
+    **kwargs: Any
+) -> colour_controls.ColourField
+```
+
+A text field for the `channel` (`"hex"`, `"red"`, `"green"`, `"blue"` or `"alpha"`) of the colour; `.error` is a `Signal` that says the text typed is not a colour.
+
+### `colour_strip`
+
+```python
+colour_strip(
+    window: Window,
+    channel: str = 'hue',
+    value: str = '#000000',
+    x: float | None = None,
+    y: float | None = None,
+    **kwargs: Any
+) -> colour_controls.ColourStrip
+```
+
+A strip that picks the `channel` (`"hue"` or `"alpha"`) of the colour; `width=` and `height=` size it (256 by 24).
+
+### `colour_swatches`
+
+```python
+colour_swatches(
+    window: Window,
+    value: str = '#000000',
+    x: float | None = None,
+    y: float | None = None,
+    **kwargs: Any
+) -> colour_controls.ColourSwatches
+```
+
+A row of the theme's colour roles (`roles=` names others); pressing one sets `.value` to its colour.
+
 ### `circular_progress`
 
 ```python

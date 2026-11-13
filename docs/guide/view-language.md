@@ -77,6 +77,7 @@ Every widget declares its properties: a type, a default, the values it allows, w
 | `SpinBox` | `value` (model), `min`, `max`, `step`, `decimals`, `prefix`, `suffix`, `wrap`, `label`, `disabled` |
 | `CircularProgress`, `LinearProgress`, `LoadingIndicator` | `value`, `track`, `thickness`, `wavy` and more: see [Progress indicators](../components/progress-indicators.md) |
 | `TimePickerDial` | `hour`, `minute`, `mode` (model), `auto_advance`, `label` |
+| `ColourArea`, `ColourStrip`, `ColourField`, `ColourSwatches` | `value` (model, a colour as `'#rrggbb'` or `'#rrggbbaa'` text; the picker's parts), `hue` (model; the area and the strip), `channel` (strip and field), `roles` (swatches), `label`, `disabled`: see [Colour picker](../components/colour-pickers.md) |
 | `Splitter`, `Canvas`, `VirtualList`, `Overlay` | their own sections below |
 | `ScrollView`, `NodeGraph`, `GraphNode` | a scrolling box; a canvas of linked nodes; a node of it |
 | `Window`, `TitleBar`, `Dock`, `DockPanel` | see [Windows, Docks & Embedded Views](windows-and-docks.md); written with `widget:` in a view opened with `app.open_view`, a `Window` root sets the OS window (title, borderless, minimum sizes) and a title bar's buttons, dimming and glyphs follow the app |

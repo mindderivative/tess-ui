@@ -60,6 +60,7 @@ Material Design 3's components, as Tesserae builds them. Each page says what the
 | [Spin box](spin-boxes.md) | `SpinBoxField`, `SpinBox` |
 | [Date picker](date-pickers.md) | `DatePicker`, `DatePickerDay` |
 | [Time picker](time-pickers.md) | `TimePicker`, `PeriodSelector`, `TimePickerDial` |
+| [Colour picker](colour-pickers.md) | `ColourPicker`, `ColourPickerPanel`, `ColourArea`, `ColourStrip`, `ColourField`, `ColourSwatches` |
 | [Segmented buttons](segmented-buttons.md) | `SegmentedButton` |
 | [Time input](time-input.md) | `TimeInput` |
 
