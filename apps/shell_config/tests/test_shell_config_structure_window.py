@@ -80,7 +80,7 @@ def test_add_lists_the_allowed_children_and_writes_the_new_block_with_its_requir
     w.key("n", ctrl=True, shift=True)
     assert [o["value"] for o in w.vm.picker_items.get()] == ["Bar", "Panel", "Popup", "Frame"] and w.vm.picker_title.get() == "Add to Monitor  Primary"
     pick(w, "Frame")
-    assert [line[1:].strip() for line in w.diff(before)] == ["Frame {", "Name: Frame_1", "Thickness: 4", "}"]
+    assert [line[1:].strip() for line in w.diff(before)] == ["Children {", "Frame {", "Name: Frame_1", "Thickness: 4", "}", "}"], "a Monitor keeps its blocks in a Children block, made with the first (the real checker refuses them in the Monitor)"
     assert w.session.model.selected.name == "Primary", "the selection stays on the block the person was on"
     assert "Frame  Frame_1" in [r["label"] for r in _rows(w.vm.structure_nodes.get())] and "Added Frame" in w.vm.status.get()
 
@@ -144,11 +144,11 @@ def test_move_to_lists_the_blocks_that_may_hold_it_and_moves_it_last_into_the_on
     before = w.session.model.text
     w.key("m", ctrl=True, shift=True)
     options = [o["label"] for o in w.vm.picker_items.get()]
-    assert all(o.startswith("Shell › ") for o in options) and any(o.endswith("Popup  Calendar_Popup") for o in options) and any(o.endswith("Bar  Top_Bar") for o in options) and not any(o.endswith("Children") for o in options), "the block it is already in is not offered"
+    assert all(o.startswith("Shell › ") for o in options) and any(o.endswith("Popup  Calendar_Popup") for o in options) and not any(o.endswith("Bar  Top_Bar") for o in options), "a Bar that has its Children block is offered as that block"
     pick(w, value_of(w, "Popup  Calendar_Popup"))
     assert selected(w).type == "Text"
     parent = w.session.model.node_at(w.session.model.selection[:-1])
-    assert parent.type == "Popup" and "Moved Text into" in w.vm.status.get()
+    assert parent.type == "Children" and w.session.model.node_at(w.session.model.selection[:-2]).type == "Popup" and "Moved Text into" in w.vm.status.get()
     assert w.session.model.undo() and w.session.model.text == before
 
 

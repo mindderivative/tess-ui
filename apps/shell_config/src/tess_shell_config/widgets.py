@@ -98,6 +98,13 @@ class TdlWidget(Widget):
         self.reason = reason
 
 
+class TooltipField(TdlWidget):
+    """The generic field for a `tooltip` key: a Popup's name, a short quoted text or an inline block. Its sample is a text: the shell refuses an empty one ("a Tooltip text is a string that is not empty")."""
+
+    def sample_edit(self) -> dict[str, Any]:
+        return {"text": '"Tooltip text"'}
+
+
 def fallback(reason: str) -> WidgetFactory:
     """A factory for a kind that has no widget of its own: the generic TDL field, with the reason the form reports."""
     return lambda key, context: TdlWidget(key, context, reason)
@@ -565,6 +572,8 @@ class ListWidget(Widget):
     def __init__(self, key: KeyInfo, context: Context) -> None:
         super().__init__(key, context)
         self.kind = str(key.extra.get("item_kind") or "")
+        if self.kind == "string" and "key names" in str(key.extra.get("note") or "").lower():
+            self.kind = "name"  # a list of key names (Transition) is written as words: the real checker refuses quoted names: "expected a key name or a list of key names"
         self.editor = _ITEM_UI[self.kind]
         self.whole = self.kind == "whole"
         self.length = key.extra.get("length")
@@ -762,7 +771,7 @@ def default_registry() -> WidgetRegistry:
     registry.register("path", PathWidget)
     for kind in ("shadows", "block"):
         registry.register(kind, block_widget)
-    registry.register("tooltip", fallback("a Popup's name (a bare word), a short quoted text or an inline Tooltip block: what is typed does not say which, so it is edited as TDL text"))
+    registry.register("tooltip", lambda key, context: TooltipField(key, context, "a Popup's name (a bare word), a short quoted text or an inline Tooltip block: what is typed does not say which, so it is edited as TDL text"))
     registry.register("icon", IconWidget)
     registry.register("font", FontWidget)
     registry.register("key_chord", KeyChordWidget)

@@ -13,6 +13,7 @@ from typing import Any
 
 from tess_ui import Effect, Signal, untrack
 
+from tess_shell_config.blocks import module_layout
 from tess_shell_config.fileops import FileOpError, SETTINGS_FILE, create, duplicate, name_of, rename, trash, unique_name
 from tess_shell_config.folder import ConfigFile, FileType
 
@@ -107,7 +108,12 @@ class FileActions:
 
     def _make(self, file_type: FileType, name: str) -> str | None:
         session = self.vm.session
-        return self._attempt(lambda: create(session.folder, session.files, file_type, name), f"Made {file_type.root.lower()} {name}")
+        return self._attempt(lambda: create(session.folder, session.files, file_type, name, self._layout()), f"Made {file_type.root.lower()} {name}")
+
+    def _layout(self) -> str:
+        """The block a new module's layout starts with, from the schema (none while the shell's schema is not loaded)."""
+        schema = self.vm.session.schema
+        return module_layout(schema) if schema is not None else ""
 
     def duplicate(self) -> None:
         entry = self._need("copy")

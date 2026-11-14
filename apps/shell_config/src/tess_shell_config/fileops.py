@@ -56,9 +56,11 @@ def rel_for(file_type: FileType, name: str) -> str:
     return f"{folder}/{inner}{name}_{file_type.root}.tdl"
 
 
-def minimal_text(file_type: FileType, name: str) -> str:
-    """The text of a new file: the metadata block (`TDL` the language version `tess_dl` writes, and the `Name`) and the empty root block of its type."""
-    return f"---\nTDL: {tess_dl.LANGUAGE_VERSION}\nName: {name}\n---\n\n{file_type.root} {{ }}\n"
+def minimal_text(file_type: FileType, name: str, layout: str = "") -> str:
+    """The text of a new file: the metadata block (`TDL` the language version `tess_dl` writes, and the `Name`) and the empty root block of its type. A module is not valid without its one layout block (the
+    real checker: "a module has one layout root"), so a new module holds an empty `layout` block, the type the caller took from the schema (`blocks.module_layout`); `""` writes none."""
+    body = f"{file_type.root} {{ }}" if not (layout and file_type is FileType.MODULE) else f"{file_type.root} {{\n    {layout} {{ }}\n}}"
+    return f"---\nTDL: {tess_dl.LANGUAGE_VERSION}\nName: {name}\n---\n\n{body}\n"
 
 
 def unique_name(files: list[ConfigFile], file_type: FileType, base: str) -> str:
@@ -89,11 +91,11 @@ def _write_new(folder: Path, rel: str, text: str) -> Path:
     return target
 
 
-def create(folder: Path, files: list[ConfigFile], file_type: FileType, name: str) -> str:
-    """Write a new file of `file_type` called `name`; returns its path from the folder."""
+def create(folder: Path, files: list[ConfigFile], file_type: FileType, name: str, layout: str = "") -> str:
+    """Write a new file of `file_type` called `name` (a module with an empty `layout` block, see `minimal_text`); returns its path from the folder."""
     rel = rel_for(file_type, name)
     _check_new(folder, files, file_type, name, rel)
-    _write_new(folder, rel, minimal_text(file_type, name))
+    _write_new(folder, rel, minimal_text(file_type, name, layout))
     return rel
 
 

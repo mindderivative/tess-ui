@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Measures the window's two budgeted actions on a headless window over a copy of the representative configuration: selecting a block (Structure tree -> Form) and one committed form edit
-(tree, form and text all updated). Prints the median and the worst of N runs, in milliseconds, with and without the frame that follows.
+(tree, form and text all updated). Prints the median, the 95th percentile and the worst of N runs, in milliseconds, with and without the frame that follows.
 
     PYTHONPATH=src:apps/shell_config/src python apps/shell_config/tools/perf.py [--runs 15]
 
@@ -78,7 +78,9 @@ def main() -> int:
         nodes = sum(1 for _ in built.view.handle.composition.walk())
 
         def line(name: str, values: list[float]) -> str:
-            return f"{name:<46} median {statistics.median(values):7.1f} ms   worst {max(values):7.1f} ms   best {min(values):7.1f} ms"
+            ordered = sorted(values)
+            p95 = ordered[min(len(ordered) - 1, round(0.95 * (len(ordered) - 1)))]
+            return f"{name:<46} median {statistics.median(values):7.1f} ms   p95 {p95:7.1f} ms   worst {max(values):7.1f} ms   best {min(values):7.1f} ms"
 
         print(f"window nodes {nodes}, form items {items}, runs {args.runs}")
         print(line("select a block: the call", select_set))

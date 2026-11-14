@@ -12,13 +12,59 @@ from dataclasses import dataclass
 import tess_dl
 
 from tess_shell_config.form import file_name, key_of_param
+from tess_shell_config.model import DocumentModel, block_names
 from tess_shell_config.schema import KeyInfo, Schema
+from tess_shell_config.tdl import IndexPath
 from tess_shell_config.widgets import Context, Refused, WidgetRegistry, default_registry
 
-__all__ = ["Child", "MODES", "children_of", "file_children", "mode_names", "accepts", "required_keys", "new_block_text"]
+__all__ = ["HOLDER", "holder_of", "has_layout", "is_surface", "is_layout", "holder_text", "add_child", "module_layout", "Child", "MODES", "children_of", "file_children", "mode_names", "accepts", "required_keys", "new_block_text"]
 
 #: The key that names a block (the TDL language's, not the schema's: `Block.name` reads it).
 NAME = "Name"
+#: The key that selects what a stylesheet rule styles, and what a new rule selects: a class nothing has yet. A sample word would be taken for a block name and refused by the real checker ("unknown block in a selector").
+SELECTOR = "Selector"
+NEW_SELECTOR = '".new_rule"'
+
+
+#: The block a surface or a container keeps its blocks in (the TDL language's word, as `Name` is): `Monitor { Children { Bar { } } }`. The schema's `allowed_children` of such a block are the blocks its `Children` holds.
+HOLDER = "Children"
+
+
+def holder_of(schema: Schema, node_type: str) -> str:
+    """`HOLDER` when a block of `node_type` keeps the blocks it holds inside a `Children` block (the real checker refuses them written straight in it: "unknown block in Monitor Bar"); `""` when they go straight in
+    (a Module offers `Children` itself among its allowed children, so its layout may be written in it or beside its `Params`; a Shell holds Monitors, a Stylesheet its Rules, a Style its classes and defaults).
+    The schema does not say so in one field; it is read from what it does say: the block takes module calls, or one of the blocks it may hold is a root that does (a Monitor holds Bars)."""
+    info = schema.block(node_type)
+    if info is None or HOLDER in info.allowed_children or not info.allowed_children:
+        return ""
+    if info.module_calls:
+        return HOLDER
+    return HOLDER if any((root := schema.roots.get(name)) is not None and root.module_calls for name in info.allowed_children) else ""
+
+
+def is_layout(schema: Schema, parent_type: str, child_type: str) -> bool:
+    """Whether `child_type`, added to a `parent_type` block that holds its layout beside its other parts (a module's root), is its layout: a drawn block or a module call (not `Params`, `Style` or `Children`)."""
+    info = schema.block(parent_type)
+    return info is not None and HOLDER in info.allowed_children and (child_type in schema.blocks or child_type in schema.modules)
+
+
+def has_layout(schema: Schema, node: tess_dl.Block) -> bool:
+    """Whether a module root already has its layout: a drawn block or module call in it, or a `Children` block holding one. A module has exactly one (the real checker: "a module has one layout root")."""
+    for entry in node.entries:
+        if isinstance(entry, tess_dl.Block) and (is_layout(schema, node.type, entry.type) or (entry.type == HOLDER and any(isinstance(e, tess_dl.Block) for e in entry.entries))):
+            return True
+    return False
+
+
+def is_surface(schema: Schema, node_type: str) -> bool:
+    """Whether a block of `node_type` is a surface: one of the blocks a block that keeps its blocks in `Children` holds, itself a root (a Monitor holds Bar, Panel, Popup, Frame). The real checker refuses a surface's style
+    keys written on it ("unknown key in Bar Background"): they go in its `Style { }`, where a drawn block (a Box) takes them either way."""
+    return node_type in schema.roots and any(holder_of(schema, name) and node_type in info.allowed_children for name, info in schema.roots.items())
+
+
+def holder_text(block_text: str) -> str:
+    """A `Children` block holding the block written in `block_text`, as the formatter writes it."""
+    return tess_dl.format_block(f"{HOLDER} {{ {block_text} }}")
 
 
 @dataclass(frozen=True)
@@ -31,8 +77,12 @@ class Child:
     unique: bool = False
 
 
-def children_of(schema: Schema, node_type: str) -> list[Child]:
-    """The blocks the block called `node_type` may hold: its `allowed_children`, then the shipped modules where it takes module calls. A block the schema does not know holds none."""
+def children_of(schema: Schema, node_type: str, parent_type: str = "") -> list[Child]:
+    """The blocks the block called `node_type` may hold: its `allowed_children`, then the shipped modules where it takes module calls. A block the schema does not know holds none. A `Children` block (`node_type`
+    is `HOLDER`) holds what its parent (`parent_type`) holds, but not the parent's own parts (a module's `Params`, `Style`: those go beside it, not in it)."""
+    if node_type == HOLDER:
+        wanted = holder_of(schema, parent_type) == HOLDER
+        return [c for c in children_of(schema, parent_type) if c.type != HOLDER and (wanted or schema.roots.get(c.type) is None)] if parent_type else []
     info = schema.block(node_type)
     if info is None:
         return file_children(schema, node_type)
@@ -73,26 +123,43 @@ def file_children(schema: Schema, node_type: str) -> list[Child]:
     return []
 
 
+def module_layout(schema: Schema) -> str:
+    """The block a new module's layout starts with: the first block the schema lets the root of a module file hold that is a drawn block (a module needs exactly one; `Params`, `Children` and `Style` are not). `""` when the schema has no such root."""
+    root = schema.roots.get("Module")
+    return next((name for name in root.allowed_children if name in schema.blocks), "") if root is not None else ""
+
+
 def accepts(schema: Schema, parent_type: str, child_type: str) -> bool:
     """Whether the schema lets a `parent_type` block hold a `child_type` block."""
     return any(c.type == child_type for c in children_of(schema, parent_type))
 
 
+def _alternative(keys: dict[str, KeyInfo], group: tuple[str, ...]) -> KeyInfo | None:
+    """The key to write for one set of alternatives: the first, but not one that names a file (`path`) while another does not: a file that is not there is an error in the real checker, a name is not."""
+    present = [keys[name] for name in group if name in keys]
+    return next((k for k in present if k.kind != "path"), present[0] if present else None)
+
+
 def required_keys(schema: Schema, type_name: str) -> list[KeyInfo]:
-    """The keys a block of this type must have: those the schema marks `required` (a module's required params)."""
+    """The keys a block must have: the schema's `required` sets of its entry (each a list of keys of which one is needed: a size or a depth; see `_alternative`), and the keys marked `required`; a module's required params."""
     info = schema.block(type_name)
     if info is not None:
-        return [k for k in info.all_keys().values() if k.required]
+        keys = info.all_keys()
+        found = [pick for group in info.required if (pick := _alternative(keys, group)) is not None]
+        return [*found, *(k for k in keys.values() if k.required and k not in found)]
     module = schema.modules.get(type_name)
     return [key_of_param(p) for p in module.params.values() if p.required] if module is not None else []
 
 
-def new_block_text(schema: Schema, type_name: str, taken: set[str], registry: WidgetRegistry | None = None) -> str:
-    """The new block as the formatter writes it: `type_name` with its required keys. `taken` is every name in the file, lower case; a `Name` is the type and a number that no block has."""
+def new_block_text(schema: Schema, type_name: str, taken: set[str], registry: WidgetRegistry | None = None, *, bare: bool = False) -> str:
+    """The new block as the formatter writes it: `type_name` with its required keys (`bare`: with none: a per-type default in a `Style` sets style keys, and the keys that make a block are not among them). `taken` is every name in the file, lower case; a `Name` is the type and a number that no block has."""
     registry = registry if registry is not None else default_registry()
     context = Context(schema)
     parts = []
-    for key in required_keys(schema, type_name):
+    for key in [] if bare else required_keys(schema, type_name):
+        if key.name == SELECTOR:
+            parts.append(f"{SELECTOR}: {NEW_SELECTOR}")
+            continue
         if key.name == NAME:
             number = 1
             while f"{type_name}_{number}".lower() in taken:
@@ -115,3 +182,19 @@ def _value(key: KeyInfo, registry: WidgetRegistry, context: Context) -> str:
     except Refused:  # a sample the widget refuses is a bug in the widget: the block is still written, the key is left for the person
         written = None
     return written or '""'
+
+
+def add_child(model: DocumentModel, schema: Schema, parent: IndexPath, type_name: str) -> IndexPath:
+    """Add a new block of `type_name`, written with its required keys, last in the block at `parent`: in its `Children` block when it keeps its blocks there (made with the first). Returns its index path. One edit."""
+    document = model.document
+    node = model.node_at(parent)
+    assert document is not None and isinstance(node, tess_dl.Block)
+    info = schema.block(node.type)
+    defaults = info is not None and HOLDER not in info.allowed_children and not info.module_calls and type_name in schema.blocks  # a Style's `Text { }`: defaults for a type
+    text = new_block_text(schema, type_name, block_names(document), bare=defaults)
+    if not holder_of(schema, node.type):
+        return model.add_block(parent, text)
+    held = next((i for i, e in enumerate(node.entries) if isinstance(e, tess_dl.Block) and e.type == HOLDER), None)
+    if held is None:
+        return (*model.add_block(parent, holder_text(text)), 0)
+    return model.add_block((*parent, held), text)

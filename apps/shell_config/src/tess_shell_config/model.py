@@ -312,10 +312,10 @@ class DocumentModel:
             i += step
         return None
 
-    def move_block(self, path: IndexPath, to_parent: IndexPath | None = None, index: int | None = None, *, select: bool = False) -> IndexPath:
+    def move_block(self, path: IndexPath, to_parent: IndexPath | None = None, index: int | None = None, *, select: bool = False, wrap_in: str = "") -> IndexPath:
         """Move the block at `path` to entry `index` of the block at `to_parent` (`None`: its own parent; `index` `None`: last). Within one parent this is `Block.move_child`; to
         another parent the block is removed and added again (an `If` or `For` cannot change parent). The selection follows its block to the new place (`select=True` selects the
-        moved block instead). Returns the moved block's new path."""
+        moved block instead). `wrap_in` names a block (`Children`) made in the target to hold the moved block: it goes in that new block, in the same edit. Returns the moved block's new path."""
         path = tuple(path)
         if not path:
             raise EditError("The root block cannot be moved.")
@@ -353,6 +353,10 @@ class DocumentModel:
             def across() -> Document:
                 without = parent.without_child(child)
                 target = from_ordinals(without, target_ords or ())
+                if wrap_in:
+                    added_document, wrapper = without.at(target or ()).with_child(tess_dl.format_block(f"{wrap_in} {{ {source} }}"), index)  # type: ignore[union-attr]
+                    new_path.append((*wrapper.index_path, 0))
+                    return added_document
                 added_document, added = without.at(target or ()).with_child(source, index)  # type: ignore[union-attr]
                 new_path.append(added.index_path)
                 return added_document

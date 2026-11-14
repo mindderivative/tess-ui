@@ -15,7 +15,7 @@ from typing import Any
 from tess_dl import Block
 from tess_ui import Signal
 
-from tess_shell_config.blocks import accepts, children_of, new_block_text
+from tess_shell_config.blocks import HOLDER, accepts, add_child, children_of, has_layout, holder_of, is_layout
 from tess_shell_config.model import DocumentModel, EditError, block_names
 from tess_shell_config.structure import ancestors, label_of, path_of, value_of
 from tess_shell_config.tdl import IndexPath, walk
@@ -68,6 +68,12 @@ class StructureActions:
     def model(self) -> DocumentModel | None:
         return self.vm.session.model
 
+    @staticmethod
+    def _parent_type(model: DocumentModel, path: IndexPath) -> str:
+        """The type of the block above `path` (`""` for the root or an `If`/`For`): what a `Children` block needs to know which blocks it holds."""
+        parent = model.node_at(path[:-1]) if path else None
+        return parent.type if isinstance(parent, Block) else ""
+
     def refresh(self) -> None:
         """Work out which actions the selection allows, and set the buttons and the menu to match."""
         enabled = dict.fromkeys(self.enabled, False)
@@ -75,7 +81,7 @@ class StructureActions:
         if model is not None and model.valid and model.selection is not None and model.selected is not None:
             path, node = tuple(model.selection), model.selected
             schema = self.vm.session.schema
-            enabled["add"] = isinstance(node, Block) and schema is not None and bool(children_of(schema, node.type))
+            enabled["add"] = isinstance(node, Block) and schema is not None and bool(children_of(schema, node.type, self._parent_type(model, path)))
             if path and isinstance(model.node_at(path[:-1]), Block):
                 enabled["remove"] = True
                 enabled["move_up"] = model.neighbour(path, -1) is not None
@@ -142,7 +148,7 @@ class StructureActions:
         node = model.selected
         assert schema is not None and isinstance(node, Block)
         present = {e.type.lower() for e in node.entries if isinstance(e, Block)}
-        offered = [c for c in children_of(schema, node.type) if not (c.unique and c.type.lower() in present)]  # a block that may be there once is not offered again
+        offered = [c for c in children_of(schema, node.type, self._parent_type(model, tuple(model.selection or ()))) if not (c.unique and c.type.lower() in present) and not (is_layout(schema, node.type, c.type) and has_layout(schema, node))]  # a block that may be there once is not offered again; a module has one layout, so a second is not offered
         if not offered:
             self.vm._say(f"{label_of(node)} already has every block it may hold once.", error=True)
             return
@@ -158,8 +164,7 @@ class StructureActions:
         assert document is not None
 
         def edit() -> str:
-            text = new_block_text(schema, type_name, block_names(document))
-            model.add_block(parent, text)
+            add_child(model, schema, parent, type_name)
             return f"Added {type_name} to {label_of(model.node_at(parent))}"
 
         self._run(edit, open_path=parent)
@@ -212,7 +217,7 @@ class StructureActions:
             if not isinstance(target, Block):
                 continue
             where = tuple(target.index_path)
-            if where[: len(path)] == path or where == path[:-1] or not accepts(schema, target.type, node.type):
+            if where[: len(path)] == path or where == path[:-1] or not self._takes(schema, model, where, target, node.type):
                 continue
             found.append((where, _trail(model, where)))
         if not found:
@@ -220,6 +225,14 @@ class StructureActions:
             return
         options = [{"value": value_of(w), "label": text, "hint": "", "colour": ""} for w, text in found]
         self.vm.form.open_choice("move_to", f"Move {label_of(node)} into", options, hooks=self.picks)
+
+    def _takes(self, schema: Any, model: DocumentModel, where: IndexPath, target: Block, child_type: str) -> bool:
+        """Whether `target` (at `where`) may take a block of `child_type`: a `Children` block takes what its parent holds; a block that keeps its blocks in a `Children` block takes them there (made if it has none)."""
+        if target.type == HOLDER:
+            return any(c.type == child_type for c in children_of(schema, HOLDER, self._parent_type(model, where)))
+        if holder_of(schema, target.type):
+            return not any(isinstance(e, Block) and e.type == HOLDER for e in target.entries) and accepts(schema, target.type, child_type)  # one that has its `Children` is offered as that block
+        return accepts(schema, target.type, child_type)
 
     def _move_picked(self, value: str) -> None:
         model = self.model
@@ -230,7 +243,9 @@ class StructureActions:
         moved: list[IndexPath] = []
 
         def edit() -> str:
-            moved.append(model.move_block(path, target, None))
+            destination = model.node_at(target)
+            wrap = HOLDER if isinstance(destination, Block) and holder_of(self.vm.session.schema, destination.type) else ""  # a surface with no `Children` yet gets one, holding the block
+            moved.append(model.move_block(path, target, None, wrap_in=wrap))
             return f"Moved {label} into {_trail(model, moved[0][:-1])}"
 
         self._run(edit)

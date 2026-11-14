@@ -190,7 +190,7 @@ def test_a_number_outside_its_range_is_refused_with_the_range_and_nothing_is_wri
     cell = rig.build().cell("Elevation")
     assert cell.error == outcome.message and cell.view()["field"] == "150", "the typed text stays in the field so it can be corrected"
     outcome, lines = rig.commit("Elevation", {"text": "40"})
-    assert outcome.changed and len(lines) == 1 and lines[0].endswith("Elevation: 40%")
+    assert outcome.changed and len(lines) == 1 and lines[0].endswith("Elevation: 40% }"), "a surface's style key is written in its Style block"
     assert rig.build().cell("Elevation").view()["field"] == "40" and not rig.form.cell("k:Elevation|").error
 
 
@@ -690,6 +690,6 @@ def test_every_key_of_the_schema_gets_a_widget_shows_its_default_and_writes_a_va
     assert seen_keys > 1100
     assert problems == []
     reasons = {markers[-1] for _, _, markers in unwritable}
-    assert reasons <= {"the shell refuses this key", "cannot be written here"}, reasons
+    assert reasons <= {"the shell refuses this key", "cannot be written here", "written in a module's file, not here"}, reasons
     assert {row_id for _, row_id, markers in unwritable if "cannot be written here" in markers} == {"k:Key"}, "the one word of the schema that TDL 0.1 reserves"
     print(f"{seen_keys} cells; not editable: {len(unwritable)} ({len([u for u in unwritable if 'the shell refuses this key' in u[2]])} the shell refuses, the rest reserved words)")

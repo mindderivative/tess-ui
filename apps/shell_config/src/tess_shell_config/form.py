@@ -129,7 +129,10 @@ class PropertyStore(Store):
 @dataclass(frozen=True)
 class StyleKeyStore(PropertyStore):
     """A style key: written on the block (the shorthand) or inside the block's `Style { }`. A key that is already in the `Style` block is read and changed there, because writing it in both places is an
-    error in the shell (Block Reference, R2); a key that is in neither is added on the block."""
+    error in the shell (Block Reference, R2); a key that is in neither is added on the block, or, for a surface (`inner`: a Bar, Panel, Popup, Frame: the real checker refuses the shorthand there,
+    "unknown key in Bar Background"), in its `Style` block, which a first key makes."""
+
+    inner: bool = False
 
     def _style(self, document: Document) -> Block | None:
         block = self._block(document)
@@ -150,8 +153,11 @@ class StyleKeyStore(PropertyStore):
         prop = properties_of(style).get(self.key)
         return Found(value=prop.value, key=self.key) if prop is not None else Found(block=child_named(style, self.key), key=self.key)
 
+    def _written_in_style(self, document: Document | None) -> bool:
+        return self._in_style(document) or (self.inner and document is not None and PropertyStore.read(self, document).value is None)
+
     def write(self, model: DocumentModel, text: str) -> None:
-        if self._in_style(model.document):
+        if self._written_in_style(model.document):
             model.set_nested_value(self.path, ("Style",), self.key, text)
         else:
             model.set_value(self.path, self.key, text)
@@ -168,10 +174,26 @@ class BlockStore(PropertyStore):
 
     spec: str = ""
     schema: Schema | None = None
+    inner: bool = False  # a surface keeps its block keys (`Shadows`) in its `Style { }`, as it does its style keys
 
     def child(self, document: Document) -> Block | None:
         block = self._block(document)
-        return child_named(block, self.key) if block is not None else None
+        if block is None:
+            return None
+        direct = child_named(block, self.key)
+        style = child_named(block, "Style") if self.inner else None
+        return direct if direct is not None or style is None else child_named(style, self.key)
+
+    def read(self, document: Document) -> Found:
+        found = PropertyStore.read(self, document)
+        if not self.inner or found.value is not None or found.block is not None:
+            return found
+        block = self._block(document)
+        style = child_named(block, "Style") if block is not None else None
+        if style is None:
+            return found
+        prop = properties_of(style).get(self.key)
+        return Found(value=prop.value, key=self.key) if prop is not None else Found(block=child_named(style, self.key), key=self.key)
 
     def write(self, model: DocumentModel, text: str) -> None:
         from tess_shell_config.blocks import new_block_text
@@ -179,19 +201,32 @@ class BlockStore(PropertyStore):
         document = model.document
         assert document is not None and self.schema is not None
         if text != ADD_BLOCK:  # a plain value the key takes instead of the block (a token reference): the key's own property
-            super().write(model, text)
+            direct = PropertyStore.read(self, document)
+            if self.inner and direct.value is None and self.read(document).block is None:
+                model.set_nested_value(self.path, ("Style",), self.key, text)
+            else:
+                super().write(model, text)
             return
-        found = PropertyStore.read(self, document)
+        found = self.read(document)
         if found.value is not None or found.block is not None:
             raise EditError(f"{self.key} is there already: " + ("open it in the structure." if found.block is not None else "reset it first to add the block."))
-        written = new_block_text(self.schema, self.spec, block_names(document))
-        model.add_block(self.path, self.key + written[len(self.spec):])
+        written = self.key + new_block_text(self.schema, self.spec, block_names(document))[len(self.spec):]
+        style = child_named(self._block(document), "Style") if self.inner and self._block(document) is not None else None  # type: ignore[arg-type]
+        if not self.inner:
+            model.add_block(self.path, written)
+        elif style is None:
+            model.add_block(self.path, f"Style {{ {written} }}")
+        else:
+            model.add_block(tuple(style.index_path), written)
 
     def remove(self, model: DocumentModel) -> None:
         document = model.document
         child = self.child(document) if document is not None else None
         if child is None:
-            super().remove(model)
+            if self.inner and document is not None and PropertyStore.read(self, document).value is None:
+                model.clear_nested_value(self.path, ("Style",), self.key)
+            else:
+                super().remove(model)
             return
         model.remove_block(tuple(child.index_path))
 
@@ -485,7 +520,9 @@ class Form:
             keys = self._rule_keys(view, document, block, path, context, info, keys, notes)
         elif info.name == "Popup" and self.schema.popups:
             keys = self._popup_keys(block, keys, notes)
-        self._fill_keys(view, document, block, path, context, keys, set(info.style))
+        from tess_shell_config.blocks import is_surface
+
+        self._fill_keys(view, document, block, path, context, keys, set(info.style), is_surface(schema, info.name))
         if info.doc:
             view.notes.append(info.doc)
         view.notes.extend(notes)
@@ -554,9 +591,9 @@ class Form:
             keys.append(_regrouped(found, COMMON) if found is not None else KeyInfo(name, "", "", None, None, None, False, False, True, COMMON, (), ()))
         return keys
 
-    def _fill_keys(self, view: FormView, document: Document, block: Block, path: IndexPath, context: Context, keys: Sequence[KeyInfo], style: Collection[str] = ()) -> None:
+    def _fill_keys(self, view: FormView, document: Document, block: Block, path: IndexPath, context: Context, keys: Sequence[KeyInfo], style: Collection[str] = (), inner: bool = False) -> None:
         for key in keys:
-            row = self._key_row(document, path, key, context, key.name in style)
+            row = self._key_row(document, path, key, context, key.name in style, inner)
             view.rows.append(row)
         self._fill_unknown(view, document, block, path, context, [k.name for k in keys])
         order: dict[str, int] = {}
@@ -575,10 +612,10 @@ class Form:
             cell = self._cell(f"k:{name}|", TdlWidget(key, context, "the schema does not name this key"), PropertyStore(path, name), document, "", key)
             view.rows.append(Row(f"k:{name}", name.replace("_", " "), key.doc, [cell], NOT_IN_SCHEMA, key))
 
-    def _key_row(self, document: Document | None, path: IndexPath, key: KeyInfo, context: Context, styled: bool = False) -> Row:
+    def _key_row(self, document: Document | None, path: IndexPath, key: KeyInfo, context: Context, styled: bool = False, inner: bool = False) -> Row:
         widget = self.registry.create(key, context)
         group = NOT_BUILT if not key.built else (key.group or "Other")
-        store: Store = BlockStore(path, key.name, str(key.extra.get("block") or key.name), self.schema) if isinstance(widget, BlockWidget) else StyleKeyStore(path, key.name) if styled else PropertyStore(path, key.name)
+        store: Store = BlockStore(path, key.name, str(key.extra.get("block") or key.name), self.schema, inner=inner and styled) if isinstance(widget, BlockWidget) else StyleKeyStore(path, key.name, inner) if styled else PropertyStore(path, key.name)
         cell = self._cell(f"k:{key.name}|", widget, store, document, "", key)
         markers = []
         if not key.built:
@@ -588,6 +625,9 @@ class Form:
             cell.readonly = True
         if key.extra.get("module_only"):
             markers.append("set by a module")
+            if document is not None and document.root.type != "Module":  # the real checker: "Value is accessibility state, set by the module that has it, not written in a shell file"
+                markers.append("written in a module's file, not here")
+                cell.readonly, cell.note = True, "Set by a module: it is written in the module's own file, not in a shell, stylesheet or style file."
         if key.extra.get("user_module"):
             markers.append(f"type {key.extra.get('type') or 'not given'}")
         problem = key_problem(key.name)

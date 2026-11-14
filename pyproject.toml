@@ -51,3 +51,4 @@ packages = ["src/tess_ui"]
 [tool.pytest.ini_options]
 testpaths = ["tests", "apps/shell_config/tests"]  # the Configuration Application's own tests (they skip on a Python without tess_dl, which needs 3.14)
 pythonpath = ["apps/shell_config/src"]  # so its tests import tess_shell_config without installing it into the repo's venv
+markers = ["real_shell_check: runs the shell's own `tesserae-shell check` and `schema` (needs its checkout and a venv of its own; skipped when they are not there)"]
