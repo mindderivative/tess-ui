@@ -1,0 +1,186 @@
+---
+TDL: 0.1
+Name: View
+Tesserae: "0.6"
+---
+
+Overlay {
+  Params {
+    open {
+      type: "bool"
+      default: false
+      model: true
+      doc: "Whether it is showing."
+    }
+    headline {
+      type: "str"
+      default: ""
+      doc: "The title."
+    }
+    text {
+      type: "str"
+      default: ""
+      doc: "Supporting text."
+    }
+    icon {
+      type: "str"
+      default: ""
+      doc: "An icon above the headline."
+    }
+    actions {
+      type: "list"
+      default: []
+      doc: "Text buttons, each {label, value} and optionally {variant}. Pressing one closes the dialog and sets `result` to its value."
+    }
+    result {
+      type: "any"
+      default: ""
+      model: true
+      doc: "The value of the action last pressed; empty when it was dismissed."
+    }
+    dismissible {
+      type: "bool"
+      default: true
+      doc: "Escape and a press on the scrim close it. Off, it is an alert dialog: only an action closes it."
+    }
+    width {
+      type: "float"
+      default: 312
+      doc: "From 280 to 560 pixels."
+    }
+    max_height {
+      type: "float"
+      default: 480
+      doc: "The content scrolls beyond this."
+    }
+    fullscreen {
+      type: "bool"
+      default: false
+      doc: "The full-screen form: it fills the window, with a close button, the headline and the actions along the top, and the content scrolling under them."
+    }
+  }
+  open: {{ open }}
+  modal: true
+  dismissible: {{ dismissible }}
+  Children {
+    Container {
+      Name: panel
+      state {
+        top: true
+      }
+      A11y {
+        role: "dialog"
+        label: {{ headline }}
+      }
+      Style {
+        flex_direction: "vertical"
+        width: {{ '100%' if fullscreen else min(560, max(280, width)) }}
+        height: {{ '100%' if fullscreen else 'auto' }}
+      }
+      Children {
+        If {{ fullscreen }} {
+          Container {
+            Name: bar
+            Style {
+              flex_direction: "horizontal"
+              align_content: "center"
+              width: "100%"
+              height: 56
+            }
+            Children {
+              IconButton {
+                Name: close
+                icon: "close"
+                label: "Close"
+                Handlers {
+                  on_click: "open = False"
+                }
+              }
+              Text {
+                Name: bar_title
+                text: {{ headline }}
+                typography_role: "title_large"
+                heading: 2
+                Style {
+                  flex: "expand_horizontal"
+                }
+              }
+              Button {
+                Name: bar_action
+                variant: {{ a.get('variant', 'text') }}
+                label: {{ a['label'] }}
+                Handlers {
+                  on_click: "result = a['value']; open = False"
+                }
+              }
+            }
+          }
+        }
+        If {{ fullscreen and not top }} {
+          Divider {
+            Name: bar_line
+          }
+        }
+        If {{ icon != '' and not fullscreen }} {
+          Icon {
+            Name: icon
+            icon: {{ icon }}
+          }
+        }
+        If {{ headline != '' and not fullscreen }} {
+          Text {
+            Name: headline
+            text: {{ headline }}
+            typography_role: "headline_small"
+            heading: 2
+          }
+        }
+        ScrollView {
+          Name: content
+          at_top: {{ top }}
+          Style {
+            flex_direction: "vertical"
+            max_height: {{ None if fullscreen else max_height }}
+            flex: {{ 'fill' if fullscreen else 'none' }}
+          }
+          Children {
+            If {{ text != '' }} {
+              Text {
+                Name: body
+                text: {{ text }}
+                typography_role: "body_medium"
+              }
+            }
+            Slot {
+            }
+          }
+        }
+        If {{ not top and not fullscreen }} {
+          Divider {
+            Name: line
+          }
+        }
+        If {{ len(actions) > 0 and not fullscreen }} {
+          Container {
+            Name: actions
+            Style {
+              flex_direction: {{ 'vertical' if sum([len(a['label']) * 8 + 24 for a in actions]) + 8 * (len(actions) - 1) > width - 48 else 'horizontal' }}
+              align_content: "bottom_right"
+              gap: 8
+            }
+            Children {
+              Button {
+                Name: action
+                variant: {{ a.get('variant', 'text') }}
+                label: {{ a['label'] }}
+                Handlers {
+                  on_click: "result = a['value']; open = False"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
