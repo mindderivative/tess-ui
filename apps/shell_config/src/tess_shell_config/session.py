@@ -7,9 +7,10 @@ application's own state folder.
 
 from __future__ import annotations
 
+import contextlib
 from pathlib import Path
 
-from tess_shell_config.files import Backups, SaveError, read_text, state_dir as default_state_dir, write_atomic
+from tess_shell_config.files import Backups, ChangedOnDisk, SaveError, read_text, state_dir as default_state_dir, write_atomic
 from tess_shell_config.folder import ConfigFile, scan
 from tess_shell_config.model import DocumentModel
 from tess_shell_config.schema import Schema
@@ -62,12 +63,40 @@ class ConfigSession:
     def model(self) -> DocumentModel | None:
         return self.models.get(self.current) if self.current else None
 
+    def changed_on_disk(self, rel: str) -> bytes | None:
+        """The bytes on disk when another program changed the open file `rel` (they are not what was last read or written here), else `None`. A file that is gone is not a change: a save writes it again."""
+        model = self.models.get(rel)
+        if model is None or model.path is None:
+            return None
+        try:
+            raw = model.path.read_bytes()
+        except OSError:
+            return None
+        return raw if raw != model.disk_bytes else None
+
+    def reload(self, rel: str) -> DocumentModel:
+        """Take the file's bytes from disk as the new state of its model (the person chose to reload). The history starts over."""
+        model = self.models[rel]
+        assert model.path is not None
+        model.adopt_disk(model.path.read_bytes())
+        return model
+
+    def keep(self, rel: str) -> None:
+        """The person chose to keep their version over what is on disk now: that content is the expected one, so it is not asked about again, and the next save replaces it."""
+        model = self.models.get(rel)
+        if model is not None and model.path is not None:
+            with contextlib.suppress(OSError):
+                model.keep_over(model.path.read_bytes())
+
     def save(self, rel: str | None = None) -> Path:
-        """Write a file: the current one unless `rel` is given. The old content is kept aside the first time; the write is atomic. Raises `SaveError` (the old file is untouched)."""
+        """Write a file: the current one unless `rel` is given. The old content is kept aside the first time; the write is atomic. Raises `SaveError` (the old file is untouched), `ChangedOnDisk`
+        (a `SaveError`) when another program changed the file since this one read or wrote it: that is never overwritten silently."""
         rel = rel or self.current
         model = self.models.get(rel) if rel else None
         if model is None or model.path is None:
             raise SaveError("There is no open file to save.")
+        if self.changed_on_disk(rel) is not None:  # type: ignore[arg-type]
+            raise ChangedOnDisk(rel)  # type: ignore[arg-type]
         self.backups.before_save(model.path, rel or model.path.name)
         write_atomic(model.path, model.data)
         model.mark_saved()

@@ -18,7 +18,7 @@ from fnmatch import fnmatchcase
 from typing import Any
 
 __all__ = [
-    "SUPPORTED_MAJOR", "SchemaError", "UnsupportedSchemaVersion", "Schema", "KindInfo", "KeyInfo", "BlockInfo", "TokenInfo", "ModuleInfo", "ParamInfo",
+    "SUPPORTED_MAJOR", "SchemaError", "UnsupportedSchemaVersion", "Schema", "KindInfo", "KeyInfo", "BlockInfo", "TokenInfo", "ModuleInfo", "ParamInfo", "PopupInfo",
     "EventInfo", "ActionInfo", "ActionArg", "parse_version", "load_schema",
 ]
 
@@ -240,6 +240,24 @@ class TokenInfo:
 
 
 @dataclass(frozen=True)
+class PopupInfo:
+    """One popup a module opens by default (schema 1.2 `popups`): the module that shows it, the block it holds, and its placement. `values` are the defaults by the schema's own
+    names (the keys of the `Popup` root block, in lower case), a `max_height` as written: `{"value": 60.0, "unit": "%"}`."""
+
+    name: str
+    shown_by: str
+    content: str
+    doc: str
+    values: Mapping[str, Any]
+
+    @classmethod
+    def read(cls, name: str, raw: Mapping[str, Any]) -> PopupInfo:
+        raw = _mapping(raw, f"popup {name}")
+        return cls(name=name, shown_by=str(raw.get("shown_by") or ""), content=str(raw.get("content") or ""), doc=str(raw.get("doc") or ""),
+                   values={k: v for k, v in raw.items() if k not in ("shown_by", "content", "doc")})
+
+
+@dataclass(frozen=True)
 class ModuleInfo:
     """A shipped module: its params, the block it is rooted in, the events it raises, the common keys of a call and the actions it takes."""
 
@@ -302,6 +320,7 @@ class ActionInfo:
 
 
 _KNOWN_TOP = ("schema_version", "shell_version", "kinds", "roots", "blocks", "settings", "events", "actions", "enums", "tokens", "modules")
+_OPTIONAL_TOP = ("popups",)
 
 
 @dataclass(frozen=True)
@@ -320,6 +339,10 @@ class Schema:
     tokens: Mapping[str, Mapping[str, TokenInfo]]
     modules: Mapping[str, ModuleInfo]
     extra: Mapping[str, Any] = field(default_factory=dict)
+    #: Schema 1.2: the popups the modules open by default; empty for a 1.1 schema.
+    popups: Mapping[str, PopupInfo] = field(default_factory=dict)
+    #: Schema 1.2: how those popups reach the monitors, in words (empty for 1.1).
+    popup_note: str = ""
 
     @property
     def version_text(self) -> str:
@@ -341,7 +364,12 @@ class Schema:
                     for section, keys in _mapping(data["settings"], "settings").items()}
         tokens = {group: {k: TokenInfo.read(group, k, v) for k, v in _mapping(entries, f"tokens {group}").items()}
                   for group, entries in _mapping(data["tokens"], "tokens").items()}
+        popup_table = data.get("popups")
+        popup_table = _mapping(popup_table, "popups") if popup_table is not None else {}
+        listed = popup_table.get("popups")
         return cls(
+            popups={k: PopupInfo.read(k, v) for k, v in _mapping(listed, "popups list").items()} if listed is not None else {},
+            popup_note=str(popup_table.get("monitors") or ""),
             version=version, shell_version=str(data.get("shell_version", "")),
             kinds={k: KindInfo(k, str(v.get("ui", "text")), str(v.get("note") or ""), _strings(v.get("model_kinds")),
                                {a: b for a, b in v.items() if a not in ("ui", "note", "model_kinds")})
@@ -352,7 +380,7 @@ class Schema:
             actions=tuple(ActionInfo.read(a) for a in _tuple(data["actions"])),
             enums={k: _strings(v) for k, v in _mapping(data["enums"], "enums").items()}, tokens=tokens,
             modules={k: ModuleInfo.read(k, v) for k, v in _mapping(data["modules"], "modules").items()},
-            extra={k: v for k, v in data.items() if k not in _KNOWN_TOP})
+            extra={k: v for k, v in data.items() if k not in _KNOWN_TOP and k not in _OPTIONAL_TOP})
 
     @classmethod
     def from_json(cls, text: str | bytes) -> Schema:
@@ -413,6 +441,13 @@ class Schema:
         for section, keys in self.settings.items():
             for key in keys.values():
                 yield section, key
+
+    def walk_popups(self) -> Iterable[tuple[str, str, KeyInfo | None]]:
+        """Every default a popup states, as `(popup, field, key)`: `key` is the `Popup` root block's key it sets (found without regard to case), or `None` when the root has none."""
+        keys = {name.lower(): key for name, key in (self.roots["Popup"].all_keys().items() if "Popup" in self.roots else ())}
+        for popup in self.popups.values():
+            for name in popup.values:
+                yield popup.name, name, keys.get(name.lower())
 
 
 def load_schema(text: str | bytes) -> Schema:

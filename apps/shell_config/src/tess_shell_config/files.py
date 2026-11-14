@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-__all__ = ["APP_DIR_NAME", "state_dir", "decode", "encode", "display_text", "is_utf8", "read_text", "write_atomic", "SaveError", "Backups"]
+__all__ = ["APP_DIR_NAME", "state_dir", "decode", "encode", "display_text", "is_utf8", "read_text", "write_atomic", "SaveError", "ChangedOnDisk", "Backups"]
 
 APP_DIR_NAME = "tesserae-shell-config"
 
@@ -59,6 +59,14 @@ def read_text(path: str | Path) -> str:
 
 class SaveError(OSError):
     """A file could not be written. `str(error)` names the file and the cause; the old file is untouched."""
+
+
+class ChangedOnDisk(SaveError):
+    """The file on disk is not what this application last read or wrote: another program changed it. Nothing was written; the person is asked to reload or to keep their version."""
+
+    def __init__(self, relative: str) -> None:
+        self.relative = relative
+        super().__init__(f"{relative} was changed on disk by another program since it was opened or saved here. Nothing was written: reload it, or keep your version.")
 
 
 def write_atomic(path: str | Path, data: bytes) -> None:

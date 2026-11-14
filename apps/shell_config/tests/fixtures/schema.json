@@ -1,6 +1,6 @@
 {
-  "schema_version": "1.1",
-  "shell_version": "0.1.0.dev0",
+  "schema_version": "1.2",
+  "shell_version": "<shell_version>",
   "kinds": {
     "string": {
       "ui": "text",
@@ -51,9 +51,7 @@
       "model_kinds": [
         "number",
         "positive",
-        "non_negative",
-        "unit",
-        "peek_size"
+        "unit"
       ]
     },
     "whole": {
@@ -136,8 +134,7 @@
       "note": "A time in milliseconds.",
       "model_kinds": [
         "duration",
-        "pause",
-        "non_negative_ms"
+        "pause"
       ]
     },
     "path": {
@@ -1804,15 +1801,19 @@
           "choices": null,
           "enum": null,
           "default": "400",
-          "doc": "The greatest height of the Popup, in pixels.",
+          "doc": "The greatest height of the Popup, in pixels, or a percentage (above 0, at most 100) of the output's height; a taller content scrolls.",
           "slot": false,
           "required": false,
           "built": true,
           "group": "Size",
           "units": [
-            "px"
+            "px",
+            "%"
           ],
           "negative": false,
+          "percent_min": 0,
+          "percent_max": 100,
+          "percent_min_exclusive": true,
           "tokens": [],
           "preferred_tokens": []
         },
@@ -2331,9 +2332,13 @@
           "built": true,
           "group": "Size",
           "units": [
-            "px"
+            "px",
+            "%"
           ],
           "negative": false,
+          "percent_min": 0,
+          "percent_max": 100,
+          "percent_min_exclusive": true,
           "tokens": [],
           "preferred_tokens": []
         },
@@ -5627,6 +5632,24 @@
           "tokens": [],
           "preferred_tokens": []
         },
+        "Reveals": {
+          "kind": "enum",
+          "choices": [
+            "NONE",
+            "OPEN",
+            "CLOSED"
+          ],
+          "enum": null,
+          "default": "NONE",
+          "doc": "Makes the block an expander: OPEN or CLOSED is the state the module wants; the block raises On_Changed (event.value true or false) when its size has finished easing there. NONE is a plain block.",
+          "slot": true,
+          "required": false,
+          "built": true,
+          "module_only": true,
+          "group": "Behaviour",
+          "tokens": [],
+          "preferred_tokens": []
+        },
         "Menu_Item": {
           "kind": "bool",
           "choices": null,
@@ -5986,6 +6009,9 @@
       },
       "events": [
         "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll",
         "On_Changed",
         "On_Released"
       ],
@@ -6946,6 +6972,24 @@
           "tokens": [],
           "preferred_tokens": []
         },
+        "Reveals": {
+          "kind": "enum",
+          "choices": [
+            "NONE",
+            "OPEN",
+            "CLOSED"
+          ],
+          "enum": null,
+          "default": "NONE",
+          "doc": "Makes the block an expander: OPEN or CLOSED is the state the module wants; the block raises On_Changed (event.value true or false) when its size has finished easing there. NONE is a plain block.",
+          "slot": true,
+          "required": false,
+          "built": true,
+          "module_only": true,
+          "group": "Behaviour",
+          "tokens": [],
+          "preferred_tokens": []
+        },
         "Menu_Item": {
           "kind": "bool",
           "choices": null,
@@ -7422,6 +7466,9 @@
       },
       "events": [
         "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll",
         "On_Changed",
         "On_Released"
       ],
@@ -8361,6 +8408,24 @@
           "enum": null,
           "default": "NONE",
           "doc": "Makes the block a slider along its axis: HORIZONTAL or VERTICAL; NONE is a plain block.",
+          "slot": true,
+          "required": false,
+          "built": true,
+          "module_only": true,
+          "group": "Behaviour",
+          "tokens": [],
+          "preferred_tokens": []
+        },
+        "Reveals": {
+          "kind": "enum",
+          "choices": [
+            "NONE",
+            "OPEN",
+            "CLOSED"
+          ],
+          "enum": null,
+          "default": "NONE",
+          "doc": "Makes the block an expander: OPEN or CLOSED is the state the module wants; the block raises On_Changed (event.value true or false) when its size has finished easing there. NONE is a plain block.",
           "slot": true,
           "required": false,
           "built": true,
@@ -9747,6 +9812,24 @@
           "tokens": [],
           "preferred_tokens": []
         },
+        "Reveals": {
+          "kind": "enum",
+          "choices": [
+            "NONE",
+            "OPEN",
+            "CLOSED"
+          ],
+          "enum": null,
+          "default": "NONE",
+          "doc": "Makes the block an expander: OPEN or CLOSED is the state the module wants; the block raises On_Changed (event.value true or false) when its size has finished easing there. NONE is a plain block.",
+          "slot": true,
+          "required": false,
+          "built": true,
+          "module_only": true,
+          "group": "Behaviour",
+          "tokens": [],
+          "preferred_tokens": []
+        },
         "Menu_Item": {
           "kind": "bool",
           "choices": null,
@@ -10239,6 +10322,9 @@
       },
       "events": [
         "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll",
         "On_Changed",
         "On_Released"
       ],
@@ -11185,6 +11271,24 @@
           "tokens": [],
           "preferred_tokens": []
         },
+        "Reveals": {
+          "kind": "enum",
+          "choices": [
+            "NONE",
+            "OPEN",
+            "CLOSED"
+          ],
+          "enum": null,
+          "default": "NONE",
+          "doc": "Makes the block an expander: OPEN or CLOSED is the state the module wants; the block raises On_Changed (event.value true or false) when its size has finished easing there. NONE is a plain block.",
+          "slot": true,
+          "required": false,
+          "built": true,
+          "module_only": true,
+          "group": "Behaviour",
+          "tokens": [],
+          "preferred_tokens": []
+        },
         "Menu_Item": {
           "kind": "bool",
           "choices": null,
@@ -11341,6 +11445,9 @@
       },
       "events": [
         "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll",
         "On_Changed",
         "On_Released"
       ],
@@ -12301,6 +12408,24 @@
           "tokens": [],
           "preferred_tokens": []
         },
+        "Reveals": {
+          "kind": "enum",
+          "choices": [
+            "NONE",
+            "OPEN",
+            "CLOSED"
+          ],
+          "enum": null,
+          "default": "NONE",
+          "doc": "Makes the block an expander: OPEN or CLOSED is the state the module wants; the block raises On_Changed (event.value true or false) when its size has finished easing there. NONE is a plain block.",
+          "slot": true,
+          "required": false,
+          "built": true,
+          "module_only": true,
+          "group": "Behaviour",
+          "tokens": [],
+          "preferred_tokens": []
+        },
         "Menu_Item": {
           "kind": "bool",
           "choices": null,
@@ -12332,7 +12457,10 @@
       },
       "style": {},
       "events": [
-        "On_Click"
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
       ],
       "required": [],
       "repeatable": true,
@@ -13277,6 +13405,24 @@
           "tokens": [],
           "preferred_tokens": []
         },
+        "Reveals": {
+          "kind": "enum",
+          "choices": [
+            "NONE",
+            "OPEN",
+            "CLOSED"
+          ],
+          "enum": null,
+          "default": "NONE",
+          "doc": "Makes the block an expander: OPEN or CLOSED is the state the module wants; the block raises On_Changed (event.value true or false) when its size has finished easing there. NONE is a plain block.",
+          "slot": true,
+          "required": false,
+          "built": true,
+          "module_only": true,
+          "group": "Behaviour",
+          "tokens": [],
+          "preferred_tokens": []
+        },
         "Menu_Item": {
           "kind": "bool",
           "choices": null,
@@ -13473,7 +13619,10 @@
         }
       },
       "events": [
-        "On_Click"
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
       ],
       "required": [
         [
@@ -14423,6 +14572,24 @@
           "tokens": [],
           "preferred_tokens": []
         },
+        "Reveals": {
+          "kind": "enum",
+          "choices": [
+            "NONE",
+            "OPEN",
+            "CLOSED"
+          ],
+          "enum": null,
+          "default": "NONE",
+          "doc": "Makes the block an expander: OPEN or CLOSED is the state the module wants; the block raises On_Changed (event.value true or false) when its size has finished easing there. NONE is a plain block.",
+          "slot": true,
+          "required": false,
+          "built": true,
+          "module_only": true,
+          "group": "Behaviour",
+          "tokens": [],
+          "preferred_tokens": []
+        },
         "Menu_Item": {
           "kind": "bool",
           "choices": null,
@@ -14578,7 +14745,10 @@
         }
       },
       "events": [
-        "On_Click"
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
       ],
       "required": [
         [
@@ -15475,6 +15645,24 @@
           "tokens": [],
           "preferred_tokens": []
         },
+        "Reveals": {
+          "kind": "enum",
+          "choices": [
+            "NONE",
+            "OPEN",
+            "CLOSED"
+          ],
+          "enum": null,
+          "default": "NONE",
+          "doc": "Makes the block an expander: OPEN or CLOSED is the state the module wants; the block raises On_Changed (event.value true or false) when its size has finished easing there. NONE is a plain block.",
+          "slot": true,
+          "required": false,
+          "built": true,
+          "module_only": true,
+          "group": "Behaviour",
+          "tokens": [],
+          "preferred_tokens": []
+        },
         "Menu_Item": {
           "kind": "bool",
           "choices": null,
@@ -15855,7 +16043,10 @@
         }
       },
       "events": [
-        "On_Click"
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
       ],
       "required": [
         [
@@ -16752,6 +16943,24 @@
           "tokens": [],
           "preferred_tokens": []
         },
+        "Reveals": {
+          "kind": "enum",
+          "choices": [
+            "NONE",
+            "OPEN",
+            "CLOSED"
+          ],
+          "enum": null,
+          "default": "NONE",
+          "doc": "Makes the block an expander: OPEN or CLOSED is the state the module wants; the block raises On_Changed (event.value true or false) when its size has finished easing there. NONE is a plain block.",
+          "slot": true,
+          "required": false,
+          "built": true,
+          "module_only": true,
+          "group": "Behaviour",
+          "tokens": [],
+          "preferred_tokens": []
+        },
         "Menu_Item": {
           "kind": "bool",
           "choices": null,
@@ -17082,7 +17291,10 @@
         }
       },
       "events": [
-        "On_Click"
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
       ],
       "required": [
         [
@@ -18031,6 +18243,24 @@
           "tokens": [],
           "preferred_tokens": []
         },
+        "Reveals": {
+          "kind": "enum",
+          "choices": [
+            "NONE",
+            "OPEN",
+            "CLOSED"
+          ],
+          "enum": null,
+          "default": "NONE",
+          "doc": "Makes the block an expander: OPEN or CLOSED is the state the module wants; the block raises On_Changed (event.value true or false) when its size has finished easing there. NONE is a plain block.",
+          "slot": true,
+          "required": false,
+          "built": true,
+          "module_only": true,
+          "group": "Behaviour",
+          "tokens": [],
+          "preferred_tokens": []
+        },
         "Menu_Item": {
           "kind": "bool",
           "choices": null,
@@ -18471,7 +18701,10 @@
         }
       },
       "events": [
-        "On_Click"
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
       ],
       "required": [
         [
@@ -19420,6 +19653,24 @@
           "tokens": [],
           "preferred_tokens": []
         },
+        "Reveals": {
+          "kind": "enum",
+          "choices": [
+            "NONE",
+            "OPEN",
+            "CLOSED"
+          ],
+          "enum": null,
+          "default": "NONE",
+          "doc": "Makes the block an expander: OPEN or CLOSED is the state the module wants; the block raises On_Changed (event.value true or false) when its size has finished easing there. NONE is a plain block.",
+          "slot": true,
+          "required": false,
+          "built": true,
+          "module_only": true,
+          "group": "Behaviour",
+          "tokens": [],
+          "preferred_tokens": []
+        },
         "Menu_Item": {
           "kind": "bool",
           "choices": null,
@@ -19794,7 +20045,10 @@
         }
       },
       "events": [
-        "On_Click"
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
       ],
       "required": [],
       "repeatable": true,
@@ -20739,6 +20993,24 @@
           "tokens": [],
           "preferred_tokens": []
         },
+        "Reveals": {
+          "kind": "enum",
+          "choices": [
+            "NONE",
+            "OPEN",
+            "CLOSED"
+          ],
+          "enum": null,
+          "default": "NONE",
+          "doc": "Makes the block an expander: OPEN or CLOSED is the state the module wants; the block raises On_Changed (event.value true or false) when its size has finished easing there. NONE is a plain block.",
+          "slot": true,
+          "required": false,
+          "built": true,
+          "module_only": true,
+          "group": "Behaviour",
+          "tokens": [],
+          "preferred_tokens": []
+        },
         "Menu_Item": {
           "kind": "bool",
           "choices": null,
@@ -21390,6 +21662,9 @@
       },
       "events": [
         "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll",
         "On_Changed",
         "On_Submit",
         "On_Text_Commit"
@@ -21526,6 +21801,18 @@
         "built": true,
         "group": "Settings",
         "block": "Debug",
+        "tokens": []
+      },
+      "Control": {
+        "kind": "bool",
+        "choices": null,
+        "enum": null,
+        "default": "true",
+        "doc": "Whether the shell exports its control interface on the session bus (the tesserae-shell commands); a restart applies it.",
+        "slot": false,
+        "required": false,
+        "built": true,
+        "group": "Settings",
         "tokens": []
       }
     },
@@ -21883,7 +22170,64 @@
       ]
     },
     "On_Click": {
-      "doc": "A click: the mouse, Space or Enter on a focused block, or assistive activation.",
+      "doc": "A click: the mouse, Space or Enter on a focused block, or assistive activation. A pointer event (this, On_Secondary_Click, On_Middle_Click, On_Scroll) gives a module's action event.rect: the block's (x, y, width, height) on the output, None inside a Popup.",
+      "module_only": false,
+      "needs": [],
+      "raised_by": [
+        "Box",
+        "FlexBox",
+        "Rectangle",
+        "ScrollBox",
+        "Spacer",
+        "SVG",
+        "Bitmap",
+        "Circle",
+        "Ring",
+        "Path",
+        "Marquee",
+        "TextField"
+      ]
+    },
+    "On_Secondary_Click": {
+      "doc": "A click with the secondary (right) button; event.button is \"secondary\". It does not run On_Click.",
+      "module_only": false,
+      "needs": [],
+      "raised_by": [
+        "Box",
+        "FlexBox",
+        "Rectangle",
+        "ScrollBox",
+        "Spacer",
+        "SVG",
+        "Bitmap",
+        "Circle",
+        "Ring",
+        "Path",
+        "Marquee",
+        "TextField"
+      ]
+    },
+    "On_Middle_Click": {
+      "doc": "A click with the middle button (a press and a release on the block); event.button is \"middle\". It does not run On_Click.",
+      "module_only": false,
+      "needs": [],
+      "raised_by": [
+        "Box",
+        "FlexBox",
+        "Rectangle",
+        "ScrollBox",
+        "Spacer",
+        "SVG",
+        "Bitmap",
+        "Circle",
+        "Ring",
+        "Path",
+        "Marquee",
+        "TextField"
+      ]
+    },
+    "On_Scroll": {
+      "doc": "One step of the mouse wheel over the block (the nearest block with the handler takes it); event.delta is +1 for a step down and -1 for a step up.",
       "module_only": false,
       "needs": [],
       "raised_by": [
@@ -21918,12 +22262,13 @@
       ]
     },
     "On_Changed": {
-      "doc": "A control's value changed by the user: a toggle flipped, an entry chosen, a slider moved; for each new value while the pointer moves. A TextField raises it for each change of its text.",
+      "doc": "A control's value changed by the user: a toggle flipped, an entry chosen, a slider moved; for each new value while the pointer moves. A TextField raises it for each change of its text. An Expander raises it when an opening or a closing has finished (event.value is whether it is open), whoever set the new state.",
       "module_only": true,
       "needs": [
         "Toggles",
         "Selection_Mode",
-        "Slides"
+        "Slides",
+        "Reveals"
       ],
       "raised_by": [
         "Box",
@@ -22742,6 +23087,206 @@
     }
   },
   "modules": {
+    "Audio": {
+      "doc": "The default sound output: an icon for its kind and level, mute on a click, the volume on the wheel, an optional percent and slider, and a menu of outputs.",
+      "params": {
+        "show_percent": {
+          "type": "boolean",
+          "kind": "bool",
+          "default": "false",
+          "doc": "Shows the volume as a number next to the icon.",
+          "required": false
+        },
+        "show_slider": {
+          "type": "boolean",
+          "kind": "bool",
+          "default": "false",
+          "doc": "Shows a volume slider.",
+          "required": false
+        },
+        "show_mic": {
+          "type": "boolean",
+          "kind": "bool",
+          "default": "true",
+          "doc": "Shows a microphone mark while the default input is muted.",
+          "required": false
+        },
+        "step": {
+          "type": "number",
+          "kind": "number",
+          "default": "5",
+          "doc": "The percent one wheel step changes the volume by.",
+          "required": false,
+          "min": null,
+          "max": null,
+          "step": null,
+          "unit": null
+        }
+      },
+      "root_block": "FlexBox",
+      "events": [
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
+      ],
+      "common_keys": [
+        "Key",
+        "Visible",
+        "Enabled",
+        "Width",
+        "Height",
+        "Min_Width",
+        "Min_Height",
+        "Max_Width",
+        "Max_Height",
+        "Aspect_Ratio",
+        "Margin",
+        "Flex_Grow",
+        "Flex_Shrink",
+        "Align_Self",
+        "Z_Index",
+        "Label",
+        "Tooltip_When_Disabled",
+        "A11y_Hidden",
+        "Opacity",
+        "Position",
+        "Left",
+        "Top",
+        "Right",
+        "Bottom",
+        "Translate_X",
+        "Translate_Y",
+        "Scale",
+        "Rotation",
+        "Clip_Children",
+        "Role",
+        "Description",
+        "Live"
+      ],
+      "actions": [
+        {
+          "name": "drag",
+          "doc": "The slider's handle moved by the user: write at most every 50 ms; the release writes the final value.",
+          "args": [
+            {
+              "name": "percent",
+              "required": true
+            }
+          ],
+          "kwargs": false
+        },
+        {
+          "name": "set_output",
+          "doc": "",
+          "args": [
+            {
+              "name": "id",
+              "required": true
+            }
+          ],
+          "kwargs": false
+        },
+        {
+          "name": "set_volume",
+          "doc": "Set the volume (clamped to 0 to 100); a slider's release sends its final value here.",
+          "args": [
+            {
+              "name": "percent",
+              "required": true
+            }
+          ],
+          "kwargs": false
+        },
+        {
+          "name": "show_outputs",
+          "doc": "Open the Popup ``Audio_Outputs`` with the outputs as they are now.",
+          "args": [],
+          "kwargs": false
+        },
+        {
+          "name": "step",
+          "doc": "Change the volume by ``delta`` percent (the layout gives ``step`` times the way).",
+          "args": [
+            {
+              "name": "delta",
+              "required": true
+            }
+          ],
+          "kwargs": false
+        },
+        {
+          "name": "toggle_mic",
+          "doc": "",
+          "args": [],
+          "kwargs": false
+        },
+        {
+          "name": "toggle_mute",
+          "doc": "",
+          "args": [],
+          "kwargs": false
+        }
+      ]
+    },
+    "Audio_Outputs": {
+      "doc": "The content of the Audio module's outputs Popup: one row per output.",
+      "params": {},
+      "root_block": "FlexBox",
+      "events": [
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
+      ],
+      "common_keys": [
+        "Key",
+        "Visible",
+        "Enabled",
+        "Width",
+        "Height",
+        "Min_Width",
+        "Min_Height",
+        "Max_Width",
+        "Max_Height",
+        "Aspect_Ratio",
+        "Margin",
+        "Flex_Grow",
+        "Flex_Shrink",
+        "Align_Self",
+        "Z_Index",
+        "Label",
+        "Tooltip_When_Disabled",
+        "A11y_Hidden",
+        "Opacity",
+        "Position",
+        "Left",
+        "Top",
+        "Right",
+        "Bottom",
+        "Translate_X",
+        "Translate_Y",
+        "Scale",
+        "Rotation",
+        "Clip_Children",
+        "Role",
+        "Description",
+        "Live"
+      ],
+      "actions": [
+        {
+          "name": "pick",
+          "doc": "",
+          "args": [
+            {
+              "name": "id",
+              "required": true
+            }
+          ],
+          "kwargs": false
+        }
+      ]
+    },
     "Badge": {
       "doc": "A pill with a count, or a dot, in the error colour.",
       "params": {
@@ -22784,7 +23329,10 @@
       },
       "root_block": "FlexBox",
       "events": [
-        "On_Click"
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
       ],
       "common_keys": [
         "Key",
@@ -22835,7 +23383,10 @@
       },
       "root_block": "FlexBox",
       "events": [
-        "On_Click"
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
       ],
       "common_keys": [
         "Key",
@@ -22907,7 +23458,10 @@
       },
       "root_block": "FlexBox",
       "events": [
-        "On_Click"
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
       ],
       "common_keys": [
         "Key",
@@ -22973,6 +23527,9 @@
       "root_block": "FlexBox",
       "events": [
         "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll",
         "On_Changed"
       ],
       "common_keys": [
@@ -23052,7 +23609,10 @@
       },
       "root_block": "FlexBox",
       "events": [
-        "On_Click"
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
       ],
       "common_keys": [
         "Key",
@@ -23128,7 +23688,11 @@
       },
       "root_block": "FlexBox",
       "events": [
-        "On_Click"
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll",
+        "On_Changed"
       ],
       "common_keys": [
         "Key",
@@ -23190,7 +23754,10 @@
       },
       "root_block": "FlexBox",
       "events": [
-        "On_Click"
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
       ],
       "common_keys": [
         "Key",
@@ -23257,7 +23824,10 @@
       },
       "root_block": "FlexBox",
       "events": [
-        "On_Click"
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
       ],
       "common_keys": [
         "Key",
@@ -23372,6 +23942,9 @@
       "root_block": "ScrollBox",
       "events": [
         "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll",
         "On_Changed"
       ],
       "common_keys": [
@@ -23459,7 +24032,10 @@
       },
       "root_block": "Marquee",
       "events": [
-        "On_Click"
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
       ],
       "common_keys": [
         "Key",
@@ -23542,7 +24118,10 @@
       },
       "root_block": "FlexBox",
       "events": [
-        "On_Click"
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
       ],
       "common_keys": [
         "Key",
@@ -23645,7 +24224,10 @@
       },
       "root_block": "FlexBox",
       "events": [
-        "On_Click"
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
       ],
       "common_keys": [
         "Key",
@@ -23727,11 +24309,21 @@
           "default": "\"\"",
           "doc": "The name assistive technology reads aloud; the text when it is empty.",
           "required": false
+        },
+        "Id": {
+          "type": "string",
+          "kind": "string",
+          "default": "\"\"",
+          "doc": "A text the row carries for the code that built the menu; shown nowhere. A submenu reads it as caller.use.params.Id.",
+          "required": false
         }
       },
       "root_block": "FlexBox",
       "events": [
-        "On_Click"
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
       ],
       "common_keys": [
         "Key",
@@ -23789,7 +24381,10 @@
       },
       "root_block": "FlexBox",
       "events": [
-        "On_Click"
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
       ],
       "common_keys": [
         "Key",
@@ -23866,7 +24461,10 @@
       },
       "root_block": "Box",
       "events": [
-        "On_Click"
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
       ],
       "common_keys": [
         "Key",
@@ -23969,6 +24567,9 @@
       "root_block": "Box",
       "events": [
         "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll",
         "On_Changed",
         "On_Released"
       ],
@@ -24157,6 +24758,9 @@
       "root_block": "TextField",
       "events": [
         "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll",
         "On_Changed",
         "On_Submit",
         "On_Text_Commit"
@@ -24261,6 +24865,9 @@
       "root_block": "TextField",
       "events": [
         "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll",
         "On_Changed",
         "On_Submit",
         "On_Text_Commit"
@@ -24322,6 +24929,9 @@
       "root_block": "Box",
       "events": [
         "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll",
         "On_Changed"
       ],
       "common_keys": [
@@ -24360,6 +24970,313 @@
       ],
       "actions": []
     },
+    "Tray": {
+      "doc": "The system tray: one icon per StatusNotifier application, with its tooltip, clicks and menu; the shell is a second tray host beside Plasma's.",
+      "params": {
+        "icon_size": {
+          "type": "number",
+          "kind": "number",
+          "default": "18",
+          "doc": "The size of each icon in pixels.",
+          "required": false,
+          "min": null,
+          "max": null,
+          "step": null,
+          "unit": null
+        },
+        "show_passive": {
+          "type": "boolean",
+          "kind": "bool",
+          "default": "false",
+          "doc": "Shows the items whose status is Passive.",
+          "required": false
+        },
+        "spacing": {
+          "type": "number",
+          "kind": "number",
+          "default": "6",
+          "doc": "The space between two items in pixels.",
+          "required": false,
+          "min": null,
+          "max": null,
+          "step": null,
+          "unit": null
+        }
+      },
+      "root_block": "FlexBox",
+      "events": [
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
+      ],
+      "common_keys": [
+        "Key",
+        "Visible",
+        "Enabled",
+        "Width",
+        "Height",
+        "Min_Width",
+        "Min_Height",
+        "Max_Width",
+        "Max_Height",
+        "Aspect_Ratio",
+        "Margin",
+        "Flex_Grow",
+        "Flex_Shrink",
+        "Align_Self",
+        "Z_Index",
+        "Label",
+        "Tooltip_When_Disabled",
+        "A11y_Hidden",
+        "Opacity",
+        "Position",
+        "Left",
+        "Top",
+        "Right",
+        "Bottom",
+        "Translate_X",
+        "Translate_Y",
+        "Scale",
+        "Rotation",
+        "Clip_Children",
+        "Role",
+        "Description",
+        "Live"
+      ],
+      "actions": [
+        {
+          "name": "activate",
+          "doc": "",
+          "args": [
+            {
+              "name": "id",
+              "required": true
+            }
+          ],
+          "kwargs": false
+        },
+        {
+          "name": "menu",
+          "doc": "The item's menu, drawn by the shell; ``ContextMenu`` when the item has none.",
+          "args": [
+            {
+              "name": "id",
+              "required": true
+            }
+          ],
+          "kwargs": false
+        },
+        {
+          "name": "scroll",
+          "doc": "One wheel step (``delta`` +1 for a step down): ``Scroll(delta, \"vertical\")`` in Qt's units, up positive.",
+          "args": [
+            {
+              "name": "id",
+              "required": true
+            },
+            {
+              "name": "delta",
+              "required": false
+            }
+          ],
+          "kwargs": false
+        },
+        {
+          "name": "secondary",
+          "doc": "",
+          "args": [
+            {
+              "name": "id",
+              "required": true
+            }
+          ],
+          "kwargs": false
+        }
+      ]
+    },
+    "Tray_Item": {
+      "doc": "One icon of the Tray, with a tooltip.",
+      "params": {
+        "icon": {
+          "type": "icon",
+          "kind": "icon",
+          "default": "\"\"",
+          "doc": "The icon: an SVG document or pixels the shell holds (the Tray sends it).",
+          "required": false
+        },
+        "size": {
+          "type": "number",
+          "kind": "number",
+          "default": "18",
+          "doc": "The icon's size in pixels.",
+          "required": false,
+          "min": null,
+          "max": null,
+          "step": null,
+          "unit": null
+        },
+        "tooltip_title": {
+          "type": "string",
+          "kind": "string",
+          "default": "\"\"",
+          "doc": "The first line of the tooltip.",
+          "required": false
+        },
+        "tooltip_text": {
+          "type": "string",
+          "kind": "string",
+          "default": "\"\"",
+          "doc": "The second line of the tooltip; empty shows none.",
+          "required": false
+        },
+        "label": {
+          "type": "string",
+          "kind": "string",
+          "default": "\"\"",
+          "doc": "The name assistive technology reads aloud.",
+          "required": false
+        },
+        "description": {
+          "type": "string",
+          "kind": "string",
+          "default": "\"\"",
+          "doc": "The description assistive technology reads after the name.",
+          "required": false
+        },
+        "attention": {
+          "type": "boolean",
+          "kind": "bool",
+          "default": "false",
+          "doc": "The item needs attention: the block takes the :selected look.",
+          "required": false
+        }
+      },
+      "root_block": "FlexBox",
+      "events": [
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
+      ],
+      "common_keys": [
+        "Key",
+        "Visible",
+        "Enabled",
+        "Width",
+        "Height",
+        "Min_Width",
+        "Min_Height",
+        "Max_Width",
+        "Max_Height",
+        "Aspect_Ratio",
+        "Margin",
+        "Flex_Grow",
+        "Flex_Shrink",
+        "Align_Self",
+        "Z_Index",
+        "Label",
+        "Tooltip_When_Disabled",
+        "A11y_Hidden",
+        "Opacity",
+        "Position",
+        "Left",
+        "Top",
+        "Right",
+        "Bottom",
+        "Translate_X",
+        "Translate_Y",
+        "Scale",
+        "Rotation",
+        "Clip_Children",
+        "Role",
+        "Description",
+        "Live"
+      ],
+      "actions": []
+    },
+    "Tray_Menu": {
+      "doc": "The content of the Popups that draw a tray item's menu, one level of it.",
+      "params": {
+        "Level": {
+          "type": "number",
+          "kind": "number",
+          "default": "1",
+          "doc": "1 is the menu itself; 2 and 3 are the submenus of the row that opened the Popup.",
+          "required": false,
+          "min": null,
+          "max": null,
+          "step": null,
+          "unit": null
+        }
+      },
+      "root_block": "FlexBox",
+      "events": [
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
+      ],
+      "common_keys": [
+        "Key",
+        "Visible",
+        "Enabled",
+        "Width",
+        "Height",
+        "Min_Width",
+        "Min_Height",
+        "Max_Width",
+        "Max_Height",
+        "Aspect_Ratio",
+        "Margin",
+        "Flex_Grow",
+        "Flex_Shrink",
+        "Align_Self",
+        "Z_Index",
+        "Label",
+        "Tooltip_When_Disabled",
+        "A11y_Hidden",
+        "Opacity",
+        "Position",
+        "Left",
+        "Top",
+        "Right",
+        "Bottom",
+        "Translate_X",
+        "Translate_Y",
+        "Scale",
+        "Rotation",
+        "Clip_Children",
+        "Role",
+        "Description",
+        "Live"
+      ],
+      "actions": [
+        {
+          "name": "pick",
+          "doc": "A row was clicked: tell the application (``Event`` with ``clicked``); the menu closes. A row that opens a submenu (``submenu`` is its Popup) is only opened by the click.",
+          "args": [
+            {
+              "name": "id",
+              "required": true
+            },
+            {
+              "name": "service",
+              "required": true
+            },
+            {
+              "name": "path",
+              "required": true
+            },
+            {
+              "name": "submenu",
+              "required": false
+            }
+          ],
+          "kwargs": false
+        }
+      ]
+    },
     "Workspaces": {
       "doc": "The virtual desktops as buttons: the current one is marked, a click switches.",
       "params": {
@@ -24373,7 +25290,10 @@
       },
       "root_block": "FlexBox",
       "events": [
-        "On_Click"
+        "On_Click",
+        "On_Secondary_Click",
+        "On_Middle_Click",
+        "On_Scroll"
       ],
       "common_keys": [
         "Key",
@@ -24417,6 +25337,59 @@
           "kwargs": false
         }
       ]
+    }
+  },
+  "popups": {
+    "monitors": "every Monitor with a Bar, Panel or Frame that shows the module in shown_by, on each output it opens on, unless that Monitor writes a Popup of the same name (which replaces it whole)",
+    "popups": {
+      "Tray_Menu": {
+        "shown_by": "Tray",
+        "content": "Tray_Menu",
+        "attach": "BOTTOM",
+        "alignment": "START",
+        "gap": 4.0,
+        "max_height": {
+          "value": 60.0,
+          "unit": "%"
+        },
+        "doc": "The menu of a tray item: its entries, below the clicked icon."
+      },
+      "Tray_Menu_2": {
+        "shown_by": "Tray",
+        "content": "Tray_Menu",
+        "attach": "BOTTOM",
+        "alignment": "START",
+        "gap": 0,
+        "max_height": {
+          "value": 60.0,
+          "unit": "%"
+        },
+        "doc": "The submenu of a row of Tray_Menu."
+      },
+      "Tray_Menu_3": {
+        "shown_by": "Tray",
+        "content": "Tray_Menu",
+        "attach": "BOTTOM",
+        "alignment": "START",
+        "gap": 0,
+        "max_height": {
+          "value": 60.0,
+          "unit": "%"
+        },
+        "doc": "The submenu of a row of Tray_Menu_2."
+      },
+      "Audio_Outputs": {
+        "shown_by": "Audio",
+        "content": "Audio_Outputs",
+        "attach": "BOTTOM",
+        "alignment": "START",
+        "gap": 4.0,
+        "max_height": {
+          "value": 400,
+          "unit": "px"
+        },
+        "doc": "The list of sound outputs the Audio module's secondary click opens."
+      }
     }
   }
 }

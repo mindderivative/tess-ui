@@ -20,7 +20,7 @@ def command(fake, **kwargs):
 
 def test_the_schema_is_read_through_the_command(fake_shell):
     schema = command(fake_shell).schema()
-    assert schema.version_text == "1.1" and "Bar" in schema.roots
+    assert schema.version_text == "1.2" and "Bar" in schema.roots
     assert fake_shell.calls() == ["schema --json"]
 
 
@@ -42,9 +42,18 @@ def test_findings_come_back_with_file_line_column_rule_and_hint_even_when_the_co
 
 
 def test_status_keeps_what_the_shell_said_and_names_the_folder_when_it_does(fake_shell, tmp_path):
-    fake_shell.answer("status", {"config_dir": str(tmp_path / "cfg"), "running": True, "pid": 7})
+    fake_shell.answer("status", {"config_dir": str(tmp_path / "cfg"), "state": "running", "pid": 7})
     status = command(fake_shell).status()
     assert status.config_dir == str(tmp_path / "cfg") and status.running is True and status.raw["pid"] == 7
+
+
+def test_the_recorded_status_shapes_say_running_or_not(fake_shell):
+    fake_shell.answer("status", (RECORDED / "status_running.json").read_text())
+    running = command(fake_shell).status()
+    assert running.running is True and running.surfaces == ("Top_Bar",) and running.error == ""
+    fake_shell.answer("status", (RECORDED / "status_not_running.json").read_text(), fails=True)  # exit 3 with JSON: still an answer
+    stopped = command(fake_shell).status()
+    assert stopped.running is False and "no shell is running" in stopped.error and stopped.surfaces == ()
 
 
 def test_a_status_that_does_not_name_the_folder_yet_says_none(fake_shell):
@@ -64,7 +73,7 @@ def test_a_missing_command_is_a_message_naming_it(tmp_path, monkeypatch):
 
 def test_a_command_found_by_name_on_the_path_runs(fake_shell, monkeypatch):
     monkeypatch.setenv("PATH", f"{fake_shell.folder}{os.pathsep}/usr/bin{os.pathsep}/bin")  # the script itself needs cat and sleep
-    assert ShellCommand().schema().version_text == "1.1"
+    assert ShellCommand().schema().version_text == "1.2"
 
 
 def test_a_command_that_does_not_answer_in_time_is_a_message(fake_shell, tmp_path):

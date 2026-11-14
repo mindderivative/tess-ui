@@ -19,7 +19,7 @@ from typing import Any
 
 from tess_shell_config.schema import Schema
 
-__all__ = ["DEFAULT_COMMAND", "DEFAULT_TIMEOUT", "ShellCommandError", "ShellNotFound", "ShellTimeout", "ShellFailed", "Finding", "CheckResult", "Status",
+__all__ = ["DEFAULT_COMMAND", "DEFAULT_TIMEOUT", "ShellCommandError", "ShellNotFound", "ShellTimeout", "ShellFailed", "Finding", "CheckResult", "Status", "ReloadResult",
            "ShellCommand", "Offload"]
 
 DEFAULT_COMMAND = "tesserae-shell"
@@ -98,9 +98,46 @@ class Status:
 
     @property
     def running(self) -> bool | None:
-        """Whether a shell is running, when the status says so; `None` when it does not."""
-        value = self.raw.get("running")
-        return value if isinstance(value, bool) else None
+        """Whether a shell is running. The recorded shapes: a running shell answers `{"state": "running", ...}`; no shell is `{"ok": false, "error": "...", "exit": 3}`. Anything else says nothing (`None`)."""
+        state = self.raw.get("state")
+        if isinstance(state, str):
+            return state == "running"
+        if self.raw.get("ok") is False:
+            return False
+        return None
+
+    @property
+    def error(self) -> str:
+        """What the shell said when it is not running (`no shell is running (nobody owns the bus name)`), else empty."""
+        value = self.raw.get("error")
+        return str(value) if isinstance(value, str) else ""
+
+    @property
+    def surfaces(self) -> tuple[str, ...]:
+        """The names of the surfaces a running shell shows (`shown` true), for the status line."""
+        found = self.raw.get("surfaces")
+        return tuple(str(x.get("name")) for x in found if isinstance(x, Mapping) and x.get("shown")) if isinstance(found, list) else ()
+
+
+@dataclass(frozen=True)
+class ReloadResult:
+    """What `reload` said: it exits 0 after the shell applied the files, 1 with the errors it printed for a bad file, 3 when no shell is running. `message` is the last line it printed, for the status line."""
+
+    exit: int
+    output: str
+
+    @property
+    def ok(self) -> bool:
+        return self.exit == 0
+
+    @property
+    def not_running(self) -> bool:
+        return self.exit == 3
+
+    @property
+    def message(self) -> str:
+        lines = [line.strip() for line in self.output.splitlines() if line.strip()]
+        return lines[0] if lines else ("Reloaded." if self.ok else "The shell did not apply the files." if self.exit == 1 else "No shell is running." if self.not_running else f"reload exited with {self.exit}.")
 
 
 Runner = Callable[..., "subprocess.CompletedProcess[str]"]
@@ -149,18 +186,26 @@ class ShellCommand:
         data = self._json(["status", "--json"], "status --json")
         return Status(data if isinstance(data, Mapping) else {})
 
+    def reload(self) -> ReloadResult:
+        """`reload`: asks the running shell to apply the files now. Never raises for a non-zero exit (that is the answer); a missing command, a timeout or a command that cannot start is a `ShellCommandError`."""
+        done = self._start(["reload"], "reload")
+        return ReloadResult(done.returncode, "\n".join(part for part in (done.stdout, done.stderr) if part and part.strip()))
+
     # -- the process -------------------------------------------------------------------------------------------------------------
 
-    def _json(self, arguments: Sequence[str], what: str) -> Any:
+    def _start(self, arguments: Sequence[str], what: str) -> subprocess.CompletedProcess[str]:
         executable = self.resolve()
         try:
-            done = self._run([executable, *arguments], capture_output=True, text=True, timeout=self.timeout, env=self._env, check=False, stdin=subprocess.DEVNULL)
+            return self._run([executable, *arguments], capture_output=True, text=True, timeout=self.timeout, env=self._env, check=False, stdin=subprocess.DEVNULL)
         except FileNotFoundError:
             raise ShellNotFound(self.executable) from None
         except subprocess.TimeoutExpired:
             raise ShellTimeout(self.executable, what, self.timeout) from None
         except OSError as error:
             raise ShellFailed(f"{self.executable} {what} could not run: {error}") from None
+
+    def _json(self, arguments: Sequence[str], what: str) -> Any:
+        done = self._start(arguments, what)
         try:
             return json.loads(done.stdout)
         except ValueError:

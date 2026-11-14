@@ -18,7 +18,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
-from tess_dl import Block, Document, Property, Slot, Value
+from tess_dl import Block, Document, For, If, Property, Slot, Value
 
 from tess_shell_config.model import DocumentModel, EditError
 from tess_shell_config.schema import KeyInfo, ModuleInfo, ParamInfo, Schema, TokenInfo
@@ -79,6 +79,7 @@ class Found:
     value: Value | None = None
     block: Block | None = None
     key: str = ""
+    text: str | None = None
 
 
 class Store:
@@ -200,6 +201,34 @@ class TokenStore(Store):
         document = model.document
         found = self.read(document) if document is not None else Found()
         model.clear_nested_value(self.path, self.chain, found.key or self.leaf)
+
+
+@dataclass(frozen=True)
+class FlowStore(Store):
+    """One part of an `If` or `For`: the `condition`, or the `items`, `key` or `variable`. The node is found by its index path, which comes from `node.index_path` and is never counted by hand."""
+
+    path: IndexPath
+    part: str
+
+    def read(self, document: Document) -> Found:
+        try:
+            node = document.at(self.path)
+        except (IndexError, ValueError):
+            return Found()
+        if not isinstance(node, (If, For)):
+            return Found()
+        value = getattr(node, self.part, None)
+        if isinstance(value, Slot):
+            return Found(value=value, key=self.part)
+        if isinstance(value, str):
+            return Found(text=value, key=self.part)
+        return Found()
+
+    def write(self, model: DocumentModel, text: str) -> None:
+        model.set_flow(self.path, self.part, text)
+
+    def remove(self, model: DocumentModel) -> None:
+        raise EditError(f"A {'If' if self.part == 'condition' else 'For'} cannot be without its {self.part}.")
 
 
 # -- cells and rows ---------------------------------------------------------------------------------------------------------------
@@ -339,8 +368,10 @@ class Form:
         document, node = model.document, model.selected
         if document is None:
             view.notes.append("This file has syntax errors: fix them in the text view and the form returns.")
+        elif isinstance(node, (If, For)):
+            self._fill_flow(view, document, node)
         elif not isinstance(node, Block):
-            view.notes.append("Select a block in the structure: an If or For holds blocks but has no keys of its own." if node is not None else "Select a block in the structure to edit its keys.")
+            view.notes.append("Select a block in the structure to edit its keys.")
         else:
             self._fill(view, document, node, tuple(model.selection or ()))
         for row in view.rows:
@@ -349,6 +380,36 @@ class Form:
         view.items = self._items(view)
         self.view = view
         return view
+
+    FLOW_LABELS = {"condition": "Condition", "items": "In", "key": "Key", "variable": "Variable"}
+    FLOW_DOCS = {
+        "condition": "The expression that decides whether the body is built, written {{ ... }}.",
+        "items": "The list the For repeats over, written {{ ... }}.",
+        "key": "What tells one repeat from another, written {{ ... }}; the body is kept for an item as long as its key stays.",
+        "variable": "The name the body uses for one item. Only this word changes: its uses inside the {{ }} slots below are not renamed.",
+    }
+
+    def _fill_flow(self, view: FormView, document: Document, node: If | For) -> None:
+        """The rows of an `If` (its condition) or a `For` (its variable, list and key): one cell each, the node's own text, written back with `tess_dl`'s own edits."""
+        kind = type(node).__name__
+        view.title = kind
+        context = self._context()
+        path = tuple(node.index_path)
+        for part in DocumentModel.FLOW_PARTS[kind]:
+            key = KeyInfo(self.FLOW_LABELS[part], "", self.FLOW_DOCS[part], None, None, None, part != "variable", True, True, kind, (), ())
+            store = FlowStore(path, part)
+            cell_id = f"f:{part}|"
+            cell = Cell(cell_id, TdlWidget(key, context, "part of an If or For"), store, "", slot=False)
+            found = store.read(document)
+            if found.value is not None:
+                cell.present, cell.text, cell.is_slot, cell.expression = True, value_text(document, found.value), True, True
+            elif found.text is not None:
+                cell.present, cell.text, cell.tdl = True, found.text, True
+            cell.error = self.errors.get(cell_id, "")
+            view.rows.append(Row(f"f:{part}", key.name, key.doc, [cell], kind, key, True))
+        if kind == "For":
+            view.notes.append("Renaming the variable does not rename its uses inside the {{ }} slots of the body: change those yourself.")
+        view.notes.append("An If holds blocks; its Else body, if it has one, is under the Else node of the structure." if kind == "If" else "A For repeats its body for each item of the list.")
 
     def _context(self) -> Context:
         model = self._model

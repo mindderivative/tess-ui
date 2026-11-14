@@ -1,0 +1,5 @@
+{
+  "ok": false,
+  "error": "no shell is running (nobody owns the bus name)",
+  "exit": 3
+}

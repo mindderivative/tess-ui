@@ -541,7 +541,8 @@ def test_with_no_file_no_tree_or_no_block_selected_the_form_says_why(tmp_path, s
     r.model.select(None) if False else None
     if_node = next(n for n in walk(r.model.document.root) if type(n).__name__ == "If")
     r.model.select(if_node.index_path)
-    assert "an If or For holds blocks" in r.build().notes[0]
+    view = r.build()
+    assert view.title == "If" and [row.key.name for row in view.rows] == ["Condition"]
 
 
 # -- the registry ------------------------------------------------------------------------------------------------------------------

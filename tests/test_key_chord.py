@@ -39,6 +39,30 @@ def test_text_that_is_not_one_chord_is_not_read(text):
     assert key_chords.normalise(text) is None
 
 
+MEDIA = ["AudioRaiseVolume", "AudioLowerVolume", "AudioMute", "AudioMicMute", "AudioPlay", "AudioPause", "AudioStop", "AudioNext", "AudioPrev", "MonBrightnessUp", "MonBrightnessDown"]
+
+
+@pytest.mark.parametrize("name", MEDIA)
+def test_a_media_or_hardware_key_is_written_without_the_xf86_prefix_and_typed_either_way(name):
+    assert key_chords.normalise(name) == name
+    assert key_chords.normalise("XF86" + name) == name
+    assert key_chords.normalise("xf86" + name.lower()) == name
+    assert key_chords.normalise("Ctrl+Alt+XF86" + name) == "Ctrl+Alt+" + name
+
+
+@pytest.mark.parametrize("key, chord", [
+    ("audio_volume_up", "AudioRaiseVolume"), ("audio_volume_down", "AudioLowerVolume"), ("audio_volume_mute", "AudioMute"), ("microphone_volume_mute", "AudioMicMute"),
+    ("media_track_next", "AudioNext"), ("media_track_previous", "AudioPrev"), ("media_stop", "AudioStop"), ("brightness_up", "MonBrightnessUp"),
+])
+def test_recording_a_media_key_writes_the_x_name_without_the_prefix(key, chord):
+    assert key_chords.from_event(key) == chord and key_chords.from_event(key, shift=True) == "Shift+" + chord
+
+
+@pytest.mark.parametrize("text", ["XF86", "XF86Home", "XF86Foo", "XF86F1", "XF86Ctrl"])
+def test_the_prefix_belongs_to_media_names_only(text):
+    assert key_chords.normalise(text) is None
+
+
 def test_the_canonical_text_is_its_own_normal_form():
     for text in ("Ctrl+Alt+Shift+Meta+A", "Ctrl+Shift+F1", "Alt+Left", "PageDown", "Meta+Space", "Shift+Plus"):
         assert key_chords.normalise(text) == text
@@ -67,7 +91,7 @@ def test_a_bare_modifier_is_no_key_of_a_chord(key):
     assert key_chords.is_modifier_key(key) and key_chords.from_event(key, shift=True) is None
 
 
-@pytest.mark.parametrize("key", ["print_screen", "audio_volume_up", "foo", "f25", ""])
+@pytest.mark.parametrize("key", ["print_screen", "foo", "f25", ""])
 def test_a_key_no_chord_can_have_is_none(key):
     assert key_chords.from_event(key) is None and not key_chords.is_modifier_key(key)
 

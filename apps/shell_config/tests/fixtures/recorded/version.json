@@ -1,0 +1,8 @@
+{
+  "shell": "<shell>",
+  "tess_re": "<tess_re>",
+  "tess_el": "<tess_el>",
+  "tess_dl": "<tess_dl>",
+  "python": "<python>",
+  "config_dir": "<config_dir>"
+}

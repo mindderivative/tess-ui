@@ -1,0 +1,35 @@
+{
+  "state": "running",
+  "api_version": 1,
+  "version": {
+    "shell": "<shell>",
+    "tess_re": "<tess_re>",
+    "tess_el": "<tess_el>",
+    "tess_dl": "<tess_dl>",
+    "python": "<python>"
+  },
+  "monitors": [
+    {
+      "name": "Main",
+      "output": "<output>"
+    }
+  ],
+  "surfaces": [
+    {
+      "name": "Launcher",
+      "kind": "panel",
+      "shown": false,
+      "output": "<output>"
+    },
+    {
+      "name": "Top_Bar",
+      "kind": "bar",
+      "shown": true,
+      "output": "<output>"
+    }
+  ],
+  "modules": [
+    "Clock"
+  ],
+  "errors": []
+}

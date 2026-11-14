@@ -52,7 +52,8 @@ echo "$@" >> "$here/calls.log"
 case "$1" in
   schema) cat "$here/schema.json" ;;
   check) cat "$here/check.json"; [ -f "$here/check.fails" ] && exit 1; exit 0 ;;
-  status) cat "$here/status.json" ;;
+  status) cat "$here/status.json"; [ -f "$here/status.fails" ] && exit 3; exit 0 ;;
+  reload) cat "$here/reload.json" 2>/dev/null; [ -f "$here/reload.fails" ] && exit 3; exit 0 ;;
   *) echo "unknown command $1" >&2; exit 2 ;;
 esac
 """

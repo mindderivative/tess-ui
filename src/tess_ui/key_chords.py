@@ -2,10 +2,10 @@
 
 A chord is its modifiers, always in the order Ctrl, Alt, Shift, Meta, and then one key, last, the parts joined by `+`: `Ctrl+Shift+F1`, `Alt+Left`, `Meta+Space`, `Ctrl+A`. A named key is in title
 case (`Escape`, `Enter`, `Backspace`, `Tab`, `Space`, `Delete`, `Insert`, `Home`, `End`, `PageUp`, `PageDown`, `Left`, `Right`, `Up`, `Down`, and `Plus`, `Minus`, `Comma`, `Period` for the characters that
-are hard to write in a `+`-joined text), a function key is `F1` to `F24`, a letter is a capital and any other single character is itself.
+are hard to write in a `+`-joined text), a function key is `F1` to `F24`, a letter is a capital and any other single character is itself. The media and hardware keys are written with the X key names without the `XF86` prefix: `AudioRaiseVolume`, `AudioLowerVolume`, `AudioMute`, `AudioMicMute`, `AudioPlay`, `AudioPause`, `AudioStop`, `AudioNext`, `AudioPrev`, `MonBrightnessUp`, `MonBrightnessDown`.
 
 `normalise(text)` reads a chord written any way a person might (`ctrl+shift+f1`, `Control + Return`, `super+pgup`: any case, `Control`, `Option`, `Super`, `Win` and `Cmd` as modifier names, `Esc`, `Return`, `Del`,
-`PgUp` and the engine's own `arrow_left` as key names, spaces around the `+`) and returns the canonical text, or `None` when it is not a chord. `from_event(key, ...)` builds the chord for a key press as the engine reports
+`PgUp` and the engine's own `arrow_left` as key names, the media and hardware keys with or without the X prefix (`XF86AudioMute` is `AudioMute`), spaces around the `+`) and returns the canonical text, or `None` when it is not a chord. `from_event(key, ...)` builds the chord for a key press as the engine reports
 it. Both use the one table below, so what is recorded and what is typed come out the same.
 """
 
@@ -40,6 +40,18 @@ _NAMED_KEYS = {
     "up": "Up", "arrowup": "Up",
     "down": "Down", "arrowdown": "Down",
     "plus": "Plus", "minus": "Minus", "comma": "Comma", "period": "Period",
+    # media and hardware keys, written with the X key names without their `XF86` prefix; the engine's own names for them (`audio_volume_up`, `media_play_pause`, ...) are read too
+    "audioraisevolume": "AudioRaiseVolume", "audiovolumeup": "AudioRaiseVolume",
+    "audiolowervolume": "AudioLowerVolume", "audiovolumedown": "AudioLowerVolume",
+    "audiomute": "AudioMute", "audiovolumemute": "AudioMute",
+    "audiomicmute": "AudioMicMute", "microphonevolumemute": "AudioMicMute",
+    "audioplay": "AudioPlay", "mediaplay": "AudioPlay",
+    "audiopause": "AudioPause", "mediapause": "AudioPause",
+    "audiostop": "AudioStop", "mediastop": "AudioStop",
+    "audionext": "AudioNext", "mediatracknext": "AudioNext",
+    "audioprev": "AudioPrev", "mediatrackprevious": "AudioPrev",
+    "monbrightnessup": "MonBrightnessUp", "brightnessup": "MonBrightnessUp",
+    "monbrightnessdown": "MonBrightnessDown", "brightnessdown": "MonBrightnessDown",
 }
 
 #: The names of keys that are only modifiers (or locks), which the engine reports as keys of their own: pressing one does not finish a chord. The `_left` and `_right` forms are the same keys.
@@ -48,6 +60,16 @@ _MODIFIER_KEYS = frozenset({"shift", "control", "ctrl", "alt", "altgr", "altgrap
 
 def _squash(name: str) -> str:
     return name.lower().replace("_", "").replace("-", "").replace(" ", "")
+
+
+def _named(name: str) -> str | None:
+    """The canonical named key for `name`; the X key names are read with or without their `XF86` prefix, and written without it."""
+    squashed = _squash(name)
+    if squashed.startswith("xf86") and squashed[4:] in _NAMED_KEYS:
+        squashed = squashed[4:]
+        if not squashed.startswith(("audio", "monbrightness")):
+            return None  # `XF86Home` is not a thing: only the media and hardware names take the prefix
+    return _NAMED_KEYS.get(squashed)
 
 
 def is_modifier_key(name: str) -> bool:
@@ -86,8 +108,9 @@ def canonical_key(name: str) -> str | None:
     if len(name) == 1 and name.isprintable():
         return name.upper()
     squashed = _squash(name)
-    if squashed in _NAMED_KEYS:
-        return _NAMED_KEYS[squashed]
+    named = _named(name)
+    if named is not None:
+        return named
     if squashed.startswith("f") and squashed[1:].isdigit() and 1 <= int(squashed[1:]) <= 24 and squashed[1:] == str(int(squashed[1:])):
         return f"F{int(squashed[1:])}"
     return None

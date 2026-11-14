@@ -1,4 +1,4 @@
-"""The schema reader: the recorded schema 1.1 reads into typed classes, an unknown major version is refused, a higher minor is tolerated, no key name is in the code."""
+"""The schema reader: the recorded schema 1.2 reads into typed classes, an unknown major version is refused, a higher minor is tolerated, no key name is in the code."""
 
 import copy
 import json
@@ -13,7 +13,7 @@ SOURCE = Path(tess_shell_config.__file__).parent
 
 
 def test_the_recorded_schema_reads_into_every_table(schema, schema_data):
-    assert schema.version == (1, 1) and schema.version_text == "1.1"
+    assert schema.version == (1, 2) and schema.version_text == "1.2"
     assert list(schema.kinds) == list(schema_data["kinds"])
     assert list(schema.roots) == list(schema_data["roots"])
     assert list(schema.blocks) == list(schema_data["blocks"])
@@ -22,6 +22,24 @@ def test_the_recorded_schema_reads_into_every_table(schema, schema_data):
     assert {g: len(t) for g, t in schema.tokens.items()} == {g: len(t) for g, t in schema_data["tokens"].items()}
     assert len(schema.events) == len(schema_data["events"]) and len(schema.actions) == len(schema_data["actions"])
     assert schema.enums["Edge"] == tuple(schema_data["enums"]["Edge"])
+
+
+def test_the_popups_section_of_schema_1_2_is_typed_and_its_fields_are_keys_of_the_popup_root(schema, schema_data):
+    raw = schema_data["popups"]["popups"]
+    assert list(schema.popups) == list(raw) and schema.popup_note == schema_data["popups"]["monitors"] and "popups" not in schema.extra
+    tray = schema.popups["Tray_Menu"]
+    assert (tray.shown_by, tray.content) == ("Tray", "Tray_Menu") and tray.values["max_height"] == {"value": 60.0, "unit": "%"}
+    walked = list(schema.walk_popups())
+    assert walked and all(key is not None for _, _, key in walked), [(p, f) for p, f, k in walked if k is None]
+    # Max_Height accepts a percent
+    height = next(key for _, name, key in walked if name == "max_height")
+    assert height.kind == "length" and "%" in height.units
+
+
+def test_a_schema_1_1_has_no_popups(schema_data):
+    old = {k: v for k, v in schema_data.items() if k != "popups"} | {"schema_version": "1.1"}
+    read = Schema.from_data(old)
+    assert read.popups == {} and read.popup_note == "" and read.version == (1, 1)
 
 
 def test_a_key_carries_its_kind_default_doc_and_hints(schema, schema_data):
@@ -45,7 +63,7 @@ def test_every_key_of_the_schema_reads_with_its_range_hints(schema, schema_data)
                     assert info.minimum == raw.get("min") and info.maximum == raw.get("max") and info.step == raw.get("step") and info.unit == raw.get("unit")
                     assert info.tokens == tuple(raw["tokens"]) and info.preferred_tokens == tuple(raw["preferred_tokens"])
                     assert set(info.extra) == set(raw) - {"kind", "choices", "enum", "default", "doc", "slot", "required", "built", "group", "tokens", "preferred_tokens"}
-    assert seen == 1017
+    assert seen == 1030
 
 
 def test_a_module_has_params_events_and_common_keys(schema, schema_data):
@@ -53,7 +71,7 @@ def test_a_module_has_params_events_and_common_keys(schema, schema_data):
     assert button.root_block == schema_data["modules"]["Button"]["root_block"]
     assert list(button.params) == list(schema_data["modules"]["Button"]["params"])
     assert button.params["Text"].kind == "string" and button.common_keys[0] == "Key"
-    assert sum(len(m.params) for m in schema.modules.values()) == 80
+    assert sum(len(m.params) for m in schema.modules.values()) == 96
 
 
 def test_the_tokens_a_key_accepts_are_its_groups_with_the_preferred_ones_first(schema):
@@ -124,4 +142,4 @@ def test_the_code_writes_no_key_name_or_enum_value_of_the_schema(schema):
 
 
 def test_the_recorded_file_is_the_schema_the_shell_exports(schema_text):
-    assert json.loads(schema_text)["schema_version"] == "1.1"
+    assert json.loads(schema_text)["schema_version"] == "1.2"

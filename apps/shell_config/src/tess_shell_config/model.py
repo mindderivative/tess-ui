@@ -63,6 +63,7 @@ class DocumentModel:
         self._history: list[Snapshot] = [Snapshot(text, parsed.document, parsed.errors, () if parsed.valid else None, "open")]
         self._at = 0
         self._saved = text
+        self._disk: bytes = encode(text)
 
     @classmethod
     def from_bytes(cls, raw: bytes, path: str | Path | None = None, *, relative: str | None = None) -> DocumentModel:
@@ -132,6 +133,16 @@ class DocumentModel:
     def mark_saved(self) -> None:
         """The text now on disk is the current text."""
         self._saved = self.text
+        self._disk = self.data
+
+    @property
+    def disk_bytes(self) -> bytes:
+        """The bytes this model last read from the file or wrote to it (or that the person chose to keep over): what the file on disk is expected to hold. A different content on disk is a change by another program."""
+        return self._disk
+
+    def keep_over(self, raw: bytes) -> None:
+        """The file on disk holds `raw`, which the person chose to keep this model's text over: that content is now the expected one, so the same change does not ask again."""
+        self._disk = raw
 
     def adopt_disk(self, raw: bytes) -> None:
         """The file was changed on disk and the person chose to reload: its bytes are the new first state. The history starts over."""
@@ -143,6 +154,7 @@ class DocumentModel:
         self._history = [Snapshot(text, parsed.document, parsed.errors, () if parsed.valid else None, "open")]
         self._at = 0
         self._saved = text
+        self._disk = raw
 
     # -- selection ---------------------------------------------------------------------------------------------------------------
 
@@ -208,6 +220,20 @@ class DocumentModel:
             block = found
         target = block
         self._edit(lambda: target.without_property(key), selection=self.selection)
+
+    #: What `set_flow` can change, by the node it belongs to.
+    FLOW_PARTS = {"If": ("condition",), "For": ("variable", "items", "key")}
+
+    def set_flow(self, path: IndexPath, part: str, text: str) -> None:
+        """Change one part of the `If` or `For` at `path`: `condition` of an `If`; `items`, `key` (slots, written with their braces: `{{ ... }}`) or `variable` (a name) of a `For`. Only the
+        bytes of that part change. `tess_dl` refuses text that is not exactly one slot, or a name that is not one; the file is then unchanged and the message says why. Renaming `variable`
+        does not rename its uses inside the slots below."""
+        node = self.node_at(path)
+        kind = type(node).__name__
+        if part not in self.FLOW_PARTS.get(kind, ()):
+            raise EditError(f"A {kind} has no {part} to edit.")
+        method = {"condition": "with_condition", "items": "with_items", "key": "with_key", "variable": "with_variable"}[part]
+        self._edit(lambda: getattr(node, method)(text), selection=tuple(path))
 
     def add_block(self, parent: IndexPath, block_text: str, index: int | None = None, *, select: bool = False) -> IndexPath:
         """Add the block written in `block_text` to the block at `parent`, at entry `index` (`None`: last). Returns the new block's index path. The selection stays on the block
@@ -523,5 +549,7 @@ def _find_moved(document: Document, parent_path: IndexPath, child: object, befor
 def _why(error: tess_dl.TDLError) -> str:
     origin = getattr(error, "origin", None)
     where = f" (line {origin.line} of the new block)" if origin is not None and getattr(origin, "file", "") == "<block_text>" else ""
+    if origin is not None and getattr(origin, "file", "") == "<slot_text>":
+        where = f" (column {origin.column} of what you wrote)"
     hint = getattr(error, "hint", "")
     return f"{getattr(error, 'message', error)}{where}" + (f" {hint}." if hint else "")
