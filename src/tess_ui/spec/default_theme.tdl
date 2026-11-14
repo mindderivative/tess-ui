@@ -1,0 +1,125 @@
+---
+TDL: 0.1
+Name: default_theme
+Tesserae: "0.6"
+---
+# Tesserae's copy of tess_re's shipped default theme (crates/engine-py/assets/
+# default_theme.yaml at v0.3.4), the default-theme layer of the cascade
+# when an app gives none. `tess_re` removes its copy with theming in 0.3.5.
+# M49 Phase 4: the engine's own shipped default theme -- the MD3
+# specification is just the default setting (the user's own words),
+# expressed here as real, editable data instead of being invisible.
+# (That was tess_re's note; in Tesserae) loaded automatically by `View` whenever a caller
+# doesn't supply their own `default_theme` path -- a caller who *does*
+# supply one replaces this file entirely (as a *default*, not merged
+# with it); `custom_theme` is the usual way to override just a few
+# things while keeping the rest of whichever default is active.
+#
+# `colors:` is deliberately empty here -- the seed-derived ColorScheme
+# (`DynamicTheme::from_seed`) already supplies every real MD3 role;
+# this file only supplies per-widget-kind default *styles* for the
+# declarative `kind:` surface (`Rect`/`Container`/`Checkbox`/`Slider`/
+# `TextField`/`Image`/`Text` -- `engine-spec`'s own `NodeKindSpec`).
+# Corner-radius values are drawn from the real MD3 shape scale
+# (`engine_md3::shape` -- `SHAPE_NONE`/`SHAPE_EXTRA_SMALL`/`SHAPE_SMALL`),
+# not invented ad hoc.
+Theme {
+  Styles {
+    Item {
+      Kind: Rect
+      Style { Corner_Radius: 0 }
+    }
+    Item {
+      Kind: Container
+      Style { Corner_Radius: 0 }
+    }
+    Item {
+      Kind: Checkbox
+      Style { Corner_Radius: 2 }
+    }
+    Item {
+      Kind: Slider
+      Style { Corner_Radius: 8 }
+    }
+    Item {
+      Kind: TextField
+      Style { Corner_Radius: 4 }
+    }
+  }
+
+  # M50: shape/elevation defaults for the imperative MD3 catalog
+  # (`Window.add_button`/`add_fab`/etc., `engine-py::window_factory.rs`)
+  # -- every value below is copied byte-for-byte from that file's own
+  # real Rust `const`s (verified by direct read before writing this,
+  # not recalled from memory), so a `Window` that never sets a theme,
+  # or calls `set_theme` with no `custom_theme`, sees zero behavior
+  # change from before this milestone.
+  #
+  # **Real, deliberate omission, not an oversight:** `button`/
+  # `icon_button`/`segmented_button`/`toolbar`/`button_group.tightened`
+  # have NO entry here at all, because their real default corner radius
+  # is a *formula* over a caller-supplied dimension (`height`/`size`),
+  # not a fixed number -- e.g. `add_button`'s own real default is
+  # `height / 2.0`, which must keep scaling with whatever `height` a
+  # caller passes. Baking in one fixed number for these would silently
+  # override that scaling for every call that doesn't happen to match
+  # whatever number was chosen, a real behavior change, not a neutral
+  # default. Leaving them with no entry is what correctly preserves
+  # their existing formula (`ThemeState::shape` returns `None`, so each
+  # factory's own real fallback computation still runs).
+  Components {
+    Card {
+      Corner_Radius: 12
+      Elevated { Elevation: 1 }
+    }
+    Chip { Corner_Radius: 8 }
+    Tooltip { Corner_Radius: 4 }
+    Dialog { Corner_Radius: 28, Elevation: 3 }
+    Snackbar { Corner_Radius: 4, Elevation: 3 }
+    Popover { Corner_Radius: 12, Elevation: 2 }
+    Side_Sheet {
+      Corner_Radius: 16
+      Modal { Elevation: 1 }
+    }
+    Navigation_Drawer {
+      Corner_Radius: 16
+      Modal { Elevation: 1 }
+      Indicator { Corner_Radius: 28 }
+    }
+    Navigation_Rail {
+      Indicator { Corner_Radius: 16 }
+    }
+    Search_Bar { Corner_Radius: 28, Elevation: 3 }
+    Search_View { Corner_Radius: 28, Elevation: 3 }
+    Date_Picker_Day { Corner_Radius: 24 }
+    Time_Input_Field { Corner_Radius: 8 }
+    Period_Selector { Corner_Radius: 8 }
+    Spin_Box { Corner_Radius: 8 }
+    # M58: narrowed scope, not a value change -- this now covers only
+    # `add_pagination`'s own numbered page items. `previous`/`next` used
+    # to share this same key too (a real, confirmed inconsistency with
+    # every other icon-button-shaped element in this catalog); they now
+    # consult `icon_button` instead, which deliberately has no entry here
+    # (see the formula-based-default note above), so they fall to their
+    # own real `PAGE_ITEM_SIZE / 2.0` default unless a theme sets one.
+    Pagination { Corner_Radius: 20 }
+    Tabs {
+      Indicator { Corner_Radius: 3 }
+    }
+    Badge {
+      Dot { Corner_Radius: 3 }
+      Labeled { Corner_Radius: 8 }
+    }
+    Fab {
+      Elevation: 3
+      Small { Corner_Radius: 12 }
+      Default { Corner_Radius: 16 }
+      Large { Corner_Radius: 28 }
+    }
+    Extended_Fab { Corner_Radius: 16, Elevation: 3 }
+    Split_Button {
+      Tightened { Corner_Radius: 8 }
+    }
+    Graph_Node { Corner_Radius: 12 }
+  }
+}

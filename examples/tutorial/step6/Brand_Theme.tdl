@@ -1,0 +1,11 @@
+---
+TDL: 0.1
+Name: Brand
+Tesserae: "0.6"
+---
+Theme {
+  Seed: "#0B6B58"
+  Typography {
+    Headline_Medium { Font_Weight: 600 }
+  }
+}

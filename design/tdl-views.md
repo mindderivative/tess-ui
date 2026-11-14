@@ -102,3 +102,37 @@ Entry points: `load_marked_tdl(text, file, resolver=None)` and `load_tdl_file(pa
 - **Pair loops.** `for: i, it in enumerate(items)` is written `For i_it In <| enumerate(items) |> Key <| ... |>` (the names joined by `_`) with `# TODO tuple for-target: i, it in enumerate(items)` above the `For`, and reported (file, line of the `for:`, original text, rewrite, and that the body still uses the second name and must use `i_it[0]`, `i_it[1]`). The converter never rewrites the body.
 - **Refused**, with file, line and what to write: a key that is not lower snake_case or is `if`/`else`/`for` (or a block named `in`/`key`), a widget name that cannot head a block, an anchor or alias, a value that is not text, a number, yes/no or null (a YAML date), a list of lists or a list that mixes maps and text, `key:` without `for:`, a `for:` that is not `name in expression`, an expression that has `|>` or a line end, a view in the older syntax (`kind:`; run `tesserae migrate-yaml`), a series line that is not the current one.
 - **Files.** A dry run lists what would be converted and writes nothing; `--write` writes `<Name>_View.tdl` beside the YAML (only when it differs: a second run is `current` and touches nothing); a differing `.tdl` is replaced only with `--write`; the YAML stays unless `--remove-source` (with `--write`) and then only for the files written or already current. Stylesheets, themes and components found under PATH are skipped with a note (pieces 4 and 5). Exit code 1 when a file failed, 2 for a wrong argument. Python 3.14 (`tess_dl`) is needed, and the command says so when it is missing.
+
+## What piece 5 decided (themes: `src/tess_ui/spec/tdl_theme.py`, `src/tess_ui/migrate_tdl_theme.py`)
+Evidence: every theme the repository has (8 `Brand_Theme.yaml` in the examples, all the same file, and Tesserae's own `src/tess_ui/spec/default_theme.yaml`, which has comments, a `styles:` list and dotted component keys) and a synthetic theme with every key the loader takes (`seed`, `dark`, `colors`, `typography` with all five fields, `components` with both fields and variants, `styles`).
+```
+---
+TDL: 0.1
+Name: Brand
+Tesserae: "0.6"
+---
+Theme {
+  Seed: "#0B6B58"
+  Dark: false
+  Colors { Tertiary: "#C2410C" }
+  Typography {
+    Body_Large { Font_Family: Inter, Font_Size: 17 }
+  }
+  Components {
+    Card {
+      Corner_Radius: 12
+      Elevated { Elevation: 1 }
+    }
+  }
+}
+```
+- **File and root.** `<Name>_Theme.tdl` beside `<Name>_Theme.yaml`; Tesserae's `default_theme.yaml` becomes `default_theme.tdl` (the command takes both names; `Name` is the file name without `.yaml` and without `_Theme`). The root is one `Theme { }` block, anything else is an error at its line. `Name` and `Tesserae` are the metadata as in a view; `Tesserae` is optional as the first line is.
+- **The mapping is a plain dict.** A YAML theme has no position maps, so `load_theme_tdl(text, file)` returns what `yaml.safe_load` + marker strip gives (`seed`, `dark`, `colors`, `typography`, `components`, `styles`); `load_marked_theme_tdl` returns the same as `PMap`s with positions for a pointed error. `load_theme_tdl_file(path)` is `load_theme` for a TDL file: it also expands a rule's `style: X_Style.yaml`, runs `check_theme` and the font check and names the file in its `ValueError`s.
+- **Keys** are `Title_Case` as everywhere (`on_primary` is `On_Primary`, `body_large` is `Body_Large`). `Seed` and `Dark` are properties; `Colors`, `Typography`, `Components`, `Styles` are blocks. A key a theme does not have (`Colours`) is an error at the key with the loader's wording, `unknown field ..., expected one of ...`, and a "did you mean".
+- **Colours are quoted strings.** `Seed: "#0B6B58"`, `Primary: "#FF000080"`; a bare `#` is `tess_dl`'s error `This colour needs quotes` with the line and column. A role name (`Tertiary: primary`), a token (`Elevation: level_2`) and a family (`Font_Family: Inter`) are words and need no quotes; text with a space is quoted. Numbers, `true`/`false` and `null` keep their types (`Font_Size: 17` is an int, `Tracking: -0.25` a float).
+- **Typography** is `Typography { Role { Field: value } }`, roles and fields `Title_Case`, plain maps (a one-line YAML `{a: 1}` stays one line up to 150 columns).
+- **Components.** A component key with a dot (`card.elevated`) cannot be a TDL key, so a variant is a block inside its component: `Card { Corner_Radius: 12, Elevated { Elevation: 1 } }` is `card` and `card.elevated`; a block holds the component's fields (properties) and its variants (blocks, to any depth: `Split_Button { Tightened { Pressed { ... } } }` is `split_button.tightened.pressed`); a component with variants and no fields is just its variants. A property directly in `Components` is the key as written, so the loader says what is wrong with it. Limits: **the order of a component's own key and its variants is normalised** (the own key first: `card.elevated` before `card` is read back as `card`, `card.elevated`; the dict is equal, and a component lookup is by key); an empty own mapping next to variants (`card: {}` and `card.elevated`) has no form and is refused, not dropped.
+- **`Styles`** (a theme's own rule list, the older `kind`/`classes`/`id` shape that the docs say is not how a view is styled now) is the generic list of maps of a view: `Styles { Item { Kind: Rect, Style { Corner_Radius: 0 } } }`. Piece 4 may give stylesheets a `Rule` block; the theme's list stays `Item` until the cutover decides (it is the only shipped use, `default_theme.yaml`).
+- **Comments, blank lines, key order and layout** are kept as in piece 2 (the same machinery: own-line comments go above the entry that follows, an end-of-line comment stays on the entry that began there, the header comments above `Theme {`); a trailing comment of a block head (`Card {  # round`) stays on the head. Every result is read back through `load_theme_tdl` and compared (types and all) with the YAML mapping before it counts; a form with no TDL form is a `ConvertError` with the YAML line. An unknown top-level key is refused at its line.
+- **Command.** `tesserae migrate-tdl` now also converts `*_Theme.yaml` and `default_theme.yaml` (a file named on the command line or found under a folder), same flags and exit codes, same `current`/`converted`/`failed` report; the hook is a branch in `migrate_tdl.migrate_tdl` that calls `migrate_tdl_theme.theme_result`.
+- **Not decided / not done.** Nothing loads `.tdl` themes yet (piece 6 does discovery; `load_theme_tdl_file` is the function the loader calls then); `Modes`-style columns do not exist in tess-ui themes (they are the shell's), so there is nothing to carry.

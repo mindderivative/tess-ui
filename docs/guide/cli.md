@@ -93,8 +93,12 @@ joins the names (`For i_item In <| enumerate(items) |> ...`), with a `# TODO tup
 report with its file and line. The loop's body still uses `i` and `item`: change it by hand to `i_item[0]` and `i_item[1]`.
 
 Running it again changes nothing. It never replaces a file that differs without `--write`; the YAML is kept unless `--remove-source` is given with `--write`, and
-then it is deleted only for the files that were written (or already current). Stylesheets (`*_Stylesheet.yaml`), themes and components are skipped with a note. The
+then it is deleted only for the files that were written (or already current). Stylesheets (`*_Stylesheet.yaml`) and components are skipped with a note. The
 exit code is 1 if any file failed and 2 for a wrong argument. The command needs the `tess_dl` package, which needs Python 3.14.
+
+A theme (`*_Theme.yaml`, and Tesserae's own `default_theme.yaml`) is written as `*_Theme.tdl` (`default_theme.tdl`) the same way: a root `Theme { }` with `Seed`, `Dark`,
+`Colors { }`, `Typography { }` and `Components { }`; a colour is quoted (`Seed: "#0B6B58"`); a component key with a dot is a block inside its component
+(`card.elevated` is `Card { Elevated { Elevation: 1 } }`).
 
 ## Build an executable
 
