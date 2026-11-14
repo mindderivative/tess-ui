@@ -101,16 +101,23 @@ DISABLED_OPACITY = 0.38
 _NUMBER_PROPS = {"width", "height", "padding", "gap", "opacity", "corner_radius", "border_width", "elevation"}
 
 
+def _same_own(a: dict[str, Any], b: dict[str, Any]) -> bool:
+    """Whether two node specs are the same but for their children."""
+    return a.keys() == b.keys() and all(a[k] == b[k] for k in a if k != "children")
+
+
+# `handlers` and `a11y` too: they change focus, role and label (M39)
+_PROP_KEYS = ("kind", "classes", "style", "text", "image", "icon", "svg", "canvas", "scroll", "overlay", "virtual", "track", "stop_indicator", "buffer", "value", "error", "icons", "ticks", "value_indicator", "vertical", "size", "low", "high", "thickness", "two_bar", "contained", "wavy", "checked", "selected", "value", "hour", "minute",
+              "handlers", "a11y", "component_of", "min", "max", "step", "label", "x", "y",  # M57, M58, M60
+              "disabled",  # M70: a control's is its own
+              "visible",  # #259: a node's own
+              "spin", "dial", "colour", "hue", "files", "mind", "graph", "tooltip",  # a SpinBox's options, a dial's mode, a colour control's options and hue, a file browser's properties, a generated node's tooltip
+              "window_region")  # 0.3.0 M3
+
+
 def _props_equal(a: dict[str, Any], b: dict[str, Any]) -> bool:
     """`tess_re`'s `node_props_equal`, plus the state fields Tesserae builds from."""
-    # `handlers` and `a11y` too: they change focus, role and label (M39)
-    keys = ("kind", "classes", "style", "text", "image", "icon", "svg", "canvas", "scroll", "overlay", "virtual", "track", "stop_indicator", "buffer", "value", "error", "icons", "ticks", "value_indicator", "vertical", "size", "low", "high", "thickness", "two_bar", "contained", "wavy", "checked", "selected", "value", "hour", "minute",
-            "handlers", "a11y", "component_of", "min", "max", "step", "label", "x", "y",  # M57, M58, M60
-            "disabled",  # M70: a control's is its own
-            "visible",  # #259: a node's own
-            "spin", "dial", "colour", "hue", "files", "mind", "graph", "tooltip",  # a SpinBox's options, a dial's mode, a colour control's options and hue, a file browser's properties, a generated node's tooltip
-            "window_region")  # 0.3.0 M3
-    return all(a.get(k) == b.get(k) for k in keys)
+    return tuple(map(a.get, _PROP_KEYS)) == tuple(map(b.get, _PROP_KEYS))
 
 
 class View:
@@ -278,14 +285,7 @@ class View:
         if frames is not None:
             self._new_frames = {node_id for node_id, frame in frames.items() if self._frames.get(node_id) != frame}
             self._frames = dict(frames)
-        # All or nothing: build the new spec on the side first, so an error
-        # (a bad kind, colour or token) leaves the live tree as it was.
-        trial = Built(root=None)
-        trial.root = build_with(self.window, spec, scheme=self._scheme, layers=self._layers, frames=self._frames,
-                                into=trial, listen=Listeners().listen)
-        for control in trial.controls.values():
-            control.dispose()
-        trial.root.destroy()
+        self._validate(self._spec, spec)
         old = self._spec
         if spec.get("id") != old.get("id") or not self._same_shape(old, spec):
             parent = self._built.root.parent()
@@ -306,6 +306,47 @@ class View:
         self._sync_docks()
         self._sync_embeds()
         self._window_changed()
+
+    def _validate(self, old: dict[str, Any], new: dict[str, Any]) -> None:
+        """All or nothing: builds on the side what `reconcile` is about to build or patch, so an error (a bad kind, colour or token) leaves the live
+        tree as it was. Only what could fail differently from the last build is built: a node that is new or rebuilt (with its subtree), a node whose
+        own spec changed (a copy without its children), the children of a node whose change moved the layout they are built in, and a `Dock` or
+        `NodeGraph` whose subtree changed (whole: its panels and edges are checked together). A node whose spec is the one already built, under a
+        parent that lays it out as before, would be the same build again, and the cost of a sync is the cost of what changed."""
+        trial = Built(root=None)
+        listen = Listeners().listen
+
+        def build(node: dict[str, Any], parent_id: Optional[str]) -> None:
+            build_with(self.window, node, scheme=self._scheme, layers=self._layers, frames=self._frames, into=trial, listen=listen, parent=parent_id)
+
+        def visit(previous: Optional[dict[str, Any]], node: dict[str, Any], parent_id: Optional[str], relaid: bool) -> None:
+            if previous is None or previous.get("id") != node.get("id") or not self._same_shape(previous, node):
+                build(node, parent_id)
+                return
+            if node.get("dock") is not None or node.get("kind") == "NodeGraph":
+                if relaid or previous != node or node["id"] in self._new_frames:
+                    build(node, parent_id)
+                return
+            changed = not _same_own(previous, node)
+            if changed or relaid or node["id"] in self._new_frames:
+                build({**node, "children": []}, parent_id)
+            if not node.get("children"):
+                return
+            node_id = node["id"]
+            trial.specs[node_id] = node  # the layout its children are built in
+            moved = changed and layout_of(previous, self._layers) != layout_of(node, self._layers)
+            before = {c.get("id"): c for c in previous.get("children") or []}
+            for child in node["children"]:
+                visit(before.get(child.get("id")), child, node_id, moved)
+
+        try:
+            visit(old, new, None, False)
+        finally:
+            for control in trial.controls.values():
+                control.dispose()
+            roots = [node for node in trial.outer.values() if node.parent() is None]
+            for node in roots:
+                node.destroy()
 
     def _window_changed(self) -> None:
         """A window view that was edited while the app runs sets the OS window again (its title, borderless, sizes)."""
@@ -1141,11 +1182,31 @@ def _alive(node: Any) -> bool:
     return True
 
 
+def _copy_spec(value: Any, memo: dict[int, Any]) -> Any:
+    """`copy.deepcopy` for a spec (dicts, lists and scalars), with its memo: what two places share, the copy shares too. Anything else is `deepcopy`'s."""
+    kind = type(value)
+    if kind is str or kind is int or kind is float or kind is bool or value is None:
+        return value
+    done = memo.get(id(value))
+    if done is not None:
+        return done
+    if kind is dict:
+        done = memo[id(value)] = {}
+        for key, item in value.items():
+            done[key] = _copy_spec(item, memo)
+        return done
+    if kind is list:
+        done = memo[id(value)] = []
+        done.extend([_copy_spec(item, memo) for item in value])
+        return done
+    return copy.deepcopy(value, memo)
+
+
 def _expanded(spec: Any) -> Any:
     """`spec` with its `Window`, `Dock`, `TitleBar` and `view:` nodes expanded: a copy, made once (each expander would otherwise copy the whole spec again, and a window of a few hundred nodes is copied four times on every sync)."""
     if not isinstance(spec, dict):
         return spec
-    spec = copy.deepcopy(spec)
+    spec = _copy_spec(spec, {})
     return expand_embeds(expand_title_bars(expand_docks(expand_windows(spec, copy_spec=False), copy_spec=False), copy_spec=False), copy_spec=False)
 
 

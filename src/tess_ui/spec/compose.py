@@ -325,12 +325,21 @@ class Instance:
                 handler.statements.run(scope, event=payload)
 
     def walk(self) -> Iterator["Instance"]:
+        """This instance and every one below it, parts first and then children, each in turn (a stack of one generator per level: a nested `yield from` costs its depth on every instance)."""
         yield self
+        stack = [self._below()]
+        while stack:
+            for inst in stack[-1]:
+                yield inst
+                stack.append(inst._below())
+                break
+            else:
+                stack.pop()
+
+    def _below(self) -> Iterator["Instance"]:
         for sub in self.parts.values():
-            for inst in sub:
-                yield from inst.walk()
-        for child in self.children:
-            yield from child.walk()
+            yield from sub
+        yield from self.children
 
     def _refresh(self) -> None:
         new = [inst for region in self._regions for inst in region.instances]
