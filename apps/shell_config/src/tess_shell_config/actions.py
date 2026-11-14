@@ -141,7 +141,12 @@ class StructureActions:
         schema = self.vm.session.schema
         node = model.selected
         assert schema is not None and isinstance(node, Block)
-        options = [{"value": c.type, "label": c.type, "hint": c.doc + (" (a module)" if c.module else ""), "colour": ""} for c in children_of(schema, node.type)]
+        present = {e.type.lower() for e in node.entries if isinstance(e, Block)}
+        offered = [c for c in children_of(schema, node.type) if not (c.unique and c.type.lower() in present)]  # a block that may be there once is not offered again
+        if not offered:
+            self.vm._say(f"{label_of(node)} already has every block it may hold once.", error=True)
+            return
+        options = [{"value": c.type, "label": c.type, "hint": c.doc + (" (a module)" if c.module else ""), "colour": ""} for c in offered]
         self.vm.form.open_choice("add", f"Add to {label_of(node)}", options, hooks=self.picks)
 
     def _add_picked(self, type_name: str) -> None:
