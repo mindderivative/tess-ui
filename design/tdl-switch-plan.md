@@ -10,8 +10,8 @@ Decided by the maintainer on 2026-11-14 (he is the only user, so no compatibilit
 - Handlers are blocks of steps: `Set { Target: name, Value: {{ expr }} }` and `Call { Action: "name", Args: [...] }`; a step's value is one pure TEL expression. Steps run in order and each sees the earlier writes. Targets are plain names.
 - TEL stays a pure expression language and is not changed. tess-ui's `expr.py` moves to TEL in its own track (piece 11).
 - `tesserae: 0.6` becomes a metadata line `Tesserae: "0.6"`; comments are kept (`#`).
-- Key casing: **lower snake_case is kept** for view, style and theme keys (open decision until piece 0 is ticked; the shell's own files use `Title_Case`).
-- Tuple `for` targets (`i, it in enumerate(items)`, 10 uses): decided in piece 0.
+- Key casing (maintainer, 2026-11-14): **`Title_Case`** for keys of views, styles and themes, as the shell's files. A block head that is a map key is Title_Case too (`Style`, `Handlers`, `Children`); a node block is headed by its widget name (also CamelCase), so a block's role is told by position (inside `Children`, a block is a node) and by the schema, not by letter case. Piece 0 writes the exact rules and the key conversion table (`typography_role` -> `Typography_Role`).
+- Tuple `for` targets (`i, it in enumerate(items)`, 10 uses; maintainer, 2026-11-14): the pair form is supported **later**, by TEL or TDL growing it. Until then the converter writes such a loop with a single variable and an `Index_And_Item` helper is NOT added; each of the 10 is listed in piece 2 with the rewrite used (e.g. iterate the list of `{index, item}` pairs built in the expression).
 - Python 3.14 becomes the minimum (`tess_dl` needs it). `tess_dl` stays pinned to a git SHA until it is published.
 
 ## Pieces
