@@ -101,7 +101,7 @@ def test_opening_a_file_shows_its_text_and_its_structure_with_if_and_for_as_node
     assert w.vm.text.get() == (folder / "Shells" / "Main_Shell.tdl").read_text() and w.vm.has_tree.get()
     labels = _labels(w.vm.structure_nodes.get())
     assert labels[0] == "Shell" and "Monitor  Primary" in labels and "Bar  Top_Bar" in labels and "Popup  Calendar_Popup" in labels
-    assert any(label.startswith("If {{ battery.present }}") for label in labels) and "Else" in labels and any(label.startswith("For item In") for label in labels)
+    assert any(label == "If battery.present" for label in labels) and "Else" in labels and any(label.startswith("For item In") for label in labels)
     assert w.vm.title.get() == "Shells/Main_Shell.tdl" and w.vm.selected_label.get() == "Selected: Shell"
     assert w.session.model.selection == ()
 

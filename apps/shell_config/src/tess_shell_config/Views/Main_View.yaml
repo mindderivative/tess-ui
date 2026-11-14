@@ -9,16 +9,16 @@ handlers: {on_key: "key_pressed(event.key, event.ctrl, event.shift, event.alt)"}
 children:
   - widget: Container
     name: toolbar
-    a11y: {role: group, label: Actions}
+    a11y: {role: group, label: Actions, description: "Save, undo, redo, format, check and reload the shell; Apply as I edit writes each change at once."}
     style: {flex_direction: horizontal, align_content: left, gap: 8, padding: 8, width: 100%}
     children:
-      - {widget: Button, name: save_button, label: Save, variant: filled, disabled: "{{ not dirty }}", handlers: {on_click: save}}
-      - {widget: Button, name: undo_button, label: Undo, variant: tonal, disabled: "{{ not can_undo }}", handlers: {on_click: undo}}
-      - {widget: Button, name: redo_button, label: Redo, variant: tonal, disabled: "{{ not can_redo }}", handlers: {on_click: redo}}
-      - {widget: Button, name: format_button, label: Format file, variant: outlined, disabled: "{{ not has_tree }}", handlers: {on_click: format_file}}
-      - {widget: Button, name: check_button, label: Check, variant: outlined, disabled: "{{ checking }}", handlers: {on_click: check_run}}
-      - {widget: Button, name: reload_button, label: Reload shell, variant: outlined, disabled: "{{ not shell_running }}", handlers: {on_click: shell_reload}}
-      - {widget: Switch, name: apply_switch, label: Apply as I edit, selected: "{{ apply_on_edit }}", a11y: {label: "Apply as I edit: write each change to the file and reload the running shell"}, handlers: {on_change: "apply_changed(apply_on_edit)"}}
+      - {widget: Button, name: save_button, label: Save, variant: filled, a11y: {label: Save, description: "Write the open file to disk and run check (Ctrl+S)"}, disabled: "{{ not dirty }}", handlers: {on_click: save}}
+      - {widget: Button, name: undo_button, label: Undo, variant: tonal, a11y: {label: Undo, description: "Undo the last edit of the open file (Ctrl+Z)"}, disabled: "{{ not can_undo }}", handlers: {on_click: undo}}
+      - {widget: Button, name: redo_button, label: Redo, variant: tonal, a11y: {label: Redo, description: "Redo the edit that was undone (Ctrl+Y)"}, disabled: "{{ not can_redo }}", handlers: {on_click: redo}}
+      - {widget: Button, name: format_button, label: Format file, variant: outlined, a11y: {label: Format file, description: "Lay the open file out with the formatter; never done unless you ask"}, disabled: "{{ not has_tree }}", handlers: {on_click: format_file}}
+      - {widget: Button, name: check_button, label: Check, variant: outlined, a11y: {label: Check, description: "Run the shell's check on the folder (F5)"}, disabled: "{{ checking }}", handlers: {on_click: check_run}}
+      - {widget: Button, name: reload_button, label: Reload shell, variant: outlined, a11y: {label: Reload shell, description: "Ask the running shell to reload its files (Ctrl+Shift+R)"}, disabled: "{{ not shell_running }}", handlers: {on_click: shell_reload}}
+      - {widget: Switch, name: apply_switch, label: Apply as I edit, selected: "{{ apply_on_edit }}", a11y: {label: Apply as I edit, description: "Write each change to the file at once and reload the running shell; off, nothing is written until Save (Ctrl+Shift+A)"}, handlers: {on_change: "apply_changed(apply_on_edit)"}}
       - {widget: Text, name: title, text: "{{ title }}", typography_role: title_small, max_lines: 1, overflow: ellipsis, style: {flex: expand_horizontal, min_width: 0}}
   - widget: Container
     name: panes
@@ -26,20 +26,20 @@ children:
     children:
       - widget: Container
         name: files_pane
-        a11y: {role: group, label: Files}
+        a11y: {role: group, label: Files, description: "The files of the configuration folder by type. Enter opens a file; New, Duplicate, Rename and Delete act on the chosen file."}
         style: {flex_direction: vertical, width: 200, gap: 4, background: surface_container_low, corner_radius: 12, padding: 8}
         children:
           - {widget: Text, name: files_heading, text: Files, typography_role: title_small}
           - {widget: Text, name: folder_text, text: "{{ folder }}", typography_role: body_small, max_lines: 1, overflow: ellipsis, style: {foreground: on_surface_variant}}
           - widget: Container
             name: files_actions
-            a11y: {role: group, label: File actions}
+            a11y: {role: group, label: File actions, description: "New file from a type, duplicate, rename and delete (to the trash folder) the chosen file."}
             style: {flex_direction: horizontal, align_content: left, gap: 0, width: 100%}
             children:
-              - {widget: IconButton, name: file_new_button, icon: plus, size: xs, label: "New file from a type (Ctrl+N)", handlers: {on_click: file_new}}
-              - {widget: IconButton, name: file_duplicate_button, icon: content_copy, size: xs, label: "Duplicate the file (Ctrl+Alt+D)", disabled: "{{ not can_file_duplicate }}", handlers: {on_click: file_duplicate}}
-              - {widget: IconButton, name: file_rename_button, icon: pencil, size: xs, label: "Rename the file (F2)", disabled: "{{ not can_file_rename }}", handlers: {on_click: file_rename}}
-              - {widget: IconButton, name: file_delete_button, icon: delete, size: xs, label: "Delete the file: it goes to the trash folder (Delete in the Files area)", disabled: "{{ not can_file_delete }}", handlers: {on_click: file_delete}}
+              - {widget: IconButton, name: file_new_button, icon: plus, size: xs, label: "New file from a type (Ctrl+N)", a11y: {label: "New file from a type", description: "New file from a type (Ctrl+N)"}, handlers: {on_click: file_new}}
+              - {widget: IconButton, name: file_duplicate_button, icon: content_copy, size: xs, label: "Duplicate the file (Ctrl+Alt+D)", a11y: {label: "Duplicate the file", description: "Duplicate the file (Ctrl+Alt+D)"}, disabled: "{{ not can_file_duplicate }}", handlers: {on_click: file_duplicate}}
+              - {widget: IconButton, name: file_rename_button, icon: pencil, size: xs, label: "Rename the file (F2)", a11y: {label: "Rename the file", description: "Rename the file (F2)"}, disabled: "{{ not can_file_rename }}", handlers: {on_click: file_rename}}
+              - {widget: IconButton, name: file_delete_button, icon: delete, size: xs, label: "Delete the file: it goes to the trash folder (Delete in the Files area)", a11y: {label: "Delete the file: it goes to the trash folder", description: "Delete the file: it goes to the trash folder (Delete in the Files area)"}, disabled: "{{ not can_file_delete }}", handlers: {on_click: file_delete}}
           - widget: ScrollView
             name: files_scroll
             style: {flex: expand_vertical, width: 100%, min_height: 0}
@@ -47,23 +47,23 @@ children:
               - {widget: Tree, name: files_tree, nodes: "{{ file_nodes }}", expanded: "{{ file_expanded }}", selected: "{{ file_selected }}", compact: true}
       - widget: Container
         name: structure_pane
-        a11y: {role: group, label: Structure}
+        a11y: {role: group, label: Structure, description: "The blocks of the open file as a tree. Arrow keys move, Enter selects; Alt+Up and Alt+Down move a block."}
         style: {flex_direction: vertical, width: 270, gap: 4, background: surface_container_low, corner_radius: 12, padding: 8}
         children:
           - {widget: Text, name: structure_heading, text: Structure, typography_role: title_small}
           - {widget: Text, name: selection_text, text: "{{ selected_label }}", typography_role: body_small, max_lines: 1, overflow: ellipsis, style: {foreground: on_surface_variant}}
           - widget: Container
             name: structure_actions
-            a11y: {role: group, label: Structure actions}
+            a11y: {role: group, label: Structure actions, description: "Add a child, remove, move, duplicate the selected block, or open the menu of these."}
             style: {flex_direction: horizontal, align_content: left, gap: 0, width: 100%}
             children:
-              - {widget: IconButton, name: add_button, icon: add, size: xs, label: "Add a child block (Ctrl+Shift+N)", disabled: "{{ not can_add }}", handlers: {on_click: structure_add}}
-              - {widget: IconButton, name: remove_button, icon: delete, size: xs, label: "Remove the block (Delete)", disabled: "{{ not can_remove }}", handlers: {on_click: structure_remove}}
-              - {widget: IconButton, name: up_button, icon: arrow_up, size: xs, label: "Move the block up (Alt+Up)", disabled: "{{ not can_move_up }}", handlers: {on_click: structure_move_up}}
-              - {widget: IconButton, name: down_button, icon: arrow_down, size: xs, label: "Move the block down (Alt+Down)", disabled: "{{ not can_move_down }}", handlers: {on_click: structure_move_down}}
-              - {widget: IconButton, name: move_button, icon: folder, size: xs, label: "Move the block into another block (Ctrl+Shift+M)", disabled: "{{ not can_move_to }}", handlers: {on_click: structure_move_to}}
-              - {widget: IconButton, name: duplicate_button, icon: content_copy, size: xs, label: "Duplicate the block (Ctrl+Shift+D)", disabled: "{{ not can_duplicate }}", handlers: {on_click: structure_duplicate}}
-              - {widget: IconButton, name: menu_button, icon: dots_vertical, size: xs, label: "Structure menu (Menu key)", disabled: "{{ not has_tree }}", handlers: {on_click: structure_menu}}
+              - {widget: IconButton, name: add_button, icon: add, size: xs, label: "Add a child block (Ctrl+Shift+N)", a11y: {label: "Add a child block", description: "Add a child block (Ctrl+Shift+N)"}, disabled: "{{ not can_add }}", handlers: {on_click: structure_add}}
+              - {widget: IconButton, name: remove_button, icon: delete, size: xs, label: "Remove the block (Delete)", a11y: {label: "Remove the block", description: "Remove the block (Delete)"}, disabled: "{{ not can_remove }}", handlers: {on_click: structure_remove}}
+              - {widget: IconButton, name: up_button, icon: arrow_up, size: xs, label: "Move the block up (Alt+Up)", a11y: {label: "Move the block up", description: "Move the block up (Alt+Up)"}, disabled: "{{ not can_move_up }}", handlers: {on_click: structure_move_up}}
+              - {widget: IconButton, name: down_button, icon: arrow_down, size: xs, label: "Move the block down (Alt+Down)", a11y: {label: "Move the block down", description: "Move the block down (Alt+Down)"}, disabled: "{{ not can_move_down }}", handlers: {on_click: structure_move_down}}
+              - {widget: IconButton, name: move_button, icon: folder, size: xs, label: "Move the block into another block (Ctrl+Shift+M)", a11y: {label: "Move the block into another block", description: "Move the block into another block (Ctrl+Shift+M)"}, disabled: "{{ not can_move_to }}", handlers: {on_click: structure_move_to}}
+              - {widget: IconButton, name: duplicate_button, icon: content_copy, size: xs, label: "Duplicate the block (Ctrl+Shift+D)", a11y: {label: "Duplicate the block", description: "Duplicate the block (Ctrl+Shift+D)"}, disabled: "{{ not can_duplicate }}", handlers: {on_click: structure_duplicate}}
+              - {widget: IconButton, name: menu_button, icon: dots_vertical, size: xs, label: "Structure menu (Menu key)", a11y: {label: "Structure menu", description: "Structure menu (Menu key)"}, disabled: "{{ not has_tree }}", handlers: {on_click: structure_menu}}
           - widget: Text
             name: structure_off
             if: "has_file and not has_tree"
@@ -78,7 +78,7 @@ children:
               - {widget: Tree, name: structure_tree, nodes: "{{ structure_nodes }}", expanded: "{{ structure_expanded }}", selected: "{{ structure_selected }}", compact: true}
       - widget: Container
         name: form_pane
-        a11y: {role: group, label: Form}
+        a11y: {role: group, label: Form, description: "The keys of the selected block in groups. Enter on a group header opens or closes it; Enter in a field writes it."}
         style: {flex_direction: vertical, width: 440, gap: 4, background: surface_container_low, corner_radius: 12, padding: 8}
         children:
           - {widget: Text, name: form_heading, text: Form, typography_role: title_small}
@@ -163,7 +163,7 @@ children:
                                     name: switch
                                     if: "cell['ui'] == 'switch'"
                                     selected: "{{ on }}"
-                                    a11y: {label: "{{ item['label'] }}"}
+                                    a11y: {label: "{{ item['label'] }}", description: "{{ item['doc'] }}"}
                                     handlers: {on_change: "form_commit(cell['id'], {'checked': on})", on_focus_enter: "active = True", on_focus_exit: "active = False"}
                                   - widget: Button
                                     name: choose
@@ -199,7 +199,7 @@ children:
                                         label: "{{ unit }}"
                                         variant: outlined
                                         size: xs
-                                        a11y: {label: "{{ item['label'] }} unit"}
+                                        a11y: {label: "{{ item['label'] }} unit", description: "{{ item['doc'] }}"}
                                         handlers: {on_click: "form_units(cell['id'], draft)", on_focus_enter: "active = True", on_focus_exit: "active = False"}
                                       - widget: Button
                                         name: browse
@@ -218,7 +218,7 @@ children:
                                         text: "{{ d0 }}"
                                         placeholder: "{{ cell['placeholder'] }}"
                                         typography_role: body_medium
-                                        a11y: {label: "{{ item['label'] }} {{ cell['labels'][0] }}"}
+                                        a11y: {label: "{{ item['label'] }} {{ cell['labels'][0] }}", description: "{{ item['doc'] }}"}
                                         style: {flex: expand_horizontal, min_width: 36, height: 32, padding: {left: 8, right: 8, top: 4, bottom: 4}}
                                         handlers: {on_submit: "form_commit(cell['id'], {'fields': [d0, d1, d2, d3], 'linked': linked})", on_focus_exit: "form_commit(cell['id'], {'fields': [d0, d1, d2, d3], 'linked': linked}); active = False", on_focus_enter: "active = True"}
                                       - widget: TextInput
@@ -227,7 +227,7 @@ children:
                                         text: "{{ d1 }}"
                                         placeholder: "{{ cell['placeholder'] }}"
                                         typography_role: body_medium
-                                        a11y: {label: "{{ item['label'] }} {{ cell['labels'][1] }}"}
+                                        a11y: {label: "{{ item['label'] }} {{ cell['labels'][1] }}", description: "{{ item['doc'] }}"}
                                         style: {flex: expand_horizontal, min_width: 36, height: 32, padding: {left: 8, right: 8, top: 4, bottom: 4}}
                                         handlers: {on_submit: "form_commit(cell['id'], {'fields': [d0, d1, d2, d3], 'linked': linked})", on_focus_exit: "form_commit(cell['id'], {'fields': [d0, d1, d2, d3], 'linked': linked}); active = False", on_focus_enter: "active = True"}
                                       - widget: TextInput
@@ -236,7 +236,7 @@ children:
                                         text: "{{ d2 }}"
                                         placeholder: "{{ cell['placeholder'] }}"
                                         typography_role: body_medium
-                                        a11y: {label: "{{ item['label'] }} {{ cell['labels'][2] }}"}
+                                        a11y: {label: "{{ item['label'] }} {{ cell['labels'][2] }}", description: "{{ item['doc'] }}"}
                                         style: {flex: expand_horizontal, min_width: 36, height: 32, padding: {left: 8, right: 8, top: 4, bottom: 4}}
                                         handlers: {on_submit: "form_commit(cell['id'], {'fields': [d0, d1, d2, d3], 'linked': linked})", on_focus_exit: "form_commit(cell['id'], {'fields': [d0, d1, d2, d3], 'linked': linked}); active = False", on_focus_enter: "active = True"}
                                       - widget: TextInput
@@ -245,7 +245,7 @@ children:
                                         text: "{{ d3 }}"
                                         placeholder: "{{ cell['placeholder'] }}"
                                         typography_role: body_medium
-                                        a11y: {label: "{{ item['label'] }} {{ cell['labels'][3] }}"}
+                                        a11y: {label: "{{ item['label'] }} {{ cell['labels'][3] }}", description: "{{ item['doc'] }}"}
                                         style: {flex: expand_horizontal, min_width: 36, height: 32, padding: {left: 8, right: 8, top: 4, bottom: 4}}
                                         handlers: {on_submit: "form_commit(cell['id'], {'fields': [d0, d1, d2, d3], 'linked': linked})", on_focus_exit: "form_commit(cell['id'], {'fields': [d0, d1, d2, d3], 'linked': linked}); active = False", on_focus_enter: "active = True"}
                                       - widget: Button
@@ -254,7 +254,7 @@ children:
                                         label: "{{ 'Linked' if linked else 'Separate' }}"
                                         variant: text
                                         size: xs
-                                        a11y: {label: "{{ item['label'] }}: one value for all sides, or one for each"}
+                                        a11y: {label: "{{ item['label'] }}: one value for all sides, or one for each", description: "{{ item['doc'] }}"}
                                         handlers: {on_click: "d1 = d0; d2 = d0; d3 = d0; linked = not linked"}
                                   - widget: Button
                                     name: block_button
@@ -323,7 +323,7 @@ children:
                                     label: "{ }"
                                     variant: "{{ 'tonal' if cell['expression'] else 'text' }}"
                                     size: xs
-                                    a11y: {label: "Expression for {{ item['label'] }}", pressed: "{{ cell['expression'] }}"}
+                                    a11y: {label: "Expression for {{ item['label'] }}", description: "Swap the widget for a field that holds an expression, written between double braces", pressed: "{{ cell['expression'] }}"}
                                     handlers: {on_click: "form_expression(cell['id'])", on_focus_enter: "active = True", on_focus_exit: "active = False"}
                                   - widget: IconButton
                                     name: reset_button
@@ -336,7 +336,7 @@ children:
                       - {widget: Text, name: doc_line, if: "item['type'] == 'row' and active and item['doc'] != ''", text: "{{ item['doc'] }}", typography_role: body_small, style: {width: 100%, foreground: on_surface_variant}}
       - widget: Container
         name: text_pane
-        a11y: {role: group, label: Text}
+        a11y: {role: group, label: Text, description: "The open file as TDL text. Edit it by hand; the structure follows when it parses."}
         style: {flex_direction: vertical, gap: 4, background: surface_container_low, corner_radius: 12, padding: 8, flex: expand_horizontal, min_width: 0}
         children:
           - {widget: Text, name: text_heading, text: Text, typography_role: title_small}
@@ -376,7 +376,7 @@ children:
       - {widget: Button, name: disk_keep_button, label: Keep mine, variant: outlined, size: xs, handlers: {on_click: disk_keep}}
   - widget: Container
     name: problems_pane
-    a11y: {role: group, label: Problems}
+    a11y: {role: group, label: Problems, description: "What check found in the files on disk. Enter on a finding selects its block and key."}
     style: {flex_direction: vertical, gap: 2, padding: {left: 8, right: 8, top: 4, bottom: 4}, width: 100%}
     children:
       - {widget: Text, name: problems_heading, text: "{{ problems_title }}", typography_role: title_small, a11y: {live: polite}}
@@ -405,7 +405,7 @@ children:
                   - {widget: Text, name: problem_message, text: "{{ problem['message'] }}{{ ' (' + problem['hint'] + ')' if problem['hint'] else '' }}", typography_role: body_small, style: {flex: expand_horizontal, min_width: 0}}
   - widget: Container
     name: status_bar
-    a11y: {role: group, label: Status}
+    a11y: {role: group, label: Status, description: "What the last action did, and whether a shell is running."}
     style: {flex_direction: horizontal, align_content: left, gap: 8, padding: 8, width: 100%}
     children:
       - {widget: Icon, name: status_icon, if: status_is_error, icon: error, style: {width: 18, height: 18, foreground: error}}

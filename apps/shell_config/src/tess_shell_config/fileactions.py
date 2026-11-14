@@ -66,7 +66,12 @@ class FileActions:
     def _refresh(self) -> None:
         entry = self.selected
         flags = {"duplicate": entry is not None and entry.type is not FileType.SETTINGS, "rename": entry is not None and entry.type is not FileType.SETTINGS, "delete": entry is not None}
-        untrack(lambda: [flag.set(flags[name]) for name, flag in self.can.items() if flag.get() != flags[name]])
+        untrack(lambda: self._set_flags(flags))
+
+    def _set_flags(self, flags: dict[str, bool]) -> None:
+        for name, flag in self.can.items():
+            if flag.get() != flags[name]:
+                flag.set(flags[name])
 
     def _need(self, what: str) -> ConfigFile | None:
         entry = self.selected

@@ -46,7 +46,7 @@ def test_a_file_that_is_not_a_module_or_does_not_parse_is_not_a_user_module(text
 
 
 def test_a_user_module_is_described_like_a_shipped_one_with_no_doc_lines_for_its_params(schema):
-    found = user_modules([("Modules/Hello/Hello_Module.tdl", MODULE, "Hello"), ("Elsewhere/Hello_Module.tdl", MODULE, "Other")], schema)
+    found = user_modules([("Modules/Hello/Hello_Module.tdl", MODULE, "Hello"), ("Elsewhere/Other_Module.tdl", MODULE.replace("Name: Hello", "Name: Other"), "Other")], schema)
     assert list(found) == ["Hello"]  # only a file under Modules/
     hello = found["Hello"]
     assert hello.root_block == "FlexBox" and hello.common_keys and "Clock" in schema.modules

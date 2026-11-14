@@ -40,7 +40,7 @@ def _clip(text: str) -> str:
 
 
 def label_of(node: Node) -> str:
-    """What a row says: a block's type and its `Name` (`Bar  Top_Bar`), or its `Selector` for a block with no name (`Rule  Text:hovered`: the rules of a stylesheet are told apart by it); `If {{ condition }}`; `For item In {{ items }}`."""
+    """What a row says: a block's type and its `Name` (`Bar  Top_Bar`), or its `Selector` for a block with no name (`Rule  Text:hovered`: the rules of a stylesheet are told apart by it); `If condition`; `For item In items` (no braces: a label with `{{` in it is taken for a binding by the toolkit's accessibility fields and would have no name for a screen reader)."""
     if isinstance(node, Block):
         if node.name:
             return f"{node.type}  {node.name}"
@@ -49,9 +49,9 @@ def label_of(node: Node) -> str:
             return f"{node.type}  {_clip(selector.value.value)}"
         return node.type
     if isinstance(node, If):
-        return f"If {{{{ {_clip(node.condition.text)} }}}}"
+        return f"If {_clip(node.condition.text)}"
     assert isinstance(node, For)
-    return f"For {node.variable} In {{{{ {_clip(node.items.text)} }}}}"
+    return f"For {node.variable} In {_clip(node.items.text)}"
 
 
 def _entries(node: Node, path: IndexPath) -> list[dict[str, Any]]:
