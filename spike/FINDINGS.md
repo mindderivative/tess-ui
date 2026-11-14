@@ -54,3 +54,17 @@ All `handlers:` texts of the 110 shipped view and stylesheet files (113 unique e
 - **0 value expressions fail in TEL** (including conditional expressions such as `x if c else y`, and `event.key == 'space'`).
 - Call steps: the callee (`on_toggle`, `surface.dismiss`) is not an expression TEL evaluates; it is checked by tess-ui against the ViewModel and its built-in actions, as today. Only the arguments go to TEL.
 - Not checked: how `event` and loop variables are scoped in a step's TEL expression; the order of writes inside one handler (a later step reads an earlier step's write, as in `n = n + 1; cmd = str(n)`), which needs a stated rule: each step sees the writes of the earlier ones.
+
+## Round trip (2026-11-14), `spike/roundtrip.py`
+YAML view -> TDL text (If/For wrappers, handlers as `Set`/`Call` step blocks, slots bare) -> `tess_dl.parse` and `loads` -> dict -> compared with the original dict.
+
+- **61 of 61 shipped `*_View.yaml` come back equal** (498 widget nodes, 121 handler groups, 166 `if:`, 33 `for:`). Not vacuous: a broken handler reverse leaves 19 of 61 equal; a broken number reverse, 7 of 61.
+- Normalised before comparing (the differences carry no meaning): `tesserae: 0.6` read as the string `"0.6"`; `if:`/`for:`/`key:` text with or without the `{{ }}`; handler text through `ast.unparse` (spacing only).
+- This is a **data-level** round trip. The TDL is not loaded by tess-ui's real loader (still YAML); because the dict equals the YAML one, the existing loader would take it, but that was not run.
+- **10 `for:` nodes use a tuple target** (`for: i, it in enumerate(items)`). TDL's `For` takes one variable. The spike keeps the original target text in a `Target:` property in the For body. A real design needs a rule (a TDL `For` with a pair, or `enumerate` handled by TEL/the runtime).
+- Handler steps: 0 handlers stayed text; the `Call` callee is a string (`on_toggle`, `surface.dismiss`).
+- Mixed text-and-slot strings and slots containing `}}` stay quoted strings and round-trip as data; whether the runtime then treats them as templates is unchanged from today.
+- **tess_dl API gap:** `api.md` promises `Block.properties`, `Block.get`, `Block.blocks`, `Block.walk` and `Document.find`; the pinned commit has no `properties`, `get`, `blocks` or `walk` on `Block` (only `entries`, `name`, `type`, edits). The spike reads `entries`.
+
+## Verdict
+The mapping is lossless on every shipped view. What remains for the real switch is engineering, not design risk: the loader reading TDL (positions, error messages), the 49 stylesheet and theme files, the 10 tuple-`for` loops, tree-shape effects of the `If`/`For` wrappers on `part:` paths and hot reload (not exercised here), and converting tests and docs.
