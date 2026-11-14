@@ -1,0 +1,127 @@
+---
+TDL: 0.1
+Name: ListItem
+Tesserae: "0.6"
+---
+# The Material 3 list item: one, two or three lines of text with something before it and something after it. `headline` is the first line, `supporting`
+# the second, and an `overline` goes above the headline; the item is 56, 72 or 88 pixels tall by how many of those it has (`lines` overrides). Before the
+# text: a `leading_icon`, a `leading_text` in a circle (an avatar), a `leading_image` (56 pixels), or your own content in the `leading` slot. After it: a
+# `trailing_text`, a `trailing_icon`, or your own content in the `trailing` slot (a switch, a checkbox, a button). It is pressable (a state layer, a
+# ripple, Enter); `handlers: {on_click: open}` on the call is what a press does. With `selectable` a press flips `selected`, and a selected item is
+# `secondary_container`. `divider` draws a line along its bottom edge.
+Container {
+  Params {
+    Headline { Type: str, Default: "", Doc: "The first line." }
+    Supporting { Type: str, Default: "", Doc: "The line under the headline." }
+    Overline { Type: str, Default: "", Doc: "A small line above the headline." }
+    Leading_Icon { Type: str, Default: "", Doc: "An icon before the text." }
+    Leading_Text { Type: str, Default: "", Doc: "One or two letters in a circle before the text (an avatar)." }
+    Leading_Image { Type: str, Default: "", Doc: "A picture before the text, 56 pixels, relative to the view." }
+    Trailing_Text { Type: str, Default: "", Doc: "Small text after it." }
+    Trailing_Icon { Type: str, Default: "", Doc: "An icon after it." }
+    Lines { Type: int, Default: 0, Doc: "1, 2 or 3 lines; 0 works it out from the text it has." }
+    Selectable { Type: bool, Default: false, Doc: "A press flips `selected`." }
+    Selected { Type: bool, Default: false, Model: true, Doc: "Whether it is selected." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed, not focusable, and it does not respond." }
+    Divider { Type: bool, Default: false, Doc: "A line along the bottom edge." }
+  }
+  Interaction: true
+  Disabled: <| disabled |>
+  Style {
+    Flex_Direction: horizontal
+    Align_Content: left
+    Width: 100%
+    Height: <| {1: 56, 2: 72, 3: 88}[lines if lines in (1, 2, 3) else (3 if (overline != '' and supporting != '') else (2 if (overline != '' or supporting != '') else 1))] |>
+  }
+  Handlers {
+    On_Click { Set { Target: selected, Value: <| (not selected) if selectable else selected |> } }
+  }
+  A11y {
+    Role: listitem
+    Label: <| headline |>
+    Selected: <| selected if selectable else None |>
+    Description: <| supporting |>
+  }
+  Children {
+    Slot {
+      Name: leading
+    }
+    If <| leading_icon != '' |> {
+      Icon {
+        Name: leading_icon
+        Icon: <| leading_icon |>
+      }
+    }
+    If <| leading_text != '' |> {
+      Container {
+        Name: avatar
+        Children {
+          Text {
+            Name: avatar_text
+            Text: <| leading_text |>
+            Typography_Role: title_medium
+          }
+        }
+      }
+    }
+    If <| leading_image != '' |> {
+      Image {
+        Name: picture
+        Src: <| leading_image |>
+      }
+    }
+    Container {
+      Name: text
+      Style { Flex_Direction: vertical, Flex: fill }
+      Children {
+        If <| overline != '' |> {
+          Text {
+            Name: overline
+            Text: <| overline |>
+            Typography_Role: label_small
+          }
+        }
+        If <| headline != '' |> {
+          Text {
+            Name: headline
+            Text: <| headline |>
+            Typography_Role: body_large
+            Max_Lines: 1
+            Overflow: ellipsis
+          }
+        }
+        If <| supporting != '' |> {
+          Text {
+            Name: supporting
+            Text: <| supporting |>
+            Typography_Role: body_medium
+            Max_Lines: <| 2 if lines == 3 or (lines == 0 and overline != '' and supporting != '') else 1 |>
+            Overflow: ellipsis
+          }
+        }
+      }
+    }
+    If <| trailing_text != '' |> {
+      Text {
+        Name: trailing_text
+        Text: <| trailing_text |>
+        Typography_Role: label_small
+      }
+    }
+    If <| trailing_icon != '' |> {
+      Icon {
+        Name: trailing_icon
+        Icon: <| trailing_icon |>
+      }
+    }
+    Slot {
+      Name: trailing
+    }
+    If <| divider |> {
+      Divider {
+        Name: line
+        Style { Position: absolute, Left: 16, Right: 0, Bottom: 0 }
+      }
+    }
+  }
+}

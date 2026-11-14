@@ -1,0 +1,59 @@
+---
+TDL: 0.1
+Name: IconButton
+Tesserae: "0.6"
+---
+# The Material 3 icon button: standard, filled, tonal or outlined, in five sizes and three widths, round or square, with a toggle form that swaps its icon.
+# `label` is required in spirit: it names the button for a screen reader and is its tooltip, since an icon has no text. `handlers: {on_click: save}` on the
+# call is what a press does. A toggle flips `selected` (two-way, or held by the button when nothing is bound). Colours, sizes and shapes are in
+# IconButton_Stylesheet.yaml.
+Container {
+  Params {
+    Icon { Type: str, Default: "", Doc: "The icon." }
+    Selected_Icon { Type: str, Default: "", Doc: "For a toggle: the icon while it is on (the same icon when empty)." }
+    Label { Type: str, Default: "", Doc: "What it does: its accessible name and its tooltip." }
+    Variant {
+      Type: enum
+      Choices: [standard, filled, tonal, outlined]
+      Default: standard
+      Doc: "standard has no container; filled is the strongest; tonal is softer; outlined has a border."
+    }
+    Size { Type: enum, Choices: [xs, s, m, l, xl], Default: s, Doc: "32, 40, 56, 96 or 136 pixels tall." }
+    Width_Kind { Type: enum, Choices: [narrow, default, wide], Default: default, Doc: "narrow, as tall as it is, or wide." }
+    Shape {
+      Type: enum
+      Choices: [round, square]
+      Default: round
+      Doc: "A circle, or a rounded square. A toggle swaps to the other shape while selected."
+    }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed, not focusable, and it does not respond." }
+    Toggle { Type: bool, Default: false, Doc: "A press flips `selected`." }
+    Selected { Type: bool, Default: false, Model: true, Doc: "For a toggle: whether it is on." }
+    Tint {
+      Type: str
+      Default: ""
+      Doc: "A standard button's icon colour, a colour role such as on_primary_container (on_surface_variant when empty)."
+    }
+  }
+  Interaction: true
+  Disabled: <| disabled |>
+  Style {
+    Flex_Direction: horizontal
+    Align_Content: center
+  }
+  Handlers {
+    On_Click { Set { Target: selected, Value: <| (not selected) if toggle else selected |> } }
+  }
+  A11y {
+    Role: button
+    Label: <| label |>
+    Pressed: <| selected if toggle else None |>
+  }
+  Tooltip: <| label |>
+  Children {
+    Icon {
+      Name: icon
+      Icon: <| selected_icon if (toggle and selected and selected_icon != '') else icon |>
+    }
+  }
+}

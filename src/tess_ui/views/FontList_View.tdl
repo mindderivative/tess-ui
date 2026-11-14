@@ -1,0 +1,117 @@
+---
+TDL: 0.1
+Name: FontList
+Tesserae: "0.6"
+---
+# The font list: a searchable list of the installed font families, each in its own face where the engine can draw it, either inline or (`popup: true`) behind a button that shows the family
+# (in its own face) and opens the list in a layer under it. The families come from `tess_ui.font_families` (`fc-list : family`, once; swap the source with `font_families.use`). `value` is
+# two-way: the family's name. Escape and a press outside close the popup (writing false to `open`); a pick closes it too, unless `close_on_pick` is false. When the installed families cannot
+# be listed there is a text field in place of the list (and of the button). `on_change` is called after each pick. What the list does is in FontListPanel.
+Container {
+  Params {
+    Value { Type: str, Default: "", Model: true, Doc: "The font family." }
+    Popup { Type: bool, Default: false, Doc: "Show a button with the family that opens the list in a layer, instead of the list itself." }
+    Open { Type: bool, Default: false, Model: true, Doc: "A popup list: whether it is showing; Escape, a pick and a press outside write false." }
+    Close_On_Pick { Type: bool, Default: true, Doc: "A popup list closes when a family is picked." }
+    Rows { Type: int, Default: 8, Min: 3, Max: 16, Doc: "How many rows show at once." }
+    Width { Type: float, Default: 280, Min: 160, Max: 640, Doc: "How wide the list is." }
+    Label { Type: str, Default: Font, Doc: "What a screen reader calls the list and the button that opens it." }
+    Placeholder { Type: str, Default: "Choose a font", Doc: "What the button says while there is no family." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed and not editable; a popup does not open." }
+    On_Change { Type: handler, Doc: "Called after each pick." }
+  }
+  State { Current { }, Mode: "", Message: "" }
+  Style { Flex_Direction: vertical, Align_Content: top_left }
+  Children {
+    If <| popup |> {
+      FontBrowser {
+        Name: swatch
+        Open: false
+        Value: <| value |>
+        Current: <| current |>
+        Mode: <| mode |>
+        Message: <| message |>
+        Disabled: <| disabled |>
+      }
+    }
+    If <| popup and mode == 'text' |> {
+      TextField {
+        Name: free
+        Variant: outlined
+        Label: <| label |>
+        Text: <| value |>
+        Supporting: <| message |>
+        Disabled: <| disabled |>
+        On_Edit: "on_change()"
+      }
+    }
+    If <| popup and mode == 'list' |> {
+      Container {
+        Name: field
+        A11y { Hidden: true }
+        Style { Flex_Direction: horizontal, Align_Content: center, Gap: 8 }
+        Children {
+          Text {
+            Name: trigger_text
+            Text: <| value if value != '' else placeholder |>
+            Typography_Role: body_large
+            Font_Family: <| value if current.get('loadable') else '' |>
+            Style { Foreground: <| 'on_surface' if value != '' else 'on_surface_variant' |> }
+          }
+          Icon {
+            Name: trigger_chevron
+            Icon: expand_more
+            Style { Width: 24, Height: 24, Foreground: on_surface_variant }
+          }
+          Container {
+            Name: trigger
+            A11y { Role: button, Label: <| label + ': ' + value if value != '' else label |>, Expanded: <| open |> }
+            Disabled: <| disabled |>
+            Handlers {
+              On_Click { Set { Target: open, Value: <| not open |> } }
+            }
+            Style { Position: absolute, X: 0, Y: 0, Width: 100%, Height: 100% }
+          }
+        }
+      }
+    }
+    If <| popup and mode == 'list' |> {
+      Overlay {
+        Name: layer
+        Open: <| open |>
+        Anchor: field
+        Placement: below
+        Focus_First: true
+        Children {
+          Container {
+            Name: surface
+            Style { Flex_Direction: vertical }
+            Children {
+              FontListPanel {
+                Name: popup_panel
+                Value: <| value |>
+                Open: <| open |>
+                Rows: <| rows |>
+                Width: <| width |>
+                Label: <| label |>
+                Disabled: <| disabled |>
+                On_Change: "open = open and not close_on_pick; on_change()"
+              }
+            }
+          }
+        }
+      }
+    }
+    If <| not popup |> {
+      FontListPanel {
+        Name: panel
+        Value: <| value |>
+        Rows: <| rows |>
+        Width: <| width |>
+        Label: <| label |>
+        Disabled: <| disabled |>
+        On_Change: "on_change()"
+      }
+    }
+  }
+}

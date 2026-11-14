@@ -1,0 +1,80 @@
+---
+TDL: 0.1
+Name: SplitButton
+Tesserae: "0.6"
+---
+# The Material 3 split button: a main action and, 2 pixels beside it, a menu button whose chevron turns over while its menu is open. `variant` and `size` are Button's (filled, tonal,
+# elevated, outlined, text; xs to xl). The main part has a `label` and an optional `icon` and calls `on_click`; the trailing part opens a `Menu` of `items` ({value, label} and the
+# rest of Menu's rows) and pressing a row sets `chosen`. The inner corners are small and the outer ones round, and the trailing part is round on both sides while its menu is open.
+# Tab reaches both parts; Enter or Space on either does what pressing it does.
+Container {
+  Params {
+    Label { Type: str, Default: "", Doc: "The main action's text." }
+    Icon { Type: str, Default: "", Doc: "A leading icon in the main part." }
+    Variant { Type: enum, Choices: [filled, tonal, elevated, outlined, text], Default: filled, Doc: "Passed to both parts." }
+    Size { Type: enum, Choices: [xs, s, m, l, xl], Default: s, Doc: "Passed to both parts." }
+    Items { Type: list, Default: [], Doc: "The menu's rows, as Menu takes them." }
+    Chosen { Type: any, Default: "", Model: true, Doc: "The value of the menu row last pressed." }
+    On_Click { Type: handler, Doc: "What the main part does." }
+    Disabled { Type: bool, Default: false, Doc: "Both parts are dimmed and do not respond." }
+  }
+  State { Menu_Open: false, Keyed: false }
+  A11y { Role: group, Label: <| label |> }
+  Style {
+    Flex_Direction: horizontal
+    Align_Content: left
+    Gap: 2
+  }
+  Children {
+    Button {
+      Name: main
+      Label: <| label |>
+      Icon: <| icon |>
+      Variant: <| variant |>
+      Size: <| size |>
+      Disabled: <| disabled |>
+      Handlers {
+        On_Click { Call { Action: "on_click" } }
+        On_Key {
+          Set { Target: keyed, Value: <| True if event.key == 'arrow_down' else keyed |> }
+          Set { Target: menu_open, Value: <| True if event.key == 'arrow_down' else menu_open |> }
+        }
+      }
+      Style {
+        Corner_Radius: <| {'top_left': 'full', 'bottom_left': 'full', 'top_right': 4, 'bottom_right': 4} |>
+      }
+    }
+    Button {
+      Name: trailing
+      Icon: <| 'chevron_up' if menu_open else 'chevron_down' |>
+      Variant: <| variant |>
+      Size: <| size |>
+      Disabled: <| disabled |>
+      Handlers {
+        On_Click {
+          Set { Target: keyed, Value: <| False |> }
+          Set { Target: menu_open, Value: <| not menu_open |> }
+        }
+        On_Key {
+          Set { Target: keyed, Value: <| True if event.key == 'arrow_down' else keyed |> }
+          Set { Target: menu_open, Value: <| True if event.key == 'arrow_down' else menu_open |> }
+        }
+      }
+      A11y { Label: <| 'More options for ' + label |>, Expanded: <| menu_open |> }
+      Style {
+        Corner_Radius: <| 'full' if menu_open else {'top_left': 4, 'bottom_left': 4, 'top_right': 'full', 'bottom_right': 'full'} |>
+      }
+    }
+    If <| len(items) > 0 |> {
+      Menu {
+        Name: menu
+        Open: <| menu_open |>
+        Focus_First: <| keyed |>
+        Anchor: trailing
+        Placement: below
+        Items: <| items |>
+        Chosen: <| chosen |>
+      }
+    }
+  }
+}

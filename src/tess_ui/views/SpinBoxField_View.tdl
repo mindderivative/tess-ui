@@ -1,0 +1,54 @@
+---
+TDL: 0.1
+Name: SpinBoxField
+Tesserae: "0.6"
+---
+# A spin box with a visible label above it and a line of supporting or error text under it, as a text field has them. `value` is two-way. The label also names the
+# spin box for a screen reader; when `error` is not empty it replaces the supporting text, in the error colour.
+Container {
+  Params {
+    Label { Type: str, Default: "", Doc: "The name above the spin box." }
+    Supporting { Type: str, Default: "", Doc: "Help under it." }
+    Error { Type: str, Default: "", Doc: "An error message; it replaces the supporting text." }
+    Value { Type: float, Default: 0, Model: true, Doc: "The number; stepping and typing write it back." }
+    Least { Type: float, Default: null, Doc: "The least it takes (`min` is a reserved name)." }
+    Most { Type: float, Default: null, Doc: "The most it takes." }
+    Step { Type: float, Default: 1, Doc: "How far a button moves it." }
+    Decimals { Type: int, Default: null, Doc: "How many decimal places show." }
+    Prefix { Type: str, Default: "", Doc: "Shown before the number." }
+    Suffix { Type: str, Default: "", Doc: "Shown after the number (a unit)." }
+    Wrap { Type: bool, Default: false, Doc: "A step past one bound lands on the other." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed and not steppable." }
+  }
+  Style { Flex_Direction: vertical, Gap: 4 }
+  Children {
+    If <| label != '' |> {
+      Text {
+        Name: label
+        Text: <| label |>
+        Typography_Role: label_medium
+      }
+    }
+    SpinBox {
+      Name: box
+      Value: <| value |>
+      Min: <| least |>
+      Max: <| most |>
+      Step: <| step |>
+      Decimals: <| decimals |>
+      Prefix: <| prefix |>
+      Suffix: <| suffix |>
+      Wrap: <| wrap |>
+      Disabled: <| disabled |>
+      Label: <| label |>
+    }
+    If <| error != '' or supporting != '' |> {
+      Text {
+        Name: help
+        Text: <| error if error != '' else supporting |>
+        Typography_Role: body_small
+        A11y { Live: polite }
+      }
+    }
+  }
+}

@@ -1,0 +1,76 @@
+---
+TDL: 0.1
+Name: NavigationDrawerPanel
+Tesserae: "0.6"
+---
+# The inside of a navigation drawer, which `NavigationDrawer` (standard) and `NavigationDrawerModal` both put in a sheet: a header slot, the destinations in a column
+# that scrolls when there are more than fit, and a footer slot. `items` is a list of {value, label, icon} and optionally {badge, disabled}; a {heading: Text} is a
+# section's title and a {divider: true} a line. `selected` is the value of the chosen one and a press writes it back. One Tab stop on the current destination; the
+# up and down arrows move the focus and choose it.
+Container {
+  Params {
+    Items { Type: list, Default: [], Doc: "The rows: {value, label, icon} and optionally {badge, disabled}; {heading: Text}; {divider: true}." }
+    Selected { Type: any, Default: "", Model: true, Doc: "The value of the chosen destination." }
+    On_Pick { Type: handler, Doc: "Called after a destination has been pressed (a modal drawer closes itself with it)." }
+    Width { Type: float, Default: 360, Doc: "From 256 to 360 pixels." }
+  }
+  A11y { Role: group, Label: Navigation }
+  Style {
+    Flex_Direction: vertical
+    Width: <| min(360, max(256, width)) |>
+    Height: 100%
+  }
+  Children {
+    Slot {
+      Name: header
+    }
+    ScrollView {
+      Name: list
+      Focus_Group: vertical
+      Style { Flex_Direction: vertical, Flex: fill }
+      Children {
+        # TODO tuple for-target: i, it in enumerate(items)
+        For i_it In <| enumerate(items) |> Key <| i |> {
+          Container {
+            Name: row
+            Style { Flex_Direction: vertical, Width: 100% }
+            Children {
+              If <| it.get('divider', False) |> {
+                Divider {
+                  Name: divider
+                }
+              }
+              If <| it.get('heading', '') != '' |> {
+                Text {
+                  Name: heading
+                  Text: <| it.get('heading', '') |>
+                  Typography_Role: title_small
+                }
+              }
+              If <| not it.get('divider', False) and it.get('heading', '') == '' |> {
+                NavigationDrawerItem {
+                  Name: item
+                  Label: <| it['label'] |>
+                  Icon: <| it.get('icon', '') |>
+                  Badge: <| it.get('badge', '') |>
+                  Selected: <| it['value'] == selected |>
+                  Disabled: <| it.get('disabled', False) |>
+                  Handlers {
+                    On_Click {
+                      Set { Target: selected, Value: <| it['value'] |> }
+                      Call { Action: "on_pick" }
+                    }
+                    On_Focus_Enter { Set { Target: selected, Value: <| it['value'] |> } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    Slot {
+      Name: footer
+    }
+  }
+}

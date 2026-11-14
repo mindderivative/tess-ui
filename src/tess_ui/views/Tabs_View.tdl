@@ -1,0 +1,102 @@
+---
+TDL: 0.1
+Name: Tabs
+Tesserae: "0.6"
+---
+# The Material 3 tab bar: a row of tabs over a divider, an indicator under the selected one that slides to the next. `tabs` is a list of
+# {value, label, icon, badge}; `selected` is the chosen value and a press writes it back. `variant: primary` (48 tall, 64 with icons, a 3 dp indicator as
+# wide as the label's share of the tab) or `secondary` (48 tall, a 2 dp indicator across the whole tab). The tabs are `tab_width` wide each: a fixed bar.
+# Arrow keys move the focus along the bar and choose the tab (one Tab stop); the panel each tab shows is yours to switch on `selected`.
+Container {
+  Params {
+    Tabs { Type: list, Default: [], Doc: "The tabs, each {value, label} and optionally {icon, badge}." }
+    Selected { Type: any, Default: "", Model: true, Doc: "The value of the chosen tab; a press writes it back." }
+    Variant {
+      Type: enum
+      Choices: [primary, secondary]
+      Default: primary
+      Doc: "primary has a short rounded indicator; secondary one across the tab."
+    }
+    Tab_Width { Type: float, Default: 120, Doc: "How wide each tab is." }
+  }
+  Style { Flex_Direction: vertical }
+  Children {
+    Container {
+      Name: bar
+      Focus_Group: horizontal
+      A11y { Role: tablist }
+      Style {
+        Flex_Direction: horizontal
+        Height: <| 64 if (variant == 'primary' and any([t.get('icon', '') != '' for t in tabs])) else 48 |>
+      }
+      Children {
+        For t In <| tabs |> Key <| t['value'] |> {
+          Container {
+            Name: tab
+            Interaction: true
+            Style {
+              Width: <| tab_width |>
+              Flex_Direction: vertical
+              Align_Content: center
+              Gap: 2
+            }
+            Handlers {
+              On_Click { Set { Target: selected, Value: <| t['value'] |> } }
+              On_Focus_Enter { Set { Target: selected, Value: <| t['value'] |> } }
+            }
+            A11y {
+              Role: tab
+              Label: <| t['label'] |>
+              Selected: <| t['value'] == selected |>
+            }
+            Children {
+              If <| t.get('icon', '') != '' and t.get('badge', '') != '' |> {
+                Badge {
+                  Name: badged
+                  Value: <| t['badge'] |>
+                  Anchored: true
+                  Children {
+                    Icon {
+                      Name: badged_icon
+                      Icon: <| t['icon'] |>
+                      Style { Width: 24, Height: 24, Foreground: <| 'primary' if t['value'] == selected else 'on_surface_variant' |> }
+                    }
+                  }
+                }
+              }
+              If <| t.get('icon', '') != '' and t.get('badge', '') == '' |> {
+                Icon {
+                  Name: icon
+                  Icon: <| t['icon'] |>
+                  Style { Width: 24, Height: 24, Foreground: <| 'primary' if t['value'] == selected else 'on_surface_variant' |> }
+                }
+              }
+              Text {
+                Name: label
+                Text: <| t['label'] |>
+                Typography_Role: title_small
+                Style { Foreground: <| 'primary' if t['value'] == selected else 'on_surface_variant' |> }
+              }
+            }
+          }
+        }
+        Container {
+          Name: indicator
+          Style {
+            Position: absolute
+            X: <| (([t['value'] for t in tabs].index(selected) if selected in [t['value'] for t in tabs] else 0) * tab_width) + (0 if variant == 'secondary' else 12) |>
+            Y: <| (62 if any([t.get('icon', '') != '' for t in tabs]) else 46) if variant == 'primary' else 46 |>
+            Width: <| tab_width if variant == 'secondary' else tab_width - 24 |>
+            Height: <| 3 if variant == 'primary' else 2 |>
+            Background: primary
+            Corner_Radius: <| {'top_left': 3, 'top_right': 3} if variant == 'primary' else 0 |>
+            Transition { X: 250, Width: 250 }
+          }
+        }
+      }
+    }
+    Divider {
+      Name: divider
+    }
+  }
+}

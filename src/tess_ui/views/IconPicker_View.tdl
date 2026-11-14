@@ -1,0 +1,129 @@
+---
+TDL: 0.1
+Name: IconPicker
+Tesserae: "0.6"
+---
+# The icon picker: a searchable grid of icons, either inline or (`popup: true`) behind a button that shows the icon and its name and opens the grid in a layer next to it. The icons are the
+# curated set of `tess_ui.icons` and the `.svg` and `.png` files of `icons_folder` (read through `tess_ui.filesystem`, and only when the grid opens). `value` is two-way: the icon's name, or a
+# file's name with its extension. Escape and a press outside close the popup (writing false to `open`); a pick closes it too, unless `close_on_pick` is false. `on_change` is called after each pick.
+# What the grid does is in IconPickerPanel.
+Container {
+  Params {
+    Value { Type: str, Default: "", Model: true, Doc: "The icon: a built-in icon's name, or a file's name with its extension." }
+    Popup { Type: bool, Default: false, Doc: "Show a button with the icon that opens the grid in a layer, instead of the grid itself." }
+    Open { Type: bool, Default: false, Model: true, Doc: "A popup picker: whether it is showing; Escape, a pick and a press outside write false." }
+    Close_On_Pick { Type: bool, Default: true, Doc: "A popup picker closes when an icon is picked." }
+    Icons_Folder { Type: str, Default: "", Doc: "A folder of .svg and .png files offered besides the built-in icons." }
+    Columns { Type: int, Default: 8, Min: 3, Max: 16, Doc: "How many icons are in a row." }
+    Rows { Type: int, Default: 6, Min: 2, Max: 12, Doc: "How many rows show at once." }
+    Label { Type: str, Default: Icon, Doc: "What a screen reader calls the picker, and the button that opens it." }
+    Placeholder { Type: str, Default: "Choose an icon", Doc: "What the button says while there is no icon." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed and not editable; a popup does not open." }
+    On_Change { Type: handler, Doc: "Called after each pick." }
+  }
+  State { Current { } }
+  Style { Flex_Direction: vertical, Align_Content: top_left }
+  Children {
+    If <| popup |> {
+      IconBrowser {
+        Name: swatch
+        Open: false
+        Value: <| value |>
+        Folder: <| icons_folder |>
+        Current: <| current |>
+        Disabled: <| disabled |>
+      }
+    }
+    If <| popup |> {
+      Container {
+        Name: field
+        A11y { Hidden: true }
+        Style { Flex_Direction: horizontal, Align_Content: center, Gap: 8 }
+        Children {
+          If <| current.get('kind') == 'glyph' or current.get('kind') == 'file' |> {
+            Icon {
+              Name: trigger_icon
+              Icon: <| current['icon'] |>
+              Style { Width: 24, Height: 24, Foreground: on_surface }
+            }
+          }
+          If <| current.get('kind') == 'svg' |> {
+            Svg {
+              Name: trigger_svg
+              Content: <| current['svg'] |>
+              Style { Width: 24, Height: 24, Foreground: on_surface }
+            }
+          }
+          If <| current.get('kind') == 'png' |> {
+            Image {
+              Name: trigger_image
+              Frame: <| current['frame'] |>
+              Fit: contain
+              Style { Width: 24, Height: 24 }
+            }
+          }
+          Text {
+            Name: trigger_text
+            Text: <| value if value != '' else placeholder |>
+            Typography_Role: body_large
+            Style { Foreground: on_surface }
+          }
+          Icon {
+            Name: trigger_chevron
+            Icon: expand_more
+            Style { Width: 24, Height: 24, Foreground: on_surface_variant }
+          }
+          Container {
+            Name: trigger
+            A11y { Role: button, Label: <| label + ': ' + value if value != '' else label |>, Expanded: <| open |> }
+            Disabled: <| disabled |>
+            Handlers {
+              On_Click { Set { Target: open, Value: <| not open |> } }
+            }
+            Style { Position: absolute, X: 0, Y: 0, Width: 100%, Height: 100% }
+          }
+        }
+      }
+    }
+    If <| popup |> {
+      Overlay {
+        Name: layer
+        Open: <| open |>
+        Anchor: field
+        Placement: below
+        Focus_First: true
+        Children {
+          Container {
+            Name: surface
+            Style { Flex_Direction: vertical }
+            Children {
+              IconPickerPanel {
+                Name: popup_panel
+                Value: <| value |>
+                Open: <| open |>
+                Icons_Folder: <| icons_folder |>
+                Columns: <| columns |>
+                Rows: <| rows |>
+                Label: <| label |>
+                Disabled: <| disabled |>
+                On_Change: "open = open and not close_on_pick; on_change()"
+              }
+            }
+          }
+        }
+      }
+    }
+    If <| not popup |> {
+      IconPickerPanel {
+        Name: panel
+        Value: <| value |>
+        Icons_Folder: <| icons_folder |>
+        Columns: <| columns |>
+        Rows: <| rows |>
+        Label: <| label |>
+        Disabled: <| disabled |>
+        On_Change: "on_change()"
+      }
+    }
+  }
+}

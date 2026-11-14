@@ -1,0 +1,166 @@
+---
+TDL: 0.1
+Name: IconPickerPanel
+Tesserae: "0.6"
+---
+# The inside of an icon picker, with no surface and no trigger: a search field over a grid of icons (the built-in set, and the `.svg` and `.png` files of `icons_folder`). `value` is two-way:
+# the icon's name, or a file's name with its extension. A press picks an icon; in the grid the arrow keys, Home and End (with Ctrl, of the whole grid), Page Up and Page Down move the
+# cursor and Enter or Space pick it; in the search field Up, Down, Page Up and Page Down move the cursor in the grid and Enter picks it. The grid is a `VirtualList` of rows of `columns`
+# icons that builds the rows in view and a few past them, and a file is read (for its preview) only when its row comes into view. `on_change` is called after each pick. Nothing is listed until
+# `open` is true (a popup's panel is open while the popup shows). What the parts do is in the IconBrowser control (`tess_ui.icon_controls`), which this view drives by writing a numbered command to `cmd`.
+Container {
+  Params {
+    Value { Type: str, Default: "", Model: true, Doc: "The icon: a built-in icon's name, or a file's name with its extension." }
+    Icons_Folder { Type: str, Default: "", Doc: "A folder of .svg and .png files offered besides the built-in icons." }
+    Columns { Type: int, Default: 8, Min: 3, Max: 16, Doc: "How many icons are in a row." }
+    Rows { Type: int, Default: 6, Min: 2, Max: 12, Doc: "How many rows show at once." }
+    Open { Type: bool, Default: true, Doc: "Whether the grid is listed and answers; a popup's panel is open while the popup shows." }
+    Label { Type: str, Default: Icon, Doc: "What a screen reader calls the picker." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed and not editable." }
+    On_Change { Type: handler, Doc: "Called after each pick." }
+  }
+  A11y { Role: group, Label: <| label |> }
+  State { N: 0, Cmd: "", Q: "", Y: 0, Grid: [], Cursor: -1, Count: 0, Current { }, Message: "" }
+  Style { Flex_Direction: vertical, Gap: 8, Width: <| columns * 48 + 16 |> }
+  Children {
+    IconBrowser {
+      Name: browser
+      Value: <| value |>
+      Open: <| open |>
+      Folder: <| icons_folder |>
+      Query: <| q |>
+      Columns: <| columns |>
+      Rows: <| rows |>
+      Command: <| cmd |>
+      Scroll: <| y |>
+      Disabled: <| disabled |>
+      Grid: <| grid |>
+      Cursor: <| cursor |>
+      Count: <| count |>
+      Current: <| current |>
+      Message: <| message |>
+      Handlers {
+        On_Input { Call { Action: "on_change" } }
+      }
+    }
+    TextField {
+      Name: search
+      Variant: outlined
+      Label: "Search icons"
+      Leading: search
+      Text: <| q |>
+      Style { Width: 100% }
+      Disabled: <| disabled |>
+      Handlers {
+        On_Submit {
+          Set { Target: n, Value: <| n + 1 |> }
+          Set { Target: cmd, Value: <| str(n) + ' key enter field' |> }
+        }
+        On_Key {
+          Set { Target: n, Value: <| n + 1 |> }
+          Set {
+            Target: cmd
+            Value: <| (str(n) + ' key ' + event.key + ' field') if event.key in ['arrow_up', 'arrow_down', 'page_up', 'page_down'] else cmd |>
+          }
+        }
+      }
+    }
+    Container {
+      Name: list_group
+      Style { Flex_Direction: vertical }
+      Children {
+        Container {
+          Name: list_box
+          Interaction: true
+          A11y { Role: list, Label: <| label + ' icons' |> }
+          Handlers {
+            On_Click { Set { Target: y, Value: <| y |> } }
+            On_Key {
+              Set { Target: n, Value: <| n + 1 |> }
+              Set { Target: cmd, Value: <| str(n) + ' key ' + event.key + (' ctrl' if event.ctrl else '') |> }
+            }
+          }
+          Style { Flex_Direction: vertical, Height: <| rows * 48 |> }
+          Children {
+            VirtualList {
+              Name: list
+              Item_Height: 48
+              Scroll_Offset: <| y |>
+              Style { Flex_Direction: vertical, Height: <| rows * 48 |> }
+              Children {
+                For row In <| grid |> Key <| row['key'] |> {
+                  Container {
+                    Name: row
+                    Style { Flex_Direction: horizontal, Align_Content: left }
+                    Children {
+                      For cell In <| row['cells'] |> Key <| cell['index'] |> {
+                        Container {
+                          Name: cell
+                          Interaction: false
+                          A11y { Role: listitem, Label: <| cell['name'] |>, Selected: <| cell['name'] == value |> }
+                          Handlers {
+                            On_Press {
+                              Set { Target: n, Value: <| n + 1 |> }
+                              Set { Target: cmd, Value: <| str(n) + ' click ' + str(cell['index']) |> }
+                            }
+                          }
+                          Style {
+                            Width: 48
+                            Height: 48
+                            Flex_Direction: horizontal
+                            Align_Content: center
+                            Background: <| 'secondary_container' if cell['name'] == value else ('surface_container_highest' if cell['index'] == cursor else 'transparent') |>
+                          }
+                          Children {
+                            If <| cell['kind'] == 'glyph' or cell['kind'] == 'file' |> {
+                              Icon {
+                                Name: cell_icon
+                                Icon: <| cell['icon'] |>
+                                Style { Width: 24, Height: 24, Foreground: <| 'on_secondary_container' if cell['name'] == value else 'on_surface' |> }
+                              }
+                            }
+                            If <| cell['kind'] == 'svg' |> {
+                              Svg {
+                                Name: cell_svg
+                                Content: <| cell['svg'] |>
+                                Style { Width: 32, Height: 32, Foreground: <| 'on_secondary_container' if cell['name'] == value else 'on_surface' |> }
+                              }
+                            }
+                            If <| cell['kind'] == 'png' |> {
+                              Image {
+                                Name: cell_image
+                                Frame: <| cell['frame'] |>
+                                Fit: contain
+                                Style { Width: 32, Height: 32 }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    If <| count == 0 and message == '' |> {
+      Text {
+        Name: empty
+        Text: "No icon matches"
+        Typography_Role: body_medium
+        A11y { Role: alert, Live: polite }
+      }
+    }
+    If <| message != '' |> {
+      Text {
+        Name: message_text
+        Text: <| message |>
+        Typography_Role: body_medium
+        A11y { Role: alert, Live: polite }
+      }
+    }
+  }
+}

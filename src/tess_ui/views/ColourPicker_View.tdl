@@ -1,0 +1,73 @@
+---
+TDL: 0.1
+Name: ColourPicker
+Tesserae: "0.6"
+---
+# The colour picker: a square of saturation and value, hue and alpha strips, a hex field, red, green, blue and alpha numbers, and a row of the theme's colour roles, either
+# inline or (`popup: true`) behind a swatch of the colour that opens it in a layer next to it. `value` is two-way: '#rrggbb' text, or '#rrggbbaa' when the alpha is below 1
+# (lowercase). Escape and a press outside close the popup (writing false to `open`). `on_change` is called after each change the user makes, while a drag is still going.
+# What the parts do is in ColourPickerPanel.
+Container {
+  Params {
+    Value { Type: str, Default: "#000000", Model: true, Doc: "The colour: '#rrggbb', or '#rrggbbaa' when its alpha is below 1 (lowercase)." }
+    Popup { Type: bool, Default: false, Doc: "Show a swatch of the colour that opens the picker in a layer, instead of the picker itself." }
+    Open { Type: bool, Default: false, Model: true, Doc: "A popup picker: whether it is showing; Escape and a press outside write false." }
+    Roles {
+      Type: list
+      Default: []
+      Doc: "The theme colour roles in the row of swatches, in order; empty for primary, secondary, tertiary, error, surface, on_surface, primary_container and secondary_container."
+    }
+    Label { Type: str, Default: Colour, Doc: "What a screen reader calls the picker, and the swatch that opens it." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed and not editable; a popup does not open." }
+    On_Change { Type: handler, Doc: "Called after each change the user makes." }
+  }
+  Style { Flex_Direction: vertical, Align_Content: top_left }
+  Children {
+    If <| popup |> {
+      Container {
+        Name: trigger
+        A11y { Role: button, Label: <| label |>, Expanded: <| open |> }
+        Disabled: <| disabled |>
+        Handlers {
+          On_Click { Set { Target: open, Value: <| not open |> } }
+        }
+        Style { Background: <| value |> }
+      }
+    }
+    If <| popup |> {
+      Overlay {
+        Name: layer
+        Open: <| open |>
+        Anchor: trigger
+        Placement: below
+        Focus_First: true
+        Children {
+          Container {
+            Name: surface
+            Style { Flex_Direction: vertical }
+            Children {
+              ColourPickerPanel {
+                Name: popup_panel
+                Value: <| value |>
+                Roles: <| roles |>
+                Label: <| label |>
+                Disabled: <| disabled |>
+                On_Change: "on_change()"
+              }
+            }
+          }
+        }
+      }
+    }
+    If <| not popup |> {
+      ColourPickerPanel {
+        Name: panel
+        Value: <| value |>
+        Roles: <| roles |>
+        Label: <| label |>
+        Disabled: <| disabled |>
+        On_Change: "on_change()"
+      }
+    }
+  }
+}

@@ -1,0 +1,45 @@
+---
+TDL: 0.1
+Name: DatePickerDay
+Tesserae: "0.6"
+---
+# One day of a date picker (Material 3): a 48 pixel target holding a 40 pixel circle with the number in `body_large`. Today is outlined in `primary`; the selected day is a
+# `primary` circle with `on_primary` text; a day outside the month shown is `on_surface_variant`; a disabled day is dimmed. It is pressable; `handlers: {on_click: ...}` on
+# the call is what a press does. One view for a day's states: normal, selected, today, outside the month and disabled.
+Container {
+  Params {
+    Day { Type: str, Default: "", Doc: "The number shown." }
+    Selected { Type: bool, Default: false, Doc: "The chosen day." }
+    Today { Type: bool, Default: false, Doc: Today. }
+    Outside { Type: bool, Default: false, Doc: "A day of the month before or after the one shown." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed, and not pressable." }
+  }
+  Interaction: true
+  Disabled: <| disabled |>
+  A11y {
+    Role: button
+    Label: <| day |>
+    Selected: <| selected |>
+    Current: <| 'date' if today else False |>
+  }
+  Style {
+    Width: 48
+    Height: 48
+    Align_Content: center
+    Corner_Radius: full
+  }
+  Children {
+    Container {
+      Name: circle
+      Style { Width: 40, Height: 40, Corner_Radius: full, Align_Content: center }
+      Children {
+        Text {
+          Name: number
+          Text: <| day |>
+          Typography_Role: body_large
+          Text_Align: center
+        }
+      }
+    }
+  }
+}

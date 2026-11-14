@@ -1,0 +1,84 @@
+---
+TDL: 0.1
+Name: Button
+Tesserae: "0.6"
+---
+# The Material 3 button: filled, tonal, elevated, outlined or text, in five sizes, with a leading and a trailing icon, a toggle form, a loading form and a
+# disabled form. It is as wide as its label and icons, unless the call gives it a width. `handlers: {on_click: save}` on the call is what it does when pressed.
+# With `toggle: true` a press flips `selected` (two-way) and the button swaps its colours and its shape; `loading` shows a spinner in the icon's place and
+# stops it taking presses. Colours, sizes, shapes and how it lifts are in Button_Stylesheet.yaml: to change them, give the app rules with `App(stylesheet=...)`.
+Container {
+  Params {
+    Label { Type: str, Default: "", Doc: "The text." }
+    Variant {
+      Type: enum
+      Choices: [filled, tonal, elevated, outlined, text]
+      Default: filled
+      Doc: "filled is the screen's main action; tonal and elevated are important but secondary; outlined is medium; text is the lowest emphasis."
+    }
+    Size { Type: enum, Choices: [xs, s, m, l, xl], Default: s, Doc: "32, 40, 56, 96 or 136 pixels tall." }
+    Shape {
+      Type: enum
+      Choices: [round, square]
+      Default: round
+      Doc: "A pill, or a rounded square. A toggle button swaps to the other shape while selected."
+    }
+    Icon { Type: str, Default: "", Doc: "A leading icon." }
+    Trailing_Icon { Type: str, Default: "", Doc: "An icon after the label." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed, not focusable, and it does not respond." }
+    Loading { Type: bool, Default: false, Doc: "A spinner in the icon's place; it does not respond while it shows." }
+    Toggle { Type: bool, Default: false, Doc: "A toggle button: it has an on and an off look, and a press flips `selected`." }
+    Flip {
+      Type: bool
+      Default: true
+      Doc: "For a toggle: whether a press flips `selected` itself. Off, the caller decides (a group of buttons does)."
+    }
+    Selected { Type: bool, Default: false, Model: true, Doc: "For a toggle button: whether it is on." }
+  }
+  Interaction: true
+  Disabled: <| disabled or loading |>
+  Style {
+    Flex_Direction: horizontal
+    Align_Content: center
+    Clip_Children: false
+  }
+  Handlers {
+    On_Click { Set { Target: selected, Value: <| (not selected) if (toggle and flip) else selected |> } }
+  }
+  A11y {
+    Role: button
+    Label: <| label |>
+    Pressed: <| selected if toggle else None |>
+    Busy: <| loading |>
+  }
+  Children {
+    If <| loading |> {
+      CircularProgress {
+        Name: spinner
+        Style {
+          Width: <| {'xs': 20, 's': 18, 'm': 24, 'l': 32, 'xl': 40}[size] |>
+          Height: <| {'xs': 20, 's': 18, 'm': 24, 'l': 32, 'xl': 40}[size] |>
+        }
+      }
+    }
+    If <| icon != '' and not loading |> {
+      Icon {
+        Name: icon
+        Icon: <| icon |>
+      }
+    }
+    If <| label != '' |> {
+      Text {
+        Name: label
+        Text: <| label |>
+        Typography_Role: <| {'xs': 'label_large', 's': 'label_large', 'm': 'title_medium', 'l': 'headline_small', 'xl': 'headline_large'}[size] |>
+      }
+    }
+    If <| trailing_icon != '' |> {
+      Icon {
+        Name: trailing
+        Icon: <| trailing_icon |>
+      }
+    }
+  }
+}

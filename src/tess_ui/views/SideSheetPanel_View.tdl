@@ -1,0 +1,87 @@
+---
+TDL: 0.1
+Name: SideSheetPanel
+Tesserae: "0.6"
+---
+# The inside of a side sheet (Material 3): a header with an optional back button, the title and a close button, a content area that scrolls, and a row of actions at
+# the bottom. `SideSheet` (standard, inline) and `SideSheetModal` (over a scrim) both put it in a sheet; use it on its own for a custom one. Children are the
+# content; children with `slot: actions` are the action buttons (a row, right-aligned).
+Container {
+  Params {
+    Title { Type: str, Default: "", Doc: "The sheet's title." }
+    Back { Type: bool, Default: false, Doc: "A back button before the title; it runs `on_back`." }
+    On_Back { Type: handler, Doc: "What the back button does." }
+    Closable { Type: bool, Default: true, Doc: "A close button after the title; it sets `open` to false." }
+    Open { Type: bool, Default: true, Model: true, Doc: "Whether the sheet is open; the close button writes false." }
+    Width { Type: float, Default: 360, Doc: "From 256 to 400 pixels." }
+  }
+  State { Top: true }
+  A11y { Role: group, Label: <| title |> }
+  Style {
+    Flex_Direction: vertical
+    Width: <| min(400, max(256, width)) |>
+    Height: 100%
+  }
+  Children {
+    Container {
+      Name: header
+      Style { Flex_Direction: horizontal, Align_Content: left, Gap: 8, Height: 56, Width: 100% }
+      Children {
+        If <| back |> {
+          IconButton {
+            Name: back
+            Icon: arrow_back
+            Label: Back
+            Handlers {
+              On_Click { Call { Action: "on_back" } }
+            }
+          }
+        }
+        If <| title != '' |> {
+          Text {
+            Name: title
+            Text: <| title |>
+            Typography_Role: title_large
+            Heading: 2
+          }
+        }
+        Container {
+          Name: spacer
+          Style { Flex: expand_horizontal }
+        }
+        If <| closable |> {
+          IconButton {
+            Name: close
+            Icon: close
+            Label: Close
+            Handlers {
+              On_Click { Set { Target: open, Value: <| False |> } }
+            }
+          }
+        }
+      }
+    }
+    ScrollView {
+      Name: content
+      At_Top: <| top |>
+      Style { Flex_Direction: vertical, Flex: fill }
+      Children {
+        Slot { }
+      }
+    }
+    If <| not top |> {
+      Divider {
+        Name: line
+      }
+    }
+    Container {
+      Name: actions
+      Style { Flex_Direction: horizontal, Align_Content: right, Gap: 8, Width: 100% }
+      Children {
+        Slot {
+          Name: actions
+        }
+      }
+    }
+  }
+}

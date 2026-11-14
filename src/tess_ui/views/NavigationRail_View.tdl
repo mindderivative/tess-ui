@@ -1,0 +1,59 @@
+---
+TDL: 0.1
+Name: NavigationRail
+Tesserae: "0.6"
+---
+# The Material 3 navigation rail: a column of 3 to 7 destinations, 80 pixels wide (220 when `expanded`, with the labels beside the icons). `items` is a list of
+# {value, label, icon, badge}; `selected` is the value of the chosen one and a press writes it back. A `header` slot above the items holds a menu button or a FAB
+# (children with `slot: header`), a `footer` slot below them. `alignment` groups the destinations at the top (the default), centre or bottom. One Tab stop;
+# the up and down arrows move the focus and choose the destination.
+Container {
+  Params {
+    Frosted { Type: bool, Default: false, Doc: "A translucent surface that blurs what is behind it (72% of its colour, a 20 pixel backdrop blur)." }
+    Items { Type: list, Default: [], Doc: "The destinations, each {value, label, icon} and optionally {badge, disabled}." }
+    Selected { Type: any, Default: "", Model: true, Doc: "The value of the chosen destination; a press writes it back." }
+    Expanded { Type: bool, Default: false, Doc: "220 pixels wide, with the labels beside the icons." }
+    Alignment { Type: enum, Choices: [top, center, bottom], Default: top, Doc: "Where the destinations sit in the column." }
+  }
+  A11y { Role: group, Label: Navigation }
+  Style {
+    Flex_Direction: vertical
+    Width: <| 220 if expanded else 80 |>
+    Height: 100%
+  }
+  Children {
+    Slot {
+      Name: header
+    }
+    Container {
+      Name: destinations
+      Focus_Group: vertical
+      Style {
+        Flex_Direction: vertical
+        Gap: 12
+        Align_Content: <| {'top': 'top', 'center': 'center', 'bottom': 'bottom'}[alignment] if not expanded else 'top_left' |>
+        Flex: fill
+      }
+      Children {
+        For it In <| items |> Key <| it['value'] |> {
+          NavigationRailItem {
+            Name: item
+            Icon: <| it['icon'] |>
+            Label: <| it['label'] |>
+            Badge: <| it.get('badge', '') |>
+            Selected: <| it['value'] == selected |>
+            Expanded: <| expanded |>
+            Disabled: <| it.get('disabled', False) |>
+            Handlers {
+              On_Click { Set { Target: selected, Value: <| it['value'] |> } }
+              On_Focus_Enter { Set { Target: selected, Value: <| it['value'] |> } }
+            }
+          }
+        }
+      }
+    }
+    Slot {
+      Name: footer
+    }
+  }
+}

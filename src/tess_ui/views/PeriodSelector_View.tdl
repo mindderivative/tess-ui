@@ -1,0 +1,51 @@
+---
+TDL: 0.1
+Name: PeriodSelector
+Tesserae: "0.6"
+---
+# The AM / PM selector of a time picker (Material 3): two 40 pixel halves in a 52 pixel wide, 1 pixel `outline` frame with 8 pixel corners. The chosen half is
+# `tertiary_container`. `period` is "AM" or "PM" and a press writes it back. One Tab stop on the chosen half; the up and down arrows move and choose.
+Container {
+  Params {
+    Period { Type: enum, Choices: [AM, PM], Default: AM, Model: true, Doc: "The half of the day." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed and not pressable." }
+    On_Change { Type: handler, Doc: "Called after a press or an arrow key has chosen a half." }
+  }
+  Focus_Group: vertical
+  A11y { Role: group, Label: Period }
+  Style {
+    Flex_Direction: vertical
+    Width: 52
+    Height: 80
+    Clip_Children: true
+  }
+  Children {
+    For p In <| ['AM', 'PM'] |> Key <| p |> {
+      Container {
+        Name: half
+        Interaction: true
+        Disabled: <| disabled |>
+        A11y { Role: radio, Label: <| p |>, Checked: <| period == p |> }
+        Handlers {
+          On_Click {
+            Set { Target: period, Value: <| p |> }
+            Call { Action: "on_change" }
+          }
+          On_Focus_Enter {
+            Set { Target: period, Value: <| p |> }
+            Call { Action: "on_change" }
+          }
+        }
+        Style { Height: 40, Width: 100%, Align_Content: center, Background: <| 'tertiary_container' if period == p else 'transparent' |> }
+        Children {
+          Text {
+            Name: label
+            Text: <| p |>
+            Typography_Role: title_medium
+            Style { Foreground: <| 'on_tertiary_container' if period == p else 'on_surface_variant' |> }
+          }
+        }
+      }
+    }
+  }
+}

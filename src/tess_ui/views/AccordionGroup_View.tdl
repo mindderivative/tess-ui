@@ -1,0 +1,47 @@
+---
+TDL: 0.1
+Name: AccordionGroup
+Tesserae: "0.6"
+---
+# Several accordion sections as one set, with a divider between them. `items` is a list of {value, title, text} (the text is the section's content; for more than text,
+# use `Accordion` sections yourself). `mode: single` keeps one open (opening one closes the rest), `multiple` lets any number be; `open` is the value that is open, or the list
+# of values with `multiple`, and is two-way. The up and down arrows move between the headers, and Home and End go to the first and last.
+Container {
+  Params {
+    Items { Type: list, Default: [], Doc: "The sections, each {value, title, text}." }
+    Mode { Type: enum, Choices: [single, multiple], Default: single, Doc: "single: at most one open; multiple: any number." }
+    Open { Type: any, Default: "", Model: true, Doc: "single: the value that is open (empty for none); multiple: the list of values that are open." }
+  }
+  Focus_Group: vertical
+  Style { Flex_Direction: vertical, Width: 100% }
+  Children {
+    # TODO tuple for-target: i, it in enumerate(items)
+    For i_it In <| enumerate(items) |> Key <| it['value'] |> {
+      Container {
+        Name: section
+        Style { Flex_Direction: vertical, Width: 100% }
+        Children {
+          If <| i > 0 |> {
+            Divider {
+              Name: divider
+            }
+          }
+          Accordion {
+            Name: panel
+            Title: <| it['title'] |>
+            Expanded: <| (it['value'] in open) if mode == 'multiple' else (it['value'] == open) |>
+            On_Toggle: "open = ([v for v in open if v != it['value']] if it['value'] in open else open + [it['value']]) if mode == 'multiple' else ('' if open == it['value'] else it['value'])"
+            Children {
+              Text {
+                Name: text
+                Text: <| it.get('text', '') |>
+                Typography_Role: body_medium
+                Style { Foreground: on_surface_variant }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

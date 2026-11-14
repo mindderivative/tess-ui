@@ -1,0 +1,96 @@
+---
+TDL: 0.1
+Name: TopAppBar
+Tesserae: "0.6"
+---
+# The Material 3 top app bar: a navigation icon, a title and up to three action icons across the top of a screen. `variant`: `small` (64 tall, the title beside the icon),
+# `center` (64, the title in the middle), `medium` (112, the title under the row of icons) and `large` (152, a bigger title under them). The medium and large collapse to the
+# small form while `collapsed` is true (bind it to the way a list under it has scrolled), and `scrolled` (true once content is under the bar) turns its colour from `surface` to
+# `surface_container`. `leading_icon` is the navigation icon (`menu` or `arrow_back`) and its `on_leading` handler; `actions` is a list of {value, icon, label}, pressing one sets
+# `chosen` to its `value`. Every icon has a label (its name and its tooltip). Role: a group.
+Container {
+  Params {
+    Frosted { Type: bool, Default: false, Doc: "A translucent surface that blurs what is behind it (72% of its colour, a 20 pixel backdrop blur)." }
+    Title { Type: str, Default: "", Doc: "The title." }
+    Variant { Type: enum, Choices: [small, center, medium, large], Default: small, Doc: "How tall it is and where the title sits." }
+    Leading_Icon { Type: str, Default: "", Doc: "The navigation icon (menu, arrow_back)." }
+    Leading_Label { Type: str, Default: Navigation, Doc: "The navigation icon's name and tooltip." }
+    On_Leading { Type: handler, Doc: "What the navigation icon does." }
+    Actions { Type: list, Default: [], Doc: "Up to three icons at the end, each {value, icon, label}." }
+    Chosen { Type: any, Default: "", Model: true, Doc: "The value of the action last pressed." }
+    Collapsed { Type: bool, Default: false, Doc: "A medium or large bar shows as a small one." }
+    Scrolled { Type: bool, Default: false, Doc: "Content is under the bar: its colour changes." }
+  }
+  A11y { Role: group, Label: <| title |> }
+  Style {
+    Flex_Direction: vertical
+    Width: 100%
+    Height: <| 64 if (variant in ('small', 'center') or collapsed) else (112 if variant == 'medium' else 152) |>
+    Transition { Height: 200, Background: 200 }
+  }
+  Children {
+    Container {
+      Name: row
+      Style { Flex_Direction: horizontal, Align_Content: left, Height: 64, Width: 100% }
+      Children {
+        If <| leading_icon != '' |> {
+          IconButton {
+            Name: leading
+            Icon: <| leading_icon |>
+            Label: <| leading_label |>
+            Handlers {
+              On_Click { Call { Action: "on_leading" } }
+            }
+          }
+        }
+        If <| leading_icon == '' |> {
+          Container {
+            Name: lead_space
+            Style { Width: 16, Height: 40 }
+          }
+        }
+        If <| variant == 'center' |> {
+          Container {
+            Name: lead_filler
+            Style { Flex: expand_horizontal }
+          }
+        }
+        If <| variant in ('small', 'center') or collapsed |> {
+          Text {
+            Name: title
+            Text: <| title |>
+            Typography_Role: title_large
+            Max_Lines: 1
+            Overflow: ellipsis
+            Heading: 1
+            Style { Flex: <| 'none' if variant == 'center' else 'expand_horizontal' |> }
+          }
+        }
+        Container {
+          Name: filler
+          Style { Flex: expand_horizontal }
+        }
+        For a In <| actions[:3] |> Key <| a['value'] |> {
+          IconButton {
+            Name: action
+            Icon: <| a['icon'] |>
+            Label: <| a['label'] |>
+            Handlers {
+              On_Click { Set { Target: chosen, Value: <| a['value'] |> } }
+            }
+          }
+        }
+      }
+    }
+    If <| variant in ('medium', 'large') and not collapsed |> {
+      Text {
+        Name: big_title
+        Text: <| title |>
+        Typography_Role: <| 'headline_small' if variant == 'medium' else 'headline_medium' |>
+        Max_Lines: 1
+        Overflow: ellipsis
+        Heading: 1
+      }
+    }
+  }
+}

@@ -1,0 +1,149 @@
+---
+TDL: 0.1
+Name: FontListPanel
+Tesserae: "0.6"
+---
+# The inside of a font list, with no surface and no button: a search field over a list of the installed font families, each shown in its own face when the engine can draw it (and
+# in the ordinary one when it cannot). `value` is two-way: the family's name. A press picks a family; in the list the Up and Down arrows, Page Up, Page Down, Home and End move the cursor
+# and Enter or Space pick it; in the search field Up, Down, Page Up and Page Down move the cursor in the list and Enter picks it. The list is a `VirtualList` that builds the rows in view and a few
+# past them. When the installed families cannot be listed (a machine with no `fc-list`), there is no list: a text field takes the family's name, and says why. `on_change` is called after each
+# pick. Nothing is listed until `open` is true. What the parts do is in the FontBrowser control (`tess_ui.font_controls`), which this view drives by writing a numbered command to `cmd`.
+Container {
+  Params {
+    Value { Type: str, Default: "", Model: true, Doc: "The font family." }
+    Rows { Type: int, Default: 8, Min: 3, Max: 16, Doc: "How many rows show at once." }
+    Width { Type: float, Default: 280, Min: 160, Max: 640, Doc: "How wide it is." }
+    Open { Type: bool, Default: true, Doc: "Whether the list is built and answers; a popup's panel is open while the popup shows." }
+    Label { Type: str, Default: Font, Doc: "What a screen reader calls the list, and the text field that stands in for it." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed and not editable." }
+    On_Change { Type: handler, Doc: "Called after each pick." }
+  }
+  A11y { Role: group, Label: <| label |> }
+  State { N: 0, Cmd: "", Q: "", Y: 0, Entries: [], Cursor_Name: "", Count: 0, Mode: "", Message: "", Current { } }
+  Style { Flex_Direction: vertical, Gap: 8, Width: <| width |> }
+  Children {
+    FontBrowser {
+      Name: browser
+      Value: <| value |>
+      Open: <| open |>
+      Query: <| q |>
+      Rows: <| rows |>
+      Command: <| cmd |>
+      Scroll: <| y |>
+      Disabled: <| disabled |>
+      Entries: <| entries |>
+      Cursor_Name: <| cursor_name |>
+      Count: <| count |>
+      Mode: <| mode |>
+      Message: <| message |>
+      Current: <| current |>
+      Handlers {
+        On_Input { Call { Action: "on_change" } }
+      }
+    }
+    If <| mode == 'text' |> {
+      TextField {
+        Name: free
+        Variant: outlined
+        Label: <| label |>
+        Text: <| value |>
+        Supporting: <| message |>
+        Disabled: <| disabled |>
+        On_Edit: "on_change()"
+      }
+    }
+    If <| mode == 'list' |> {
+      TextField {
+        Name: search
+        Variant: outlined
+        Label: "Search fonts"
+        Leading: search
+        Text: <| q |>
+        Disabled: <| disabled |>
+        Style { Width: 100% }
+        Handlers {
+          On_Submit {
+            Set { Target: n, Value: <| n + 1 |> }
+            Set { Target: cmd, Value: <| str(n) + ' key enter field' |> }
+          }
+          On_Key {
+            Set { Target: n, Value: <| n + 1 |> }
+            Set {
+              Target: cmd
+              Value: <| (str(n) + ' key ' + event.key + ' field') if event.key in ['arrow_up', 'arrow_down', 'page_up', 'page_down'] else cmd |>
+            }
+          }
+        }
+      }
+    }
+    If <| mode == 'list' |> {
+      Container {
+        Name: list_group
+        Style { Flex_Direction: vertical }
+        Children {
+          Container {
+            Name: list_box
+            Interaction: true
+            A11y { Role: list, Label: <| label + ' families' |> }
+            Handlers {
+              On_Click { Set { Target: y, Value: <| y |> } }
+              On_Key {
+                Set { Target: n, Value: <| n + 1 |> }
+                Set { Target: cmd, Value: <| str(n) + ' key ' + event.key |> }
+              }
+            }
+            Style { Flex_Direction: vertical, Height: <| rows * 40 |> }
+            Children {
+              VirtualList {
+                Name: list
+                Item_Height: 40
+                Scroll_Offset: <| y |>
+                Style { Flex_Direction: vertical, Height: <| rows * 40 |> }
+                Children {
+                  For row In <| entries |> Key <| row['family'] |> {
+                    Container {
+                      Name: row
+                      Interaction: false
+                      A11y { Role: listitem, Label: <| row['family'] |>, Selected: <| row['family'] == value |> }
+                      Handlers {
+                        On_Press {
+                          Set { Target: n, Value: <| n + 1 |> }
+                          Set { Target: cmd, Value: <| str(n) + ' click ' + row['family'] |> }
+                        }
+                      }
+                      Style {
+                        Flex_Direction: horizontal
+                        Align_Content: left
+                        Padding { Left: 12, Right: 12, Top: 0, Bottom: 0 }
+                        Background: <| 'secondary_container' if row['family'] == value else ('surface_container_highest' if row['family'] == cursor_name else 'transparent') |>
+                      }
+                      Children {
+                        Text {
+                          Name: row_name
+                          Text: <| row['family'] |>
+                          Typography_Role: body_large
+                          Font_Family: <| row['family'] if row['loadable'] else '' |>
+                          Max_Lines: 1
+                          Overflow: ellipsis
+                          Style { Foreground: <| 'on_secondary_container' if row['family'] == value else 'on_surface' |> }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    If <| mode == 'list' and count == 0 |> {
+      Text {
+        Name: empty
+        Text: "No font matches"
+        Typography_Role: body_medium
+        A11y { Role: alert, Live: polite }
+      }
+    }
+  }
+}

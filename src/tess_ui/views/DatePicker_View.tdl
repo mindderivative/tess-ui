@@ -1,0 +1,198 @@
+---
+TDL: 0.1
+Name: DatePicker
+Tesserae: "0.6"
+---
+# The Material 3 modal date picker: a dialog with the chosen date at the top (and a button that swaps the grid for a typed field), the month with arrows to move between months, the weekday
+# initials and a grid of six weeks of `DatePickerDay`s, and Cancel and OK. `date` is a text `year-month-day` ("2026-10-09", or empty for none) and is two-way, changing only when OK is
+# pressed; `open` is two-way (Escape and a press on the scrim close it). `earliest` and `latest` bound the days that can be chosen; `week_starts` is `sunday` (the default) or `monday`. Today
+# is outlined. Days of the months either side show faintly and choosing one moves to its month. The arrows move the focus around the grid. `on_ok` is called after OK.
+Overlay {
+  Params {
+    Open { Type: bool, Default: false, Model: true, Doc: "Whether the picker is showing." }
+    Date { Type: str, Default: "", Model: true, Doc: "The date, year-month-day; set by OK." }
+    Earliest { Type: str, Default: "", Doc: "The first date that can be chosen, year-month-day; empty for no limit." }
+    Latest { Type: str, Default: "", Doc: "The last date that can be chosen, year-month-day; empty for no limit." }
+    Week_Starts { Type: enum, Choices: [sunday, monday], Default: sunday, Doc: "Which day the weeks start on." }
+    Title { Type: str, Default: "Select date", Doc: "The small heading." }
+    On_Ok { Type: handler, Doc: "Called after OK has set the date." }
+  }
+  Open: <| open |>
+  Modal: true
+  Children {
+    If <| open |> {
+      Container {
+        Name: panel
+        State {
+          Dd: <| date |>
+          Vy: <| int((date if date != '' else current_date())[:4]) |>
+          Vm: <| int((date if date != '' else current_date())[5:7]) |>
+          Typing: false
+          Typed: <| date |>
+        }
+        A11y { Role: dialog, Label: <| title |> }
+        Style { Flex_Direction: vertical, Width: 384, Gap: 8 }
+        Children {
+          Text {
+            Name: heading
+            Text: <| title |>
+            Typography_Role: label_medium
+          }
+          Container {
+            Name: header
+            Style { Flex_Direction: horizontal, Align_Content: left, Width: 100% }
+            Children {
+              Text {
+                Name: chosen
+                Text: <| format_date(dd, '%a, %b %e') if dd != '' else 'No date' |>
+                Typography_Role: headline_large
+                A11y { Live: polite }
+              }
+              Container {
+                Name: header_filler
+                Style { Flex: expand_horizontal }
+              }
+              IconButton {
+                Name: mode_button
+                Icon: <| 'calendar' if typing else 'keyboard' |>
+                Label: <| 'Switch to the calendar' if typing else 'Switch to typing' |>
+                Handlers {
+                  On_Click { Set { Target: typing, Value: <| not typing |> } }
+                }
+              }
+            }
+          }
+          Divider {
+            Name: line
+          }
+          If <| not typing |> {
+            Container {
+              Name: month_bar
+              Style { Flex_Direction: horizontal, Align_Content: left, Gap: 4, Width: 100% }
+              Children {
+                Text {
+                  Name: month
+                  Text: <| format_date(str(vy) + '-' + ('0' + str(vm))[-2:] + '-01', '%B %Y') |>
+                  Typography_Role: title_small
+                  A11y { Live: polite }
+                }
+                Container {
+                  Name: month_filler
+                  Style { Flex: expand_horizontal }
+                }
+                IconButton {
+                  Name: previous
+                  Icon: chevron_left
+                  Label: "Previous month"
+                  Handlers {
+                    On_Click {
+                      Set { Target: vy, Value: <| vy - 1 if vm == 1 else vy |> }
+                      Set { Target: vm, Value: <| 12 if vm == 1 else vm - 1 |> }
+                    }
+                  }
+                }
+                IconButton {
+                  Name: next
+                  Icon: chevron_right
+                  Label: "Next month"
+                  Handlers {
+                    On_Click {
+                      Set { Target: vy, Value: <| vy + 1 if vm == 12 else vy |> }
+                      Set { Target: vm, Value: <| 1 if vm == 12 else vm + 1 |> }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          If <| not typing |> {
+            Container {
+              Name: weekdays
+              Style { Flex_Direction: horizontal, Width: 100% }
+              Children {
+                For k In <| range(7) |> Key <| k |> {
+                  Container {
+                    Name: weekday
+                    Style { Width: 48, Height: 40, Align_Content: center }
+                    Children {
+                      Text {
+                        Name: initial
+                        Text: <| ['M', 'T', 'W', 'T', 'F', 'S', 'S'][(k + (6 if week_starts == 'sunday' else 0)) % 7] |>
+                        Typography_Role: body_large
+                        Text_Align: center
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          If <| not typing |> {
+            Container {
+              Name: grid
+              Focus_Group: both
+              A11y { Role: group, Label: Days }
+              Style { Flex_Direction: horizontal, Flex_Wrap: wrap, Width: 336 }
+              Children {
+                For iso In <| [date_add_days(str(vy) + '-' + ('0' + str(vm))[-2:] + '-01', k - ((date_weekday(str(vy) + '-' + ('0' + str(vm))[-2:] + '-01') - (6 if week_starts == 'sunday' else 0)) % 7)) for k in range(42)] |> Key <| iso |> {
+                  DatePickerDay {
+                    Name: day
+                    Day: <| str(int(iso[8:10])) |>
+                    Outside: <| int(iso[5:7]) != vm |>
+                    Selected: <| iso == dd |>
+                    Today: <| iso == current_date() |>
+                    Disabled: <| (earliest != '' and iso < earliest) or (latest != '' and iso > latest) |>
+                    Handlers {
+                      On_Click {
+                        Set { Target: dd, Value: <| iso |> }
+                        Set { Target: vy, Value: <| int(iso[:4]) |> }
+                        Set { Target: vm, Value: <| int(iso[5:7]) |> }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          If <| typing |> {
+            TextField {
+              Name: entry
+              Variant: outlined
+              Label: Date
+              Supporting: year-month-day
+              Mask: "####-##-##"
+              Text: <| typed |>
+              On_Edit: "dd = typed if (len(typed) == 10 and 1 <= int(typed[5:7]) <= 12 and 1 <= int(typed[8:10]) <= days_in_month(int(typed[:4]), int(typed[5:7]))) else dd"
+            }
+          }
+          Container {
+            Name: footer
+            Style { Flex_Direction: horizontal, Align_Content: right, Gap: 8, Width: 100% }
+            Children {
+              Button {
+                Name: cancel
+                Label: Cancel
+                Variant: text
+                Handlers {
+                  On_Click { Set { Target: open, Value: <| False |> } }
+                }
+              }
+              Button {
+                Name: ok
+                Label: OK
+                Variant: text
+                Handlers {
+                  On_Click {
+                    Set { Target: date, Value: <| dd |> }
+                    Set { Target: open, Value: <| False |> }
+                    Call { Action: "on_ok" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

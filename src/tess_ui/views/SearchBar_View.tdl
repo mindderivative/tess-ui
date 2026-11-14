@@ -1,0 +1,134 @@
+---
+TDL: 0.1
+Name: SearchBar
+Tesserae: "0.6"
+---
+# The Material 3 search bar: a 56 pixel `surface_container_high` pill with a leading icon (a search glass, or a menu button), the text being typed, and trailing parts: a
+# clear button once there is a `query`, an optional `trailing_icon` (a microphone) and an optional avatar (`avatar_text`). Pressing it, or typing in it, makes it `active`
+# (two-way; a `SearchView` shows while it is), and while it is active the leading icon becomes a back arrow that deactivates it. Enter calls `on_search`. `query` is two-way.
+Container {
+  Params {
+    Frosted { Type: bool, Default: false, Doc: "A translucent surface that blurs what is behind it (72% of its colour, a 20 pixel backdrop blur)." }
+    Query { Type: str, Default: "", Model: true, Doc: "What has been typed." }
+    Placeholder { Type: str, Default: Search, Doc: "Shown while the field is empty." }
+    Active {
+      Type: bool
+      Default: false
+      Model: true
+      Doc: "Whether the search is under way (the view shows); focusing the bar sets it, the back arrow clears it."
+    }
+    Leading_Icon { Type: str, Default: magnify, Doc: "The icon at the start while it is not active (menu, for a menu button)." }
+    On_Leading { Type: handler, Doc: "What the leading icon does when it is not a search glass (open a drawer)." }
+    Trailing_Icon { Type: str, Default: "", Doc: "An icon at the end, such as a microphone." }
+    On_Trailing { Type: handler, Doc: "What the trailing icon does." }
+    Avatar_Text { Type: str, Default: "", Doc: "Letters in a circle at the end." }
+    On_Search { Type: handler, Doc: "Called when Enter is pressed." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed and not editable." }
+  }
+  Disabled: <| disabled |>
+  Interaction: false
+  Handlers {
+    On_Click { Set { Target: active, Value: <| True |> } }
+  }
+  A11y { Role: group, Label: Search }
+  Style {
+    Flex_Direction: horizontal
+    Align_Content: left
+    Height: 56
+    Width: 100%
+  }
+  Children {
+    If <| active |> {
+      Container {
+        Name: back
+        Interaction: true
+        Handlers {
+          On_Click { Set { Target: active, Value: <| False |> } }
+        }
+        A11y { Role: button, Label: Back }
+        Children {
+          Icon {
+            Name: back_icon
+            Icon: arrow_back
+          }
+        }
+      }
+    }
+    If <| not active |> {
+      Container {
+        Name: leading
+        Interaction: true
+        Handlers {
+          On_Click {
+            Call { Action: "focus", Args: [<| 'input' |>] }
+            Call { Action: "on_leading" }
+          }
+        }
+        A11y { Role: button, Label: <| 'Menu' if leading_icon == 'menu' else 'Search' |> }
+        Children {
+          Icon {
+            Name: leading_glyph
+            Icon: <| leading_icon |>
+          }
+        }
+      }
+    }
+    TextInput {
+      Name: input
+      Text: <| query |>
+      Placeholder: <| placeholder |>
+      Typography_Role: body_large
+      Disabled: <| disabled |>
+      Handlers {
+        On_Key { Set { Target: active, Value: <| True if event.key != 'escape' else active |> } }
+        On_Submit { Call { Action: "on_search" } }
+      }
+      Style { Flex: fill }
+      A11y { Label: <| placeholder |> }
+    }
+    If <| query != '' |> {
+      Container {
+        Name: clear
+        Interaction: true
+        Handlers {
+          On_Click { Set { Target: query, Value: <| '' |> } }
+        }
+        A11y { Role: button, Label: Clear }
+        Children {
+          Icon {
+            Name: clear_icon
+            Icon: close
+          }
+        }
+      }
+    }
+    If <| trailing_icon != '' and query == '' |> {
+      Container {
+        Name: trailing
+        Interaction: true
+        Handlers {
+          On_Click { Call { Action: "on_trailing" } }
+        }
+        A11y { Role: button, Label: <| trailing_icon |> }
+        Children {
+          Icon {
+            Name: trailing_glyph
+            Icon: <| trailing_icon |>
+          }
+        }
+      }
+    }
+    If <| avatar_text != '' |> {
+      Container {
+        Name: avatar
+        Children {
+          Text {
+            Name: avatar_text
+            Text: <| avatar_text |>
+            Typography_Role: title_small
+          }
+        }
+      }
+    }
+  }
+}

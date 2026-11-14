@@ -1,0 +1,161 @@
+---
+TDL: 0.1
+Name: ListEditorRow
+Tesserae: "0.6"
+---
+# One row of a list editor: the widget of the item kind (a text field, a spin box, a switch, a button that opens a menu of choices, or a colour picker in a popup) and the buttons that move the row up and
+# down and remove it. It does not hold the list: when the person changes the item it writes the new value to `typed` (a number, `true` or `false`, or a choice as text) and calls `on_commit`, which is the list
+# editor's to answer. A text field commits on Enter and when it is left, the others when they change. The row keeps what the person
+# has typed and not yet committed, which is why the list editor gives each item a row of its own that follows it when it moves.
+Container {
+  Params {
+    Kind { Type: enum, Choices: [text, number, bool, enum, colour], Default: text, Doc: "The kind of the item: which widget the row has." }
+    Item { Type: any, Default: "", Doc: "The item, as its kind has it (it seeds what the row shows; a change the app makes is a new row)." }
+    Options { Type: list, Default: [], Doc: "An enum's choices, as {value, label}." }
+    Least { Type: float, Default: null, Doc: "A number's least." }
+    Most { Type: float, Default: null, Doc: "A number's most." }
+    Step { Type: float, Default: 1, Doc: "A number's step." }
+    Label { Type: str, Default: Item, Doc: "What a screen reader calls the item." }
+    Position { Type: int, Default: 1, Doc: "The row's place in the list, from 1, for a screen reader." }
+    First { Type: bool, Default: false, Doc: "The first row: it cannot move up." }
+    Last { Type: bool, Default: false, Doc: "The last row: it cannot move down." }
+    Can_Remove { Type: bool, Default: true, Doc: "Whether the remove button works." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed and not editable." }
+    Typed { Type: any, Default: "", Model: true, Doc: "Written when the item is changed: its new value as text." }
+    On_Commit { Type: handler, Doc: "Called after `typed` has been written." }
+    On_Up { Type: handler, Doc: "Called by the move up button." }
+    On_Down { Type: handler, Doc: "Called by the move down button." }
+    On_Remove { Type: handler, Doc: "Called by the remove button." }
+  }
+  State {
+    Draft: <| str(item) if kind == 'text' else '' |>
+    Ndraft: <| item if kind == 'number' else 0 |>
+    Bdraft: <| bool(item) if kind == 'bool' else False |>
+    Edraft: <| item if kind == 'enum' else '' |>
+    Cdraft: <| item if kind == 'colour' else '#000000' |>
+    Menu_Open: false
+    Colour_Open: false
+  }
+  A11y { Role: listitem, Label: <| label + ' ' + str(position) |> }
+  Style { Flex_Direction: horizontal, Align_Content: center, Gap: 8 }
+  Children {
+    Container {
+      Name: cell
+      Style { Flex: fill, Flex_Direction: horizontal, Align_Content: left }
+      Children {
+        If <| kind == 'text' |> {
+          TextField {
+            Name: text
+            Variant: outlined
+            Label: <| label + ' ' + str(position) |>
+            Text: <| draft |>
+            Disabled: <| disabled |>
+            Style { Flex: fill }
+            Handlers {
+              On_Submit {
+                Set { Target: typed, Value: <| draft |> }
+                Call { Action: "on_commit" }
+              }
+              On_Focus_Exit {
+                Set { Target: typed, Value: <| draft |> }
+                Call { Action: "on_commit" }
+              }
+            }
+          }
+        }
+        If <| kind == 'number' |> {
+          SpinBox {
+            Name: number
+            Value: <| ndraft |>
+            Min: <| least |>
+            Max: <| most |>
+            Step: <| step |>
+            Disabled: <| disabled |>
+            A11y { Label: <| label + ' ' + str(position) |> }
+            Handlers {
+              On_Change {
+                Set { Target: typed, Value: <| ndraft |> }
+                Call { Action: "on_commit" }
+              }
+            }
+          }
+        }
+        If <| kind == 'bool' |> {
+          Switch {
+            Name: flag
+            Selected: <| bdraft |>
+            Label: <| label + ' ' + str(position) |>
+            Disabled: <| disabled |>
+            Handlers {
+              On_Change {
+                Set { Target: typed, Value: <| 'true' if bdraft else 'false' |> }
+                Call { Action: "on_commit" }
+              }
+            }
+          }
+        }
+        If <| kind == 'enum' |> {
+          Button {
+            Name: choice
+            Variant: outlined
+            Trailing_Icon: menu_down
+            Label: <| ([o['label'] for o in options if o['value'] == edraft] + [str(edraft)])[0] |>
+            Disabled: <| disabled |>
+            Handlers {
+              On_Click { Set { Target: menu_open, Value: <| not menu_open |> } }
+            }
+          }
+        }
+        If <| kind == 'enum' |> {
+          Menu {
+            Name: choices
+            Open: <| menu_open |>
+            Anchor: choice
+            Chosen: <| edraft |>
+            Items: <| options |>
+            Width: 240
+            On_Pick: "typed = edraft; on_commit()"
+          }
+        }
+        If <| kind == 'colour' |> {
+          ColourPicker {
+            Name: colour
+            Popup: true
+            Open: <| colour_open |>
+            Value: <| cdraft |>
+            Label: <| label + ' ' + str(position) |>
+            Disabled: <| disabled |>
+            On_Change: "typed = cdraft; on_commit()"
+          }
+        }
+      }
+    }
+    IconButton {
+      Name: up
+      Icon: arrow_up
+      Label: "Move up"
+      Disabled: <| first or disabled |>
+      Handlers {
+        On_Click { Call { Action: "on_up" } }
+      }
+    }
+    IconButton {
+      Name: down
+      Icon: arrow_down
+      Label: "Move down"
+      Disabled: <| last or disabled |>
+      Handlers {
+        On_Click { Call { Action: "on_down" } }
+      }
+    }
+    IconButton {
+      Name: remove
+      Icon: delete
+      Label: Remove
+      Disabled: <| not can_remove or disabled |>
+      Handlers {
+        On_Click { Call { Action: "on_remove" } }
+      }
+    }
+  }
+}

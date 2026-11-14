@@ -1,0 +1,93 @@
+---
+TDL: 0.1
+Name: Chip
+Tesserae: "0.6"
+---
+# The Material 3 chip: assist (an action), filter (a toggle), input (a piece of what the user entered, with a close) or suggestion (a suggested reply or
+# query). 32 pixels tall with 8 pixel corners, a `label_large` label and an optional 18 pixel leading `icon` or 24 pixel avatar (`avatar_text`, letters in a
+# circle). A filter chip flips `selected` on a press, and while it is on it is `secondary_container` with a check in place of its icon. An input chip has a close
+# button, `removable`, which sets `removed` to true. `elevated` swaps the outline for a raised surface. `handlers: {on_click: ...}` on the call is what a press does.
+# Colours and shapes are in Chip_Stylesheet.yaml.
+Container {
+  Params {
+    Label { Type: str, Default: "", Doc: "The text." }
+    Variant {
+      Type: enum
+      Choices: [assist, filter, input, suggestion]
+      Default: assist
+      Doc: "assist runs an action; filter toggles; input is what the user entered; suggestion offers a reply or a query."
+    }
+    Icon { Type: str, Default: "", Doc: "A leading icon." }
+    Avatar_Text { Type: str, Default: "", Doc: "Letters in a circle before the label (an avatar)." }
+    Selected { Type: bool, Default: false, Model: true, Doc: "For a filter or input chip: whether it is on." }
+    Elevated { Type: bool, Default: false, Doc: "A raised surface instead of an outline." }
+    Removable { Type: bool, Default: false, Doc: "A close button after the label (an input chip)." }
+    Removed { Type: bool, Default: false, Model: true, Doc: "Set to true when the close button is pressed." }
+    On_Remove { Type: handler, Doc: "What to do when the close button is pressed, written as a handler (an action name or statements)." }
+    Flip {
+      Type: bool
+      Default: true
+      Doc: "For a filter chip: whether a press flips `selected` itself. Off, the caller decides (a chip group does)."
+    }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed, not focusable, and it does not respond." }
+  }
+  Interaction: true
+  Disabled: <| disabled |>
+  Style {
+    Flex_Direction: horizontal
+    Align_Content: center
+    Height: 32
+  }
+  Handlers {
+    On_Click { Set { Target: selected, Value: <| (not selected) if (variant == 'filter' and flip) else selected |> } }
+  }
+  A11y {
+    Role: <| 'checkbox' if variant == 'filter' else 'button' |>
+    Label: <| label |>
+    Checked: <| selected if variant == 'filter' else None |>
+  }
+  Children {
+    If <| avatar_text != '' |> {
+      Container {
+        Name: avatar
+        Children {
+          Text {
+            Name: avatar_text
+            Text: <| avatar_text |>
+            Typography_Role: label_medium
+          }
+        }
+      }
+    }
+    If <| avatar_text == '' and (icon != '' or (variant == 'filter' and selected)) |> {
+      Icon {
+        Name: icon
+        Icon: <| 'check' if (variant == 'filter' and selected) else icon |>
+      }
+    }
+    Text {
+      Name: label
+      Text: <| label |>
+      Typography_Role: label_large
+    }
+    If <| removable |> {
+      Container {
+        Name: close
+        Interaction: true
+        Handlers {
+          On_Click {
+            Set { Target: removed, Value: <| True |> }
+            Call { Action: "on_remove" }
+          }
+        }
+        A11y { Role: button, Label: <| 'Remove ' + label |> }
+        Children {
+          Icon {
+            Name: close_icon
+            Icon: close
+          }
+        }
+      }
+    }
+  }
+}

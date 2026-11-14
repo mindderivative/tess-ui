@@ -1,0 +1,83 @@
+---
+TDL: 0.1
+Name: ChipGroup
+Tesserae: "0.6"
+---
+# A group of chips, wrapping onto new rows. `chips` is a list of {value, label} and optionally {icon, avatar_text, disabled}. `mode` says how they behave:
+# `none` suggestion/assist chips that act (the last one pressed goes to `chosen`); `single` and `multiple` filter chips (`selected` is the chosen value, or the
+# list of them); `input` chips with a close button and a text field after them, so typing and pressing Enter adds a chip, and the close removes one (`chips`
+# is two-way: the list the user has built). One Tab stop; the arrows move the focus along the chips (and, for `single`, the choice).
+Container {
+  Params {
+    Chips {
+      Type: list
+      Default: []
+      Model: true
+      Doc: "The chips, each {value, label} and optionally {icon, avatar_text, disabled}. In input mode adding and removing write it back."
+    }
+    Mode {
+      Type: enum
+      Choices: [none, single, multiple, input]
+      Default: none
+      Doc: "none: actions; single or multiple: filters; input: what the user entered."
+    }
+    Selected { Type: any, Default: "", Model: true, Doc: "single: the chosen value; multiple: the list of chosen values." }
+    Chosen { Type: any, Default: "", Model: true, Doc: "none: the value of the chip last pressed." }
+    Variant { Type: enum, Choices: [assist, suggestion], Default: assist, Doc: "The look of the chips in `none` mode." }
+    Elevated { Type: bool, Default: false, Doc: "Raised chips instead of outlined ones." }
+    Placeholder { Type: str, Default: Add, Doc: "Input mode: the hint in the text field." }
+    Entry { Type: str, Default: "", Model: true, Doc: "Input mode: what is typed in the field." }
+  }
+  Focus_Group: both
+  A11y { Role: group }
+  Style {
+    Flex_Direction: horizontal
+    Flex_Wrap: wrap
+    Gap: 8
+    Align_Content: left
+  }
+  Children {
+    For c In <| chips |> Key <| c['value'] |> {
+      Chip {
+        Name: chip
+        Label: <| c['label'] |>
+        Icon: <| c.get('icon', '') |>
+        Avatar_Text: <| c.get('avatar_text', '') |>
+        Variant: <| {'none': variant, 'single': 'filter', 'multiple': 'filter', 'input': 'input'}[mode] |>
+        Selected: <| ((c['value'] in selected) if mode == 'multiple' else (c['value'] == selected)) if mode in ('single', 'multiple') else False |>
+        Removable: <| mode == 'input' |>
+        Flip: false
+        On_Remove: "chips = [x for x in chips if x['value'] != c['value']]"
+        Elevated: <| elevated |>
+        Disabled: <| c.get('disabled', False) |>
+        Handlers {
+          On_Click {
+            Set { Target: chosen, Value: <| c['value'] if mode == 'none' else chosen |> }
+            Set {
+              Target: selected
+              Value: <| (c['value'] if mode == 'single' else ([v for v in selected if v != c['value']] if c['value'] in selected else selected + [c['value']])) if mode in ('single', 'multiple') else selected |>
+            }
+          }
+          On_Focus_Enter { Set { Target: selected, Value: <| c['value'] if (mode == 'single' and not c.get('disabled', False)) else selected |> } }
+        }
+      }
+    }
+    If <| mode == 'input' |> {
+      TextField {
+        Name: entry
+        Variant: outlined
+        Label: <| placeholder |>
+        Text: <| entry |>
+        Handlers {
+          On_Submit {
+            Set {
+              Target: chips
+              Value: <| chips + [{'value': entry, 'label': entry}] if (entry != '' and entry not in [c['value'] for c in chips]) else chips |>
+            }
+            Set { Target: entry, Value: <| '' |> }
+          }
+        }
+      }
+    }
+  }
+}

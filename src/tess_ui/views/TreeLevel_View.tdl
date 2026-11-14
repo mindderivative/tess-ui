@@ -1,0 +1,62 @@
+---
+TDL: 0.1
+Name: TreeLevel
+Tesserae: "0.6"
+---
+# The rows of one level of a tree, each followed by its children's level while it is open (this view calls itself). `Tree` is the one to use; this is its part.
+Container {
+  Params {
+    Nodes { Type: list, Default: [], Doc: "The rows: {value, label} and optionally {icon, children, disabled}." }
+    Level { Type: int, Default: 0, Doc: "How deep this level is." }
+    Expanded { Type: list, Default: [], Model: true, Doc: "The values of the branches that are open." }
+    Selected { Type: any, Default: "", Model: true, Doc: "The value of the chosen row." }
+    Compact { Type: bool, Default: false, Doc: "40 pixel rows." }
+  }
+  Style { Flex_Direction: vertical, Width: 100% }
+  Children {
+    For n In <| nodes |> Key <| n['value'] |> {
+      Container {
+        Name: entry
+        Style { Flex_Direction: vertical, Width: 100% }
+        Children {
+          TreeNode {
+            Name: row
+            Label: <| n['label'] |>
+            Icon: <| n.get('icon', '') |>
+            Level: <| level |>
+            Branch: <| len(n.get('children', [])) > 0 |>
+            Expanded: <| n['value'] in expanded |>
+            Selected: <| n['value'] == selected |>
+            Compact: <| compact |>
+            Disabled: <| n.get('disabled', False) |>
+            Handlers {
+              On_Click {
+                Set { Target: selected, Value: <| n['value'] |> }
+                Set {
+                  Target: expanded
+                  Value: <| ([v for v in expanded if v != n['value']] if n['value'] in expanded else expanded + [n['value']]) if len(n.get('children', [])) > 0 else expanded |>
+                }
+              }
+              On_Key {
+                Set {
+                  Target: expanded
+                  Value: <| (expanded + [n['value']]) if (event.key == 'arrow_right' and len(n.get('children', [])) > 0 and n['value'] not in expanded) else (([v for v in expanded if v != n['value']]) if (event.key == 'arrow_left' and n['value'] in expanded) else expanded) |>
+                }
+              }
+            }
+          }
+          If <| len(n.get('children', [])) > 0 and n['value'] in expanded |> {
+            TreeLevel {
+              Name: children
+              Nodes: <| n.get('children', []) |>
+              Level: <| level + 1 |>
+              Expanded: <| expanded |>
+              Selected: <| selected |>
+              Compact: <| compact |>
+            }
+          }
+        }
+      }
+    }
+  }
+}

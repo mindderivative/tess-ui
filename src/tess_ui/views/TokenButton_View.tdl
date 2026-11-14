@@ -1,0 +1,243 @@
+---
+TDL: 0.1
+Name: TokenButton
+Tesserae: "0.6"
+---
+# The token button: a button that shows the theme token it holds (its ref, such as `$color.primary`, with a swatch when the token is a colour the view knows) and opens a list of tokens in a layer
+# under it. The tokens are data you give it (`tokens`: each {name, ref, kind, value, doc}; `groups`: more in named sets, each {name, tokens}), and `preferred` names are listed first. A row is the
+# token's name, a line under it with its group and doc, and its value: a swatch for a colour token (`kind: colour` with a `'#rrggbb'` or `'#rrggbbaa'` value), the value as text for any other.
+# The search keeps the tokens that have every word typed in their name, ref, group or doc. `value` is two-way text: a pick writes the token's `ref` and calls `on_pick`, and closes the layer unless
+# `close_on_pick` is false. Enter or Space on the button, or Down, opens the layer with the search field focused; Up and Down in the field move the cursor and Enter picks; Tab goes on to the
+# list, where the arrows, Page Up, Page Down, Home and End move and Enter or Space pick. Escape and a press outside close it (writing false to `open`), and the focus goes back to the button.
+# What the list does is in the TokenList control (`tess_ui.token_controls`), which this view drives by writing a numbered command to `cmd`.
+Container {
+  Params {
+    Value {
+      Type: str
+      Default: ""
+      Model: true
+      Doc: "The token's ref, such as `$color.primary`. A ref that is none of the tokens is kept and shown as it is."
+    }
+    Tokens {
+      Type: list
+      Default: []
+      Doc: "The tokens, each {name, ref, kind, value, doc}: `ref` is what a pick writes (`$` and the name when left out), `kind: colour` draws a `'#rrggbb'` or `'#rrggbbaa'` value as a swatch, `doc` is a line about it."
+    }
+    Groups { Type: list, Default: [], Doc: "More tokens in named sets, each {name, tokens}: they come after `tokens` and each row says its group." }
+    Preferred { Type: list, Default: [], Doc: "Names (or refs) of tokens to list first, in this order." }
+    Open { Type: bool, Default: false, Model: true, Doc: "Whether the list is showing; Escape, a pick and a press outside write false." }
+    Close_On_Pick { Type: bool, Default: true, Doc: "The list closes when a token is picked." }
+    Rows { Type: int, Default: 7, Min: 3, Max: 12, Doc: "How many rows show at once." }
+    Width { Type: float, Default: 360, Min: 240, Max: 640, Doc: "How wide the list is." }
+    Label { Type: str, Default: Token, Doc: "What a screen reader calls the button and the list." }
+    Placeholder { Type: str, Default: "Choose a token", Doc: "What the button says while there is no token." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed and not editable; the list does not open." }
+    On_Pick { Type: handler, Doc: "Called after each pick." }
+  }
+  State { N: 0, Cmd: "", Q: "", Y: 0, Entries: [], Cursor_Ref: "", Count: 0, Current { } }
+  Style { Flex_Direction: vertical, Align_Content: top_left }
+  Children {
+    TokenList {
+      Name: mind
+      Value: <| value |>
+      Tokens: <| tokens |>
+      Groups: <| groups |>
+      Preferred: <| preferred |>
+      Open: <| open |>
+      Query: <| q |>
+      Rows: <| rows |>
+      Command: <| cmd |>
+      Scroll: <| y |>
+      Disabled: <| disabled |>
+      Entries: <| entries |>
+      Cursor_Ref: <| cursor_ref |>
+      Count: <| count |>
+      Current: <| current |>
+      Handlers {
+        On_Input {
+          Set { Target: open, Value: <| open and not close_on_pick |> }
+          Call { Action: "on_pick" }
+        }
+      }
+    }
+    Container {
+      Name: field
+      A11y { Hidden: true }
+      Style { Flex_Direction: horizontal, Align_Content: center, Gap: 12 }
+      Children {
+        If <| current.get('swatch', '') != '' |> {
+          Container {
+            Name: current_swatch
+            Style {
+              Width: 24
+              Height: 24
+              Corner_Radius: 6
+              Border_Width: 1
+              Border_Color: outline
+              Background: <| current.get('swatch') or 'transparent' |>
+            }
+          }
+        }
+        Text {
+          Name: trigger_text
+          Text: <| value if value != '' else placeholder |>
+          Typography_Role: body_large
+          Style { Foreground: <| 'on_surface' if value != '' else 'on_surface_variant' |> }
+        }
+        Icon {
+          Name: trigger_chevron
+          Icon: expand_more
+          Style { Width: 24, Height: 24, Foreground: on_surface_variant }
+        }
+        Container {
+          Name: trigger
+          A11y { Role: button, Label: <| label + ': ' + value if value != '' else label |>, Expanded: <| open |> }
+          Disabled: <| disabled |>
+          Handlers {
+            On_Click { Set { Target: open, Value: <| not open |> } }
+            On_Key { Set { Target: open, Value: <| True if event.key == 'arrow_down' else open |> } }
+          }
+          Style { Position: absolute, X: 0, Y: 0, Width: 100%, Height: 100% }
+        }
+      }
+    }
+    Overlay {
+      Name: layer
+      Open: <| open |>
+      Anchor: field
+      Placement: below
+      Focus_First: true
+      Children {
+        Container {
+          Name: surface
+          A11y { Role: group, Label: <| label |> }
+          Style { Flex_Direction: vertical, Gap: 8, Width: <| width |> }
+          Children {
+            TextField {
+              Name: search
+              Variant: outlined
+              Label: "Search tokens"
+              Leading: search
+              Text: <| q |>
+              Disabled: <| disabled |>
+              Style { Width: 100% }
+              Handlers {
+                On_Submit {
+                  Set { Target: n, Value: <| n + 1 |> }
+                  Set { Target: cmd, Value: <| str(n) + ' key enter field' |> }
+                }
+                On_Key {
+                  Set { Target: n, Value: <| n + 1 |> }
+                  Set {
+                    Target: cmd
+                    Value: <| (str(n) + ' key ' + event.key + ' field') if event.key in ['arrow_up', 'arrow_down', 'page_up', 'page_down'] else cmd |>
+                  }
+                }
+              }
+            }
+            Container {
+              Name: list_box
+              Interaction: true
+              A11y { Role: list, Label: <| label + ' tokens' |> }
+              Handlers {
+                On_Click { Set { Target: y, Value: <| y |> } }
+                On_Key {
+                  Set { Target: n, Value: <| n + 1 |> }
+                  Set { Target: cmd, Value: <| str(n) + ' key ' + event.key |> }
+                }
+              }
+              Style { Flex_Direction: vertical, Height: <| rows * 56 |> }
+              Children {
+                VirtualList {
+                  Name: list
+                  Item_Height: 56
+                  Scroll_Offset: <| y |>
+                  Style { Flex_Direction: vertical, Height: <| rows * 56 |> }
+                  Children {
+                    For row In <| entries |> Key <| row['ref'] |> {
+                      Container {
+                        Name: row
+                        Interaction: false
+                        A11y { Role: listitem, Label: <| row['label'] |>, Selected: <| row['ref'] == value |> }
+                        Handlers {
+                          On_Press {
+                            Set { Target: n, Value: <| n + 1 |> }
+                            Set { Target: cmd, Value: <| str(n) + ' click ' + row['ref'] |> }
+                          }
+                        }
+                        Style {
+                          Flex_Direction: horizontal
+                          Align_Content: left
+                          Gap: 12
+                          Padding { Left: 12, Right: 12, Top: 0, Bottom: 0 }
+                          Background: <| 'secondary_container' if row['ref'] == value else ('surface_container_highest' if row['ref'] == cursor_ref else 'transparent') |>
+                        }
+                        Children {
+                          If <| row['swatch'] != '' |> {
+                            Container {
+                              Name: swatch
+                              Style {
+                                Width: 32
+                                Height: 32
+                                Corner_Radius: 8
+                                Border_Width: 1
+                                Border_Color: outline
+                                Background: <| row['swatch'] |>
+                              }
+                            }
+                          }
+                          Container {
+                            Name: texts
+                            Style { Flex: fill, Flex_Direction: vertical, Align_Content: left }
+                            Children {
+                              Text {
+                                Name: row_name
+                                Text: <| row['name'] |>
+                                Typography_Role: body_large
+                                Max_Lines: 1
+                                Overflow: ellipsis
+                                Style { Foreground: <| 'on_secondary_container' if row['ref'] == value else 'on_surface' |> }
+                              }
+                              If <| row['detail'] != '' |> {
+                                Text {
+                                  Name: row_detail
+                                  Text: <| row['detail'] |>
+                                  Typography_Role: body_small
+                                  Max_Lines: 1
+                                  Overflow: ellipsis
+                                  Style { Foreground: <| 'on_secondary_container' if row['ref'] == value else 'on_surface_variant' |> }
+                                }
+                              }
+                            }
+                          }
+                          If <| row['swatch'] == '' and row['shown'] != '' |> {
+                            Text {
+                              Name: row_value
+                              Text: <| row['shown'] |>
+                              Typography_Role: label_medium
+                              Max_Lines: 1
+                              Overflow: ellipsis
+                              Style { Max_Width: 120, Foreground: <| 'on_secondary_container' if row['ref'] == value else 'on_surface_variant' |> }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            If <| count == 0 |> {
+              Text {
+                Name: empty
+                Text: "No token matches"
+                Typography_Role: body_medium
+                A11y { Role: alert, Live: polite }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

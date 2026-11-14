@@ -1,0 +1,149 @@
+---
+TDL: 0.1
+Name: Dialog
+Tesserae: "0.6"
+---
+# The Material 3 dialog, basic or (`fullscreen: true`) full-screen: a modal panel over a scrim, with an optional icon, a headline, supporting text or your own content, and up to a few text
+# button actions. `open` is two-way (Escape and a press on the scrim close it, unless `dismissible: false`); pressing an action closes it and writes the
+# action's value to `result`, so the caller can tell which was chosen. A screen reader hears a `dialog` named by the headline (tess_re has no `alertdialog` role, so an alert is a `dialog` with
+# `dismissible: false`). The content scrolls when it is taller than the dialog, and a line shows above the actions then. Children are the content:
+# they follow the supporting text. Actions stack when they do not fit the width on one row.
+Overlay {
+  Params {
+    Open { Type: bool, Default: false, Model: true, Doc: "Whether it is showing." }
+    Headline { Type: str, Default: "", Doc: "The title." }
+    Text { Type: str, Default: "", Doc: "Supporting text." }
+    Icon { Type: str, Default: "", Doc: "An icon above the headline." }
+    Actions {
+      Type: list
+      Default: []
+      Doc: "Text buttons, each {label, value} and optionally {variant}. Pressing one closes the dialog and sets `result` to its value."
+    }
+    Result { Type: any, Default: "", Model: true, Doc: "The value of the action last pressed; empty when it was dismissed." }
+    Dismissible { Type: bool, Default: true, Doc: "Escape and a press on the scrim close it. Off, it is an alert dialog: only an action closes it." }
+    Width { Type: float, Default: 312, Doc: "From 280 to 560 pixels." }
+    Max_Height { Type: float, Default: 480, Doc: "The content scrolls beyond this." }
+    Fullscreen {
+      Type: bool
+      Default: false
+      Doc: "The full-screen form: it fills the window, with a close button, the headline and the actions along the top, and the content scrolling under them."
+    }
+  }
+  Open: <| open |>
+  Modal: true
+  Dismissible: <| dismissible |>
+  Children {
+    Container {
+      Name: panel
+      State { Top: true }
+      A11y { Role: dialog, Label: <| headline |> }
+      Style {
+        Flex_Direction: vertical
+        Width: <| '100%' if fullscreen else min(560, max(280, width)) |>
+        Height: <| '100%' if fullscreen else 'auto' |>
+      }
+      Children {
+        If <| fullscreen |> {
+          Container {
+            Name: bar
+            Style { Flex_Direction: horizontal, Align_Content: center, Width: 100%, Height: 56 }
+            Children {
+              IconButton {
+                Name: close
+                Icon: close
+                Label: Close
+                Handlers {
+                  On_Click { Set { Target: open, Value: <| False |> } }
+                }
+              }
+              Text {
+                Name: bar_title
+                Text: <| headline |>
+                Typography_Role: title_large
+                Heading: 2
+                Style { Flex: expand_horizontal }
+              }
+              For a In <| actions |> Key <| a['value'] |> {
+                Button {
+                  Name: bar_action
+                  Variant: <| a.get('variant', 'text') |>
+                  Label: <| a['label'] |>
+                  Handlers {
+                    On_Click {
+                      Set { Target: result, Value: <| a['value'] |> }
+                      Set { Target: open, Value: <| False |> }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        If <| fullscreen and not top |> {
+          Divider {
+            Name: bar_line
+          }
+        }
+        If <| icon != '' and not fullscreen |> {
+          Icon {
+            Name: icon
+            Icon: <| icon |>
+          }
+        }
+        If <| headline != '' and not fullscreen |> {
+          Text {
+            Name: headline
+            Text: <| headline |>
+            Typography_Role: headline_small
+            Heading: 2
+          }
+        }
+        ScrollView {
+          Name: content
+          At_Top: <| top |>
+          Style { Flex_Direction: vertical, Max_Height: <| None if fullscreen else max_height |>, Flex: <| 'fill' if fullscreen else 'none' |> }
+          Children {
+            If <| text != '' |> {
+              Text {
+                Name: body
+                Text: <| text |>
+                Typography_Role: body_medium
+              }
+            }
+            Slot { }
+          }
+        }
+        If <| not top and not fullscreen |> {
+          Divider {
+            Name: line
+          }
+        }
+        If <| len(actions) > 0 and not fullscreen |> {
+          Container {
+            Name: actions
+            Style {
+              Flex_Direction: <| 'vertical' if sum([len(a['label']) * 8 + 24 for a in actions]) + 8 * (len(actions) - 1) > width - 48 else 'horizontal' |>
+              Align_Content: bottom_right
+              Gap: 8
+            }
+            Children {
+              For a In <| actions |> Key <| a['value'] |> {
+                Button {
+                  Name: action
+                  Variant: <| a.get('variant', 'text') |>
+                  Label: <| a['label'] |>
+                  Handlers {
+                    On_Click {
+                      Set { Target: result, Value: <| a['value'] |> }
+                      Set { Target: open, Value: <| False |> }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

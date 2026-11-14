@@ -1,0 +1,37 @@
+---
+TDL: 0.1
+Name: NavigationRailScreens
+Tesserae: "0.6"
+---
+# A navigation rail whose destinations are the app's screens: `items` is a list of {screen, label, icon} and optionally {badge}. The destination of the
+# screen showing is selected, and pressing one navigates to its screen. The up and down arrows move the focus along the rail.
+Container {
+  Params {
+    Items { Type: list, Default: [], Doc: "The destinations, each {screen, label, icon} and optionally {badge}." }
+    Expanded { Type: bool, Default: false, Doc: "220 pixels wide, with the labels beside the icons." }
+    Alignment { Type: enum, Choices: [top, center, bottom], Default: top, Doc: "Where the destinations sit in the column." }
+  }
+  A11y { Role: group, Label: Navigation }
+  Focus_Group: vertical
+  Style {
+    Flex_Direction: vertical
+    Width: <| 220 if expanded else 80 |>
+    Height: 100%
+    Gap: 12
+    Align_Content: <| {'top': 'top', 'center': 'center', 'bottom': 'bottom'}[alignment] if not expanded else 'top_left' |>
+    Background: surface
+    Padding: <| {'left': 20, 'right': 20, 'top': 44, 'bottom': 56} if expanded else {'left': 0, 'right': 0, 'top': 44, 'bottom': 56} |>
+  }
+  Children {
+    For s In <| items |> Key <| s['screen'] |> {
+      NavigationRailScreen {
+        Name: item
+        Screen: <| s['screen'] |>
+        Label: <| s['label'] |>
+        Icon: <| s['icon'] |>
+        Badge: <| s.get('badge', '') |>
+        Expanded: <| expanded |>
+      }
+    }
+  }
+}

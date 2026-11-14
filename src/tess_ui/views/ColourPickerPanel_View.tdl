@@ -1,0 +1,126 @@
+---
+TDL: 0.1
+Name: ColourPickerPanel
+Tesserae: "0.6"
+---
+# The inside of a colour picker, with no surface and no trigger: a square of saturation and value for the hue, a hue strip, an alpha strip, the hex text, the red, green, blue
+# and alpha numbers, and a row of the theme's colour roles. `value` is two-way and holds the colour as '#rrggbb' text, or '#rrggbbaa' when its alpha is below 1 (lowercase). Every
+# part reads and writes `value`, so they stay in step, and the hue the picker remembers (kept in `hue`, for a grey or a black, which have none of their own) is shared by the
+# square and the hue strip. `on_change` is called after each change the user makes, while a drag is still going. Tab goes square, hue, alpha, hex, red, green, blue, alpha, swatches.
+Container {
+  Params {
+    Value { Type: str, Default: "#000000", Model: true, Doc: "The colour: '#rrggbb', or '#rrggbbaa' when its alpha is below 1 (lowercase)." }
+    Roles {
+      Type: list
+      Default: []
+      Doc: "The theme colour roles in the row of swatches, in order; empty for primary, secondary, tertiary, error, surface, on_surface, primary_container and secondary_container."
+    }
+    Label { Type: str, Default: Colour, Doc: "What a screen reader calls the picker." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed and not editable." }
+    On_Change { Type: handler, Doc: "Called after each change the user makes." }
+  }
+  State { Hue: 0 }
+  A11y { Role: group, Label: <| label |> }
+  Style { Flex_Direction: vertical, Gap: 12, Width: 256 }
+  Children {
+    ColourArea {
+      Name: square
+      Value: <| value |>
+      Hue: <| hue |>
+      Disabled: <| disabled |>
+      Handlers {
+        On_Input { Call { Action: "on_change" } }
+      }
+      Style { Width: 256, Height: 176 }
+    }
+    ColourStrip {
+      Name: hue_strip
+      Channel: hue
+      Label: Hue
+      Value: <| value |>
+      Hue: <| hue |>
+      Disabled: <| disabled |>
+      Handlers {
+        On_Input { Call { Action: "on_change" } }
+      }
+      Style { Width: 256, Height: 24 }
+    }
+    ColourStrip {
+      Name: alpha_strip
+      Channel: alpha
+      Label: Alpha
+      Value: <| value |>
+      Hue: <| hue |>
+      Disabled: <| disabled |>
+      Handlers {
+        On_Input { Call { Action: "on_change" } }
+      }
+      Style { Width: 256, Height: 24 }
+    }
+    ColourField {
+      Name: hex
+      Channel: hex
+      Value: <| value |>
+      Disabled: <| disabled |>
+      Handlers {
+        On_Input { Call { Action: "on_change" } }
+      }
+      Style { Width: 256 }
+    }
+    Container {
+      Name: channels
+      Style { Flex_Direction: horizontal, Gap: 8 }
+      Children {
+        ColourField {
+          Name: red
+          Channel: red
+          Value: <| value |>
+          Disabled: <| disabled |>
+          Handlers {
+            On_Input { Call { Action: "on_change" } }
+          }
+          Style { Width: 58 }
+        }
+        ColourField {
+          Name: green
+          Channel: green
+          Value: <| value |>
+          Disabled: <| disabled |>
+          Handlers {
+            On_Input { Call { Action: "on_change" } }
+          }
+          Style { Width: 58 }
+        }
+        ColourField {
+          Name: blue
+          Channel: blue
+          Value: <| value |>
+          Disabled: <| disabled |>
+          Handlers {
+            On_Input { Call { Action: "on_change" } }
+          }
+          Style { Width: 58 }
+        }
+        ColourField {
+          Name: alpha
+          Channel: alpha
+          Value: <| value |>
+          Disabled: <| disabled |>
+          Handlers {
+            On_Input { Call { Action: "on_change" } }
+          }
+          Style { Width: 58 }
+        }
+      }
+    }
+    ColourSwatches {
+      Name: swatches
+      Roles: <| roles if len(roles) > 0 else None |>
+      Value: <| value |>
+      Disabled: <| disabled |>
+      Handlers {
+        On_Input { Call { Action: "on_change" } }
+      }
+    }
+  }
+}

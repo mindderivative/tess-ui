@@ -1,0 +1,252 @@
+---
+TDL: 0.1
+Name: TextField
+Tesserae: "0.6"
+---
+# The Material 3 text field: a labelled box around a text input, with an optional leading icon, prefix, suffix, trailing icon, supporting text,
+# character counter and an error state. `variant: filled | outlined`. What it looks like is in TextField_Stylesheet.yaml; this file is its
+# structure. `text` is two-way: give it a bare reference (`text: "{{ query }}"`) and typing writes `query`.
+#
+# The label is raised (small, at the top) while the field has focus or text, and sits in the middle as a hint otherwise; it glides between
+# the two (`transition:` on its position).
+Container {
+  Params {
+    Variant { Type: enum, Choices: [filled, outlined], Default: filled, Doc: "filled has a fill and a line under it; outlined has a border." }
+    Label { Type: str, Default: "", Doc: "The field's name; it also names the field for a screen reader." }
+    Text { Type: str, Default: "", Model: true, Doc: "What the user has typed." }
+    Placeholder { Type: str, Default: "", Doc: "Shown while the field is empty and focused (or has no label)." }
+    Supporting { Type: str, Default: "", Doc: "Help under the field." }
+    Error {
+      Type: str
+      Default: ""
+      Doc: "An error message. When it is not empty the field shows the error look and the message replaces the supporting text."
+    }
+    Leading { Type: str, Default: "", Doc: "A built-in icon name shown before the text." }
+    Trailing { Type: str, Default: "", Doc: "A built-in icon name shown after the text." }
+    Prefix { Type: str, Default: "", Doc: "Text before the typing, such as a currency sign." }
+    Suffix { Type: str, Default: "", Doc: "Text after the typing, such as a unit." }
+    Max_Length { Type: int, Default: 0, Doc: "The most characters it takes; 0 is no limit." }
+    Typing_Effect {
+      Type: enum
+      Choices: [none, flash, fade_in]
+      Default: none
+      Doc: "What happens to the characters just typed: flash tints them for a moment; fade_in fades them in. Left out when the app asks for reduced motion."
+    }
+    Typing_Duration {
+      Type: float
+      Default: null
+      Min: 0
+      Doc: "How long a flash or a fade-in lasts, in milliseconds: 260 for a flash and 180 for a fade-in when left out; 0 leaves the effect out."
+    }
+    Flash_Color { Type: color, Default: null, Doc: "What a flash is tinted with: a theme role or a colour; the primary colour when left out." }
+    Flash_Opacity { Type: float, Default: null, Min: 0, Max: 1, Doc: "How strong a flash starts, from 0 to 1: 0.24 when left out." }
+    Glide_Duration {
+      Type: float
+      Default: null
+      Min: 0
+      Doc: "How long the gliding caret takes to reach its new place, in milliseconds: 120 when left out; 0 makes it jump."
+    }
+    Caret_Blink {
+      Type: float
+      Default: null
+      Min: 0
+      Doc: "The time the gliding caret is on and then off, in milliseconds: 530 when left out; 0 keeps it solid."
+    }
+    Caret_Effect {
+      Type: enum
+      Choices: [none, glide]
+      Default: none
+      Doc: "glide draws the caret itself and eases it to each new place. It jumps, and does not blink, when the app asks for reduced motion."
+    }
+    Mask {
+      Type: mask
+      Default: ""
+      Doc: "A pattern the typing is put in: # a digit, A a letter, * either, \\ a literal; other characters come by themselves, as in (###) ###-####."
+    }
+    Counter { Type: bool, Default: false, Doc: "Shows how many characters are typed (of max_length, when there is one)." }
+    Multiline { Type: bool, Default: false, Doc: "Several lines; Enter makes a new one, so on_submit does not fire." }
+    Obscured { Type: bool, Default: false, Doc: "A password: dots instead of the text, with a button that shows it." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed, and takes no typing." }
+    Read_Only { Type: bool, Default: false, Doc: "The text can be selected and copied but not changed." }
+    On_Edit { Type: handler, Doc: "Called after each edit the user makes, once `text` has been written." }
+    Suggestions {
+      Type: list
+      Default: []
+      Doc: "Texts to offer while typing: those that contain what is typed show in a menu under the field, and pressing one fills it in."
+    }
+  }
+  State { Reveal: false, Ac_Open: false, Picked: "" }
+  Style { Flex_Direction: vertical }
+  Children {
+    If <| text != '' and len([s for s in suggestions if text.lower() in s.lower() and s != text]) > 0 |> {
+      Menu {
+        Name: offers
+        Open: <| ac_open |>
+        Anchor: box
+        Chosen: <| picked |>
+        Items: <| [{'value': s, 'label': s} for s in suggestions if text.lower() in s.lower() and s != text][:6] |>
+        Width: 280
+        On_Pick: "text = picked; ac_open = False"
+      }
+    }
+    Container {
+      Name: box
+      Handlers {
+        On_Press { Call { Action: "focus", Args: [<| 'input' |>] } }
+      }
+      Style { Flex_Direction: horizontal, Align_Content: left, Gap: 12, Padding { Left: 16, Right: 16, Top: 0, Bottom: 0 }, Min_Height: 56 }
+      Children {
+        If <| leading != '' |> {
+          Icon {
+            Name: leading_icon
+            Icon: <| leading |>
+            Style { Width: 24, Height: 24 }
+          }
+        }
+        Container {
+          Name: body
+          Style {
+            Flex_Direction: horizontal
+            Flex: fill
+            Align_Content: left
+            Gap: 4
+            Padding: <| {'left': 0, 'right': 0, 'top': 16 if label != '' else 0, 'bottom': 0} |>
+          }
+          Children {
+            If <| prefix != '' |> {
+              Text {
+                Name: prefix
+                Text: <| prefix |>
+                Typography_Role: body_large
+              }
+            }
+            TextInput {
+              Name: input
+              Text: <| text |>
+              Placeholder: <| placeholder if (focused or label == '') else '' |>
+              Multiline: <| multiline |>
+              Obscured: <| obscured and not reveal |>
+              Max_Length: <| max_length |>
+              Mask: <| mask |>
+              Typing_Effect: <| typing_effect |>
+              Caret_Effect: <| caret_effect |>
+              Typing_Duration: <| typing_duration |>
+              Flash_Color: <| flash_color |>
+              Flash_Opacity: <| flash_opacity |>
+              Glide_Duration: <| glide_duration |>
+              Caret_Blink: <| caret_blink |>
+              Read_Only: <| read_only |>
+              Disabled: <| disabled |>
+              Typography_Role: body_large
+              Handlers {
+                On_Change {
+                  Set { Target: ac_open, Value: <| True |> }
+                  Call { Action: "on_edit" }
+                }
+              }
+              Style { Flex: fill, Min_Height: <| 72 if multiline else 24 |> }
+              A11y {
+                Label: <| label + (': ' + error if error != '' else '') |>
+                Invalid: <| error != '' |>
+                Describedby: footer
+                Description: <| error if error != '' else supporting |>  # sent to the screen reader when tess_re takes it; the label carries the error until then
+              }
+            }
+            If <| suffix != '' |> {
+              Text {
+                Name: suffix
+                Text: <| suffix |>
+                Typography_Role: body_large
+              }
+            }
+          }
+        }
+        If <| error != '' |> {
+          Icon {
+            Name: error_icon
+            Icon: error
+            Style { Width: 24, Height: 24 }
+          }
+        }
+        If <| trailing != '' and error == '' and not obscured |> {
+          Icon {
+            Name: trailing_icon
+            Icon: <| trailing |>
+            Style { Width: 24, Height: 24 }
+          }
+        }
+        If <| obscured and error == '' |> {
+          Rect {
+            Name: reveal_button
+            Style { Width: 40, Height: 40, Corner_Radius: 20, Align_Content: center }
+            Handlers {
+              On_Click { Set { Target: reveal, Value: <| not reveal |> } }
+            }
+            A11y { Label: <| 'Hide' if reveal else 'Show' |> <| label.lower() or 'text' |>, Role: button }
+            Interaction: true
+            Children {
+              Icon {
+                Name: reveal_icon
+                Icon: <| 'visibility' if reveal else 'visibility_off' |>
+                Style { Width: 24, Height: 24 }
+              }
+            }
+          }
+        }
+        If <| label != '' |> {
+          Container {
+            Name: label_box
+            Style {
+              Transition { X: 150, Y: 150 }  # the label glides up when the field is used and back down when it is empty again
+              Position: absolute
+              X: <| 12 + (36 if leading != '' else 0) + (0 if (focused or text != '') and variant == 'outlined' else 4) |>
+              Y: <| ((8 if variant == 'filled' else -8) if (focused or text != '') else 18) |>
+              Padding { Left: 4, Right: 4, Top: 0, Bottom: 0 }
+              # an outlined label sits on the border when raised, and a fill behind it hides the line there
+              Background: <| 'surface' if (variant == 'outlined' and (focused or text != '')) else 'transparent' |>
+            }
+            Children {
+              Text {
+                Name: label
+                Text: <| label |>
+                Typography_Role: <| 'body_small' if (focused or text != '') else 'body_large' |>
+              }
+            }
+          }
+        }
+      }
+    }
+    If <| variant == 'filled' |> {
+      Rect {
+        Name: indicator
+        Style { Flex: expand_horizontal }
+      }
+    }
+    Container {
+      Name: footer
+      Style {
+        Flex_Direction: horizontal
+        Align_Content: top_left
+        Gap: 16
+        Padding: <| {'left': 16, 'right': 16, 'top': 4 if (supporting != '' or error != '' or counter) else 0, 'bottom': 0} |>
+      }
+      Children {
+        If <| supporting != '' or error != '' |> {
+          Text {
+            Name: supporting
+            Text: <| error if error != '' else supporting |>
+            Typography_Role: body_small
+            Style { Flex: fill }
+          }
+        }
+        If <| counter |> {
+          Text {
+            Name: counter
+            Text: <| len(text) |><| '/' + str(max_length) if max_length > 0 else '' |>
+            Typography_Role: body_small
+          }
+        }
+      }
+    }
+  }
+}

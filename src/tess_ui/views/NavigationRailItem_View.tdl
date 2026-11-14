@@ -1,0 +1,72 @@
+---
+TDL: 0.1
+Name: NavigationRailItem
+Tesserae: "0.6"
+---
+# One destination of a navigation rail: an icon in a 56 by 32 pill with its label under it (or, in an expanded rail, a 56 high pill with the label beside the
+# icon). A selected item has a `secondary_container` pill; a `badge` sits on the icon. A screen reader hears a link named by the label, current when it is
+# selected. `handlers: {on_click: ...}` on the call is what a press does.
+Container {
+  Params {
+    Icon { Type: str, Default: "", Doc: "The icon." }
+    Label { Type: str, Default: "", Doc: "The destination's name." }
+    Selected { Type: bool, Default: false, Doc: "Whether this is where the user is." }
+    Badge { Type: any, Default: "", Doc: "A count or text on the icon; empty for none, and `true` for a dot." }
+    Expanded { Type: bool, Default: false, Doc: "The label beside the icon, as in an expanded rail." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed and not pressable." }
+  }
+  Interaction: true
+  Disabled: <| disabled |>
+  A11y {
+    Role: link
+    Label: <| label |>
+    Current: <| 'page' if selected else False |>
+  }
+  Style {
+    Flex_Direction: <| 'horizontal' if expanded else 'vertical' |>
+    Align_Content: <| 'left' if expanded else 'top' |>
+    Gap: 4
+  }
+  Children {
+    Container {
+      Name: pill
+      Style { Flex_Direction: horizontal, Align_Content: center, Gap: 8 }
+      Children {
+        If <| badge != '' |> {
+          Badge {
+            Name: badged
+            Value: <| '' if badge is True else badge |>
+            Anchored: true
+            Children {
+              Icon {
+                Name: badged_icon
+                Icon: <| icon |>
+              }
+            }
+          }
+        }
+        If <| badge == '' |> {
+          Icon {
+            Name: icon
+            Icon: <| icon |>
+          }
+        }
+        If <| expanded |> {
+          Text {
+            Name: inline_label
+            Text: <| label |>
+            Typography_Role: label_large
+          }
+        }
+      }
+    }
+    If <| not expanded |> {
+      Text {
+        Name: label
+        Text: <| label |>
+        Typography_Role: label_medium
+        Text_Align: center
+      }
+    }
+  }
+}

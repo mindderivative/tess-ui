@@ -1,0 +1,107 @@
+---
+TDL: 0.1
+Name: KeyChordField
+Tesserae: "0.6"
+---
+# A field for a keyboard shortcut: the chord as text in an outlined text field (`Ctrl+Shift+F1`: the modifiers Ctrl, Alt, Shift and Meta in that order, then one key, a named key in title case),
+# and a button that records it. Press the button (or focus it and press Enter or Space) and the next key press is the chord (the `on_click: n = n` below changes nothing: a box with no click handler cannot take the focus, and the pointer starts a recording on its press, so a key press that is also a click cannot start one again after it has ended it): Escape cancels, Backspace clears, and a modifier on its own (Shift,
+# Control, Alt, Meta) only shows the modifiers held so far and does not finish it. A chord can also be typed: it is read when Enter is pressed or the field is left, in any case (`ctrl+shift+f1`,
+# `Control+Return`), and written in the canonical form; text that is not a chord is refused, in the error colours, and `value` is left as it was. `value` is two-way text and is never rewritten
+# for a value the app sets. `on_change` is called after each change the person makes. What the parts do is in the ChordRecorder control (`tess_ui.chord_controls`), which this view drives by
+# writing a numbered command to `cmd`.
+Container {
+  Params {
+    Value { Type: str, Default: "", Model: true, Doc: "The key chord, `Ctrl+Alt+Shift+Meta+Key`; empty is no shortcut." }
+    Recording {
+      Type: bool
+      Default: false
+      Model: true
+      Doc: "Whether the next key press is recorded as the chord. The button sets it; a finished or cancelled recording writes false."
+    }
+    Label { Type: str, Default: Shortcut, Doc: "What a screen reader calls the field, and its label." }
+    Placeholder { Type: str, Default: "Not set", Doc: "What the field says while it is empty and not being edited." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed and not editable." }
+    On_Change { Type: handler, Doc: "Called after each change the person makes." }
+  }
+  State { N: 0, Cmd: "", Draft: "", Preview: "", Invalid: false, Message: "" }
+  A11y { Role: group, Label: <| label |> }
+  Style { Flex_Direction: horizontal, Align_Content: center, Gap: 8 }
+  Children {
+    ChordRecorder {
+      Name: recorder
+      Value: <| value |>
+      Draft: <| draft |>
+      Recording: <| recording |>
+      Command: <| cmd |>
+      Preview: <| preview |>
+      Invalid: <| invalid |>
+      Message: <| message |>
+      Disabled: <| disabled |>
+      Handlers {
+        On_Input { Call { Action: "on_change" } }
+      }
+    }
+    TextField {
+      Name: field
+      Variant: outlined
+      Label: <| label |>
+      Placeholder: <| placeholder |>
+      Text: <| draft |>
+      Error: <| message if invalid else '' |>
+      Disabled: <| disabled |>
+      Style { Flex: fill }
+      Handlers {
+        On_Submit {
+          Set { Target: n, Value: <| n + 1 |> }
+          Set { Target: cmd, Value: <| str(n) + ' typed ' + draft |> }
+        }
+        On_Focus_Exit {
+          Set { Target: n, Value: <| n + 1 |> }
+          Set { Target: cmd, Value: <| str(n) + ' typed ' + draft |> }
+        }
+      }
+    }
+    Container {
+      Name: record
+      Interaction: true
+      Disabled: <| disabled |>
+      A11y {
+        Role: button
+        Label: <| ('Recording ' + label + ': press the keys, Escape cancels, Backspace clears') if recording else ('Record ' + label) |>
+        Pressed: <| recording |>
+      }
+      Handlers {
+        On_Press { Set { Target: recording, Value: <| True |> } }
+        On_Click { Set { Target: n, Value: <| n |> } }
+        On_Key {
+          Set { Target: n, Value: <| n + 1 |> }
+          Set {
+            Target: cmd
+            Value: <| str(n) + ' key ' + event.key + (' ctrl' if event.ctrl else '') + (' alt' if event.alt else '') + (' shift' if event.shift else '') + (' meta' if event.meta else '') |>
+          }
+        }
+        On_Focus_Exit { Set { Target: recording, Value: <| False |> } }
+      }
+      Style {
+        Flex_Direction: horizontal
+        Align_Content: center
+        Gap: 8
+        Min_Height: 56
+        Background: <| 'primary_container' if recording else 'transparent' |>
+      }
+      Children {
+        Icon {
+          Name: record_icon
+          Icon: keyboard
+          Style { Width: 24, Height: 24, Foreground: <| 'on_primary_container' if recording else 'on_surface_variant' |> }
+        }
+        Text {
+          Name: record_text
+          Text: <| ('Press keys ' + preview if preview != '' else 'Press keys') if recording else 'Record' |>
+          Typography_Role: label_large
+          Style { Foreground: <| 'on_primary_container' if recording else 'on_surface_variant' |> }
+        }
+      }
+    }
+  }
+}

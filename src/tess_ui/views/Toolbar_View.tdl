@@ -1,0 +1,107 @@
+---
+TDL: 0.1
+Name: Toolbar
+Tesserae: "0.6"
+---
+# The Material 3 toolbar: a row (or, floating, a column) of icon buttons with an optional action button at the end and an overflow menu. `variant: docked` spans its width, 64 tall, on
+# `surface_container`; `floating` is a pill with a shadow that is as long as its buttons, and `vibrant: true` puts it on `primary_container` (the icons on_primary_container). `items` is a list of
+# {value, icon, label} and optionally {disabled}: pressing one sets `chosen` to its `value`; every icon has a label (its name and its tooltip). `overflow` is a list of Menu rows shown under a
+# more button at the end; with `fit: true` the items that do not fit go there by themselves. Your own content goes in the default slot after the items. `fab_icon` (with `fab_label` and `on_fab`) adds an action
+# button at the end. `hidden: true` fades the toolbar out of the way and out of the tab order (bind it to the way a list scrolls). The arrow keys move between the buttons (one Tab stop).
+# Role: a group, because the engine has no toolbar role.
+Container {
+  Params {
+    Variant { Type: enum, Choices: [docked, floating], Default: docked, Doc: "docked spans its width; floating is a pill with a shadow." }
+    Orientation { Type: enum, Choices: [horizontal, vertical], Default: horizontal, Doc: "A row, or (for the floating one) a column." }
+    Vibrant { Type: bool, Default: false, Doc: "primary_container, with on_primary_container icons." }
+    Width { Type: any, Default: null, Doc: "A docked toolbar's width; the width of its place when not given." }
+    Label { Type: str, Default: Toolbar, Doc: "The toolbar's accessible name." }
+    Items { Type: list, Default: [], Doc: "The icon buttons, each {value, icon, label} and optionally {disabled}." }
+    Overflow { Type: list, Default: [], Doc: "Menu rows under a more button at the end (empty shows no button)." }
+    Chosen { Type: any, Default: "", Model: true, Doc: "The value of the item or overflow row last pressed." }
+    Fab_Icon { Type: str, Default: "", Doc: "An action button at the end (empty shows none)." }
+    Fab_Label { Type: str, Default: "", Doc: "Its name and tooltip." }
+    On_Fab { Type: handler, Doc: "What the action button does." }
+    Fit {
+      Type: bool
+      Default: false
+      Doc: "Items that do not fit move into the overflow menu, after the ones that do (a docked toolbar measures itself; a floating one uses `max_length`)."
+    }
+    Max_Length { Type: any, Default: null, Doc: "A floating toolbar's longest length in pixels, for `fit`." }
+    Hidden { Type: bool, Default: false, Doc: "Faded out of the way and out of the tab order." }
+    Disabled { Type: bool, Default: false, Doc: "No button responds." }
+  }
+  Measured_Width: <| avail |>
+  State { Menu_Open: false, Avail: 0 }
+  Focus_Group: both
+  A11y { Role: group, Label: <| label |>, Hidden: <| hidden |> }
+  Style {
+    Flex_Direction: <| 'vertical' if (variant == 'floating' and orientation == 'vertical') else 'horizontal' |>
+    Align_Content: center
+    Opacity: <| 0 if hidden else 1 |>
+    Transition { Opacity: 200 }
+    Width: <| (64 if orientation == 'vertical' else 'auto') if variant == 'floating' else (width if width is not None else '100%') |>
+    Height: <| 'auto' if (variant == 'floating' and orientation == 'vertical') else 64 |>
+  }
+  Children {
+    Container {
+      Name: group
+      Style {
+        Flex_Direction: <| 'vertical' if (variant == 'floating' and orientation == 'vertical') else 'horizontal' |>
+        Align_Content: center
+        Flex: <| 'expand_horizontal' if (variant == 'docked' and (fab_icon != '' or len(overflow) > 0 or fit)) else 'none' |>
+      }
+      Children {
+        For o In <| items[:(len(items) if (not fit or (max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) <= 0 or len(items) * 44 - 4 + (48 if len(overflow) > 0 else 0) <= ((max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) - (32 if variant == 'docked' else 16) - (48 if fab_icon != '' else 0))) else max(0, int((((max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) - (32 if variant == 'docked' else 16) - (48 if fab_icon != '' else 0)) - 44) // 44)))] |> Key <| o['value'] |> {
+          IconButton {
+            Name: item
+            Icon: <| o['icon'] |>
+            Label: <| o['label'] |>
+            Tint: <| 'on_primary_container' if vibrant else '' |>
+            Disabled: <| disabled or hidden or o.get('disabled', False) |>
+            Handlers {
+              On_Click { Set { Target: chosen, Value: <| o['value'] |> } }
+            }
+          }
+        }
+        Slot { }
+      }
+    }
+    If <| len(overflow) > 0 or len(items) > (len(items) if (not fit or (max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) <= 0 or len(items) * 44 - 4 + (48 if len(overflow) > 0 else 0) <= ((max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) - (32 if variant == 'docked' else 16) - (48 if fab_icon != '' else 0))) else max(0, int((((max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) - (32 if variant == 'docked' else 16) - (48 if fab_icon != '' else 0)) - 44) // 44))) |> {
+      IconButton {
+        Name: more
+        Icon: <| 'dots_vertical' if orientation == 'vertical' else 'dots_horizontal' |>
+        Label: "More actions"
+        Tint: <| 'on_primary_container' if vibrant else '' |>
+        Disabled: <| disabled or hidden |>
+        A11y { Expanded: <| menu_open |> }
+        Handlers {
+          On_Click { Set { Target: menu_open, Value: <| not menu_open |> } }
+        }
+      }
+    }
+    If <| len(overflow) > 0 or len(items) > (len(items) if (not fit or (max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) <= 0 or len(items) * 44 - 4 + (48 if len(overflow) > 0 else 0) <= ((max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) - (32 if variant == 'docked' else 16) - (48 if fab_icon != '' else 0))) else max(0, int((((max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) - (32 if variant == 'docked' else 16) - (48 if fab_icon != '' else 0)) - 44) // 44))) |> {
+      Menu {
+        Name: menu
+        Open: <| menu_open |>
+        Anchor: more
+        Placement: <| 'start' if orientation == 'vertical' else 'above' |>
+        Items: <| [{'value': o['value'], 'label': o['label'], 'icon': o.get('icon', ''), 'disabled': o.get('disabled', False)} for o in items[(len(items) if (not fit or (max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) <= 0 or len(items) * 44 - 4 + (48 if len(overflow) > 0 else 0) <= ((max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) - (32 if variant == 'docked' else 16) - (48 if fab_icon != '' else 0))) else max(0, int((((max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) - (32 if variant == 'docked' else 16) - (48 if fab_icon != '' else 0)) - 44) // 44))):]] + ([{'divider': True}] if (len(items) > (len(items) if (not fit or (max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) <= 0 or len(items) * 44 - 4 + (48 if len(overflow) > 0 else 0) <= ((max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) - (32 if variant == 'docked' else 16) - (48 if fab_icon != '' else 0))) else max(0, int((((max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) - (32 if variant == 'docked' else 16) - (48 if fab_icon != '' else 0)) - 44) // 44))) and len(overflow) > 0) else []) + overflow |>
+        Chosen: <| chosen |>
+      }
+    }
+    If <| fab_icon != '' |> {
+      Fab {
+        Name: fab
+        Icon: <| fab_icon |>
+        Label: <| fab_label |>
+        Size: small
+        Variant: primary
+        Disabled: <| disabled or hidden |>
+        Handlers {
+          On_Click { Call { Action: "on_fab" } }
+        }
+      }
+    }
+  }
+}

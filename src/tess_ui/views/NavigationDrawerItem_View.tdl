@@ -1,0 +1,56 @@
+---
+TDL: 0.1
+Name: NavigationDrawerItem
+Tesserae: "0.6"
+---
+# One destination of a navigation drawer (Material 3): a 56 pixel tall pill with a 24 pixel icon, a `label_large` label and, at the end, a badge (a count or short
+# text). The selected one is `secondary_container`. A screen reader hears a link named by the label, current when it is selected.
+# `handlers: {on_click: ...}` on the call is what a press does.
+Container {
+  Params {
+    Label { Type: str, Default: "", Doc: "The destination's name." }
+    Icon { Type: str, Default: "", Doc: "The icon." }
+    Badge { Type: any, Default: "", Doc: "A count or short text at the end; empty for none." }
+    Selected { Type: bool, Default: false, Doc: "Whether this is where the user is." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed and not pressable." }
+  }
+  Interaction: true
+  Disabled: <| disabled |>
+  A11y {
+    Role: link
+    Label: <| label |>
+    Current: <| 'page' if selected else False |>
+  }
+  Style {
+    Flex_Direction: horizontal
+    Align_Content: left
+    Height: 56
+    Width: 100%
+  }
+  Children {
+    If <| icon != '' |> {
+      Icon {
+        Name: icon
+        Icon: <| icon |>
+      }
+    }
+    Text {
+      Name: label
+      Text: <| label |>
+      Typography_Role: label_large
+      Max_Lines: 1
+      Overflow: ellipsis
+    }
+    Container {
+      Name: filler
+      Style { Flex: expand_horizontal }
+    }
+    If <| badge != '' |> {
+      Text {
+        Name: badge
+        Text: <| str(badge) |>
+        Typography_Role: label_large
+      }
+    }
+  }
+}

@@ -1,0 +1,59 @@
+---
+TDL: 0.1
+Name: ButtonGroup
+Tesserae: "0.6"
+---
+# The Material 3 button group: buttons that behave as a set. `mode: none` is a row of actions (the last one pressed goes to `chosen`), `single` is a
+# choice of one (`selected` is the chosen value) and `multiple` a set (`selected` is the list of chosen values). `connected: true` joins the buttons with
+# a 2 pixel gap and square inner corners; otherwise they stand 8 pixels apart. One Tab stop; the arrow keys move the focus (and, for
+# `single`, the choice). The look of each button is Button's: `variant` and `size` pass to every one.
+Container {
+  Params {
+    Items { Type: list, Default: [], Doc: "The buttons, each {value, label} and optionally {icon, disabled}." }
+    Mode { Type: enum, Choices: [none, single, multiple], Default: none, Doc: "none: actions; single: one chosen; multiple: any number chosen." }
+    Selected { Type: any, Default: "", Model: true, Doc: "single: the chosen value; multiple: the list of chosen values." }
+    Chosen { Type: any, Default: "", Model: true, Doc: "none: the value of the button last pressed." }
+    Variant { Type: enum, Choices: [filled, tonal, elevated, outlined, text], Default: filled, Doc: "Passed to every button." }
+    Size { Type: enum, Choices: [xs, s, m, l, xl], Default: s, Doc: "Passed to every button." }
+    Connected { Type: bool, Default: false, Doc: "Joined, with square inner corners." }
+    Orientation { Type: enum, Choices: [horizontal, vertical], Default: horizontal, Doc: "A row, or a column." }
+    Disabled { Type: bool, Default: false, Doc: "No button can be pressed." }
+  }
+  Focus_Group: both
+  A11y { Role: group }
+  Style {
+    Flex_Direction: <| 'vertical' if orientation == 'vertical' else 'horizontal' |>
+    Gap: <| 2 if connected else 8 |>
+  }
+  Children {
+    # TODO tuple for-target: i, o in enumerate(items)
+    For i_o In <| enumerate(items) |> Key <| o['value'] |> {
+      Button {
+        Name: item
+        Label: <| o['label'] |>
+        Icon: <| o.get('icon', '') |>
+        Variant: <| variant |>
+        Size: <| size |>
+        Toggle: <| mode != 'none' |>
+        Flip: false
+        Selected: <| ((o['value'] in selected) if mode == 'multiple' else (o['value'] == selected)) if mode != 'none' else False |>
+        Disabled: <| disabled or o.get('disabled', False) |>
+        Style {
+          Corner_Radius: <| ({'top_left': 'full' if i == 0 else 4, 'bottom_left': 'full' if i == 0 else 4, 'top_right': 'full' if i == len(items) - 1 else 4, 'bottom_right': 'full' if i == len(items) - 1 else 4} if orientation == 'horizontal' else {'top_left': 'full' if i == 0 else 4, 'top_right': 'full' if i == 0 else 4, 'bottom_left': 'full' if i == len(items) - 1 else 4, 'bottom_right': 'full' if i == len(items) - 1 else 4}) if connected else None |>
+        }
+        Handlers {
+          On_Click {
+            Set { Target: chosen, Value: <| o['value'] if mode == 'none' else chosen |> }
+            Set {
+              Target: selected
+              Value: <| (o['value'] if mode == 'single' else ([v for v in selected if v != o['value']] if o['value'] in selected else selected + [o['value']])) if mode != 'none' else selected |>
+            }
+          }
+          On_Focus_Enter {
+            Set { Target: selected, Value: <| o['value'] if (mode == 'single' and not (disabled or o.get('disabled', False))) else selected |> }
+          }
+        }
+      }
+    }
+  }
+}

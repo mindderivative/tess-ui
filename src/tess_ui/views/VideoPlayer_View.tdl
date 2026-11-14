@@ -1,0 +1,118 @@
+---
+TDL: 0.1
+Name: VideoPlayer
+Tesserae: "0.6"
+---
+# A video player: a picture surface with the usual transport controls under it. Tesserae has no decoder, so the app supplies the frames: a `frame` (rgba bytes, width, height) that a
+# ViewModel updates as it plays, like an `Image`'s `frame`. The player owns none of the playing: `playing` (two-way) is what the play button flips, `position` (two-way, seconds) is where the seek
+# slider is and what it writes when dragged, and the app's player follows both and moves `position` on as the video plays. `duration` is the length in seconds. `muted` (two-way) is the volume button.
+# `buffering` lays a wait ring over the picture; `caption` is a line of subtitle on a darkened band at its foot. Keys, on the seek slider: Space plays or pauses, the arrows step `position` by `step` seconds, M mutes (the buttons are Tab stops with their own keys). The role is a group named by `label`. Not here: a decoder, full-screen, speeds, a volume level.
+Container {
+  Params {
+    Frame { Type: any, Default: null, Doc: "The current picture: (rgba bytes, width, height), pushed by the app as the video plays." }
+    Width { Type: float, Default: 480, Doc: "The picture's width." }
+    Height { Type: float, Default: 270, Doc: "The picture's height." }
+    Fit { Type: enum, Choices: [cover, contain, fill], Default: contain, Doc: "How the picture fills its box." }
+    Playing { Type: bool, Default: false, Model: true, Doc: "Whether it is playing; the play button flips it." }
+    Position { Type: float, Default: 0, Model: true, Doc: "Seconds in; the seek slider shows and writes it." }
+    Duration { Type: float, Default: 0, Doc: "The length in seconds." }
+    Muted { Type: bool, Default: false, Model: true, Doc: "Whether the sound is off; the volume button flips it." }
+    Buffering { Type: bool, Default: false, Doc: "A wait ring over the picture." }
+    Caption { Type: str, Default: "", Doc: "A subtitle line shown at the foot of the picture." }
+    Step { Type: float, Default: 1, Doc: "Seconds the arrow keys move the seek slider (and a drag lands on a multiple of it)." }
+    Label { Type: str, Default: Video, Doc: "What a screen reader calls the player." }
+  }
+  A11y { Role: group, Label: <| label |> }
+  Style {
+    Flex_Direction: vertical
+    Width: <| width |>
+    Gap: 8
+  }
+  Children {
+    Container {
+      Name: stage
+      Style { Width: 100%, Height: <| height |>, Corner_Radius: 12, Clip_Children: true, Background: scrim }
+      Children {
+        Image {
+          Name: picture
+          Frame: <| frame |>
+          Fit: <| fit |>
+          Style { Position: absolute, X: 0, Y: 0, Width: 100%, Height: 100% }
+        }
+        If <| buffering |> {
+          CircularProgress {
+            Name: wait
+            Label: Buffering
+            Style { Position: absolute, X: 50%, Y: 50%, Translate_X: -24, Translate_Y: -24, Width: 48, Height: 48 }
+          }
+        }
+        If <| caption != '' |> {
+          Container {
+            Name: caption
+            Style { Position: absolute, Left: 0, Right: 0, Bottom: 0, Height: 40, Align_Content: center, Background: "scrim@60%" }
+            Children {
+              Text {
+                Name: caption_text
+                Text: <| caption |>
+                Typography_Role: body_medium
+                Max_Lines: 1
+                Overflow: ellipsis
+              }
+            }
+          }
+        }
+      }
+    }
+    Container {
+      Name: controls
+      Focus_Group: horizontal
+      Style { Flex_Direction: horizontal, Align_Content: center, Gap: 8 }
+      Children {
+        IconButton {
+          Name: play
+          Icon: <| 'pause' if playing else 'play' |>
+          Label: <| 'Pause' if playing else 'Play' |>
+          Handlers {
+            On_Click { Set { Target: playing, Value: <| not playing |> } }
+          }
+        }
+        Text {
+          Name: elapsed
+          Style { Width: 44 }
+          Text: <| str(int(position // 60)) + ':' + str(int(position % 60)).zfill(2) |>
+          Typography_Role: label_medium
+        }
+        Slider {
+          Name: seek
+          Min: 0
+          Max: <| max(duration, 1) |>
+          Value: <| position |>
+          Step: <| step |>
+          Disabled: <| duration <= 0 |>
+          A11y { Label: Seek }
+          Style { Width: <| max(80, width - 200) |> }
+          Handlers {
+            On_Key {
+              Set { Target: playing, Value: <| (not playing) if event.key == 'space' else playing |> }
+              Set { Target: muted, Value: <| (not muted) if event.key == 'm' else muted |> }
+            }
+          }
+        }
+        Text {
+          Name: total
+          Style { Width: 44 }
+          Text: <| str(int(duration // 60)) + ':' + str(int(duration % 60)).zfill(2) |>
+          Typography_Role: label_medium
+        }
+        IconButton {
+          Name: volume
+          Icon: <| 'volume_off' if muted else 'volume_high' |>
+          Label: <| 'Unmute' if muted else 'Mute' |>
+          Handlers {
+            On_Click { Set { Target: muted, Value: <| not muted |> } }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,64 @@
+---
+TDL: 0.1
+Name: TimeInput
+Tesserae: "0.6"
+---
+# The keyboard form of a time picker (Material 3's "input mode"): an hour field, a colon, a minute field and, in 12-hour time, an AM / PM selector. `hour` (0 to 23)
+# and `minute` (0 to 59) are two-way; the fields take the digits, and a number that does not fit is left out until it does. The fields are filled from `hour` and
+# `minute` when the input appears, and follow what is typed after that. `twelve` shows 1 to 12 and the period selector, otherwise the hour is 0 to 23.
+Container {
+  Params {
+    Hour { Type: int, Default: 0, Model: true, Doc: "0 to 23." }
+    Minute { Type: int, Default: 0, Model: true, Doc: "0 to 59." }
+    Twelve { Type: bool, Default: true, Doc: "12-hour time with an AM / PM selector." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed and not editable." }
+  }
+  State {
+    Ht: <| ('0' + str(hour % 12 or 12))[-2:] if twelve else ('0' + str(hour))[-2:] |>
+    Mt: <| ('0' + str(minute))[-2:] |>
+    Period: <| 'PM' if hour >= 12 else 'AM' |>
+  }
+  A11y { Role: group, Label: Time }
+  Style {
+    Flex_Direction: horizontal
+    Align_Content: left
+    Gap: 12
+  }
+  Children {
+    TextField {
+      Name: hour_field
+      Variant: outlined
+      Label: Hour
+      Text: <| ht |>
+      Mask: "##"
+      Max_Length: 2
+      Disabled: <| disabled |>
+      On_Edit: "hour = ((int(ht) % 12) + (12 if period == 'PM' else 0)) if (twelve and ht != '' and 1 <= int(ht) <= 12) else (int(ht) if (not twelve and ht != '' and 0 <= int(ht) <= 23) else hour)"
+      Style { Width: 96 }
+    }
+    Text {
+      Name: colon
+      Text: ":"
+      Typography_Role: display_medium
+    }
+    TextField {
+      Name: minute_field
+      Variant: outlined
+      Label: Minute
+      Text: <| mt |>
+      Mask: "##"
+      Max_Length: 2
+      Disabled: <| disabled |>
+      On_Edit: "minute = int(mt) if (mt != '' and 0 <= int(mt) <= 59) else minute"
+      Style { Width: 96 }
+    }
+    If <| twelve |> {
+      PeriodSelector {
+        Name: period_selector
+        Period: <| period |>
+        Disabled: <| disabled |>
+        On_Change: "hour = (hour % 12) + (12 if period == 'PM' else 0)"
+      }
+    }
+  }
+}

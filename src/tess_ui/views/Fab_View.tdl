@@ -1,0 +1,45 @@
+---
+TDL: 0.1
+Name: Fab
+Tesserae: "0.6"
+---
+# The Material 3 floating action button, and its extended form: an icon in a prominent container, with a label beside it when `label` is given. In four
+# colours (`variant`: primary, secondary, tertiary, surface) and three sizes (`size`: small 40, medium 56, large 96). An extended FAB collapses to just its icon
+# when `collapsed` is true; bind that to the way a list scrolls (`collapsed: "{{ way == 'down' }}"`) for the usual behaviour. `label` names it for a screen
+# reader and, when it is only an icon, is its tooltip. `handlers: {on_click: add}` on the call is what a press does. Colours, sizes and how it lifts are in Fab_Stylesheet.yaml.
+Container {
+  Params {
+    Icon { Type: str, Default: "", Doc: "The icon." }
+    Label { Type: str, Default: "", Doc: "The text beside the icon (an extended FAB); also its accessible name." }
+    Variant { Type: enum, Choices: [primary, secondary, tertiary, surface], Default: primary, Doc: "The container colour." }
+    Size { Type: enum, Choices: [small, medium, large], Default: medium, Doc: "40, 56 or 96 pixels. An extended FAB is 56 tall." }
+    Collapsed { Type: bool, Default: false, Doc: "An extended FAB shows only its icon." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed, not focusable, and it does not respond." }
+  }
+  Interaction: true
+  Disabled: <| disabled |>
+  Style {
+    Flex_Direction: horizontal
+    Align_Content: center
+  }
+  A11y {
+    Role: button
+    Label: <| label |>
+  }
+  Tooltip: <| label if (label != '' and collapsed) else '' |>
+  Children {
+    If <| icon != '' |> {
+      Icon {
+        Name: icon
+        Icon: <| icon |>
+      }
+    }
+    If <| label != '' and not collapsed |> {
+      Text {
+        Name: label
+        Text: <| label |>
+        Typography_Role: label_large
+      }
+    }
+  }
+}

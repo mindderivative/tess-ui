@@ -1,0 +1,93 @@
+---
+TDL: 0.1
+Name: Carousel
+Tesserae: "0.6"
+---
+# The Material 3 carousel: a row of rounded items that scrolls sideways and settles with an item lined up (the scroll view's `snap`). `items` is a list of {value, title}
+# and optionally {image, supporting}; `variant` sets how big they are: `uncontained` (every item `item_width` wide), `multi_browse` (a large item, a medium one, then small ones),
+# `hero` (large items with a peek of the next) and `center_hero` (the item in the middle large, with a peek of the ones either side). `width` and `height` are the carousel's own.
+# Pressing an item sets `chosen` to its `value`; the items are focusable and the arrows move along them. The wheel and a drag scroll it, and so do the arrows once an item
+# is focused.
+ScrollView {
+  Params {
+    Items { Type: list, Default: [], Doc: "The items, each {value, title} and optionally {image, supporting}." }
+    Variant { Type: enum, Choices: [uncontained, multi_browse, hero, center_hero], Default: uncontained, Doc: "How big the items are." }
+    Chosen { Type: any, Default: "", Model: true, Doc: "The value of the item last pressed." }
+    Width { Type: float, Default: 360, Doc: "How wide the carousel is." }
+    Height { Type: float, Default: 200, Doc: "How tall the items are." }
+    Item_Width { Type: float, Default: 200, Doc: "uncontained: how wide each item is." }
+  }
+  Orientation: horizontal
+  Snap: <| 'center' if variant == 'center_hero' else 'start' |>
+  Focus_Group: horizontal
+  A11y { Role: group, Label: Carousel }
+  Style {
+    Width: <| width |>
+    Height: <| height |>
+    Flex_Direction: horizontal
+    Gap: 8
+    Padding: <| {'left': 56 + 8, 'right': 56 + 8, 'top': 0, 'bottom': 0} if variant == 'center_hero' else 0 |>
+  }
+  Children {
+    # TODO tuple for-target: i, it in enumerate(items)
+    For i_it In <| enumerate(items) |> Key <| it['value'] |> {
+      Container {
+        Name: item
+        Interaction: true
+        Handlers {
+          On_Click { Set { Target: chosen, Value: <| it['value'] |> } }
+        }
+        A11y { Role: listitem, Label: <| it['title'] |> }
+        Style {
+          Snap_Align: <| 'center' if variant == 'center_hero' else 'start' |>
+          Width: <| item_width if variant == 'uncontained' else ((width * 0.55 if i == 0 else (width * 0.28 if i == 1 else 56)) if variant == 'multi_browse' else (width - 56 - 8 if variant == 'hero' else width - 2 * 56 - 2 * 8)) |>
+          Height: 100%
+          Corner_Radius: 28
+          Clip_Children: true
+          Background: surface_container_highest
+        }
+        Children {
+          If <| it.get('image', '') != '' |> {
+            Image {
+              Name: picture
+              Src: <| it.get('image', '') |>
+              Fit: cover
+              Style { Position: absolute, X: 0, Y: 0, Width: 100%, Height: 100% }
+            }
+          }
+          Container {
+            Name: caption
+            Style {
+              Position: absolute
+              Left: 0
+              Right: 0
+              Bottom: 0
+              Height: 64
+              Padding { Left: 16, Right: 16, Top: 8, Bottom: 8 }
+              Flex_Direction: vertical
+              Background: "scrim@32%"
+            }
+            Children {
+              Text {
+                Name: title
+                Text: <| it['title'] |>
+                Typography_Role: title_medium
+                Max_Lines: 1
+                Overflow: ellipsis
+              }
+              If <| it.get('supporting', '') != '' |> {
+                Text {
+                  Name: supporting
+                  Text: <| it.get('supporting', '') |>
+                  Typography_Role: body_small
+                  Max_Lines: 1
+                  Overflow: ellipsis
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

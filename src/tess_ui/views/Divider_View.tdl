@@ -1,0 +1,26 @@
+---
+TDL: 0.1
+Name: Divider
+Tesserae: "0.6"
+---
+# The Material 3 divider: a thin line that separates content. `variant: full | inset | middle`, `orientation: horizontal | vertical`.
+# What it looks like (the colour, the thickness, the insets) is in Divider_Stylesheet.yaml; this file is its structure. A screen reader hears it as a
+# `separator`.
+Container {
+  Params {
+    Variant {
+      Type: enum
+      Choices: [full, inset, middle]
+      Default: full
+      Doc: "full spans the whole length; inset starts 16 in from the start; middle is 16 in from both ends."
+    }
+    Orientation {
+      Type: enum
+      Choices: [horizontal, vertical]
+      Default: horizontal
+      Doc: "Horizontal separates rows and fills the width it is in; vertical separates columns and fills the height."
+    }
+    Thickness { Type: float, Default: 1, Doc: "How thick the line is." }
+  }
+  A11y { Role: separator }
+}

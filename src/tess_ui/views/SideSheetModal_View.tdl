@@ -1,0 +1,54 @@
+---
+TDL: 0.1
+Name: SideSheetModal
+Tesserae: "0.6"
+---
+# The Material 3 modal side sheet: the same header, scrolling content and actions as the standard one, over a scrim and on top of the content. `side` is the end
+# (the default) or the start. Escape and a press on the scrim close it (they write false to `open`) unless `dismissible` is off; Tab stays inside it, and focus goes
+# back to where it was. Children are the content; children with `slot: actions` are the buttons.
+Overlay {
+  Params {
+    Open { Type: bool, Default: false, Model: true, Doc: "Whether the sheet is showing." }
+    Title { Type: str, Default: "", Doc: "The sheet's title." }
+    Back { Type: bool, Default: false, Doc: "A back button before the title." }
+    On_Back { Type: handler, Doc: "What the back button does." }
+    Closable { Type: bool, Default: true, Doc: "A close button." }
+    Side { Type: enum, Choices: [start, end], Default: end, Doc: "Which edge of the window it comes from." }
+    Dismissible { Type: bool, Default: true, Doc: "Escape and a press on the scrim close it." }
+    Width { Type: float, Default: 360, Doc: "From 256 to 400 pixels." }
+  }
+  Open: <| open |>
+  Modal: true
+  Dismissible: <| dismissible |>
+  Style {
+    Align_Content: <| 'right' if side == 'end' else 'left' |>
+  }
+  Children {
+    Container {
+      Name: sheet
+      A11y { Role: dialog, Label: <| title |> }
+      Style {
+        Flex_Direction: vertical
+        Height: 100%
+      }
+      Children {
+        SideSheetPanel {
+          Name: panel
+          Title: <| title |>
+          Back: <| back |>
+          On_Back: "on_back()"
+          Closable: <| closable |>
+          Open: <| open |>
+          Width: <| width |>
+          Children {
+            Slot { }
+            Slot {
+              Name: actions
+              Slot: actions
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,66 @@
+---
+TDL: 0.1
+Name: Accordion
+Tesserae: "0.6"
+---
+# One section of an accordion: a 56 pixel header button (the title, and a chevron that turns over when it opens) and, while `expanded`, the content (the children). A press,
+# Enter or Space toggles it; `expanded` is two-way. A screen reader hears a button that says whether it is expanded and what it controls. `AccordionGroup` makes several
+# of them behave as one set.
+Container {
+  Params {
+    Title { Type: str, Default: "", Doc: "The header's text." }
+    Expanded { Type: bool, Default: false, Model: true, Doc: "Whether the content shows." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed, and it does not toggle." }
+    On_Toggle { Type: handler, Doc: "Called after the header has been pressed (a group uses it to close the others)." }
+  }
+  Style { Flex_Direction: vertical, Width: 100% }
+  Children {
+    Container {
+      Name: header
+      Interaction: true
+      Disabled: <| disabled |>
+      Handlers {
+        On_Click {
+          Set { Target: expanded, Value: <| not expanded |> }
+          Call { Action: "on_toggle" }
+        }
+      }
+      A11y { Role: button, Label: <| title |>, Expanded: <| expanded |>, Controls: content }
+      Style { Flex_Direction: horizontal, Align_Content: left, Height: 56, Width: 100% }
+      Children {
+        Text {
+          Name: title
+          Text: <| title |>
+          Typography_Role: title_medium
+          Max_Lines: 1
+          Overflow: ellipsis
+        }
+        Container {
+          Name: filler
+          Style { Flex: expand_horizontal }
+        }
+        Icon {
+          Name: chevron
+          Icon: chevron_down
+          Style { Rotation_Deg: <| 180 if expanded else 0 |>, Transition { Rotation_Deg: 200 } }
+        }
+      }
+    }
+    Container {
+      Name: content
+      A11y { Role: group, Label: <| title |>, Hidden: <| not expanded |> }
+      Style { Flex_Direction: vertical, Width: 100% }
+      Children {
+        If <| expanded |> {
+          Container {
+            Name: inner
+            Style { Flex_Direction: vertical, Width: 100% }
+            Children {
+              Slot { }
+            }
+          }
+        }
+      }
+    }
+  }
+}

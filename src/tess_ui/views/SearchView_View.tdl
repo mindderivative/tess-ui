@@ -1,0 +1,71 @@
+---
+TDL: 0.1
+Name: SearchView
+Tesserae: "0.6"
+---
+# The Material 3 docked search view: the panel that opens under a search bar (`anchor`, the bar's name in the calling view) and shows suggestions, history and results as list
+# rows. `results` is a list of {value, label} and optionally {supporting, icon}; pressing a row sets `chosen` to its `value` and closes the view. With a `query` and no
+# results the `empty` text shows. Escape and a press outside close it (writing false to `open`). The number of results is announced politely. Bind `open` to the bar's `active`.
+Overlay {
+  Params {
+    Frosted { Type: bool, Default: false, Doc: "A translucent surface that blurs what is behind it (72% of its colour, a 20 pixel backdrop blur)." }
+    Open { Type: bool, Default: false, Model: true, Doc: "Whether the view is showing; Escape and a press outside write false." }
+    Anchor { Type: str, Default: "", Doc: "The name of the search bar in the calling view." }
+    Results { Type: list, Default: [], Doc: "The rows: {value, label} and optionally {supporting, icon}." }
+    Query { Type: str, Default: "", Doc: "What is typed, so the empty state can say there is nothing." }
+    Chosen { Type: any, Default: "", Model: true, Doc: "The value of the row pressed." }
+    Empty { Type: str, Default: "No results", Doc: "Shown when there is a query and no rows." }
+    Width { Type: float, Default: 360, Doc: "How wide the view is (the bar's width)." }
+    Max_Height { Type: float, Default: 400, Doc: "The rows scroll beyond this." }
+    History_Icon { Type: str, Default: history, Doc: "The icon of a row that gives none." }
+  }
+  Open: <| open |>
+  Anchor: <| anchor |>
+  Placement: below
+  Children {
+    Container {
+      Name: panel
+      A11y { Role: group, Label: "Search results" }
+      Style { Flex_Direction: vertical, Width: <| width |> }
+      Children {
+        Text {
+          Name: count
+          Text: <| str(len(results)) + ' results' |>
+          Typography_Role: label_small
+          A11y { Live: polite }
+          Style { Height: 0 }
+        }
+        If <| len(results) == 0 and query != '' |> {
+          Text {
+            Name: none
+            Text: <| empty |>
+            Typography_Role: body_large
+          }
+        }
+        If <| len(results) > 0 |> {
+          ScrollView {
+            Name: rows
+            Focus_Group: vertical
+            Style { Flex_Direction: vertical, Max_Height: <| max_height |> }
+            Children {
+              For r In <| results |> Key <| r['value'] |> {
+                ListItem {
+                  Name: row
+                  Headline: <| r['label'] |>
+                  Supporting: <| r.get('supporting', '') |>
+                  Leading_Icon: <| r.get('icon', history_icon) |>
+                  Handlers {
+                    On_Click {
+                      Set { Target: chosen, Value: <| r['value'] |> }
+                      Set { Target: open, Value: <| False |> }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

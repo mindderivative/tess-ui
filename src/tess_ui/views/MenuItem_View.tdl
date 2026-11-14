@@ -1,0 +1,70 @@
+---
+TDL: 0.1
+Name: MenuItem
+Tesserae: "0.6"
+---
+# One row of a menu (Material 3): 48 pixels tall, `label_large` text, an optional 24 pixel leading icon, trailing text such as a keyboard shortcut, and a chevron when
+# it opens a submenu. `checked` makes it a checkable item: true shows a check where the icon would be, false leaves the space, and nothing (null) is no check at all.
+# It is pressable (a state layer, a ripple, Enter); `handlers: {on_click: ...}` on the call is what a press does. Roles: a `menuitem`, with `checked` for a checkable one.
+Container {
+  Params {
+    Label { Type: str, Default: "", Doc: "The text." }
+    Icon { Type: str, Default: "", Doc: "A leading icon." }
+    Trailing_Text { Type: str, Default: "", Doc: "Text at the end, such as a shortcut." }
+    Checked { Type: any, Default: null, Doc: "true: a check shows; false: its space is kept; empty: not checkable." }
+    Submenu { Type: bool, Default: false, Doc: "A chevron at the end: the item opens another menu." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed, not focusable, and it does not respond." }
+  }
+  Interaction: true
+  Disabled: <| disabled |>
+  A11y {
+    Role: menuitem
+    Label: <| label |>
+    Checked: <| checked |>
+    Expanded: <| submenu |>
+  }
+  Style {
+    Flex_Direction: horizontal
+    Align_Content: left
+    Height: 48
+    Width: 100%
+  }
+  Children {
+    If <| checked is True or icon != '' |> {
+      Icon {
+        Name: lead
+        Icon: <| 'check' if checked is True else icon |>
+      }
+    }
+    If <| checked is False and icon == '' |> {
+      Container {
+        Name: lead_space
+        Style { Width: 24, Height: 24 }
+      }
+    }
+    Text {
+      Name: label
+      Text: <| label |>
+      Typography_Role: label_large
+      Max_Lines: 1
+      Overflow: ellipsis
+    }
+    Container {
+      Name: filler
+      Style { Flex: expand_horizontal }
+    }
+    If <| trailing_text != '' |> {
+      Text {
+        Name: trailing
+        Text: <| trailing_text |>
+        Typography_Role: label_large
+      }
+    }
+    If <| submenu |> {
+      Icon {
+        Name: chevron
+        Icon: chevron_right
+      }
+    }
+  }
+}

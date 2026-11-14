@@ -1,0 +1,81 @@
+---
+TDL: 0.1
+Name: SegmentedButton
+Tesserae: "0.6"
+---
+# The Material 3 segmented button: two to five connected segments in one outlined pill. `options` is a list of {value, label, icon, disabled};
+# `selected` is the chosen value, or with `multiple: true` the list of chosen values, and a press writes it back.
+# A chosen segment is `secondary_container` with a check that takes the place of its icon. Single-select behaves as a radio group (one Tab stop, the
+# arrows move the choice); multi-select is a group of toggles. What it looks like is mostly here, in the segments' own style, because each segment's
+# state is its own: restyle it by writing a view of the same name.
+Container {
+  Params {
+    Options { Type: list, Default: [], Doc: "The segments, each {value, label} and optionally {icon, disabled}." }
+    Selected { Type: any, Default: "", Model: true, Doc: "The chosen value; with multiple, the list of chosen values." }
+    Multiple { Type: bool, Default: false, Doc: "Several segments can be chosen at once." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed, and no segment can be pressed." }
+  }
+  Focus_Group: horizontal
+  Style { Flex_Direction: horizontal, Height: 40, Corner_Radius: full, Clip_Children: true, Border_Width: 1, Border_Color: outline }
+  A11y { Role: group }
+  Children {
+    # TODO tuple for-target: i, o in enumerate(options)
+    For i_o In <| enumerate(options) |> Key <| o['value'] |> {
+      Container {
+        Name: segment
+        Interaction: true
+        Style {
+          Flex_Direction: horizontal
+          Align_Content: center
+          Gap: 8
+          Padding { Left: 12, Right: 12, Top: 0, Bottom: 0 }
+          Background: <| 'secondary_container' if ((o['value'] in selected) if multiple else (o['value'] == selected)) else 'transparent' |>
+          Opacity: <| 0.38 if (disabled or o.get('disabled', False)) else 1 |>
+        }
+        Handlers {
+          On_Click {
+            Set {
+              Target: selected
+              Value: <| (o['value'] if not multiple else ([v for v in selected if v != o['value']] if o['value'] in selected else selected + [o['value']])) if not (disabled or o.get('disabled', False)) else selected |>
+            }
+          }
+          On_Focus_Enter {
+            Set { Target: selected, Value: <| o['value'] if (not multiple and not (disabled or o.get('disabled', False))) else selected |> }
+          }
+        }
+        A11y {
+          Role: <| 'checkbox' if multiple else 'radio' |>
+          Label: <| o['label'] |>
+          Checked: <| (o['value'] in selected) if multiple else (o['value'] == selected) |>
+        }
+        Children {
+          If <| i > 0 |> {
+            Container {
+              Name: divider
+              Style { Position: absolute, X: 0, Y: 0, Width: 1, Height: 100%, Background: outline }
+            }
+          }
+          If <| ((o['value'] in selected) if multiple else (o['value'] == selected)) or o.get('icon', '') != '' |> {
+            Icon {
+              Name: icon
+              Icon: <| 'check' if ((o['value'] in selected) if multiple else (o['value'] == selected)) else o['icon'] |>
+              Style {
+                Width: 18
+                Height: 18
+                Foreground: <| 'on_secondary_container' if ((o['value'] in selected) if multiple else (o['value'] == selected)) else 'on_surface' |>
+              }
+            }
+          }
+          Text {
+            Name: label
+            Text: <| o['label'] |>
+            Typography_Role: label_large
+            Style {
+              Foreground: <| 'on_secondary_container' if ((o['value'] in selected) if multiple else (o['value'] == selected)) else 'on_surface' |>
+            }
+          }
+        }
+      }
+    }
+  }
+}

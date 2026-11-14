@@ -1,0 +1,117 @@
+---
+TDL: 0.1
+Name: ListEditor
+Tesserae: "0.6"
+---
+# A list editor: the items of a list as rows, each with the widget of the item kind (`item_kind`: `text` a text field, `number` a spin box bounded by `least` and `most`, `bool` a switch, `enum` a button that
+# opens a menu of `choices`, `colour` a colour picker in a popup), and buttons to move a row up or down and to remove it, and an Add button that appends an item of the kind (empty text, the least number or 0,
+# false, the first choice, black). `value` is the list and is two-way: an edit writes a new list in which only the edited item differs, and `on_change` is called after each edit the person makes; a list the
+# app sets is shown as it is, with new rows, and never rewritten. `min_items` and `max_items` bound the length. The keyboard: Tab goes through each row's widget and buttons, Enter or Space press a button. Turning a list into TDL text and back is not its job. What the parts do is in the ListModel control (`tess_ui.list_controls`), which this
+# view drives by writing a numbered command to `cmd`.
+Container {
+  Params {
+    Value { Type: list, Default: [], Model: true, Doc: "The list: its items are all of `item_kind`." }
+    Item_Kind { Type: enum, Choices: [text, number, bool, enum, colour], Default: text, Doc: "The kind of every item." }
+    Choices { Type: list, Default: [], Doc: "An enum's choices: plain values, or {value, label}." }
+    Least { Type: float, Default: null, Doc: "A number's least." }
+    Most { Type: float, Default: null, Doc: "A number's most." }
+    Step { Type: float, Default: 1, Doc: "A number's step; whole numbers stay ints when it is whole." }
+    Min_Items { Type: int, Default: 0, Min: 0, Doc: "The fewest items: the remove buttons stop at it." }
+    Max_Items { Type: int, Default: 0, Min: 0, Doc: "The most items (0 for no limit): the Add button stops at it." }
+    Label { Type: str, Default: Items, Doc: "What a screen reader calls the list; an item is called by it and its place." }
+    Add_Label { Type: str, Default: Add, Doc: "The Add button's label." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed and not editable." }
+    On_Change { Type: handler, Doc: "Called after each edit the person makes." }
+  }
+  State { N: 0, Cmd: "", Typed: "", Rows: [], Options: [], Count: 0, Can_Add: true, Can_Remove: true, Message: "" }
+  A11y { Role: group, Label: <| label |> }
+  Style { Flex_Direction: vertical, Gap: 8 }
+  Children {
+    ListModel {
+      Name: model
+      Value: <| value |>
+      Item_Kind: <| item_kind |>
+      Choices: <| choices |>
+      Least: <| least |>
+      Most: <| most |>
+      Step: <| step |>
+      Min_Items: <| min_items |>
+      Max_Items: <| max_items |>
+      Command: <| cmd |>
+      Disabled: <| disabled |>
+      Rows: <| rows |>
+      Options: <| options |>
+      Count: <| count |>
+      Can_Add: <| can_add |>
+      Can_Remove: <| can_remove |>
+      Message: <| message |>
+      Handlers {
+        On_Input { Call { Action: "on_change" } }
+      }
+    }
+    Container {
+      Name: rows
+      A11y { Role: list, Label: <| label |> }
+      Style { Flex_Direction: vertical, Gap: 8 }
+      Children {
+        # TODO tuple for-target: i, row in enumerate(rows)
+        For i_row In <| enumerate(rows) |> Key <| row['uid'] |> {
+          ListEditorRow {
+            Name: item
+            Kind: <| item_kind |>
+            Item: <| row['value'] |>
+            Options: <| options |>
+            Least: <| least |>
+            Most: <| most |>
+            Step: <| step |>
+            Label: <| label |>
+            Position: <| i + 1 |>
+            First: <| i == 0 |>
+            Last: <| i == count - 1 |>
+            Can_Remove: <| can_remove |>
+            Disabled: <| disabled |>
+            Typed: <| typed |>
+            On_Commit: "n = n + 1; cmd = str(n) + ' set ' + str(i) + ' ' + str(typed)"
+            On_Up: "n = n + 1; cmd = str(n) + ' up ' + str(i)"
+            On_Down: "n = n + 1; cmd = str(n) + ' down ' + str(i)"
+            On_Remove: "n = n + 1; cmd = str(n) + ' remove ' + str(i)"
+          }
+        }
+      }
+    }
+    If <| count == 0 |> {
+      Text {
+        Name: empty
+        Text: "No items"
+        Typography_Role: body_medium
+      }
+    }
+    If <| message != '' |> {
+      Text {
+        Name: message_text
+        Text: <| message |>
+        Typography_Role: body_medium
+        A11y { Role: alert, Live: polite }
+      }
+    }
+    Container {
+      Name: actions
+      Style { Flex_Direction: horizontal, Align_Content: left }
+      Children {
+        Button {
+          Name: add
+          Variant: tonal
+          Icon: plus
+          Label: <| add_label |>
+          Disabled: <| not can_add or disabled |>
+          Handlers {
+            On_Click {
+              Set { Target: n, Value: <| n + 1 |> }
+              Set { Target: cmd, Value: <| str(n) + ' add' |> }
+            }
+          }
+        }
+      }
+    }
+  }
+}

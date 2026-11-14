@@ -1,0 +1,118 @@
+---
+TDL: 0.1
+Name: Menu
+Tesserae: "0.6"
+---
+# The Material 3 menu: a list of choices on a temporary surface next to the node it comes from (`anchor`, the name of a node in the view that has the menu). `items` is
+# a list of {value, label} and optionally {icon, shortcut, checked, disabled, submenu}; a {divider: true} is a line and a {heading: "Text"} a small heading. Pressing
+# an item sets `chosen` to its `value` and closes the menu; `mode: check` makes pressing an item flip its check (kept in `checks`, the list of checked values) and
+# `mode: radio` keeps one checked (`selected`). An item with a `submenu` list opens another menu beside it (with Right, or a press). Escape and a press outside
+# close it (writing false to `open`); the arrows move, Enter chooses, typing the start of a label jumps to it.
+Overlay {
+  Params {
+    Frosted { Type: bool, Default: false, Doc: "A translucent surface that blurs what is behind it (72% of its colour, a 20 pixel backdrop blur)." }
+    Open { Type: bool, Default: false, Model: true, Doc: "Whether the menu is showing; Escape and a press outside write false." }
+    Anchor { Type: str, Default: "", Doc: "The name of the node in the calling view the menu sits against." }
+    Items {
+      Type: list
+      Default: []
+      Doc: "The rows: {value, label} and optionally {icon, shortcut, checked, disabled, submenu}; {divider: true}; {heading: Text}."
+    }
+    Chosen { Type: any, Default: "", Model: true, Doc: "The value of the item last pressed." }
+    Mode {
+      Type: enum
+      Choices: [plain, check, radio]
+      Default: plain
+      Doc: "plain: actions; check: items flip their checks; radio: one item is checked."
+    }
+    Checks { Type: list, Default: [], Model: true, Doc: "check mode: the values that are checked." }
+    Selected { Type: any, Default: "", Model: true, Doc: "radio mode: the value that is checked." }
+    Placement { Type: enum, Choices: [below, above, start, end], Default: below, Doc: "Which side of the anchor; it flips or shifts to fit." }
+    Width { Type: float, Default: 200, Doc: "How wide the menu is, from 112 to 280 pixels." }
+    Focus_First { Type: bool, Default: false, Doc: "When it opens, the focus moves to its first row (a menu opened with the keyboard)." }
+    On_Pick { Type: handler, Doc: "Called after an item has been chosen (a submenu uses it to close the menu it came from)." }
+  }
+  Open: <| open |>
+  Focus_First: <| focus_first |>
+  Anchor: <| anchor |>
+  Placement: <| placement |>
+  Children {
+    Container {
+      Name: surface
+      Focus_Group: vertical
+      A11y { Role: menu }
+      Style { Flex_Direction: vertical, Width: <| min(280, max(112, width)) |> }
+      Children {
+        # TODO tuple for-target: i, it in enumerate(items)
+        For i_it In <| enumerate(items) |> Key <| i |> {
+          Container {
+            Name: row
+            State { Subopen: false }
+            Style { Flex_Direction: vertical, Width: 100% }
+            Children {
+              If <| it.get('divider', False) |> {
+                Divider {
+                  Name: divider
+                }
+              }
+              If <| it.get('heading', '') != '' |> {
+                Text {
+                  Name: heading
+                  Text: <| it.get('heading', '') |>
+                  Typography_Role: label_small
+                }
+              }
+              If <| not it.get('divider', False) and it.get('heading', '') == '' and len(it.get('submenu', [])) == 0 |> {
+                MenuItem {
+                  Name: item
+                  Label: <| it['label'] |>
+                  Icon: <| it.get('icon', '') |>
+                  Trailing_Text: <| it.get('shortcut', '') |>
+                  Checked: <| ((it['value'] in checks) if mode == 'check' else (it['value'] == selected)) if mode != 'plain' else it.get('checked') |>
+                  Disabled: <| it.get('disabled', False) |>
+                  Handlers {
+                    On_Click {
+                      Set { Target: chosen, Value: <| it['value'] |> }
+                      Set {
+                        Target: checks
+                        Value: <| ([v for v in checks if v != it['value']] if it['value'] in checks else checks + [it['value']]) if mode == 'check' else checks |>
+                      }
+                      Set { Target: selected, Value: <| it['value'] if mode == 'radio' else selected |> }
+                      Set { Target: open, Value: <| False |> }
+                      Call { Action: "on_pick" }
+                    }
+                  }
+                }
+              }
+              If <| len(it.get('submenu', [])) > 0 |> {
+                MenuItem {
+                  Name: parent_item
+                  Label: <| it['label'] |>
+                  Icon: <| it.get('icon', '') |>
+                  Submenu: true
+                  Disabled: <| it.get('disabled', False) |>
+                  Handlers {
+                    On_Click { Set { Target: subopen, Value: <| True |> } }
+                    On_Key { Set { Target: subopen, Value: <| True if event.key == 'arrow_right' else subopen |> } }
+                  }
+                }
+              }
+              If <| len(it.get('submenu', [])) > 0 |> {
+                Menu {
+                  Name: sub
+                  Open: <| subopen |>
+                  Anchor: parent
+                  Placement: end
+                  Items: <| it.get('submenu', []) |>
+                  Width: <| width |>
+                  Chosen: <| chosen |>
+                  On_Pick: "open = False; on_pick()"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

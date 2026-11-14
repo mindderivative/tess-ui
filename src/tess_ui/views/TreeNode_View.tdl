@@ -1,0 +1,63 @@
+---
+TDL: 0.1
+Name: TreeNode
+Tesserae: "0.6"
+---
+# One row of a tree: a leaf or a branch with a chevron that turns a quarter when it opens. 56 pixels tall (40 when `compact`), indented 16 pixels plus 24 for each
+# `level`, with an optional 24 pixel icon and a `body_large` label; a selected row is `secondary_container`. A screen reader hears a tree item at level `level + 1`, a branch
+# saying whether it is expanded. It is pressable; `handlers: {on_click: ...}` on the call is what a press does. `Tree` puts the rows together.
+Container {
+  Params {
+    Label { Type: str, Default: "", Doc: "The row's text." }
+    Icon { Type: str, Default: "", Doc: "A leading icon." }
+    Level { Type: int, Default: 0, Doc: "How deep it is: 0 for the top." }
+    Branch { Type: bool, Default: false, Doc: "It has children: a chevron shows." }
+    Expanded { Type: bool, Default: false, Doc: "For a branch: whether its children show." }
+    Selected { Type: bool, Default: false, Doc: "Whether this is the chosen row." }
+    Compact { Type: bool, Default: false, Doc: "A 40 pixel row instead of 56." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed and not pressable." }
+  }
+  Interaction: true
+  Disabled: <| disabled |>
+  A11y {
+    Role: treeitem
+    Label: <| label |>
+    Level: <| level + 1 |>
+    Expanded: <| expanded if branch else None |>
+    Selected: <| selected |>
+  }
+  Style {
+    Flex_Direction: horizontal
+    Align_Content: left
+    Height: <| 40 if compact else 56 |>
+    Width: 100%
+  }
+  Children {
+    If <| branch |> {
+      Icon {
+        Name: chevron
+        Icon: chevron_right
+        Style { Rotation_Deg: <| 90 if expanded else 0 |>, Transition { Rotation_Deg: 200 } }
+      }
+    }
+    If <| not branch |> {
+      Container {
+        Name: chevron_space
+        Style { Width: 24, Height: 24 }
+      }
+    }
+    If <| icon != '' |> {
+      Icon {
+        Name: icon
+        Icon: <| icon |>
+      }
+    }
+    Text {
+      Name: label
+      Text: <| label |>
+      Typography_Role: body_large
+      Max_Lines: 1
+      Overflow: ellipsis
+    }
+  }
+}

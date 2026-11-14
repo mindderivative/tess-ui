@@ -1,0 +1,97 @@
+---
+TDL: 0.1
+Name: Snackbar
+Tesserae: "0.6"
+---
+# The Material 3 snackbar: a short message near the bottom of the window, over the content, that goes by itself. It is not modal, takes no focus and blocks
+# nothing. `open` shows it (and is written false when it closes); it closes `duration` milliseconds after it opens (4000 by default; 0 keeps it up) unless the
+# pointer is over it, when the action or the close button is pressed, and calls `on_close` then. An `action` is a text button after the message: pressing it runs
+# `on_action`, then closes. Announced politely. `SnackbarHost` shows several one after another.
+Overlay {
+  Params {
+    Open { Type: bool, Default: false, Model: true, Doc: "Whether it is showing; it writes false when it closes." }
+    Message { Type: str, Default: "", Doc: "What to say." }
+    Action { Type: str, Default: "", Doc: "The label of a text button after the message." }
+    On_Action { Type: handler, Doc: "What the action button does." }
+    On_Close { Type: handler, Doc: "Called when it closes, however it closes." }
+    Closable { Type: bool, Default: false, Doc: "A close button after the message." }
+    Duration { Type: float, Default: 4000, Doc: "Milliseconds before it closes itself; 0 keeps it until it is closed." }
+    Margin { Type: float, Default: 16, Doc: "The space between it and the window's edge." }
+    Centered { Type: bool, Default: false, Doc: "In the middle of the window instead of at the start." }
+    Width { Type: float, Default: 344, Doc: "How wide it is, from 344 to 560 pixels; a message longer than fits goes onto a second line." }
+  }
+  Open: <| open |>
+  Dismissible: false
+  Timeout: <| duration |>
+  Handlers {
+    On_Dismiss { Call { Action: "on_close" } }
+  }
+  Style {
+    Position: absolute
+    X: <| ((app.window_width - min(560, max(344, width))) / 2 if app.window_width > min(560, max(344, width)) + 2 * margin else margin) if centered else margin |>
+    Y: <| app.window_height - 48 - margin |>
+    Width: <| min(560, max(344, width)) |>
+  }
+  Children {
+    Container {
+      Name: bar
+      A11y { Role: alert, Live: polite, Label: <| message |> }
+      Style {
+        Flex_Direction: horizontal
+        Align_Content: left
+        Gap: 8
+        Min_Height: 48
+        Width: 100%
+      }
+      Children {
+        Text {
+          Name: message
+          Text: <| message |>
+          Typography_Role: body_medium
+          Wrap: word
+          Style { Width: <| min(560, max(344, width)) - 24 - ((len(action) * 9 + 24 + 8) if action != '' else 0) - (48 if closable else 0) |> }
+        }
+        If <| action != '' |> {
+          Container {
+            Name: action
+            Interaction: true
+            Handlers {
+              On_Click {
+                Call { Action: "on_action" }
+                Set { Target: open, Value: <| False |> }
+                Call { Action: "on_close" }
+              }
+            }
+            A11y { Role: button, Label: <| action |> }
+            Children {
+              Text {
+                Name: action_text
+                Text: <| action |>
+                Typography_Role: label_large
+              }
+            }
+          }
+        }
+        If <| closable |> {
+          Container {
+            Name: close
+            Interaction: true
+            Handlers {
+              On_Click {
+                Set { Target: open, Value: <| False |> }
+                Call { Action: "on_close" }
+              }
+            }
+            A11y { Role: button, Label: Close }
+            Children {
+              Icon {
+                Name: close_icon
+                Icon: close
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

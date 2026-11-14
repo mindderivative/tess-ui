@@ -1,0 +1,100 @@
+---
+TDL: 0.1
+Name: StatusBar
+Tesserae: "0.6"
+---
+# A status bar (a desktop convention, not Material 3): a thin strip at the bottom of a window with short items on its left, centre and right. `items` is a
+# list of {text} and optionally {icon, side, value, tooltip}: `side` is start (the default), center or end; an item with a `value` can be pressed, and pressing
+# it sets `clicked` to the value; `tooltip` explains it. `progress` (0 to 1) or `busy` shows a 4 pixel indicator along the top edge. The bar is announced
+# politely when its text changes.
+Container {
+  Params {
+    Text { Type: str, Default: "", Doc: "One message at the start, for a bar that only says one thing; the same as a first item {text}." }
+    Width { Type: any, Default: null, Doc: "The bar's width; the width of its place when not given." }
+    Items { Type: list, Default: [], Doc: "The items, each {text} and optionally {icon, side, value, tooltip}." }
+    Progress { Type: any, Default: null, Doc: "0 to 1: a determinate indicator along the top edge. Empty shows none." }
+    Busy { Type: bool, Default: false, Doc: "An indicator with no end along the top edge." }
+    Clicked { Type: any, Default: "", Model: true, Doc: "The value of the item last pressed." }
+  }
+  A11y { Role: group, Live: polite }
+  Style {
+    Display: grid
+    Grid_Template_Columns: "1fr auto 1fr"
+    Height: 24
+    Width: <| width if width is not None else '100%' |>
+    Align_Cells: center
+  }
+  Children {
+    For side In <| ['start', 'center', 'end'] |> Key <| side |> {
+      Container {
+        Name: section
+        Style {
+          Flex_Direction: horizontal
+          Align_Content: <| {'start': 'left', 'center': 'center', 'end': 'right'}[side] |>
+          Gap: 16
+          Width: 100%
+        }
+        Children {
+          For it In <| [x for x in ([{'text': text}] if text != '' else []) + items if x.get('side', 'start') == side and x.get('value') is None] |> Key <| it['text'] |> {
+            Container {
+              Name: note
+              Style { Flex_Direction: horizontal, Align_Content: center, Gap: 4, Padding { Left: 4, Right: 4, Top: 0, Bottom: 0 } }
+              Tooltip: <| it.get('tooltip', '') |>
+              Children {
+                If <| it.get('icon', '') != '' |> {
+                  Icon {
+                    Name: note_icon
+                    Icon: <| it.get('icon', 'home') |>
+                  }
+                }
+                Text {
+                  Name: note_text
+                  Text: <| it['text'] |>
+                  Typography_Role: label_small
+                }
+              }
+            }
+          }
+          For it In <| [x for x in items if x.get('side', 'start') == side and x.get('value') is not None] |> Key <| it['value'] |> {
+            Container {
+              Name: item
+              Interaction: true
+              Style { Flex_Direction: horizontal, Align_Content: center, Gap: 4, Padding { Left: 4, Right: 4, Top: 0, Bottom: 0 }, Corner_Radius: 4 }
+              Tooltip: <| it.get('tooltip', '') |>
+              Handlers {
+                On_Click { Set { Target: clicked, Value: <| it['value'] |> } }
+              }
+              A11y { Role: button, Label: <| it['text'] |> }
+              Children {
+                If <| it.get('icon', '') != '' |> {
+                  Icon {
+                    Name: icon
+                    Icon: <| it.get('icon', 'home') |>
+                  }
+                }
+                Text {
+                  Name: text
+                  Text: <| it['text'] |>
+                  Typography_Role: label_small
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    If <| busy or progress is not None |> {
+      Container {
+        Name: edge
+        Style { Position: absolute, X: 0, Y: 0, Width: 100%, Height: 4 }
+        Children {
+          LinearProgress {
+            Name: bar
+            Value: <| None if busy else progress |>
+            Style { Flex: fill, Height: 4 }
+          }
+        }
+      }
+    }
+  }
+}

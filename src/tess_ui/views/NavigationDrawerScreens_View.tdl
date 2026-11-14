@@ -1,0 +1,57 @@
+---
+TDL: 0.1
+Name: NavigationDrawerScreens
+Tesserae: "0.6"
+---
+# A standard navigation drawer whose destinations are the app's screens: `items` is a list of {screen, label, icon} and optionally {badge}, with {heading: Text} and
+# {divider: true} rows between them. The destination of the screen showing is selected, and pressing one navigates to its screen. It belongs in each screen (or in a window's shell).
+Container {
+  Params {
+    Items { Type: list, Default: [], Doc: "The rows: {screen, label, icon} and optionally {badge}; {heading: Text}; {divider: true}." }
+    Width { Type: float, Default: 360, Doc: "From 256 to 360 pixels." }
+  }
+  A11y { Role: group, Label: Navigation }
+  Style {
+    Flex_Direction: vertical
+    Width: <| min(360, max(256, width)) |>
+    Height: 100%
+    Background: surface
+    Padding { Left: 12, Right: 12, Top: 12, Bottom: 12 }
+  }
+  Focus_Group: vertical
+  Children {
+    # TODO tuple for-target: i, it in enumerate(items)
+    For i_it In <| enumerate(items) |> Key <| i |> {
+      Container {
+        Name: row
+        Style { Flex_Direction: vertical, Width: 100% }
+        Children {
+          If <| it.get('divider', False) |> {
+            Divider {
+              Name: divider
+            }
+          }
+          If <| it.get('heading', '') != '' |> {
+            Text {
+              Name: heading
+              Text: <| it.get('heading', '') |>
+              Typography_Role: title_small
+            }
+          }
+          If <| not it.get('divider', False) and it.get('heading', '') == '' |> {
+            NavigationDrawerItem {
+              Name: item
+              Label: <| it['label'] |>
+              Icon: <| it.get('icon', '') |>
+              Badge: <| it.get('badge', '') |>
+              Selected: <| app.current_screen == it['screen'] |>
+              Handlers {
+                On_Click { Call { Action: "navigate_to", Args: [<| it['screen'] |>] } }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

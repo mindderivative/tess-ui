@@ -1,0 +1,102 @@
+---
+TDL: 0.1
+Name: Pagination
+Tesserae: "0.6"
+---
+# Page navigation (not Material 3 itself, which has page indicators and a pager): previous and next, and between them the page numbers with an ellipsis for
+# the stretches left out, the current page filled. `page` (two-way, from 1) is the page showing and `pages` how many there are; the first, the last and the
+# pages beside the current one always show. `compact` is a "3 of 12" between the arrows, and `dots` is a row of dots, one to a page, for a carousel.
+# Previous is disabled on the first page and next on the last. Tab visits each control; Enter or Space chooses.
+Container {
+  Params {
+    Page { Type: int, Default: 1, Model: true, Doc: "The page showing, from 1; choosing another writes it back." }
+    Pages { Type: int, Default: 1, Doc: "How many pages there are." }
+    Compact { Type: bool, Default: false, Doc: "Show '3 of 12' instead of the numbers." }
+    Dots { Type: bool, Default: false, Doc: "Show a dot for each page instead of the numbers (best under ten pages)." }
+  }
+  A11y { Role: group, Label: Pagination }
+  Style {
+    Flex_Direction: horizontal
+    Align_Content: center
+    Gap: 4
+  }
+  Children {
+    IconButton {
+      Name: previous
+      Icon: chevron_left
+      Label: "Previous page"
+      Disabled: <| page <= 1 |>
+      Handlers {
+        On_Click { Set { Target: page, Value: <| max(1, page - 1) |> } }
+      }
+    }
+    If <| compact |> {
+      Text {
+        Name: summary
+        Text: <| str(page) + ' of ' + str(pages) |>
+        Typography_Role: label_large
+        A11y { Live: polite }
+        Style { Padding { Left: 8, Right: 8, Top: 0, Bottom: 0 } }
+      }
+    }
+    For n In <| range(1, pages + 1) |> Key <| n |> {
+      If <| dots |> {
+        Container {
+          Name: dot
+          Interaction: true
+          Handlers {
+            On_Click { Set { Target: page, Value: <| n |> } }
+          }
+          A11y { Role: button, Label: <| 'Page ' + str(n) |>, Current: <| 'page' if n == page else False |> }
+          Style { Width: 24, Height: 24, Align_Content: center, Corner_Radius: full }
+          Children {
+            Container {
+              Name: mark
+              Style { Width: 8, Height: 8, Corner_Radius: full, Background: <| 'primary' if n == page else 'outline_variant' |> }
+            }
+          }
+        }
+      }
+    }
+    For n In <| range(1, pages + 1) |> Key <| n |> {
+      If <| not compact and not dots and (pages <= 7 or n == 1 or n == pages or abs(n - page) <= 1 or (n == 2 and page == 4) or (n == pages - 1 and page == pages - 3)) |> {
+        Container {
+          Name: slot
+          Style { Flex_Direction: horizontal, Align_Content: center, Gap: 4 }
+          Children {
+            If <| n > 1 and not (pages <= 7 or (n - 1) == 1 or (n - 1) == pages or abs((n - 1) - page) <= 1 or ((n - 1) == 2 and page == 4) or ((n - 1) == pages - 1 and page == pages - 3)) |> {
+              Text {
+                Name: gap
+                Text: "…"
+                Typography_Role: label_large
+                A11y { Hidden: true }
+                Text_Align: center
+                Style { Width: 40 }
+              }
+            }
+            Button {
+              Name: number
+              Label: <| str(n) |>
+              Variant: <| 'filled' if n == page else 'text' |>
+              Size: s
+              A11y { Label: <| 'Page ' + str(n) |>, Current: <| 'page' if n == page else False |> }
+              Style { Min_Width: 40 }
+              Handlers {
+                On_Click { Set { Target: page, Value: <| n |> } }
+              }
+            }
+          }
+        }
+      }
+    }
+    IconButton {
+      Name: next
+      Icon: chevron_right
+      Label: "Next page"
+      Disabled: <| page >= pages |>
+      Handlers {
+        On_Click { Set { Target: page, Value: <| min(pages, page + 1) |> } }
+      }
+    }
+  }
+}

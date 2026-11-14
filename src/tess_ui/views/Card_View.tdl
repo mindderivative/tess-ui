@@ -1,0 +1,85 @@
+---
+TDL: 0.1
+Name: Card
+Tesserae: "0.6"
+---
+# The Material 3 card: a surface that holds content about one subject. `variant` is elevated, filled or outlined. It can have a `media` picture across the top, a
+# `headline`, a `subhead` and supporting `text`; your own content goes in the default slot, and a row of `actions` (buttons) in the `actions` slot. An
+# `actionable` card is one pressable surface (a state layer, a ripple, Enter, a lift for the elevated one): `handlers: {on_click: open}` on the call is what a press
+# does, and the buttons inside one are a conflict MD3 asks you to avoid. `selected` shows a chosen card; the caller decides when (`on_click: "picked = not picked"`). Colours, corners and how it lifts are in Card_Stylesheet.yaml.
+Container {
+  Params {
+    Variant {
+      Type: enum
+      Choices: [elevated, filled, outlined]
+      Default: elevated
+      Doc: "elevated has a shadow, filled a higher surface, outlined a border."
+    }
+    Headline { Type: str, Default: "", Doc: "The title." }
+    Subhead { Type: str, Default: "", Doc: "A line under the title." }
+    Text { Type: str, Default: "", Doc: "Supporting text." }
+    Media { Type: str, Default: "", Doc: "A picture across the top, relative to the view." }
+    Media_Height { Type: float, Default: 160, Doc: "How tall the picture is." }
+    Actionable { Type: bool, Default: false, Doc: "The whole card is one pressable surface." }
+    Selected { Type: bool, Default: false, Doc: "Whether the card is chosen (the caller decides when)." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed, and an actionable card does not respond." }
+  }
+  Interaction: <| actionable |>
+  Disabled: <| disabled |>
+  Style {
+    Flex_Direction: vertical
+    Clip_Children: true
+  }
+  A11y {
+    Role: <| 'button' if actionable else 'group' |>
+    Label: <| headline |>
+    Selected: <| selected if selected else None |>
+  }
+  Children {
+    If <| media != '' |> {
+      Image {
+        Name: picture
+        Src: <| media |>
+        Fit: cover
+        Style { Width: 100%, Height: <| media_height |> }
+      }
+    }
+    Container {
+      Name: body
+      Style { Flex_Direction: vertical }
+      Children {
+        If <| headline != '' |> {
+          Text {
+            Name: headline
+            Text: <| headline |>
+            Typography_Role: title_large
+          }
+        }
+        If <| subhead != '' |> {
+          Text {
+            Name: subhead
+            Text: <| subhead |>
+            Typography_Role: title_small
+          }
+        }
+        If <| text != '' |> {
+          Text {
+            Name: text
+            Text: <| text |>
+            Typography_Role: body_medium
+          }
+        }
+        Slot { }
+        Container {
+          Name: actions
+          Style { Flex_Direction: horizontal, Align_Content: right, Gap: 8 }
+          Children {
+            Slot {
+              Name: actions
+            }
+          }
+        }
+      }
+    }
+  }
+}

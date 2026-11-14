@@ -1,0 +1,171 @@
+---
+TDL: 0.1
+Name: TimePicker
+Tesserae: "0.6"
+---
+# The Material 3 modal time picker: a dialog with the time at the top (an hour and a minute you press to choose which the dial sets, and an AM / PM selector), a
+# 256 pixel dial, a keyboard button that swaps the dial for typed fields, and Cancel and OK. `hour` (0 to 23) and `minute` are two-way and change only when OK is
+# pressed; Cancel, Escape and a press on the scrim leave them. `open` is two-way. `on_ok` is called after OK. 24-hour time has no dial here (the face is the twelve
+# hours): `twelve: false` opens straight on the typed fields.
+Overlay {
+  Params {
+    Open { Type: bool, Default: false, Model: true, Doc: "Whether the picker is showing." }
+    Hour { Type: int, Default: 0, Model: true, Doc: "0 to 23; set by OK." }
+    Minute { Type: int, Default: 0, Model: true, Doc: "0 to 59; set by OK." }
+    Twelve { Type: bool, Default: true, Doc: "12-hour time with a dial and an AM / PM selector; otherwise only the typed fields." }
+    Title { Type: str, Default: "Select time", Doc: "The small heading." }
+    On_Ok { Type: handler, Doc: "Called after OK has set hour and minute." }
+  }
+  Open: <| open |>
+  Modal: true
+  Children {
+    If <| open |> {
+      Container {
+        Name: panel
+        State {
+          Dh: <| hour |>
+          Dm: <| minute |>
+          Dp: <| 'PM' if hour >= 12 else 'AM' |>
+          Dmode: hour
+          Typing: <| not twelve |>
+        }
+        A11y { Role: dialog, Label: <| title |> }
+        Style {
+          Flex_Direction: vertical
+          Width: 328
+          Gap: 20
+        }
+        Children {
+          Text {
+            Name: heading
+            Text: <| title |>
+            Typography_Role: label_medium
+          }
+          If <| not typing |> {
+            Container {
+              Name: header
+              Style { Flex_Direction: horizontal, Align_Content: left, Gap: 12 }
+              Children {
+                Container {
+                  Name: hour_button
+                  Interaction: true
+                  Handlers {
+                    On_Click { Set { Target: dmode, Value: <| 'hour' |> } }
+                  }
+                  A11y { Role: button, Label: Hour, Selected: <| dmode == 'hour' |> }
+                  Style {
+                    Width: 96
+                    Height: 80
+                    Align_Content: center
+                    Corner_Radius: 8
+                    Background: <| 'primary_container' if dmode == 'hour' else 'surface_container_highest' |>
+                  }
+                  Children {
+                    Text {
+                      Name: hour_text
+                      Text: <| ('0' + str(dh % 12 or 12))[-2:] |>
+                      Typography_Role: display_large
+                      Style { Foreground: <| 'on_primary_container' if dmode == 'hour' else 'on_surface' |> }
+                    }
+                  }
+                }
+                Text {
+                  Name: colon
+                  Text: ":"
+                  Typography_Role: display_large
+                }
+                Container {
+                  Name: minute_button
+                  Interaction: true
+                  Handlers {
+                    On_Click { Set { Target: dmode, Value: <| 'minute' |> } }
+                  }
+                  A11y { Role: button, Label: Minute, Selected: <| dmode == 'minute' |> }
+                  Style {
+                    Width: 96
+                    Height: 80
+                    Align_Content: center
+                    Corner_Radius: 8
+                    Background: <| 'primary_container' if dmode == 'minute' else 'surface_container_highest' |>
+                  }
+                  Children {
+                    Text {
+                      Name: minute_text
+                      Text: <| ('0' + str(dm))[-2:] |>
+                      Typography_Role: display_large
+                      Style { Foreground: <| 'on_primary_container' if dmode == 'minute' else 'on_surface' |> }
+                    }
+                  }
+                }
+                PeriodSelector {
+                  Name: period
+                  Period: <| dp |>
+                  On_Change: "dh = (dh % 12) + (12 if dp == 'PM' else 0)"
+                }
+              }
+            }
+          }
+          If <| not typing |> {
+            TimePickerDial {
+              Name: dial
+              Hour: <| dh |>
+              Minute: <| dm |>
+              Mode: <| dmode |>
+              Label: Clock
+              Style { Width: 256, Height: 256 }
+            }
+          }
+          If <| typing |> {
+            TimeInput {
+              Name: fields
+              Hour: <| dh |>
+              Minute: <| dm |>
+              Twelve: <| twelve |>
+            }
+          }
+          Container {
+            Name: footer
+            Style { Flex_Direction: horizontal, Align_Content: left, Gap: 8, Width: 100% }
+            Children {
+              If <| twelve |> {
+                IconButton {
+                  Name: mode_button
+                  Icon: <| 'clock_outline' if typing else 'keyboard' |>
+                  Label: <| 'Switch to the clock' if typing else 'Switch to typing' |>
+                  Handlers {
+                    On_Click { Set { Target: typing, Value: <| not typing |> } }
+                  }
+                }
+              }
+              Container {
+                Name: spacer
+                Style { Flex: expand_horizontal }
+              }
+              Button {
+                Name: cancel
+                Label: Cancel
+                Variant: text
+                Handlers {
+                  On_Click { Set { Target: open, Value: <| False |> } }
+                }
+              }
+              Button {
+                Name: ok
+                Label: OK
+                Variant: text
+                Handlers {
+                  On_Click {
+                    Set { Target: hour, Value: <| dh |> }
+                    Set { Target: minute, Value: <| dm |> }
+                    Set { Target: open, Value: <| False |> }
+                    Call { Action: "on_ok" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

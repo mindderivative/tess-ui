@@ -1,0 +1,576 @@
+---
+TDL: 0.1
+Name: FileDialog
+Tesserae: "0.6"
+---
+# The file dialog: a modal panel over a scrim for choosing a file to open (`mode: open`, one or, with `multiple`, several), a folder and a name to save under (`mode: save`,
+# which asks before it writes over a file that is there), or a folder (`mode: folder`). A path bar (type a path and press Enter) and the folders of the path as buttons; Back, Forward,
+# Up and Home; a list of the folder's entries, folders first and then files, each sorted without regard to case, with their sizes and times; a switch for the names that start with a dot;
+# the file types (`filters`, each {label, patterns}; an `All files` choice follows them) that hide the files that do not match and never a folder; and, when saving or choosing a folder, a button
+# that makes a new folder. `root` is a folder it never leaves. `value` is two-way and gets the answer when OK is pressed: the path as text, or a list of paths when `multiple`; `on_accept` is
+# called after it is written and `on_cancel` when Escape, Cancel or a press outside closes it instead. Nothing is read from the disk until `open` goes true, and only the folder shown is read.
+# The keyboard in the list: Up, Down, Page Up, Page Down, Home and End move; Enter opens the folder or chooses the file; Backspace goes Up; Alt+Left and Alt+Right are Back and Forward; typing
+# jumps to the next name that starts with it; Ctrl+A picks all when `multiple`; Shift and Ctrl with a press or an arrow extend or flip the picks. The list shows `rows` rows at a time and builds
+# only those (a folder of ten thousand entries opens at once). The disk is read through `tess_ui.filesystem`. What the parts do is in the FileBrowser control (`tess_ui.file_controls`), which this
+# view drives by writing a numbered command to `cmd` and reading what comes back.
+Overlay {
+  Params {
+    Open { Type: bool, Default: false, Model: true, Doc: "Whether it is showing; Escape and a press outside write false." }
+    Mode {
+      Type: enum
+      Choices: [open, save, folder]
+      Default: open
+      Doc: "open picks existing files; save picks a folder and a name; folder picks a folder."
+    }
+    Headline { Type: str, Default: "", Doc: "The title; `Open file`, `Save file` or `Choose folder` when left out." }
+    Accept_Label { Type: str, Default: "", Doc: "The label of the OK button; `Open`, `Save` or `Choose` when left out." }
+    Multiple { Type: bool, Default: false, Doc: "More than one file (or folder) may be picked; `value` is then a list." }
+    Start { Type: str, Default: "", Doc: "The folder it opens in; the root, else the working folder, when left out." }
+    Root { Type: str, Default: "", Doc: "A folder it never leaves: nothing above it can be entered." }
+    Filters {
+      Type: list
+      Default: []
+      Doc: "The file types, each {label, patterns: [glob, ...]}, such as {label: TDL files, patterns: ['*.tdl']}; `All files` is added after them."
+    }
+    Filter { Type: int, Default: 0, Doc: "The number of the file type it opens with." }
+    Show_Hidden { Type: bool, Default: false, Doc: "Whether names that start with a dot are listed when it opens; the person can switch them." }
+    Filename {
+      Type: str
+      Default: ""
+      Doc: "A save dialog's starting file name. A name typed with no extension gets the one the file type gives (`*.tdl` gives `.tdl`)."
+    }
+    Rows { Type: int, Default: 8, Min: 3, Max: 20, Doc: "How many rows of the list show at once." }
+    Width { Type: float, Default: 720, Min: 480, Max: 1080, Doc: "How wide the panel is." }
+    Value {
+      Type: any
+      Default: ""
+      Model: true
+      Doc: "The answer, written when OK is pressed: the absolute path as text, or a list of paths when `multiple`."
+    }
+    On_Accept { Type: handler, Doc: "Called after `value` has been written and the dialog has closed." }
+    On_Cancel { Type: handler, Doc: "Called when the dialog is closed without an answer." }
+  }
+  Open: <| open |>
+  Modal: true
+  Dismissible: true
+  Focus_First: true
+  Handlers {
+    On_Dismiss { Call { Action: "on_cancel" } }
+  }
+  Children {
+    Container {
+      Name: panel
+      A11y { Role: dialog, Label: <| headline if headline != '' else {'open': 'Open file', 'save': 'Save file', 'folder': 'Choose folder'}[mode] |> }
+      State {
+        N: 0
+        Cmd: ""
+        Typed: ""
+        Fname: <| filename |>
+        Hidden: <| show_hidden |>
+        Which: <| filter |>
+        Y: 0
+        Confirm: false
+        Making: false
+        New_Name: ""
+        Menu_Open: false
+        Pick: 0
+        Entries: []
+        Selection: []
+        Cursor: -1
+        Folder: ""
+        Crumbs: []
+        Message: ""
+        Valid: false
+        Target: []
+        Chosen: ""
+        Exists: false
+        Problem: ""
+        Can_Back: false
+        Can_Forward: false
+        Can_Up: false
+        Filter_Items: []
+      }
+      Style { Flex_Direction: vertical, Width: <| width |> }
+      Children {
+        FileBrowser {
+          Name: browser
+          Mode: <| mode |>
+          Multiple: <| multiple |>
+          Start: <| start |>
+          Root: <| root |>
+          Filters: <| filters |>
+          Open: <| open |>
+          Initial: <| filename |>
+          Rows: <| rows |>
+          Command: <| cmd |>
+          Path: <| typed |>
+          Filename: <| fname |>
+          Hidden: <| hidden |>
+          Filter: <| which |>
+          Scroll: <| y |>
+          Confirm: <| confirm |>
+          Entries: <| entries |>
+          Selection: <| selection |>
+          Cursor: <| cursor |>
+          Folder: <| folder |>
+          Crumbs: <| crumbs |>
+          Message: <| message |>
+          Valid: <| valid |>
+          Target: <| target |>
+          Chosen: <| chosen |>
+          Exists: <| exists |>
+          Problem: <| problem |>
+          Can_Back: <| can_back |>
+          Can_Forward: <| can_forward |>
+          Can_Up: <| can_up |>
+          Filter_Items: <| filter_items |>
+          Handlers {
+            On_Input {
+              Set { Target: value, Value: <| target if multiple else target[0] |> }
+              Set { Target: open, Value: <| False |> }
+              Call { Action: "on_accept" }
+            }
+          }
+        }
+        Text {
+          Name: headline
+          Text: <| headline if headline != '' else {'open': 'Open file', 'save': 'Save file', 'folder': 'Choose folder'}[mode] |>
+          Typography_Role: headline_small
+          Heading: 2
+        }
+        Container {
+          Name: toolbar
+          Style { Flex_Direction: horizontal, Align_Content: center, Gap: 4 }
+          Children {
+            IconButton {
+              Name: back
+              Icon: arrow_back
+              Label: Back
+              Disabled: <| not can_back |>
+              Handlers {
+                On_Click {
+                  Set { Target: n, Value: <| n + 1 |> }
+                  Set { Target: cmd, Value: <| str(n) + ' back' |> }
+                }
+              }
+            }
+            IconButton {
+              Name: forward
+              Icon: arrow_forward
+              Label: Forward
+              Disabled: <| not can_forward |>
+              Handlers {
+                On_Click {
+                  Set { Target: n, Value: <| n + 1 |> }
+                  Set { Target: cmd, Value: <| str(n) + ' forward' |> }
+                }
+              }
+            }
+            IconButton {
+              Name: up
+              Icon: arrow_up
+              Label: Up
+              Disabled: <| not can_up |>
+              Handlers {
+                On_Click {
+                  Set { Target: n, Value: <| n + 1 |> }
+                  Set { Target: cmd, Value: <| str(n) + ' up' |> }
+                }
+              }
+            }
+            IconButton {
+              Name: home
+              Icon: home
+              Label: Home
+              Handlers {
+                On_Click {
+                  Set { Target: n, Value: <| n + 1 |> }
+                  Set { Target: cmd, Value: <| str(n) + ' home' |> }
+                }
+              }
+            }
+            IconButton {
+              Name: refresh
+              Icon: refresh
+              Label: Refresh
+              Handlers {
+                On_Click {
+                  Set { Target: n, Value: <| n + 1 |> }
+                  Set { Target: cmd, Value: <| str(n) + ' refresh' |> }
+                }
+              }
+            }
+            TextField {
+              Name: path_field
+              Variant: outlined
+              Label: Path
+              Text: <| typed |>
+              Handlers {
+                On_Submit {
+                  Set { Target: n, Value: <| n + 1 |> }
+                  Set { Target: cmd, Value: <| str(n) + ' goto' |> }
+                }
+              }
+              Style { Flex: fill }
+            }
+          }
+        }
+        Container {
+          Name: crumbs
+          A11y { Role: group, Label: "Folders in the path" }
+          Style { Flex_Direction: horizontal, Align_Content: left, Gap: 0, Height: 36 }
+          Children {
+            # TODO tuple for-target: i, c in enumerate(crumbs)
+            For i_c In <| enumerate(crumbs) |> Key <| c['path'] |> {
+              Container {
+                Name: crumb
+                Style { Flex_Direction: horizontal, Align_Content: center }
+                Children {
+                  If <| i > 0 |> {
+                    Icon {
+                      Name: crumb_gap
+                      Icon: chevron_right
+                    }
+                  }
+                  Button {
+                    Name: crumb_button
+                    Variant: text
+                    Size: xs
+                    Label: <| c['name'] |>
+                    Handlers {
+                      On_Click {
+                        Set { Target: n, Value: <| n + 1 |> }
+                        Set { Target: cmd, Value: <| str(n) + ' goto ' + c['path'] |> }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        Container {
+          Name: columns
+          Style { Flex_Direction: horizontal, Align_Content: left, Gap: 12, Height: 32 }
+          Children {
+            Container {
+              Name: column_icon
+              Style { Width: 24, Height: 24 }
+            }
+            Container {
+              Name: column_name_cell
+              Style { Flex: fill, Flex_Direction: horizontal, Align_Content: left }
+              Children {
+                Text {
+                  Name: column_name
+                  Text: Name
+                  Typography_Role: label_large
+                }
+              }
+            }
+            Text {
+              Name: column_size
+              Text: Size
+              Typography_Role: label_large
+              Text_Align: end
+              Style { Width: 80, Align_Self: left }
+            }
+            Text {
+              Name: column_modified
+              Text: Modified
+              Typography_Role: label_large
+              Style { Width: 140, Align_Self: left }
+            }
+          }
+        }
+        Container {
+          Name: list_group
+          Focus_Group: vertical
+          Style { Flex_Direction: vertical }
+          Children {
+            Container {
+              Name: list_box
+              Interaction: false
+              A11y { Role: list, Label: <| 'Folders' if mode == 'folder' else 'Files and folders' |> }
+              Handlers {
+                On_Click { Set { Target: y, Value: <| y |> } }
+                On_Key {
+                  Set { Target: n, Value: <| n + 1 |> }
+                  Set {
+                    Target: cmd
+                    Value: <| str(n) + ' key ' + event.key + (' shift' if event.shift else '') + (' ctrl' if event.ctrl else '') + (' alt' if event.alt else '') |>
+                  }
+                }
+              }
+              Style { Flex_Direction: vertical, Height: <| rows * 40 |> }
+              Children {
+                VirtualList {
+                  Name: list
+                  Item_Height: 40
+                  Scroll_Offset: <| y |>
+                  Style { Flex_Direction: vertical, Height: <| rows * 40 |> }
+                  Children {
+                    # TODO tuple for-target: i, row in enumerate(entries)
+                    For i_row In <| enumerate(entries) |> Key <| row['path'] |> {
+                      Container {
+                        Name: row
+                        Interaction: true
+                        A11y { Role: listitem, Label: <| row['name'] |>, Selected: <| row['path'] in selection |> }
+                        Handlers {
+                          On_Press {
+                            Set { Target: n, Value: <| n + 1 |> }
+                            Set {
+                              Target: cmd
+                              Value: <| str(n) + ' click ' + str(i) + (' ctrl' if event.ctrl else '') + (' shift' if event.shift else '') |>
+                            }
+                          }
+                        }
+                        Style {
+                          Flex_Direction: horizontal
+                          Align_Content: left
+                          Gap: 12
+                          Padding { Left: 8, Right: 8, Top: 0, Bottom: 0 }
+                          Background: <| 'secondary_container' if row['path'] in selection else ('surface_container_highest' if i == cursor else 'transparent') |>
+                        }
+                        Children {
+                          Icon {
+                            Name: row_icon
+                            Icon: <| row['icon'] |>
+                          }
+                          Container {
+                            Name: row_name_cell
+                            Style { Flex: fill, Flex_Direction: horizontal, Align_Content: left }
+                            Children {
+                              Text {
+                                Name: row_name
+                                Text: <| row['name'] |>
+                                Typography_Role: body_large
+                                Max_Lines: 1
+                                Overflow: ellipsis
+                                Style { Width: 100% }
+                              }
+                            }
+                          }
+                          Text {
+                            Name: row_size
+                            Text: <| row['size'] |>
+                            Typography_Role: body_medium
+                            Text_Align: end
+                            Style { Width: 80, Align_Self: left }
+                          }
+                          Text {
+                            Name: row_modified
+                            Text: <| row['modified'] |>
+                            Typography_Role: body_medium
+                            Style { Width: 140, Align_Self: left }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        If <| len(entries) == 0 and message == '' |> {
+          Text {
+            Name: empty
+            Text: "This folder is empty"
+            Typography_Role: body_medium
+          }
+        }
+        If <| message != '' or problem != '' |> {
+          Text {
+            Name: message_text
+            Text: <| message if message != '' else problem |>
+            Typography_Role: body_medium
+            A11y { Role: alert, Live: polite }
+          }
+        }
+        If <| making |> {
+          Container {
+            Name: new_folder_row
+            Style { Flex_Direction: horizontal, Align_Content: center, Gap: 8 }
+            Children {
+              TextField {
+                Name: new_folder_field
+                Variant: outlined
+                Label: "New folder name"
+                Text: <| new_name |>
+                Style { Flex: fill }
+              }
+              Button {
+                Name: new_folder_make
+                Variant: tonal
+                Label: Create
+                Disabled: <| new_name.strip() == '' |>
+                Handlers {
+                  On_Click {
+                    Set { Target: n, Value: <| n + 1 |> }
+                    Set { Target: cmd, Value: <| str(n) + ' new_folder ' + new_name |> }
+                    Set { Target: making, Value: <| False |> }
+                    Set { Target: new_name, Value: <| '' |> }
+                  }
+                }
+              }
+              Button {
+                Name: new_folder_cancel
+                Variant: text
+                Label: Cancel
+                Handlers {
+                  On_Click {
+                    Set { Target: making, Value: <| False |> }
+                    Set { Target: new_name, Value: <| '' |> }
+                  }
+                }
+              }
+            }
+          }
+        }
+        If <| mode == 'save' |> {
+          TextField {
+            Name: filename_field
+            Variant: outlined
+            Label: "File name"
+            Text: <| fname |>
+            Handlers {
+              On_Submit {
+                Set { Target: n, Value: <| n + 1 |> }
+                Set { Target: cmd, Value: <| str(n) + ' accept' |> }
+              }
+            }
+          }
+        }
+        Container {
+          Name: options
+          Style { Flex_Direction: horizontal, Align_Content: center, Gap: 8 }
+          Children {
+            Checkbox {
+              Name: show_hidden_box
+              Checked: <| hidden |>
+              Label: "Show hidden files"
+            }
+            If <| mode != 'open' |> {
+              Button {
+                Name: new_folder_button
+                Variant: text
+                Icon: plus
+                Label: "New folder"
+                Handlers {
+                  On_Click { Set { Target: making, Value: <| True |> } }
+                }
+              }
+            }
+            Container {
+              Name: spacer
+              Style { Flex: fill, Height: 1 }
+            }
+            If <| len(filter_items) > 1 |> {
+              Button {
+                Name: filter_button
+                Variant: outlined
+                Trailing_Icon: menu_down
+                Label: <| filter_items[which]['label'] if len(filter_items) > which else '' |>
+                Handlers {
+                  On_Click { Set { Target: menu_open, Value: <| not menu_open |> } }
+                }
+              }
+            }
+            If <| len(filter_items) > 1 |> {
+              Menu {
+                Name: filter_menu
+                Open: <| menu_open |>
+                Anchor: filter_button
+                Placement: above
+                Chosen: <| pick |>
+                Items: <| filter_items |>
+                Width: 240
+                On_Pick: "which = pick"
+              }
+            }
+          }
+        }
+        Container {
+          Name: actions
+          Style { Flex_Direction: horizontal, Align_Content: right, Gap: 8 }
+          Children {
+            Button {
+              Name: cancel
+              Variant: text
+              Label: Cancel
+              Handlers {
+                On_Click {
+                  Set { Target: open, Value: <| False |> }
+                  Call { Action: "on_cancel" }
+                }
+              }
+            }
+            Button {
+              Name: accept
+              Variant: filled
+              Label: <| accept_label if accept_label != '' else {'open': 'Open', 'save': 'Save', 'folder': 'Choose'}[mode] |>
+              Disabled: <| not valid |>
+              Handlers {
+                On_Click {
+                  Set { Target: n, Value: <| n + 1 |> }
+                  Set { Target: cmd, Value: <| str(n) + ' accept' |> }
+                }
+              }
+            }
+          }
+        }
+        Overlay {
+          Name: replace
+          Open: <| confirm |>
+          Modal: true
+          Children {
+            Container {
+              Name: replace_panel
+              A11y { Role: dialog, Label: "Replace file" }
+              Style { Flex_Direction: vertical, Width: 360 }
+              Children {
+                Text {
+                  Name: replace_headline
+                  Text: "Replace file?"
+                  Typography_Role: headline_small
+                  Heading: 2
+                }
+                Text {
+                  Name: replace_body
+                  Text: <| chosen + ' is there already. Saving writes over it.' |>
+                  Typography_Role: body_medium
+                }
+                Container {
+                  Name: replace_actions
+                  Style { Flex_Direction: horizontal, Align_Content: right, Gap: 8 }
+                  Children {
+                    Button {
+                      Name: replace_cancel
+                      Variant: text
+                      Label: Cancel
+                      Handlers {
+                        On_Click { Set { Target: confirm, Value: <| False |> } }
+                      }
+                    }
+                    Button {
+                      Name: replace_yes
+                      Variant: filled
+                      Label: Replace
+                      Handlers {
+                        On_Click {
+                          Set { Target: n, Value: <| n + 1 |> }
+                          Set { Target: cmd, Value: <| str(n) + ' confirmed' |> }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
