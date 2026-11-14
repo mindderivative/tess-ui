@@ -234,7 +234,7 @@ class ComposedView(View):
         super().__init__(spec, window=window, frames=frames, **kwargs)
         handle.window = self.window  # the ViewModel finds its app through the view's window
         handle.view = self
-        self._effect = Effect(self._sync)
+        self._effect = Effect(self._sync, deferred=True)
         self._synced = True
 
     def firing_node(self, action: str) -> Any:
@@ -310,11 +310,11 @@ class ComposedView(View):
             old_effect.dispose()
         old_handle.composition, old_handle.doc, self._observed = new, doc, set()
         try:
-            self._effect = Effect(self._sync)
+            self._effect = Effect(self._sync, deferred=True)
         except Exception:
             old_handle.composition, old_handle.doc, self._observed = old, old_doc, old_observed
             new.dispose()
-            self._effect = Effect(self._sync)  # the old composition drawn again
+            self._effect = Effect(self._sync, deferred=True)  # the old composition drawn again
             raise
         old.dispose()
 
@@ -352,7 +352,7 @@ class ComposedView(View):
 
     def _children_changed(self, inst: Instance, old: list[Instance], new: list[Instance]) -> None:
         if self._effect is not None and not self.handle.closed:
-            self._effect._run()
+            self._effect._poke()
 
     # handlers and edits
 

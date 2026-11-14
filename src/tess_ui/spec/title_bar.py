@@ -80,12 +80,12 @@ class TitleBarError(ValueError):
     """A `TitleBar` written wrongly, said on one line naming its id."""
 
 
-def expand_title_bars(spec: Any) -> Any:
+def expand_title_bars(spec: Any, *, copy_spec: bool = True) -> Any:
     """`spec` with each `kind: TitleBar` expanded into its nodes (a copy;
     `spec` itself is left as it is). Anything else passes through."""
     if not isinstance(spec, dict):
         return spec
-    return _expand(copy.deepcopy(spec))
+    return _expand((copy.deepcopy(spec) if copy_spec else spec))
 
 
 def _expand(node: dict[str, Any]) -> dict[str, Any]:

@@ -31,12 +31,12 @@ class EmbedError(ValueError):
     """A `view:` node written wrongly, said on one line naming its id."""
 
 
-def expand_embeds(spec: Any) -> Any:
+def expand_embeds(spec: Any, *, copy_spec: bool = True) -> Any:
     """`spec` with each `view:` node turned into a `Container` that holds an `embed:` request (a copy; `spec` itself is
     left as it is). Anything else passes through."""
     if not isinstance(spec, dict):
         return spec
-    return _expand(copy.deepcopy(spec))
+    return _expand((copy.deepcopy(spec) if copy_spec else spec))
 
 
 def _expand(node: dict[str, Any]) -> dict[str, Any]:

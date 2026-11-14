@@ -38,12 +38,12 @@ class WindowError(ValueError):
     """A `Window` written wrongly, said on one line naming its id."""
 
 
-def expand_windows(spec: Any) -> Any:
+def expand_windows(spec: Any, *, copy_spec: bool = True) -> Any:
     """`spec` with its root `kind: Window` turned into the container and title bar it stands for (a copy; `spec` itself is
     left as it is). A `Window` anywhere but the root is an error."""
     if not isinstance(spec, dict):
         return spec
-    spec = copy.deepcopy(spec)
+    spec = (copy.deepcopy(spec) if copy_spec else spec)
     for child in spec.get("children") or []:
         _no_window(child, spec.get("id"))
     return _window(spec) if spec.get("kind") == "Window" else spec

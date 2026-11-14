@@ -102,3 +102,5 @@ A block inside an `If` or `For` can have blocks added to it (and keys changed in
 ## Development
 
 The application's tests are in `tests/` here and run in the repository's `pytest` run (they are skipped on a Python without `tess_dl`). They use a recorded schema (`tests/fixtures/schema.json`, schema 1.2) and the recorded `check`, `status` and `version` answers (`tests/fixtures/recorded/`), the `tess_dl` corpus, the shell's shipped files and a fake `tesserae-shell` script written under `tmp_path` that prints those answers; the real shell and the real configuration folder are never touched, and the real-session guard of the repository's tests applies.
+
+`tools/perf.py` measures the two budgeted actions (selecting a block, one committed edit) on a headless window over a temporary copy of the test configuration: `PYTHONPATH=src:apps/shell_config/src python apps/shell_config/tools/perf.py`. `tests/test_shell_config_perf.py` asserts the counts that make them fast: the window is composed once for each.

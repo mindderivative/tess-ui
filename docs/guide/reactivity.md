@@ -36,7 +36,10 @@ batch(apply_discount)  # total recomputes once, not twice
   one of the `Signal`/`Computed` values `fn` actually reads changes.
 - **`Effect(fn)`** -- runs `fn` once immediately, then again whenever
   something it reads changes. Side-effect-only -- has no `.get()` of
-  its own to read back.
+  its own to read back. `Effect(fn, deferred=True)` is for an effect that costs a lot and reads many signals (a window composed again): when
+  it is told while a write or a `batch` is still notifying, it waits and runs once after everything that write set off has settled, instead of once per
+  path that reached it. The write has still not returned when it runs, and it runs even when another subscriber of the same write raised. A window's
+  own effect is deferred, so a change that touches ten signals and three `for:` lists composes the window once.
 - **`batch(fn)`** -- runs `fn`, collapsing every `Signal` write inside
   it into one notification pass at the end, instead of one pass per
   write. Use it when a single logical action touches several `Signal`s

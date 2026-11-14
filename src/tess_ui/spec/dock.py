@@ -43,12 +43,12 @@ class DockError(ValueError):
     """A `Dock` or `DockPanel` written wrongly, said on one line naming its id."""
 
 
-def expand_docks(spec: Any) -> Any:
+def expand_docks(spec: Any, *, copy_spec: bool = True) -> Any:
     """`spec` with each `Dock`, its `DockPanel`s and their splits turned into containers (a copy; `spec` itself is left as
     it is). A `zone:` anywhere but on a `DockPanel` of a `Dock`, a `DockPanel` outside a `Dock`, and a second `Dock` are errors."""
     if not isinstance(spec, dict):
         return spec
-    spec = copy.deepcopy(spec)
+    spec = (copy.deepcopy(spec) if copy_spec else spec)
     docks: list[str] = []
     out = _walk(spec, docks, in_dock=False)
     if len(docks) > 1:

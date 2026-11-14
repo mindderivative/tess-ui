@@ -396,6 +396,7 @@ children:
       - {widget: Text, name: shell_text, text: "{{ shell_state }}", typography_role: body_small, max_lines: 1, overflow: ellipsis, style: {foreground: on_surface_variant}}
   - widget: Menu
     name: structure_menu
+    if: menu_open
     open: "{{ menu_open }}"
     anchor: structure_actions
     items: "{{ menu_items }}"

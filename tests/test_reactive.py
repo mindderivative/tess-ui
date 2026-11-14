@@ -192,6 +192,75 @@ def test_writing_a_signal_while_it_notifies_raises(rx):
         s.set(1)
 
 
+# -- a deferred effect: one run for one change, however many of its signals it touches ----------------
+
+
+def test_a_deferred_effect_runs_once_for_a_write_that_reaches_it_by_several_paths(rx):
+    base = rx.Signal(1)
+    doubled = rx.Computed(lambda: base.get() * 2)
+    tripled = rx.Computed(lambda: base.get() * 3)
+    seen = []
+    plain = []
+    rx.Effect(lambda: seen.append((base.get(), doubled.get(), tripled.get())), deferred=True)
+    rx.Effect(lambda: plain.append((base.get(), doubled.get(), tripled.get())))
+    base.set(2)
+    assert seen == [(1, 2, 3), (2, 4, 6)]  # once for the write, and it saw every computed settled
+    assert len(plain) == 4 and plain[1] == (2, 4, 3)  # an ordinary effect still runs per path, in the middle of the notification
+
+
+def test_a_deferred_effect_runs_once_after_a_batch_and_again_for_what_it_sets_off_itself(rx):
+    a, b, log = rx.Signal(0), rx.Signal(0), []
+    rx.Effect(lambda: log.append((a.get(), b.get())), deferred=True)
+    rx.batch(lambda: (a.set(1), b.set(1)))
+    assert log == [(0, 0), (1, 1)]
+    followers = rx.Signal(0)
+    rx.Effect(lambda: followers.set(a.get() * 10))  # an ordinary effect writes a third signal when `a` changes
+    rx.Effect(lambda: log.append(("f", followers.get())), deferred=True)
+    log.clear()
+    a.set(2)
+    assert log == [(2, 1), ("f", 20)]  # the deferred one read the follower after it settled, not before (20, not the old 10)
+
+
+def test_a_deferred_effect_that_is_poked_during_its_own_run_runs_again_after_it(rx):
+    log, holder = [], []
+
+    def body():
+        log.append(len(log))
+        if len(log) == 1:
+            holder[0]._poke()  # told to run while running (a view's children changed under its own sync)
+
+    holder.append(rx.Effect.__new__(rx.Effect))
+    rx.Effect.__init__(holder[0], body, deferred=True)
+    assert log == [0, 1]
+
+
+def test_a_deferred_effect_still_runs_when_a_subscriber_of_the_same_write_raises(rx):
+    s, log = rx.Signal(0), []
+    rx.Effect(lambda: log.append(s.get()), deferred=True)
+
+    s._subscribe(lambda: (_ for _ in ()).throw(ValueError("boom")))
+    with pytest.raises(ValueError, match="boom"):
+        s.set(1)
+    assert log == [0, 1]
+
+
+def test_a_disposed_deferred_effect_never_runs_again_even_when_it_was_waiting(rx):
+    s, log = rx.Signal(0), []
+    effect = rx.Effect(lambda: log.append(s.get()), deferred=True)
+    s._subscribe(effect.dispose)  # disposed in the middle of the notification that told it
+    s.set(1)
+    assert log == [0]  # it was waiting when it was disposed: it never ran
+    n = len(log)
+    s.set(2)
+    assert len(log) == n and rx._deferred == []
+
+
+def test_reads_are_recorded_once_each_in_the_order_first_read(rx):
+    first, second = rx.Signal(1), rx.Signal(2)
+    c = rx.Computed(lambda: first.get() + second.get() + first.get())
+    assert c.get() == 4 and c._dependencies == [first, second]
+
+
 # -- only Tesserae: the public names -------------------------------------------
 
 

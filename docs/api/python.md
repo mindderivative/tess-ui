@@ -172,7 +172,7 @@ Also has everything `_Notifiable` has.
 ### `Effect`
 
 ```python
-class Effect(fn: Callable[[], None]) -> None
+class Effect(fn: Callable[[], None], *, deferred: bool = False) -> None
 ```
 
 Runs `fn` now, and again whenever something it read last time changes -- for side effects:

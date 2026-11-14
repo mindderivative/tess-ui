@@ -37,25 +37,43 @@ from typing import Any, Callable, Optional
 
 __all__ = ["Computed", "Effect", "Signal", "ViewModel", "batch", "untrack"]
 
-#: The recording stack: one list of read objects per open frame.
-_frames: list[list[Any]] = []
+#: The recording stack: one table of read objects per open frame, by identity, in the order they were first read (a frame that reads hundreds of signals, a whole window's, must not search a list for each read).
+_frames: list[dict[int, Any]] = []
 _batch_depth = 0
 _pending_notifications: list[Any] = []
+#: How many notifications are being delivered right now (a write's, or a batch flush's, with everything it set off in turn).
+_wave = 0
+#: `Effect(..., deferred=True)`s that were told to run during a wave: each runs once, when the outermost wave is done.
+_deferred: list["Effect"] = []
+_draining = False
+
+
+def _settle() -> None:
+    """Runs the deferred effects once no notification and no batch is going on, until none is left (one of them may write signals that tell another)."""
+    global _draining
+    if _draining or _wave > 0 or _batch_depth > 0:
+        return
+    _draining = True
+    try:
+        while _deferred:
+            effect = _deferred.pop(0)
+            effect._queued = False
+            effect._run()
+    finally:
+        _draining = False
 
 
 def _record_read(obj: Any) -> None:
     if _frames:
-        frame = _frames[-1]
-        if not any(seen is obj for seen in frame):
-            frame.append(obj)
+        _frames[-1].setdefault(id(obj), obj)
 
 
 def _begin_recording() -> None:
-    _frames.append([])
+    _frames.append({})
 
 
 def _end_recording() -> list[Any]:
-    return _frames.pop()
+    return list(_frames.pop().values())
 
 
 def _schedule_notify(signal_like: Any) -> None:
@@ -77,7 +95,7 @@ def batch(fn: Callable[[], Any]) -> Any:
     Deduplication is per callback, across every pending signal: a
     `Computed` reading two signals written in one batch recomputes once.
     """
-    global _batch_depth
+    global _batch_depth, _wave
     _batch_depth += 1
     try:
         return fn()
@@ -87,11 +105,16 @@ def batch(fn: Callable[[], Any]) -> Any:
             pending, _pending_notifications[:] = _pending_notifications[:], []
             seen_signals: set[int] = set()
             invoked_callbacks: set[Any] = set()
-            for signal_like in pending:
-                if id(signal_like) in seen_signals:
-                    continue
-                seen_signals.add(id(signal_like))
-                signal_like._notify(invoked_callbacks)
+            _wave += 1  # the whole flush is one wave: a deferred effect runs after it, not after each signal
+            try:
+                for signal_like in pending:
+                    if id(signal_like) in seen_signals:
+                        continue
+                    seen_signals.add(id(signal_like))
+                    signal_like._notify(invoked_callbacks)
+            finally:
+                _wave -= 1
+                _settle()
 
 
 def untrack(fn: Callable[[], Any]) -> Any:
@@ -140,7 +163,9 @@ class _Notifiable:
                 "tess_ui.untrack(...); otherwise restructure the code so this Signal's own "
                 "subscribers don't write back to it."
             )
+        global _wave
         self._notifying = True
+        _wave += 1
         try:
             invoked = already_invoked if already_invoked is not None else set()
             for callback in list(self._subscribers):
@@ -150,6 +175,8 @@ class _Notifiable:
                 callback()
         finally:
             self._notifying = False
+            _wave -= 1
+            _settle()  # also when a subscriber raised: the deferred effects (the window) still show what did change
 
 
 class Signal(_Notifiable):
@@ -237,29 +264,61 @@ class Effect:
         Effect(lambda: logger.info("count is now {}", count.get()))
 
     `dispose()` stops it.
+
+    A `deferred` effect does not run in the middle of a notification: when what it read changes while a write (or a `batch` flush) is still
+    telling its subscribers, it waits and runs once, after everything that notification set off has settled. An effect that costs a lot
+    (a whole window composed again) and reads many signals runs once for a change that touches many of them, not once for each. The write
+    that set it off has still not returned when it runs, so a caller sees the result at once.
     """
 
-    def __init__(self, fn: Callable[[], None]) -> None:
+    def __init__(self, fn: Callable[[], None], *, deferred: bool = False) -> None:
         self._fn = fn
         self._dependencies: list[Any] = []
+        self._running = False
+        self._again = False
+        self._queued = False
+        self._disposed = False
+        self._wake = self._poke if deferred else self._run
         self._run()
+
+    def _poke(self) -> None:
+        """What a deferred effect's dependencies call: run now, or once the notification going on is done; at the end of its own run when a dependency changed during it."""
+        if self._disposed:
+            return
+        if self._running:
+            self._again = True
+        elif _wave > 0 or _batch_depth > 0 or _draining:
+            if not self._queued:
+                self._queued = True
+                _deferred.append(self)
+        else:
+            self._run()
 
     def _run(self) -> None:
         for dependency in self._dependencies:
-            dependency._unsubscribe(self._run)
+            dependency._unsubscribe(self._wake)
+        self._running = True
         _begin_recording()
         try:
             self._fn()
         finally:
             self._dependencies = _end_recording()
+            self._running = False
         for dependency in self._dependencies:
-            dependency._subscribe(self._run)
+            dependency._subscribe(self._wake)
+        if self._again:
+            self._again = False
+            self._poke()
 
     def dispose(self) -> None:
         """Stops the effect: it no longer runs when what it read changes."""
+        self._disposed = True
         for dependency in self._dependencies:
-            dependency._unsubscribe(self._run)
+            dependency._unsubscribe(self._wake)
         self._dependencies = []
+        if self._queued:
+            self._queued = False
+            _deferred.remove(self)
 
 
 class _FromApp:

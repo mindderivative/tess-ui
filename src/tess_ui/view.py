@@ -182,7 +182,7 @@ class View:
             window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, align_items="flex_start")
             # no `Window.set_theme` (removed in tre 0.3.5): since M40 nothing a view builds reads the window's theme
         self.window = window
-        spec = expand_embeds(expand_title_bars(expand_docks(expand_windows(spec))))  # `Window`, `Dock`, `TitleBar` into their nodes; `view:` into containers
+        spec = _expanded(spec)  # `Window`, `Dock`, `TitleBar` into their nodes; `view:` into containers
         self._spec = spec
         self._built = Built(root=None)
         self._events = Listeners()
@@ -273,7 +273,7 @@ class View:
 
     def reconcile(self, spec: dict[str, Any], frames: Optional[dict[str, tuple[bytes, int, int]]] = None) -> None:
         """Brings the live tree in line with `spec`, in place."""
-        spec = expand_embeds(expand_title_bars(expand_docks(expand_windows(spec))))  # as in `__init__`
+        spec = _expanded(spec)  # as in `__init__`
         self._new_frames: set[str] = set()  # the pictures that are not the ones the nodes show: a changed `src`, which the spec no longer names
         if frames is not None:
             self._new_frames = {node_id for node_id, frame in frames.items() if self._frames.get(node_id) != frame}
@@ -1139,6 +1139,14 @@ def _alive(node: Any) -> bool:
     except ValueError:
         return False
     return True
+
+
+def _expanded(spec: Any) -> Any:
+    """`spec` with its `Window`, `Dock`, `TitleBar` and `view:` nodes expanded: a copy, made once (each expander would otherwise copy the whole spec again, and a window of a few hundred nodes is copied four times on every sync)."""
+    if not isinstance(spec, dict):
+        return spec
+    spec = copy.deepcopy(spec)
+    return expand_embeds(expand_title_bars(expand_docks(expand_windows(spec, copy_spec=False), copy_spec=False), copy_spec=False), copy_spec=False)
 
 
 def _walk(spec: dict[str, Any]):
