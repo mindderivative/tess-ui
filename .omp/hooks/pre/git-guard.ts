@@ -1,7 +1,7 @@
 /**
  * Before a bash call: the one rule AGENTS.md sets for git, made a real check (the Claude Code hook `bash_guard.sh` did not run under omp).
  *
- *  - `git push` runs without asking (the Tesserae Shell Directive, maintainer 2026-11-13), except a force push and a push of tags, which stay blocked: no releases, no rewritten history.
+ *  - `git push` runs without asking (maintainer, 2026-11-13), except a force push and a push of tags, which stay blocked: no releases, no rewritten history.
  *  - `git commit` first checks the Python files the commit will hold at pyflakes level (syntax errors, unused or undefined names), so an old finding
  *    elsewhere does not block it; a finding blocks the commit and the report is the reason. The files are the staged ones, the ones a `git add` in the
  *    same command line would stage (`git add -n` says which: `git add x && git commit` is how commits are made, and nothing is staged when the hook
@@ -16,7 +16,7 @@ import { gitSubcommands, ruffBin, run } from "../lib.ts";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-export const PUSH_BLOCKED = "Blocked: a force push or a push of tags needs the maintainer (Tesserae Shell Directive: no releases, no rewritten history).";
+export const PUSH_BLOCKED = "Blocked: a force push or a push of tags needs the maintainer (no releases, no rewritten history).";
 /** `git [options] push <arguments up to the end of the command>`. */
 const PUSH = /\bgit\s+(?:(?:-C|-c)\s+\S+\s+|-\S+\s+)*push\b([^;&|\n]*)/g;
 /** A force (`-f`, `--force*`, `--mirror`, `--delete`, a `+ref` spec) or tags (`--tags`, `--follow-tags`, `--tag`, `tag NAME`, `refs/tags/`). */
