@@ -38,7 +38,7 @@ from tess_ui.spec.layout import LAYOUT_FIELDS, REPLACED, LayoutError, engine_sty
 
 __all__ = ["style_props", 
     "A11Y_BINDABLE", "Built", "Layers", "SpecBuildError", "a11y_bindings", "build", "control_shape", "focus_ring_color",
-    "interaction_tint", "is_binding", "natural_size", "patch",
+    "interaction_tint", "is_binding", "is_bound", "natural_size", "patch",
     "prepare_layers",
     "shipped_default_theme",
 ]
@@ -59,7 +59,7 @@ _KINDS = _CONTROL_KINDS | _WIDGET_KINDS | {"Rect", "Container", "Text", "Link", 
                                            "ScrollView", "Canvas", "Overlay"}
 _NODE_KEYS = frozenset({
     "id", "kind", "classes", "style", "text", "checked", "selected", "value", "hour", "minute",
-    "image", "icon", "svg", "canvas", "scroll", "overlay", "virtual", "track", "stop_indicator", "buffer", "error", "icons", "ticks", "value_indicator", "vertical", "size", "low", "high", "thickness", "two_bar", "contained", "wavy", "bindings", "handlers", "two_way", "interaction", "a11y", "group", "children",
+    "image", "icon", "svg", "canvas", "scroll", "overlay", "virtual", "track", "stop_indicator", "buffer", "error", "icons", "ticks", "value_indicator", "vertical", "size", "low", "high", "thickness", "two_bar", "contained", "wavy", "bindings", "handlers", "two_way", "interaction", "a11y", "a11y_literal", "group", "children",
     "component_of",  # the fragment a node is the root of (M57): its theme `components:` entry
     "embed",  # a `view:` node, made a container (0.4.4): the view to build into it and its `with:`
     "window",  # a root `kind: Window`, made a container (0.4.4): the OS window's title, borderless, sizes
@@ -957,10 +957,16 @@ def is_binding(value: Any) -> bool:
     return isinstance(value, str) and "{{" in value
 
 
+def is_bound(node: dict[str, Any], value: Any) -> bool:
+    """Whether the `a11y:` value `value` of `node` is a `{{ }}` binding. Not in a lowered spec (`a11y_literal: true`, set by `lower`): a composed view has worked every expression out already, so a `{{` left in a
+    label or description is the text itself (a tree row's label, a param that holds braces)."""
+    return not node.get("a11y_literal") and is_binding(value)
+
+
 def a11y_bindings(node: dict[str, Any]) -> dict[str, str]:
     """The node's bound `a11y:` fields, `{field: "{{ expr }}"}` (the view wires them)."""
     value = node.get("a11y")
-    return {k: v for k, v in value.items() if is_binding(v)} if isinstance(value, dict) else {}
+    return {k: v for k, v in value.items() if is_bound(node, v)} if isinstance(value, dict) else {}
 
 
 def _a11y_fields(node: dict[str, Any]) -> dict[str, Any]:
@@ -981,7 +987,7 @@ def _a11y_fields(node: dict[str, Any]) -> dict[str, Any]:
     own = sorted(_A11Y_STATES & set(value)) if node["kind"] in _CONTROL_KINDS else []
     if own:
         raise SpecBuildError(f"{where}: a {node['kind']} sets its own {own[0]}; `a11y:` can't")
-    bound = [k for k, v in value.items() if is_binding(v)]
+    bound = [k for k, v in value.items() if is_bound(node, v)]
     fixed_only = [k for k in bound if k not in A11Y_BINDABLE]
     if fixed_only:
         raise SpecBuildError(f"{where}: a11y {fixed_only[0]} can't be bound -- only "

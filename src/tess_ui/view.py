@@ -62,7 +62,7 @@ from tess_ui.spec.title_bar import expand_title_bars
 from tess_ui.spec.window import expand_windows
 from tess_ui.spec.build import (
     A11Y_BINDABLE, Built, _CONTROL_KINDS, _WIDGET_KINDS, a11y_bindings, build_with, connect_edges, control_shape,
-    focus_ring_color, is_binding,
+    focus_ring_color, is_bound,
     interaction_tint, layout_of, natural_size, patch, prepare_layers, resting_focus,
 )
 from tess_ui.spec.cascade import resolve_style
@@ -808,7 +808,7 @@ class View:
         for node_spec in _walk(self._spec):
             node_id = node_spec["id"]
             fields = node_spec.get("a11y") if isinstance(node_spec.get("a11y"), dict) else {}
-            props: dict[str, Any] = {k: v for k, v in fields.items() if k in a11y.EXTRAS and not is_binding(v)}
+            props: dict[str, Any] = {k: v for k, v in fields.items() if k in a11y.EXTRAS and not is_bound(node_spec, v)}
             for name in a11y.RELATIONS:
                 if name in fields:
                     names = [fields[name]] if isinstance(fields[name], str) else list(fields[name])

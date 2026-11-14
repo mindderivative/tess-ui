@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- **An `a11y:` label or description with `{{` in it is kept (T-056).** A composed view works every expression out before the builder sees the spec, but the builder took any `a11y:` value with `{{` for a binding to wire: a label such as a tree row's `Bar  {{ x }}`, or a param that holds braces, made the view refuse the spec, and on a patch left the field unset (the label or description vanished). `lower` now marks the node `a11y_literal: true` and the view reads its `a11y:` values as text; a spec written by hand still has `{{ }}` bindings (`tests/test_a11y_literal_braces.py`).
+
 - **A state rule on a popup view no longer makes Escape fail.** A stylesheet rule with `state: focused` or `state: focus_visible` on a view whose root holds an anchored `Overlay` (`ColourPicker`, `Menu`) wrote the `focused` state again while that state was still notifying, when closing the layer moved the focus back to the trigger; the engine logged `was written to again while still notifying` and the write was lost. A state written during its own notification is now applied on the next turn.
 
 - **A text input whose `text` is two-way keeps its caret while you type in the middle of it.** After each edit the view set the typed text on the input again, and the engine moves the caret to the end of the text when it is given the text it already shows, so a second character typed after `Home` landed at the end and a Backspace deleted there (found in the configuration app, where it looked like a lost Backspace). A text the input already shows is no longer set again; a text the app sets still reaches the input.

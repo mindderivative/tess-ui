@@ -125,6 +125,7 @@ def lower(inst: Instance) -> dict[str, Any]:
                 a11y[relation] = _node_ids(inst, relation, a11y[relation])
     if a11y:
         node["a11y"] = a11y
+        node["a11y_literal"] = True  # worked out above: a `{{` in it is text, not a binding for the view to wire
     if inst.interaction is not None:
         node["interaction"] = {"color": inst.interaction} if isinstance(inst.interaction, str) else inst.interaction
     if inst.handlers:
