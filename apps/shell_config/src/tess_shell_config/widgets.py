@@ -29,7 +29,11 @@ from tess_shell_config.schema import KeyInfo, Schema
 from tess_shell_config.values import colour_text, format_number, is_reference, normal_colour, parse_number, quote
 
 __all__ = ["Refused", "Context", "Widget", "WidgetFactory", "WidgetRegistry", "TdlWidget", "SwitchWidget", "ChoiceWidget", "NumberWidget", "LengthWidget", "SidesWidget", "ColourWidget",
-           "TextWidget", "PathWidget", "IconWidget", "FontWidget", "KeyChordWidget", "ListWidget", "list_widget", "fallback", "default_registry"]
+           "TextWidget", "PathWidget", "IconWidget", "FontWidget", "KeyChordWidget", "ListWidget", "BlockWidget", "list_widget", "fallback", "default_registry"]
+
+
+#: What `BlockWidget.write` returns for its button; `form.BlockStore` adds the block for it.
+ADD_BLOCK = "\0add-block"
 
 
 class Refused(Exception):
@@ -692,6 +696,35 @@ def list_widget(key: KeyInfo, context: Context) -> Widget:
 
 # -- the registry ------------------------------------------------------------------------------------------------------------------
 
+class BlockWidget(Widget):
+    """block and shadows: a key whose value is a block of its own (`Shadows { Shadow { ... } }`, `Inner_Border { Width: 2 }`), not a value on the line. The cell is one button: Add (the block is written with its required
+    keys, one edit) or Open (the block is chosen in the structure, where its own keys and children are edited). Reset removes the block. A plain value the key takes instead (a token reference such as `$elevation.max`)
+    is shown as TDL text."""
+
+    ui = "block"
+
+    def empty(self) -> dict[str, Any]:
+        return {"label": f"Add {self.key.name}", "exists": False, "placeholder": ""}
+
+    def read(self, value: Value, text: str) -> dict[str, Any] | None:
+        return None
+
+    def write(self, edit: Mapping[str, Any]) -> str | None:
+        if not edit.get("add"):
+            raise Refused(f"{_label(self.key)} is a block: add it with the button, then edit it in the structure.")
+        return ADD_BLOCK
+
+    def sample_edit(self) -> dict[str, Any]:
+        return {"add": True}
+
+
+def block_widget(key: KeyInfo, context: Context) -> Widget:
+    """The button of a key of a block; a theme token or a module param whose value is a block has no block to add to, so it is the generic TDL field."""
+    if key.extra.get("token") or key.extra.get("param"):
+        return TdlWidget(key, context, "a theme token or a module param whose value is a block: edited as TDL text")
+    return BlockWidget(key, context)
+
+
 @dataclass
 class WidgetRegistry:
     """Schema kind -> widget factory. `create` never fails: a kind with no entry gets the generic TDL field and a reason."""
@@ -727,9 +760,9 @@ def default_registry() -> WidgetRegistry:
     for kind in ("string", "text", "name", "name_ref", "text_or_number", "monitor_index", "token_ref"):
         registry.register(kind, TextWidget)
     registry.register("path", PathWidget)
-    composite = "a composite value (a block or a token reference): edited as TDL text"
-    for kind in ("shadows", "block", "tooltip"):
-        registry.register(kind, fallback(composite))
+    for kind in ("shadows", "block"):
+        registry.register(kind, block_widget)
+    registry.register("tooltip", fallback("a Popup's name (a bare word), a short quoted text or an inline Tooltip block: what is typed does not say which, so it is edited as TDL text"))
     registry.register("icon", IconWidget)
     registry.register("font", FontWidget)
     registry.register("key_chord", KeyChordWidget)

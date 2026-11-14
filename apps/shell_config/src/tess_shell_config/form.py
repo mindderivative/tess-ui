@@ -21,11 +21,11 @@ from typing import Any
 
 from tess_dl import Block, Document, For, If, Property, Slot, Value
 
-from tess_shell_config.model import DocumentModel, EditError
+from tess_shell_config.model import DocumentModel, EditError, block_names
 from tess_shell_config.schema import BlockInfo, KeyInfo, ModuleInfo, ParamInfo, Schema, TokenInfo
 from tess_shell_config.tdl import IndexPath, child_named, properties_of
 from tess_shell_config.values import EXPRESSION_STUB, format_number, is_reference, key_problem, normal_colour, value_text
-from tess_shell_config.widgets import Context, PathWidget, Refused, TdlWidget, Widget, WidgetRegistry, default_registry
+from tess_shell_config.widgets import ADD_BLOCK, BlockWidget, Context, PathWidget, Refused, TdlWidget, Widget, WidgetRegistry, default_registry
 
 __all__ = ["Outcome", "Fallback", "Coverage", "Cell", "Row", "FormView", "Form", "coverage", "key_of_param", "key_of_token", "file_name"]
 
@@ -57,13 +57,13 @@ class Fallback:
 def key_of_param(param: ParamInfo) -> KeyInfo:
     """A module param as a key: the same record the schema keeps for a block's key, so one widget code path serves both."""
     return KeyInfo(name=param.name, kind=param.kind, doc=param.doc, default=param.default, choices=param.extra.get("choices"), enum=None, slot=False, required=param.required, built=True,
-                   group=PARAMS, tokens=(), preferred_tokens=(), extra=param.extra)
+                   group=PARAMS, tokens=(), preferred_tokens=(), extra={**param.extra, "param": True})
 
 
 def key_of_token(token: TokenInfo) -> KeyInfo:
     """A theme token as a key, named by its dotted path (`type.body.font_size`)."""
     return KeyInfo(name=token.name, kind=token.kind, doc=token.doc, default=token.default, choices=None, enum=None, slot=False, required=False, built=True, group=token.group, tokens=(),
-                   preferred_tokens=(), extra=token.extra)
+                   preferred_tokens=(), extra={**token.extra, "token": True})
 
 
 def file_name(part: str) -> str:
@@ -161,6 +161,40 @@ class StyleKeyStore(PropertyStore):
             model.clear_nested_value(self.path, ("Style",), self.key)
         else:
             model.clear_value(self.path, self.key)
+
+@dataclass(frozen=True)
+class BlockStore(PropertyStore):
+    """A key whose value is a child block of the key's name: a write adds the block (the schema's `spec` says what it holds; its required keys are written), a removal takes the block out."""
+
+    spec: str = ""
+    schema: Schema | None = None
+
+    def child(self, document: Document) -> Block | None:
+        block = self._block(document)
+        return child_named(block, self.key) if block is not None else None
+
+    def write(self, model: DocumentModel, text: str) -> None:
+        from tess_shell_config.blocks import new_block_text
+
+        document = model.document
+        assert document is not None and self.schema is not None
+        if text != ADD_BLOCK:  # a plain value the key takes instead of the block (a token reference): the key's own property
+            super().write(model, text)
+            return
+        found = PropertyStore.read(self, document)
+        if found.value is not None or found.block is not None:
+            raise EditError(f"{self.key} is there already: " + ("open it in the structure." if found.block is not None else "reset it first to add the block."))
+        written = new_block_text(self.schema, self.spec, block_names(document))
+        model.add_block(self.path, self.key + written[len(self.spec):])
+
+    def remove(self, model: DocumentModel) -> None:
+        document = model.document
+        child = self.child(document) if document is not None else None
+        if child is None:
+            super().remove(model)
+            return
+        model.remove_block(tuple(child.index_path))
+
 
 @dataclass(frozen=True)
 class TokenStore(Store):
@@ -263,7 +297,7 @@ class Cell:
             "id": self.id, "ui": ui, "column": self.column, "present": self.present, "text": self.text, "default": self.widget.default, "error": self.error, "expression": self.expression,
             "slot": self.slot, "tokens": self.tokens, "token_groups": self.token_groups, "token_preferred": self.token_preferred,
             "token_ref": self.text.strip() if self.present and is_reference(self.text) else "", "readonly": self.readonly, "note": self.note, "fallback": self.widget.reason is not None, "stepping": False, "browse": False, "suffix": "",
-            "hint": "", "mono": False, "placeholder": self.widget.default,
+            "hint": "", "mono": False, "placeholder": self.widget.default, "label": "", "exists": False,
         }
         data.update(self.shown)
         if self.expression:
@@ -544,7 +578,7 @@ class Form:
     def _key_row(self, document: Document | None, path: IndexPath, key: KeyInfo, context: Context, styled: bool = False) -> Row:
         widget = self.registry.create(key, context)
         group = NOT_BUILT if not key.built else (key.group or "Other")
-        store = StyleKeyStore(path, key.name) if styled else PropertyStore(path, key.name)
+        store: Store = BlockStore(path, key.name, str(key.extra.get("block") or key.name), self.schema) if isinstance(widget, BlockWidget) else StyleKeyStore(path, key.name) if styled else PropertyStore(path, key.name)
         cell = self._cell(f"k:{key.name}|", widget, store, document, "", key)
         markers = []
         if not key.built:
@@ -577,9 +611,13 @@ class Form:
                 shown = {}
             cell.shown = shown
         elif found.block is not None:
-            cell.present, cell.readonly = True, True
+            cell.present = True
             cell.text = document.text[found.block.start:found.block.end]  # type: ignore[union-attr]
-            cell.note = "a block: edit it in the structure"
+            if isinstance(widget, BlockWidget):
+                cell.shown = {"label": f"Open {key.name}", "exists": True, "placeholder": ""}
+            else:
+                cell.readonly = True
+                cell.note = "a block: edit it in the structure"
         else:
             cell.shown = widget.empty()
         cell.expression = cell.is_slot or cell.id in self.expressions

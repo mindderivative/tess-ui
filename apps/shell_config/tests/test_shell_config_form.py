@@ -154,11 +154,11 @@ def test_a_token_reference_is_shown_as_tdl_and_a_property_the_schema_does_not_na
     assert weird.group == "Not in the schema" and weird.cells[0].view()["field"] == "3" and weird.cells[0].widget.reason
 
 
-def test_a_child_block_of_a_composite_key_is_shown_read_only(tmp_path, schema):
+def test_a_child_block_of_a_composite_key_has_an_open_button_and_a_typed_value_is_refused(tmp_path, schema):
     text = DOC.replace('Background: "#101418"', "Shadows { Shadow { Color: \"#000000\", X: 0, Y: 4, Blur: 8, Spread: 0 } }")
     r = Rig(tmp_path, schema, text)
     cell = r.select("Bar", "Top_Bar").cell("Shadows")
-    assert cell.readonly and cell.present and cell.text.startswith("Shadows {") and cell.view()["ui"] == "field"
+    assert cell.present and cell.text.startswith("Shadows {") and cell.view()["ui"] == "block" and cell.view()["label"] == "Open Shadows"
     assert not r.form.commit("k:Shadows|", {"text": "$elevation.max"}).ok and r.text == text
 
 
@@ -601,9 +601,8 @@ def _timed(fn):
 #: Why a key gets the generic TDL field, by schema kind: every one is stated in the widget registry (`widgets.default_registry`) or comes from the schema itself.
 EXPECTED_FALLBACKS = {
     "": "the schema gives this key no kind",  # the keys the shell does not build, and tokens with no kind
-    "shadows": "a composite value",
-    "block": "a composite value",
-    "tooltip": "a composite value",
+    "shadows": "a theme token or a module param whose value is a block",  # the token elevation.max: its value is a list of Shadow blocks
+    "tooltip": "what is typed does not say which",  # a Popup's name, a short text or an inline block (shadows and blocks have a button: BlockWidget)
 }
 
 
@@ -617,7 +616,7 @@ def test_the_coverage_report_lists_every_key_that_got_the_generic_field_each_wit
     for fallback in fallbacks:
         by_kind.setdefault(fallback.kind, []).append(f"{fallback.where}.{fallback.key}")
     assert len(by_kind[""]) == 13, "ten keys and three tokens with no kind"
-    assert set(by_kind) == {"", "shadows", "block", "tooltip"}, "the list, icon, font and key_chord kinds have widgets now"
+    assert set(by_kind) == {"", "shadows", "tooltip"}, "the list, icon, font, key_chord, shadows and block kinds have widgets now"
     assert len(report.entries) == len(list(schema.walk_keys())) + sum(len(m.params) for m in schema.modules.values()) + sum(len(t) for t in schema.tokens.values())
     print("generic TDL field:", {kind: len(names) for kind, names in by_kind.items()})
 

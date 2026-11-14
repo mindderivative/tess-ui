@@ -11,6 +11,10 @@ focus is; the text editor takes Tab and the arrow keys itself, so a shortcut is 
 | Ctrl+Shift+R | Ask the running shell to reload (Reload shell) |
 | Ctrl+Shift+A | Switch "Apply as I edit" on or off |
 | Ctrl+Shift+L, Ctrl+Shift+U | The file changed on disk: reload it from disk (L), or use your version, Keep mine (U; Ctrl+K and Ctrl+J are the text editor's own) |
+| Ctrl+N | A new file from a type (a list of the types, then a name) |
+| F2 | Rename the file chosen in the Files area |
+| Ctrl+Alt+D | Duplicate the file chosen in the Files area |
+| Delete (in the Files area) | Delete the file: it moves to the trash folder of the state folder |
 | Ctrl+Shift+N | Add a child to the selected block (a list of the blocks the schema lets it hold) |
 | Delete (in the Structure tree), Ctrl+Shift+Delete | Remove the selected block |
 | Alt+Up, Alt+Down | Move the selected block up or down among its siblings |
@@ -30,7 +34,7 @@ from tess_shell_config.viewmodel import ShellConfigViewModel
 __all__ = ["REGIONS", "Shortcuts"]
 
 #: The form's widgets that take the keyboard focus, by the name they have in `Main_View.yaml`.
-_FOCUSABLE = ("switch", "choose", "field", "unit_button", "side_0", "colour_picker", "icon_picker", "font_list", "chord_field", "list_editor", "token_button")
+_FOCUSABLE = ("switch", "choose", "block_button", "field", "unit_button", "side_0", "colour_picker", "icon_picker", "font_list", "chord_field", "list_editor", "token_button")
 
 #: The structure actions that have a Ctrl+Shift+letter, by the letter.
 _STRUCTURE = {"n": "add", "m": "move_to", "d": "duplicate"}
@@ -57,8 +61,21 @@ class Shortcuts:
     def handle(self, key: str, ctrl: bool = False, shift: bool = False, alt: bool = False) -> bool:
         """Do what the keys mean; returns whether they meant something."""
         key = key.lower().replace("_", "")
+        files = self.viewmodel.file_actions
+        if alt and ctrl and not shift and key == "d":
+            files.duplicate()
+            return True
         if alt:
             return self._alt(key, ctrl, shift)
+        if ctrl and not shift and key == "n":
+            files.new()
+            return True
+        if key == "f2" and not ctrl and not shift:
+            files.rename()
+            return True
+        if key == "delete" and not ctrl and not shift and self.focused_region() == 0:
+            files.delete()
+            return True
         if ctrl and shift and key in _STRUCTURE:
             getattr(self.viewmodel.structure_actions, _STRUCTURE[key])()
         elif key == "delete" and (ctrl and shift or (not ctrl and not shift and self.focused_region() == 1)):

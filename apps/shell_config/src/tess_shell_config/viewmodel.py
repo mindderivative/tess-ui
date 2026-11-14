@@ -11,6 +11,7 @@ from typing import Any
 
 from tess_ui import Effect, Signal, ViewModel, batch, untrack
 
+from tess_shell_config.fileactions import FileActions
 from tess_shell_config.folder import FileType
 from tess_shell_config.actions import StructureActions
 from tess_shell_config.formcontrol import FormController
@@ -58,6 +59,7 @@ class ShellConfigViewModel(ViewModel):
         self.shortcuts: Any = None  # a `Shortcuts`, set by `build`, which has the view to move the focus in
         self.form = FormController(self)  # the form's Signals and handlers (`form_*`, `picker_*`, `file_*`) are put on this ViewModel
         self.structure_actions = StructureActions(self)  # the Structure area's actions (`structure_*`, `can_*`, `menu_*`)
+        self.file_actions = FileActions(self)  # the Files area's actions (`file_*`, `can_file_*`, the name prompt)
         self.services = Services(self)  # check and the problems list, status, reload, Apply as I edit, the file watch (`problems`, `check_run`, `shell_state`, `disk_*`, ...)
         self._effects = [Effect(self._file_picked), Effect(self._structure_picked)]
         self.refresh_files()
@@ -92,6 +94,26 @@ class ShellConfigViewModel(ViewModel):
             rel = value[len(FILE):]
             if self.session.current != rel or rel not in self.session.models:  # the file the model already shows needs no reopening
                 untrack(lambda: self.open_file(rel))
+
+    def close_view(self) -> None:
+        """No file is open any more (the open one was renamed or deleted): the text, the structure and the form are empty."""
+        batch(self._close_view_now)
+
+    def _close_view_now(self) -> None:
+        self.has_file.set(False)
+        self.has_tree.set(False)
+        self.text.set("")
+        self.read_only.set(False)
+        self.error_rows.set([])
+        self.structure_nodes.set([])
+        self.structure_selected.set("")
+        self.selected_label.set("")
+        self.title.set("No file open")
+        self.dirty.set(False)
+        self.can_undo.set(False)
+        self.can_redo.set(False)
+        self.structure_actions.refresh()
+        self.form.refresh()
 
     def open_file(self, rel: str) -> None:
         """Open a file of the folder: its text shows, and its structure when it parses."""

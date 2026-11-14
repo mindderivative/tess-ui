@@ -31,6 +31,15 @@ children:
         children:
           - {widget: Text, name: files_heading, text: Files, typography_role: title_small}
           - {widget: Text, name: folder_text, text: "{{ folder }}", typography_role: body_small, max_lines: 1, overflow: ellipsis, style: {foreground: on_surface_variant}}
+          - widget: Container
+            name: files_actions
+            a11y: {role: group, label: File actions}
+            style: {flex_direction: horizontal, align_content: left, gap: 0, width: 100%}
+            children:
+              - {widget: IconButton, name: file_new_button, icon: plus, size: xs, label: "New file from a type (Ctrl+N)", handlers: {on_click: file_new}}
+              - {widget: IconButton, name: file_duplicate_button, icon: content_copy, size: xs, label: "Duplicate the file (Ctrl+Alt+D)", disabled: "{{ not can_file_duplicate }}", handlers: {on_click: file_duplicate}}
+              - {widget: IconButton, name: file_rename_button, icon: pencil, size: xs, label: "Rename the file (F2)", disabled: "{{ not can_file_rename }}", handlers: {on_click: file_rename}}
+              - {widget: IconButton, name: file_delete_button, icon: delete, size: xs, label: "Delete the file: it goes to the trash folder (Delete in the Files area)", disabled: "{{ not can_file_delete }}", handlers: {on_click: file_delete}}
           - widget: ScrollView
             name: files_scroll
             style: {flex: expand_vertical, width: 100%, min_height: 0}
@@ -247,6 +256,14 @@ children:
                                         size: xs
                                         a11y: {label: "{{ item['label'] }}: one value for all sides, or one for each"}
                                         handlers: {on_click: "d1 = d0; d2 = d0; d3 = d0; linked = not linked"}
+                                  - widget: Button
+                                    name: block_button
+                                    if: "cell['ui'] == 'block'"
+                                    label: "{{ cell['label'] }}"
+                                    variant: "{{ 'tonal' if cell['exists'] else 'outlined' }}"
+                                    size: xs
+                                    a11y: {label: "{{ cell['label'] }}", description: "{{ item['doc'] }}"}
+                                    handlers: {on_click: "form_block(cell['id'])", on_focus_enter: "active = True", on_focus_exit: "active = False"}
                                   - widget: ColourPicker
                                     name: colour_picker
                                     if: "cell['ui'] == 'colour'"
@@ -430,6 +447,31 @@ children:
               - {widget: Rect, name: swatch, if: "option['colour'] != ''", style: {width: 20, height: 20, corner_radius: 4, background: "{{ option['colour'] }}", border_width: 1, border_color: outline}}
               - {widget: Text, name: option_label, text: "{{ option['label'] }}", typography_role: body_medium, style: {width: 150}}
               - {widget: Text, name: option_hint, text: "{{ option['hint'] }}", typography_role: body_small, max_lines: 2, style: {flex: expand_horizontal, min_width: 0, foreground: on_surface_variant}}
+  - widget: Dialog
+    name: prompt
+    if: prompt_open
+    open: "{{ prompt_open }}"
+    headline: "{{ prompt_title }}"
+    width: 440
+    actions: [{label: Cancel, value: cancel}]
+    children:
+      - widget: Container
+        for: row in prompt_rows
+        key: row['id']
+        name: prompt_body
+        state: {typed: "{{ row['text'] }}"}
+        a11y: {role: group, label: "{{ prompt_title }}"}
+        style: {flex_direction: vertical, width: 100%, gap: 8}
+        children:
+          - widget: TextInput
+            name: prompt_field
+            text: "{{ typed }}"
+            typography_role: body_medium
+            a11y: {label: "{{ prompt_title }}", description: "Letters, digits and underscores, starting with a letter"}
+            style: {width: 100%, height: 36, padding: {left: 8, right: 8, top: 4, bottom: 4}}
+            handlers: {on_submit: "prompt_accept(typed)"}
+          - {widget: Text, name: prompt_error_text, if: "prompt_error != ''", text: "{{ prompt_error }}", typography_role: body_small, a11y: {live: assertive}, style: {width: 100%, foreground: error}}
+          - {widget: Button, name: prompt_ok, label: OK, variant: filled, handlers: {on_click: "prompt_accept(typed)"}}
   - widget: FileDialog
     name: files_dialog
     if: file_open

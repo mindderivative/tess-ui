@@ -14,7 +14,8 @@ from typing import Any
 from tess_ui import Signal, batch
 from tess_ui.file_dialog import FileDialogRequest
 
-from tess_shell_config.form import Form, Outcome
+from tess_shell_config.form import BlockStore, Form, Outcome
+from tess_shell_config.structure import value_of
 from tess_shell_config.widgets import PathWidget
 
 __all__ = ["FormController"]
@@ -46,7 +47,7 @@ class FormController:
         for name, signal in {"form_items": self.items, "form_notes": self.notes, "form_title": self.title, "picker_open": self.picker_open, "picker_title": self.picker_title,
                              "picker_items": self.picker_items, "picker_current": self.picker_current}.items():
             setattr(viewmodel, name, signal)
-        for name in ("commit", "reset", "expression", "token", "choices", "units", "pick_option", "browse", "colour", "key", "group"):
+        for name in ("commit", "reset", "expression", "token", "choices", "units", "pick_option", "browse", "colour", "key", "group", "block"):
             setattr(viewmodel, ("form_" if name != "pick_option" else "") + name, getattr(self, name))
 
     # -- publishing --------------------------------------------------------------------------------------------------------------
@@ -228,6 +229,20 @@ class FormController:
             self._done(self.form.commit(cell_id, {"value": str(value)}))
         elif what == "unit":
             self._done(self.form.commit(cell_id, {"text": number, "unit": str(value)}))
+
+    def block(self, cell_id: str) -> None:
+        """The button of a key whose value is a block: add the block, or (when the file has it) choose it in the structure, where its own keys and children are edited."""
+        if self.form is None or self._busy:
+            return
+        cell = self.form.cell(str(cell_id))
+        document = self.vm.session.model.document if self.vm.session.model is not None else None
+        child = cell.store.child(document) if isinstance(cell.store, BlockStore) and document is not None else None
+        if child is None:
+            self._done(self.form.commit(str(cell_id), {"add": True}))
+            return
+        path = tuple(child.index_path)
+        self.vm.structure_actions._open(path)
+        self.vm.structure_selected.set(value_of(path))
 
     def browse(self, cell_id: str) -> None:
         """Open the shipped file dialog in the key's mode and filters, starting where the path already points (else beside the open file)."""
