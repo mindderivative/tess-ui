@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from tess_ui import mind
+from tess_ui import mind, reactive
 from tess_ui.spec.compose import Instance
 
 __all__ = ["lower"]
@@ -27,7 +27,31 @@ _PLACEHOLDER = "composed"
 
 
 def lower(inst: Instance) -> dict[str, Any]:
-    """The 0.4.x node mapping for `inst` and everything under it, at the values the instances hold now."""
+    """The 0.4.x node mapping for `inst` and everything under it, at the values the instances hold now.
+
+    What a node was lowered to is kept on it (`Instance._lowered`) while nothing it read has changed: each node reads its own values in a recording frame of its own and is told
+    (`Instance._invalidate`) when one of them changes, which marks it and the nodes above it dirty. A node that is not dirty is the same dict as the last time, with its whole subtree: a sync costs what
+    changed, and `View.reconcile` can tell an unchanged subtree by identity. A node that reads what is not a signal (`_volatile`) is lowered again every time."""
+    kept = inst._lowered
+    if kept is not None:
+        return kept
+    for dependency in inst._lower_deps:
+        dependency._unsubscribe(inst._invalidate)
+    reactive._begin_recording()
+    try:
+        node = _lower(inst)
+    finally:
+        inst._lower_deps = reactive._end_recording()
+    inst._volatile = inst.virtual is not None or inst.virtual_index is not None or "describedby" in inst.a11y or "controls" in inst.a11y or any(child._volatile for child in inst.children)
+    for dependency in inst._lower_deps:
+        dependency._subscribe(inst._invalidate)
+    if inst._volatile:
+        return node
+    inst._lowered = node
+    return node
+
+
+def _lower(inst: Instance) -> dict[str, Any]:
     node: dict[str, Any] = {"id": inst.id, "kind": _KIND.get(inst.widget, inst.widget)}
     # an Image's `frame` changes many times a second: it is not read here (the view would be lowered again each time) but followed by `ComposedView._wire_frames`
     values = {name: inst.value(name) for name in inst.props if not (name == "frame" and inst.widget == "Image")}

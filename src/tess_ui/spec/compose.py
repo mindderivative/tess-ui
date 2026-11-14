@@ -277,6 +277,29 @@ class Instance:
         self.virtual_index: Optional[Signal] = None
         self._observers: list[Callable[["Instance", list["Instance"], list["Instance"]], None]] = []
         self._release: list[Callable[[], None]] = []
+        #: What `lower` made of this node and everything under it, kept while nothing it read has changed (the dirty flag of a lowering: `None` is dirty). `_lower_deps` are the signals it read, which call `_invalidate`.
+        self._lowered: Optional[dict[str, Any]] = None
+        self._lower_deps: list[Any] = []
+        #: Whether this node or one under it is lowered from something that is not a signal (a VirtualList's window, the names a relation looks up): it is then lowered again each time, never kept.
+        self._volatile = False
+        #: Set on the root of a composition: what to call when a node under it is dirty (the renderer's own effect is told to run).
+        self.on_dirty: Optional[Callable[[], None]] = None
+
+    def _invalidate(self) -> None:
+        """Something this node's lowering read has changed: it and every node above it are lowered again at the next sync, and the root says so."""
+        for dependency in self._lower_deps:
+            dependency._unsubscribe(self._invalidate)
+        self._lower_deps = []
+        self._mark_dirty()
+
+    def _mark_dirty(self) -> None:
+        node: Optional[Instance] = self
+        top = self
+        while node is not None:
+            node._lowered = None
+            top, node = node, node.parent
+        if top.on_dirty is not None and not top.disposed:
+            top.on_dirty()
 
     def value(self, name: str) -> Any:
         """The current value of a property: what was given, else the declaration's default."""
@@ -348,6 +371,7 @@ class Instance:
         old, self.children = self.children, new
         for child in new:
             child.parent = self
+        self._mark_dirty()
         for callback in list(self._observers):
             callback(self, old, new)
 
@@ -355,6 +379,10 @@ class Instance:
         if self.disposed:
             return
         self.disposed = True
+        for dependency in self._lower_deps:
+            dependency._unsubscribe(self._invalidate)
+        self._lower_deps = []
+        self._lowered = None
         for release in self._release_rules:
             release()
         self._release_rules = []

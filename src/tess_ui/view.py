@@ -133,6 +133,9 @@ class View:
     `App`'s window with no theme argument at all, it takes the app's theme
     and follows it; any theme argument pins it."""
 
+    #: Whether the specs given to `reconcile` keep the nodes that did not change (a composed view): then a subtree with nothing to expand is not copied and an unchanged one is skipped by identity.
+    _shares_specs = False
+
     def __init__(
         self,
         source: Any,
@@ -184,6 +187,7 @@ class View:
         self._scheme = tokens.resolve_scheme(theme_seed, dark, default_theme_spec, custom_theme_spec, contrast)
         self._layers = prepare_layers(default_theme_spec, custom_theme_spec, stylesheet_spec)
         self._owns_window = window is None
+        self._expandable: dict[int, tuple[Any, bool]] = {}
         if window is None:
             window = tess_re.Window(width=DEFAULT_SIZE[0], height=DEFAULT_SIZE[1])
             window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, align_items="flex_start")
@@ -280,7 +284,7 @@ class View:
 
     def reconcile(self, spec: dict[str, Any], frames: Optional[dict[str, tuple[bytes, int, int]]] = None) -> None:
         """Brings the live tree in line with `spec`, in place."""
-        spec = _expanded(spec)  # as in `__init__`
+        spec = _expanded_shared(spec, self._expandable) if self._shares_specs else _expanded(spec)  # as in `__init__`
         self._new_frames: set[str] = set()  # the pictures that are not the ones the nodes show: a changed `src`, which the spec no longer names
         if frames is not None:
             self._new_frames = {node_id for node_id, frame in frames.items() if self._frames.get(node_id) != frame}
@@ -320,6 +324,8 @@ class View:
             build_with(self.window, node, scheme=self._scheme, layers=self._layers, frames=self._frames, into=trial, listen=listen, parent=parent_id)
 
         def visit(previous: Optional[dict[str, Any]], node: dict[str, Any], parent_id: Optional[str], relaid: bool) -> None:
+            if previous is node and not relaid and not self._new_frames:  # the very node (and subtree) that was built: nothing to try
+                return
             if previous is None or previous.get("id") != node.get("id") or not self._same_shape(previous, node):
                 build(node, parent_id)
                 return
@@ -608,6 +614,8 @@ class View:
         self._scrollers = {}
 
     def _reconcile_node(self, old: dict[str, Any], new: dict[str, Any]) -> None:
+        if old is new and not self._new_frames:  # the node and its subtree as they were built (a view that keeps what it lowered, `_shares_specs`): there is nothing to patch
+            return
         node_id = new["id"]
         outer = self._built.outer[node_id]
         if not _props_equal(old, new) or node_id in self._new_frames:
@@ -1200,6 +1208,41 @@ def _copy_spec(value: Any, memo: dict[int, Any]) -> Any:
         done.extend([_copy_spec(item, memo) for item in value])
         return done
     return copy.deepcopy(value, memo)
+
+
+#: The kinds and keys that `_expanded` turns into other nodes.
+_EXPANDED_KINDS = frozenset({"Window", "Dock", "DockPanel", "TitleBar"})
+
+
+def _expandable(node: Any, memo: dict[int, tuple[Any, bool]]) -> bool:
+    """Whether `node` or a node under it is one `_expanded` changes, remembered by identity (a node that has not changed is not looked through again)."""
+    if not isinstance(node, dict):
+        return False
+    hit = memo.get(id(node))
+    if hit is not None and hit[0] is node:
+        return hit[1]
+    found = node.get("kind") in _EXPANDED_KINDS or "view" in node or "dock" in node or any(_expandable(child, memo) for child in node.get("children") or [])
+    memo[id(node)] = (node, found)
+    return found
+
+
+def _expanded_shared(spec: Any, memo: dict[int, tuple[Any, bool]]) -> Any:
+    """`_expanded` for a spec whose nodes the caller keeps from one call to the next (a composed view lowers what changed and gives the rest as it was): a subtree that holds nothing to expand is not copied, it is the
+    same dicts, so the view can tell it is unchanged; the nodes on the way to one that is expanded are copied, then expanded."""
+    if not isinstance(spec, dict):
+        return spec
+    if not _expandable(spec, memo):
+        return spec
+
+    def path(node: dict[str, Any]) -> dict[str, Any]:
+        if not _expandable(node, memo):
+            return node
+        copy_of = {key: _copy_spec(value, {}) for key, value in node.items() if key != "children"}
+        if isinstance(node.get("children"), list):
+            copy_of["children"] = [path(child) if isinstance(child, dict) else child for child in node["children"]]
+        return copy_of
+
+    return expand_embeds(expand_title_bars(expand_docks(expand_windows(path(spec), copy_spec=False), copy_spec=False), copy_spec=False), copy_spec=False)
 
 
 def _expanded(spec: Any) -> Any:

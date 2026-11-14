@@ -104,10 +104,18 @@ def _cursor(node: dict[str, Any], base_dir: Path | None, deps: set[Path]) -> dic
         "rgba": rgba, "width": width, "height": height, "hotspot": [int(hotspot[0]), int(hotspot[1])]}}}
 
 
-def _extract(node: Any, base_dir: Path | None, frames: list[Frame], deps: set[Path]) -> Any:
+def _extract(node: Any, base_dir: Path | None, memo: dict[int, tuple[Any, Any, list[Frame], set[Path]]] | None) -> tuple[Any, list[Frame], set[Path]]:
+    """`node` with its image sources taken out, the frames decoded and the files read, for it and everything under it. A node with nothing to take out under it is returned as itself (not a copy), and what is
+    found for a node is kept in `memo` by identity: a lowered node that is the same dict as at the last sync (`lower` keeps what has not changed) is not walked again."""
     if not isinstance(node, dict):
-        return node
-    out = dict(node)
+        return node, [], set()
+    if memo is not None:
+        hit = memo.get(id(node))
+        if hit is not None and hit[0] is node:
+            return hit[1], hit[2], hit[3]
+    frames: list[Frame] = []
+    deps: set[Path] = set()
+    changes: dict[str, Any] = {}
     image = node.get("image")
     if node.get("kind") == "Image" and isinstance(image, dict) and "src" in image:
         node_id = node.get("id")
@@ -123,28 +131,40 @@ def _extract(node: Any, base_dir: Path | None, frames: list[Frame], deps: set[Pa
         except OSError as exc:
             raise ComponentError(f"widget {node_id!r}: {exc}") from exc
         frames.append((node_id, rgba, width, height))
-        out["image"] = {k: v for k, v in image.items() if k != "src"}
+        changes["image"] = {k: v for k, v in image.items() if k != "src"}
     style = node.get("style")
     if isinstance(style, dict) and isinstance(style.get("cursor"), dict) and "src" in style["cursor"]:
-        out["style"] = _cursor(node, base_dir, deps)["style"]
+        changes["style"] = _cursor(node, base_dir, deps)["style"]
     if node.get("kind") == "Svg":
-        out["svg"] = _svg(node, base_dir, deps)
+        changes["svg"] = _svg(node, base_dir, deps)
     children = node.get("children")
     if isinstance(children, list):
-        out["children"] = [_extract(child, base_dir, frames, deps) for child in children]
-    return out
+        outs = []
+        for child in children:
+            out, child_frames, child_deps = _extract(child, base_dir, memo)
+            outs.append(out)
+            frames += child_frames
+            deps |= child_deps
+        if any(out is not child for out, child in zip(outs, children)):
+            changes["children"] = outs
+    result = {**node, **changes} if changes else node
+    if memo is not None:
+        memo[id(node)] = (node, result, frames, deps)
+    return result, frames, deps
 
 
 def extract_images(
-    spec: Any, base_dir: Path | None, *, dependencies: set[Path] | None = None
+    spec: Any, base_dir: Path | None, *, dependencies: set[Path] | None = None, memo: dict[int, tuple[Any, Any, list[Frame], set[Path]]] | None = None
 ) -> tuple[Any, list[Frame]]:
     """Returns `spec` with every `kind: Image`'s `image.src:` removed,
     plus one decoded `Frame` per image removed. `spec` itself is not
-    modified. If `dependencies` is given, each image file's resolved
-    path is added to it."""
-    frames: list[Frame] = []
-    deps = dependencies if dependencies is not None else set()
-    return _extract(spec, base_dir, frames, deps), frames
+    modified (a node with nothing to remove under it is the same dict in the result). If `dependencies` is given, each image file's resolved
+    path is added to it. `memo` keeps what was found for each node by identity, from one call to the next: a caller whose spec reuses the nodes that have not changed
+    (a composed view) gives the same dict each time, and the image files are read once, not at every sync."""
+    out, frames, deps = _extract(spec, base_dir, memo)
+    if dependencies is not None:
+        dependencies |= deps
+    return out, frames
 
 
 def check_frame(rgba: Any, width: Any, height: Any) -> tuple[bytes, int, int]:

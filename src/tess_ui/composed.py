@@ -191,6 +191,8 @@ class _Screen:
 class ComposedView(View):
     """A `View` built and kept up to date from a `ViewHandle`. See the module docstring."""
 
+    _shares_specs = True  # `lower` gives the nodes that did not change as they were: `View.reconcile` skips them by identity
+
     def __init__(self, handle: ViewHandle, *, base_dir: Optional[Path] = None, window: Any = None, **kwargs: Any) -> None:
         self.handle = handle
         self._base_dir = Path(base_dir) if base_dir is not None else Path.cwd()
@@ -202,6 +204,7 @@ class ComposedView(View):
         self._active: dict[str, str] = {}  # a focus group's id -> the id of the item that holds its tab stop
         self._typed: tuple[str, float] = ("", 0.0)
         self._observed: set[int] = set()
+        self._extracted: dict[int, tuple[Any, Any, list[Any], set[Path]]] = {}  # the lowered nodes that were looked through for images, by identity (see `extract_images`)
         self._synced = False
         self.source: Optional[Path] = None  # the view file it was opened from (set by `App.open_view`), which a hot reload watches
         self.image_files: set[Path] = set()  # the pictures the view draws, for a hot reload to watch
@@ -230,12 +233,17 @@ class ComposedView(View):
         self._anchored: dict[str, tuple] = {}  # a node placed against another by its style: its id -> (the anchor's id, placement, offset) as last set; or ('gone',) while hidden
         self._timer_code: dict[str, Any] = {}
         self._timer_scopes: weakref.WeakKeyDictionary[Any, int] = weakref.WeakKeyDictionary()
+        self._watch_root()
         spec, frames = self._lowered()
         super().__init__(spec, window=window, frames=frames, **kwargs)
         handle.window = self.window  # the ViewModel finds its app through the view's window
         handle.view = self
         self._effect = Effect(self._sync, deferred=True)
         self._synced = True
+
+    def _watch_root(self) -> None:
+        """The composition's nodes keep what they were lowered to and say when it is stale: the root tells this view's effect to run (it no longer reads what each node reads)."""
+        self.handle.composition.root.on_dirty = lambda: self._effect._poke() if self._effect is not None else None
 
     def firing_node(self, action: str) -> Any:
         """The node whose handler is running, for an action that acts on it. Only a handler has one: a timer's action does not."""
@@ -290,7 +298,9 @@ class ComposedView(View):
     def _lowered(self) -> tuple[dict[str, Any], dict[str, tuple[bytes, int, int]]]:
         spec = lower(self.handle.composition.root)
         images: set[Path] = set()
-        spec, frames = extract_images(spec, self._base_dir, dependencies=images)
+        if len(self._extracted) > 4 * max(len(self._observed), 64):  # what nodes that are gone had: not kept for ever
+            self._extracted.clear()
+        spec, frames = extract_images(spec, self._base_dir, dependencies=images, memo=self._extracted)
         self.image_files = images
         return spec, {node_id: (rgba, w, h) for node_id, rgba, w, h in frames}
 
@@ -309,10 +319,12 @@ class ComposedView(View):
         if old_effect is not None:
             old_effect.dispose()
         old_handle.composition, old_handle.doc, self._observed = new, doc, set()
+        self._watch_root()
         try:
             self._effect = Effect(self._sync, deferred=True)
         except Exception:
             old_handle.composition, old_handle.doc, self._observed = old, old_doc, old_observed
+            self._watch_root()
             new.dispose()
             self._effect = Effect(self._sync, deferred=True)  # the old composition drawn again
             raise
