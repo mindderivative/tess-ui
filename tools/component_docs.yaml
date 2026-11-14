@@ -1545,7 +1545,7 @@ components:
 
       Typing. The text in the field is read when Enter is pressed or the field is left, never per key. It is read in any case and in the usual names (`ctrl+shift+f1`, `Control + Return`, `super+pgup`, `Esc`,
       `Del`, `arrow_left`): a chord is written back in the canonical form (`Ctrl+Enter`). Anything else is refused: `value` stays as it was, the field is drawn in the error colours with the reason under it, and what was typed
-      stays to be mended. Typing nothing clears the shortcut. A value the app sets is shown as it is and never rewritten: `ctrl+shift+f1` stays so until the person commits it, and a value that is not a chord is shown in
+      stays to be mended. The media and hardware keys are written with the X key names without their `XF86` prefix (`AudioRaiseVolume`, `AudioLowerVolume`, `AudioMute`, `AudioMicMute`, `AudioPlay`, `AudioPause`, `AudioStop`, `AudioNext`, `AudioPrev`, `MonBrightnessUp`, `MonBrightnessDown`): recording one writes that name, and typing it with the prefix (`XF86AudioMute`) is read and written back without it. Typing nothing clears the shortcut. A value the app sets is shown as it is and never rewritten: `ctrl+shift+f1` stays so until the person commits it, and a value that is not a chord is shown in
       the error colours and kept. The disabled field records and reads nothing.
 
       A screen reader hears a group named by `label`, the field with that label (and the error), and a button that says "Record label", or while recording "Recording label: press the keys, Escape cancels, Backspace clears",
