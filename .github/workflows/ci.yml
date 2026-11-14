@@ -178,13 +178,13 @@ jobs:
           PYTHONUTF8: "1"
         run: |
           # The application's tests are skipped (not failed) where `tess_dl` is missing, in the other jobs: so this job must prove it ran them. `tess_dl` must import (the pinned commit of
-          # apps/shell_config/pyproject.toml), at least 600 app tests must be collected (635 on 2026-11-14), and none may be skipped.
+          # apps/shell_config/pyproject.toml), at least 600 app tests must be collected (635 on 2026-11-14), and none may be skipped except the `real_shell_check` tests, which need the shell's own checkout and venv (D-056) and so cannot run on GitHub.
           python -c "import tess_dl; print('tess_dl', tess_dl.__file__)"
           collected=$(pytest apps/shell_config/tests --collect-only -q -p no:cacheprovider | tail -1 | grep -oE '^[0-9]+')
           echo "collected $collected application tests"
           test "${collected:-0}" -ge 600
           pytest apps/shell_config/tests tests/test_apps_tooling.py -rs | tee run.log
-          ! grep -E "^SKIPPED .*apps/shell_config" run.log
+          ! grep -E "^SKIPPED .*apps/shell_config" run.log | grep -v "test_shell_config_real_check.py"
 
   # M76: one `pip install` is enough, on every supported platform. Only the
   # built wheel goes into a fresh venv; its dependencies come from PyPI as
