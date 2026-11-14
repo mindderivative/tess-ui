@@ -9,9 +9,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from tess_dl import Block, Document, For, If
+from tess_dl import Block, Document, For, If, String
 
-from tess_shell_config.tdl import IndexPath, Node
+from tess_shell_config.tdl import IndexPath, Node, properties_of
 
 __all__ = ["ROOT", "value_of", "path_of", "label_of", "nodes_for", "ancestors"]
 
@@ -40,9 +40,14 @@ def _clip(text: str) -> str:
 
 
 def label_of(node: Node) -> str:
-    """What a row says: a block's type and its `Name` (`Bar  Top_Bar`); `If {{ condition }}`; `For item In {{ items }}`."""
+    """What a row says: a block's type and its `Name` (`Bar  Top_Bar`), or its `Selector` for a block with no name (`Rule  Text:hovered`: the rules of a stylesheet are told apart by it); `If {{ condition }}`; `For item In {{ items }}`."""
     if isinstance(node, Block):
-        return f"{node.type}  {node.name}" if node.name else node.type
+        if node.name:
+            return f"{node.type}  {node.name}"
+        selector = properties_of(node).get("Selector")
+        if selector is not None and isinstance(selector.value, String):
+            return f"{node.type}  {_clip(selector.value.value)}"
+        return node.type
     if isinstance(node, If):
         return f"If {{{{ {_clip(node.condition.text)} }}}}"
     assert isinstance(node, For)

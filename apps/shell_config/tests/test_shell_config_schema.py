@@ -137,8 +137,9 @@ def test_the_code_writes_no_key_name_or_enum_value_of_the_schema(schema):
     words = {n for n in names if len(n) > 4 and n[0].isupper()}  # the shell's own words: Capitalised, not an English word the code needs
     text = "\n".join(p.read_text(encoding="utf-8") for p in SOURCE.rglob("*") if p.suffix in (".py", ".yaml"))
     quoted = {w for w in words if f'"{w}"' in text or f"'{w}'" in text}
-    # the file types' root words and the configuration folder's own folder names are the application's vocabulary (what a file and a folder are called), not keys; nothing else may appear
-    assert quoted <= {"Shell", "Module", "Style", "Stylesheet", "Theme", "Settings", "Shells", "Modules", "Styles", "Stylesheets", "Themes", "Icons"}, quoted
+    # the file types' root words and the configuration folder's own folder names are the application's vocabulary (what a file and a folder are called), not keys; the two grammars the schema does not carry
+    # (a rule's Selector, from the Style Schema note, and a module file's Params block, from its file) are the rest; nothing else may appear
+    assert quoted <= {"Shell", "Module", "Style", "Stylesheet", "Theme", "Settings", "Shells", "Modules", "Styles", "Stylesheets", "Themes", "Icons", "Selector", "Default", "Children", "Params"}, quoted
 
 
 def test_the_recorded_file_is_the_schema_the_shell_exports(schema_text):

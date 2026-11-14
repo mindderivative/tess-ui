@@ -15,15 +15,16 @@ from __future__ import annotations
 
 from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass, field, replace
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
 from tess_dl import Block, Document, For, If, Property, Slot, Value
 
 from tess_shell_config.model import DocumentModel, EditError
-from tess_shell_config.schema import KeyInfo, ModuleInfo, ParamInfo, Schema, TokenInfo
+from tess_shell_config.schema import BlockInfo, KeyInfo, ModuleInfo, ParamInfo, Schema, TokenInfo
 from tess_shell_config.tdl import IndexPath, child_named, properties_of
-from tess_shell_config.values import EXPRESSION_STUB, is_reference, key_problem, normal_colour, value_text
+from tess_shell_config.values import EXPRESSION_STUB, format_number, is_reference, key_problem, normal_colour, value_text
 from tess_shell_config.widgets import Context, PathWidget, Refused, TdlWidget, Widget, WidgetRegistry, default_registry
 
 __all__ = ["Outcome", "Fallback", "Coverage", "Cell", "Row", "FormView", "Form", "coverage", "key_of_param", "key_of_token", "file_name"]
@@ -445,12 +446,66 @@ class Form:
             self._fill_unknown(view, document, block, path, context, ())
             return
         keys = list(info.all_keys().values())
+        notes: list[str] = []
+        if "Selector" in info.keys:
+            keys = self._rule_keys(view, document, block, path, context, info, keys, notes)
+        elif info.name == "Popup" and self.schema.popups:
+            keys = self._popup_keys(block, keys, notes)
         self._fill_keys(view, document, block, path, context, keys, set(info.style))
         if info.doc:
             view.notes.append(info.doc)
+        view.notes.extend(notes)
         satisfied = [group for group in info.required if all(self._has(block, name) for name in group)]
         if info.required and not satisfied:
             view.notes.append("Needs one of: " + "; ".join(" and ".join(group) for group in info.required) + ".")
+
+    def _rule_keys(self, view: FormView, document: Document, block: Block, path: IndexPath, context: Context, info: BlockInfo, keys: list[KeyInfo], notes: list[str]) -> list[KeyInfo]:
+        """A stylesheet rule: the selector builder's rows first; then the style keys the selector's block type takes (every style key when the selector is a class or a name, or the builder cannot read it).
+        A style key the rule already has stays shown whatever the type."""
+        from tess_shell_config.selector import parse_selector, selector_rows
+
+        text = self._property_text(document, path, "Selector")
+        selector = parse_selector(text.strip().strip('"')) if text is not None else None
+        if text is not None and selector is None:
+            notes.append(f"The selector builder cannot read {text.strip()}, so the form shows the selector as written and the style keys of every block type.")
+        else:
+            view.rows.extend(selector_rows(path, selector, context, self.errors, self.drafts))
+        notes.append("Rules apply in the order they are written; of two rules that match equally the later one wins. Move a rule with Alt+Up and Alt+Down.")
+        take = self._style_keys_of(selector.target) if selector is not None and selector.base == "Block or module" else None
+        if take is None:
+            return keys
+        shown = [k for k in keys if k.name not in info.style or k.name in take or self._has_style_key(document, path, k.name)]
+        notes.append(f"Showing the {len([k for k in shown if k.name in info.style])} style keys a {selector.target} takes (a key this rule already has stays shown).")  # type: ignore[union-attr]
+        return shown
+
+    def _style_keys_of(self, target: str) -> set[str] | None:
+        """The style keys a block type or a module takes (the keys of its root block), or `None` when the schema knows no such block or module."""
+        found = self.schema.block(target)
+        if found is None and target in self.schema.modules:
+            found = self.schema.block(self.schema.modules[target].root_block)
+        return set(found.style) if found is not None and found.style else None
+
+    @staticmethod
+    def _property_text(document: Document, path: IndexPath, key: str) -> str | None:
+        found = PropertyStore(path, key).read(document)
+        return document.text[found.value.start:found.value.end] if found.value is not None else None
+
+    @staticmethod
+    def _has_style_key(document: Document, path: IndexPath, key: str) -> bool:
+        found = StyleKeyStore(path, key).read(document)
+        return found.value is not None or found.block is not None
+
+    def _popup_keys(self, block: Block, keys: list[KeyInfo], notes: list[str]) -> list[KeyInfo]:
+        """A `Popup` whose `Name` is one a module opens by default (schema 1.2 `popups`) replaces that popup: the keys show the default's values as their placeholders."""
+        popup = self.schema.popups.get(block.name or "")
+        if popup is None:
+            notes.append("The popups the modules open by default: " + ", ".join(f"{p.name} ({p.shown_by})" for p in self.schema.popups.values()) + ". A Popup with one of these names replaces it whole.")
+            return keys
+        notes.append(f"The default {popup.name} popup of the {popup.shown_by} module: {popup.doc} This block replaces it whole; the placeholders are its values.")
+        if self.schema.popup_note:
+            notes.append(self.schema.popup_note[:1].upper() + self.schema.popup_note[1:] + ".")
+        by_name = {name.lower(): value for name, value in popup.values.items()}
+        return [replace(k, default=text) if (text := _popup_text(by_name.get(k.name.lower()))) is not None else k for k in keys]
 
     @staticmethod
     def _has(block: Block, name: str) -> bool:
@@ -499,6 +554,8 @@ class Form:
             cell.readonly = True
         if key.extra.get("module_only"):
             markers.append("set by a module")
+        if key.extra.get("user_module"):
+            markers.append(f"type {key.extra.get('type') or 'not given'}")
         problem = key_problem(key.name)
         if problem:  # a word the language reserves cannot be written as a property by `tess_dl`'s edits: the row says so instead of offering a field that always fails
             markers.append("cannot be written here")
@@ -791,6 +848,19 @@ def _overlay(edit: Mapping[str, Any]) -> dict[str, Any]:
     if "items" in edit:
         shown["items"] = list(edit["items"])
     return shown
+
+
+def _popup_text(value: Any) -> str | None:
+    """A default of the `popups` table as the TDL text the key shows as its placeholder: a word as it is, a number without a stray `.0`, a length with its unit (`60%`; pixels are the bare number)."""
+    if isinstance(value, Mapping):
+        number = _popup_text(value.get("value"))
+        unit = str(value.get("unit") or "")
+        return None if number is None else number + ("" if unit in ("", "px") else unit)
+    if isinstance(value, bool) or value is None:
+        return None if value is None else str(value).lower()
+    if isinstance(value, (int, float)):
+        return format_number(Decimal(str(value)))
+    return str(value)
 
 
 def _swatch(token: TokenInfo) -> str:

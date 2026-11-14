@@ -209,6 +209,8 @@ class ShellConfigViewModel(ViewModel):
     def _show_now(self, model: DocumentModel, *, new_file: bool, set_text: bool | None, refresh_form: bool) -> None:
         if new_file or set_text:
             self.text.set(model.display_text)
+        if model.relative.startswith("Modules/"):  # a module's params are what the Add menu and the forms of its calls say
+            self.session.update_modules()
         self.has_file.set(True)
         self.read_only.set(not model.utf8)
         self.title.set(model.relative + ("  (read only: not UTF-8)" if not model.utf8 else ""))

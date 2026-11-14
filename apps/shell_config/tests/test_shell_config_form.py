@@ -654,6 +654,8 @@ def test_every_key_of_the_schema_gets_a_widget_shows_its_default_and_writes_a_va
         info = schema.block(block_type)
         assert view.rows or (info is not None and not info.all_keys()), f"{what}: no rows"
         for row in view.rows:
+            if row.id.startswith("s:"):  # the selector builder's rows are not keys of the schema (test_shell_config_stylesheet.py)
+                continue
             for cell in row.cells:
                 seen_keys += 1
                 if cell.widget is None:

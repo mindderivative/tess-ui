@@ -59,6 +59,7 @@ class FormController:
             self.items.set([])
             self.title.set("")
             return
+        self.form.schema = self.vm.session.schema or self.form.schema  # the schema with the user's own modules
         self.form.build(model, self.vm.session.folder)
         self._set_signals()
 

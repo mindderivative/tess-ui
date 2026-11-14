@@ -11,10 +11,11 @@ import contextlib
 from pathlib import Path
 
 from tess_shell_config.files import Backups, ChangedOnDisk, SaveError, read_text, state_dir as default_state_dir, write_atomic
-from tess_shell_config.folder import ConfigFile, scan
+from tess_shell_config.folder import ConfigFile, FileType, scan
 from tess_shell_config.model import DocumentModel
 from tess_shell_config.schema import Schema
 from tess_shell_config.shell import ShellCommand
+from tess_shell_config.usermodules import MODULES_FOLDER, user_modules
 
 __all__ = ["ConfigSession"]
 
@@ -24,7 +25,9 @@ class ConfigSession:
 
     def __init__(self, folder: str | Path, schema: Schema | None = None, shell: ShellCommand | None = None, state_dir: str | Path | None = None) -> None:
         self.folder = Path(folder)
-        self.schema = schema
+        self.shipped_schema = schema  # what the shell exported
+        self.schema = schema  # that, and the user's own modules
+        self._modules_key: tuple[tuple[str, str, str], ...] = ()
         self.shell = shell
         self.state_dir = Path(state_dir) if state_dir is not None else default_state_dir()
         self.backups = Backups(self.state_dir)
@@ -34,9 +37,30 @@ class ConfigSession:
         self.refresh()
 
     def refresh(self) -> list[ConfigFile]:
-        """Read the folder again: the files by type."""
+        """Read the folder again: the files by type, and the user's own modules."""
         self.files = scan(self.folder)
+        self.update_modules()
         return self.files
+
+    def update_modules(self) -> None:
+        """Read the `Params` of the module files in the folder's `Modules/` folder (an open file's unsaved text, else the file on disk) and add those modules to the schema. Work is done only for a file whose text changed."""
+        if self.shipped_schema is None:
+            return
+        seen: dict[str, tuple[str, str, str]] = {}
+        for entry in self.files:
+            if entry.type is not FileType.MODULE or not entry.rel.startswith(MODULES_FOLDER + "/"):
+                continue
+            model = self.models.get(entry.rel)
+            try:
+                text = model.text if model is not None else read_text(entry.path)
+            except OSError:
+                continue
+            seen[entry.rel] = (entry.rel, text, entry.name)
+        key = tuple(seen.values())
+        if key == self._modules_key:
+            return
+        self._modules_key = key
+        self.schema = self.shipped_schema.with_modules(user_modules(key, self.shipped_schema))
 
     def file(self, rel: str) -> ConfigFile:
         found = next((f for f in self.files if f.rel == rel), None)

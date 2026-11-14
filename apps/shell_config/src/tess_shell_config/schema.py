@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from fnmatch import fnmatchcase
 from typing import Any
 
@@ -391,6 +391,12 @@ class Schema:
         return cls.from_data(data)
 
     # -- lookups -----------------------------------------------------------------------------------------------------------------
+
+    def with_modules(self, extra: Mapping[str, ModuleInfo]) -> Schema:
+        """This schema with more modules (the user's own, read from the configuration folder). A shipped module is never replaced by one of the same name."""
+        if not extra:
+            return self
+        return replace(self, modules={**self.modules, **{k: v for k, v in extra.items() if k not in self.modules}})
 
     def kind(self, name: str) -> KindInfo:
         """The kind called `name`. A kind a higher minor version adds, which this table does not have, reads as the generic text kind."""
