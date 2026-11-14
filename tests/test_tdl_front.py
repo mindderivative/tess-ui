@@ -1,16 +1,15 @@
 """Piece 1 of the TDL switch: the TDL front end reads a view into the same mapping with positions that the YAML loader makes, and its errors name the
 `.tdl` file, line and column in the same words (`design/tdl-views.md`)."""
 
-import ast
 from pathlib import Path
 
 import pytest
-import yaml
 
 from tess_ui.spec import tdl as T
 from tess_ui.spec.nodes import LoadError, PMap, PSeq, load_marked, parse_data, parse_view
 from tess_ui.spec.widgets import Property, WidgetDecl
-from tests.tdl_helper import with_single_variable, yaml_to_tdl
+from tess_ui.migrate_tdl import ConvertError, with_single_variable
+from tests.tdl_helper import normal, yaml_to_tdl
 
 VIEWS = sorted((Path(__file__).parent.parent / "src" / "tess_ui" / "views").glob("*_View.yaml"))
 
@@ -37,27 +36,6 @@ def at(err, line, column):
 
 
 # -- (a) the shipped views -------------------------------------------------------------------------------------------------
-
-
-def normal(data):
-    """The mapping as plain data; handler texts through `ast`, which only changes their spacing (the front end writes `a = b; c(d)`)."""
-
-    def handler(text):
-        try:
-            return "; ".join(ast.unparse(s) for s in ast.parse(text.strip()).body)
-        except SyntaxError:
-            return text
-
-    def walk(item, key=None):
-        if isinstance(item, dict):
-            if key == "handlers":
-                return {k: handler(v) if isinstance(v, str) else walk(v) for k, v in item.items()}
-            return {k: walk(v, k) for k, v in item.items()}
-        if isinstance(item, list):
-            return [walk(v) for v in item]
-        return item
-
-    return walk(data)
 
 
 def test_every_shipped_view_read_as_tdl_equals_the_yaml_mapping():
@@ -395,14 +373,13 @@ def test_load_tdl_file_reads_a_file_and_names_it_in_errors(tmp_path):
     assert str(caught.value).startswith("Broken_View.tdl:6:") and "never closed" in str(caught.value)
 
 
-def test_the_helper_refuses_what_it_cannot_write_back_exactly():
-    with pytest.raises(ValueError, match="no TDL form"):
+def test_the_converter_refuses_what_it_cannot_write_back_exactly():
+    with pytest.raises(ConvertError, match="not lower snake_case"):
         yaml_to_tdl("widget: Text\nmaxLines: 1\n", "X")
-    with pytest.raises(ValueError, match="no step form"):
+    with pytest.raises(ConvertError, match="no step form"):
         yaml_to_tdl("widget: Button\nhandlers:\n  on_click: |\n    if a:\n      b()\n", "X")
-    with pytest.raises(ValueError, match="cannot be written unquoted"):
+    with pytest.raises(ConvertError, match="cannot be written unquoted"):
         yaml_to_tdl("widget: Text\ntext: 'a, {{ b }}'\n", "X")
-    assert yaml.safe_load("a: 1") == {"a": 1}  # pyyaml is what the helper's input goes through
 
 
 def test_the_snake_case_conversion_is_exact_both_ways():
