@@ -34,3 +34,14 @@ Stylesheets and themes (49 more files), a reverse conversion, loading into the v
 
 ## Read
 The syntax is not the obstacle. The work is the tree-shape change from `if:`/`for:` wrappers and the editor/loader plumbing around it. Another 2 to 3 days would settle items 2 to 4 and do a real round trip on 10 views; the estimate of 3 to 4 weeks for the full switch stands (not made more precise by this spike).
+
+## TEL compatibility of the views' expressions (checked with tess_el from /home/phil/Projects/pyDev/projects/tess-el, `compile_expression`, language 0.1)
+Every slot, condition and handler text in the 110 shipped view and stylesheet files was compiled (unique texts only).
+
+| Kind | Unique | Compile | Fail | Why |
+|---|---|---|---|---|
+| `{{ }}` slots | 512 | 506 | 6 | 5 call tess-ui built-ins (`format_date`, `current_date`: pass them as `functions=`); 1 is a nested dict literal cut at its first `}}` by my own regex, i.e. the TDL slot-end rule |
+| `if:`/`for:`/`key:` texts | 172 | 171 | 1 | `date_add_days`, a tess-ui built-in |
+| `handlers:` | 107 | **0** | 107 | TEL is expression-only: `open = not open`, `n = n + 1; cmd = ...`, `a(); b()` are assignments and statement sequences, which TEL refuses |
+
+Reading: slots and conditions are practically compatible (99%, the rest needing the built-in functions registered). **Handlers are the gap.** tess-ui handlers are small statements (assign, sequence, call). Moving to TEL needs a decision: a handler language of its own on top of TEL (assignment targets plus `;`), TEL growing an assignment/sequence form, or rewriting handlers as calls to named actions on the ViewModel. This is the main design question for the switch.
