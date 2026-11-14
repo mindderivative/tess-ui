@@ -25,7 +25,7 @@ from tess_ui.spec import widgets as registry
 from tess_ui.spec.widgets import Property, PropertyError, WidgetDecl, decl_from_params, is_expression, style_fields_of
 from tess_ui.project import looks_like
 
-__all__ = ["EVENTS", "ForSpec", "Handler", "LoadError", "Node", "ViewDoc", "load_marked", "parse_view"]
+__all__ = ["EVENTS", "ForSpec", "Handler", "LoadError", "Node", "ViewDoc", "load_marked", "parse_data", "parse_view"]
 
 #: What `visible:` is when a widget does not declare a property of that name: a bool (or an expression), like any property.
 VISIBLE = Property("bool", name="visible", doc="Shown while true; while false it is hidden and takes no room.")
@@ -611,7 +611,13 @@ def _check_names(parser: _Parser) -> None:
 def parse_view(text: str, file: str = "<view>", *, resolver: Optional[Callable[[str], Optional[WidgetDecl]]] = None,
                view_name: Optional[str] = None) -> ViewDoc:
     """Reads the view in `text`. `resolver` maps a widget name that is not built in to its declaration (a view with `params:`)."""
-    data = load_marked(text, file)
+    return parse_data(load_marked(text, file), text, file, resolver=resolver, view_name=view_name)
+
+
+def parse_data(data: Any, text: str, file: str = "<view>", *, resolver: Optional[Callable[[str], Optional[WidgetDecl]]] = None,
+               view_name: Optional[str] = None) -> ViewDoc:
+    """Reads a view that is already a mapping with positions: what `load_marked` makes of YAML text and `tdl.load_marked_tdl` of TDL text.
+    `text` is only the file's text, for error messages."""
     parser = _Parser(text, file, resolver)
     if not isinstance(data, PMap):
         raise parser.fail((1, 0), "a view file is a mapping: its root node", "start with 'widget: Container'")
