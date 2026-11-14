@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+pytest.importorskip("tess_dl", reason="TDL needs tess_dl, which needs Python 3.14 (not installed in the 3.12 CI jobs)")
 from tess_ui.spec import tdl as T
 from tess_ui.spec.nodes import LoadError, PMap, PSeq, load_marked, parse_data, parse_view
 from tess_ui.spec.widgets import Property, WidgetDecl
