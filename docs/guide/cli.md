@@ -1,7 +1,7 @@
 # The `tesserae` Command
 
 Installing Tesserae installs a `tesserae` command (`python -m tess_ui` is the same).
-It starts apps and screens from templates, moves a project to the current view syntax, builds an app into one executable, and
+It starts apps and screens from templates, moves a project to the current view syntax, writes views as TDL, builds an app into one executable, and
 finds the editor schemas. `tesserae --version` prints the version, and `tesserae <command> --help` lists a command's options.
 
 ## Start an app
@@ -64,6 +64,37 @@ renamed (a `*_Style.yaml` file is read in and left in place). The report lists w
 lines for `app.py`, because Python is not rewritten. A call of a shipped fragment that became one view with a property (`ButtonFilled` is `widget: Button` with
 `variant: filled`) fails the check with `no widget named 'ButtonFilled'`, and is written by hand from the table in Migrating. The exit code is 1 if any file failed,
 A view, stylesheet or theme whose `tesserae:` first line names an older series is also moved to the current one: that line only, nothing else in the file changes, and a file already current, newer or without the line is left alone. and 2 for a wrong argument (`--force` without `--write` is one). [Migrating](../migration.md#to-050) has the table of every change and of the shipped names.
+
+## Write views as TDL
+
+```bash
+tesserae migrate-tdl                      # lists what it would convert; writes nothing
+tesserae migrate-tdl --write              # writes Views/Name_View.tdl beside each Name_View.yaml
+tesserae migrate-tdl Views/Main_View.yaml --write --remove-source   # one file, and deletes its YAML afterwards
+```
+
+`tesserae migrate-tdl [PATH]` writes each `*_View.yaml` under `PATH` (a file or the project's folder, here by default) as a `*_View.tdl` file beside it:
+keys in `Title_Case` (`typography_role` is `Typography_Role`), a node a block headed by its widget (`Button { ... }`), `if:` and `for:` as `If` and `For`
+blocks around the node, a handler as `Set` and `Call` steps (`open = not open; on_toggle()` is a `Set { Target: open, Value: <| not open |> }` and a
+`Call { Action: "on_toggle" }`), `{{ expression }}` as `<| expression |>`, and a metadata block with the view's `Name` and the `Tesserae` series.
+Comments are kept (the ones at the top, the ones above an entry and the ones at the end of a line), and so are blank lines between entries and the order of
+the keys. Each entry is on a line of its own; a YAML `{...}` or `[...]` that sits on one line stays on one line when it fits in 150 columns, a list that
+does not is wrapped there, and a mapping that does not is opened one entry to a line. The report lists the files, the number of steps written, and
+what needs a look.
+
+Every result is read back through the TDL loader and compared with the YAML view before it is written, so a view the command cannot write exactly is
+reported with its file, line and what to write instead, and left alone; the other files are still written. It refuses a key that is not lower
+`snake_case`, a handler that is not assignments to a name and calls (`if`, `for`, `a[0] = 1`, `go(*args)`), a value of another type than text, number,
+yes/no or nothing (a YAML date: quote it), an anchor or alias, and text that holds a `{{ }}` and a `,`, a brace or ` #` (write the whole value as one slot).
+An augmented assignment (`x += 1`) is written as `Set { Target: x, Value: <| x + 1 |> }`: the name gets a new value, it is not changed in place.
+
+A `for:` with a pair target (`for: i, item in enumerate(items)`) has no TDL form yet, because a TDL `For` has one variable. It is written with one variable that
+joins the names (`For i_item In <| enumerate(items) |> ...`), with a `# TODO tuple for-target: i, item in enumerate(items)` line above it, and listed in the
+report with its file and line. The loop's body still uses `i` and `item`: change it by hand to `i_item[0]` and `i_item[1]`.
+
+Running it again changes nothing. It never replaces a file that differs without `--write`; the YAML is kept unless `--remove-source` is given with `--write`, and
+then it is deleted only for the files that were written (or already current). Stylesheets (`*_Stylesheet.yaml`), themes and components are skipped with a note. The
+exit code is 1 if any file failed and 2 for a wrong argument. The command needs the `tess_dl` package, which needs Python 3.14.
 
 ## Build an executable
 

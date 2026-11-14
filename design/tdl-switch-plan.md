@@ -20,7 +20,7 @@ Each piece lists what is done when it is ticked.
 
 - [x] **0. Language mapping spec** (`design/tdl-views.md`, no code): every rule above written out, the casing and tuple-`for` decisions, what an error points at, the `If`/`For` wrapper effect on `part:` paths and hot reload.
 - [x] **1. TDL front end**: `spec/tdl.py` turns TDL text into the same node dict the YAML loader produces (the spike's reverse mapping, made real), with `file:line:column` errors from `tess_dl`. Both loaders exist side by side; nothing is switched. Tests: the 61 shipped views as TDL give dicts equal to their YAML. **Depends on `tess_dl` reading `<| |>`** (paused upstream): until it does, the front end keeps slot reading behind one small function and its tests run through a stand-in that rewrites `<| x |>` to `{{ x }}` for text without nested braces; the stand-in is deleted when `tess_dl` ships the delimiters. If the stand-in proves too awkward, do pieces 0 and 11 first and resume here.
-- [ ] **2. Converter**: `tesserae migrate-tdl PATH [--write]` turns a view into TDL keeping comments, key order and layout, using the pair-target rule; idempotent. Tests on the shipped views and on edge cases.
+- [x] **2. Converter** (branch `feat/tdl-converter`, not merged): `tesserae migrate-tdl PATH [--write] [--remove-source]` turns a view into TDL keeping comments, key order and layout, using the pair-target rule; idempotent. Tests on the shipped views and on edge cases. Decisions in `design/tdl-views.md` ("What piece 2 decided").
 - [ ] **3. Convert the 61 shipped views** to `*_View.tdl` (YAML kept beside them for now) with a test that each pair loads to the same dict. **GATE**: full suite.
 - [ ] **4. Stylesheets**: front end and converter for `*_Stylesheet`, then the shipped stylesheets, same equality test.
 - [ ] **5. Themes**: the same for `*_Theme`, including `Modes`-style columns if any.
@@ -40,3 +40,4 @@ Each piece lists what is done when it is ticked.
 (append one line per merged piece: date, piece, commit)
 - 2026-11-14: piece 0 done: `design/tdl-views.md` (the front end returns the same node dict, wrappers removed again, so the tree shape downstream is unchanged).
 - 2026-11-14: piece 1 done on branch feat/tdl-front-end (not merged): `spec/tdl.py` + `nodes.parse_data`; 61/61 shipped views as TDL load to the YAML mapping (decisions in design/tdl-views.md).
+- 2026-11-14: piece 2 done on branch feat/tdl-converter (not merged): `src/tess_ui/migrate_tdl.py`, `tesserae migrate-tdl`; 61/61 shipped views convert and read back equal, comments kept, 10 pair loops reported (a TODO line above each), a second run changes nothing.

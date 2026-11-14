@@ -312,7 +312,10 @@ def _migrate(args: argparse.Namespace) -> int:
 
 
 def _migrate_tdl(args: argparse.Namespace) -> int:
-    from tess_ui.migrate_tdl import migrate_tdl
+    try:
+        from tess_ui.migrate_tdl import migrate_tdl
+    except ImportError as exc:  # `tess_dl` needs Python 3.14 and is not installed with older ones
+        raise CliError(f"migrate-tdl needs the `tess_dl` package, which needs Python 3.14 ({exc})") from None
 
     if not args.path.exists():
         raise CliError(f"{args.path} does not exist")

@@ -182,7 +182,7 @@ def _scalar(v: Any) -> str:
     if (_WORD.match(v) and v not in ("true", "false", "null")) or _PERCENT.match(v):
         return v
     out = json.dumps(v, ensure_ascii=False)
-    if re.search(r"\\[bfr/]", out):
+    if re.search(r"(?<!\\)(?:\\\\)*\\[bfr/]", out):
         raise ConvertError(f"a string with a control character: {v!r}", hint="remove the control character or write it as \\n or \\t")
     return out
 
@@ -576,7 +576,7 @@ class _Converter:
             if not isinstance(evn, yaml.ScalarNode):
                 raise self.fail(evn, f"the handler '{event}' is an action name or statements", "write an action name (save) or Python statements")
             value = self.construct(evn)
-            if not isinstance(value, str):
+            if not isinstance(value, str) or not value.strip():  # a number, null, or no text at all is a property, as it was
                 out.append(_Line(indent + 2, f"{self.key_of(event, ekn, block=False)}: {self.scalar(evn)}", (eline,), (eline,)))
             elif is_action_name(value):
                 out.append(_Line(indent + 2, f"{self.key_of(event, ekn, block=False)}: {_scalar(value.strip())}", (eline,), (eline,)))
@@ -893,7 +893,7 @@ class Report:
 
     @property
     def steps(self) -> int:
-        return sum(r.steps for r in self.results if r.status in ("converted", "current"))
+        return sum(r.steps for r in self.results if r.status == "converted")
 
     def render(self, root: Path | None = None) -> str:
         def rel(path: Path) -> str:
@@ -923,8 +923,9 @@ class Report:
                 parts = first.split(",")
                 uses = ", ".join(f"{loop.variable}[{i}] for {p}" for i, p in enumerate(parts))
                 lines.append(f"  {loop.file}:{loop.line}: `for: {loop.original}`")
-                lines.append(f"      written as `For {loop.rewrite.replace(' in ', ' In ', 1)}`; the body still uses {' and '.join(parts)}, which no longer exist: "
-                             f"{loop.variable} is the (pair), use {uses}")
+                variable, iterable = loop.rewrite.split(" in ", 1)
+                lines.append(f"      written as `For {variable} In <| {iterable} |>`; the body still uses {' and '.join(parts)}, which no longer exist: "
+                             f"{loop.variable} is the ({', '.join(parts)}) pair, use {uses}")
         counts = {s: sum(r.status == s for r in self.results) for s in ("converted", "current", "skipped", "failed")}
         lines.append("")
         if self.written:

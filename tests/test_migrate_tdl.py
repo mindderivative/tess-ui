@@ -2,16 +2,19 @@
 idempotent, refusing what it cannot write back, and reporting the pair-target loops (`design/tdl-views.md`, `src/tess_ui/migrate_tdl.py`)."""
 
 import re
+import sys
 from pathlib import Path
 
 import pytest
 
-from tess_ui import cli
-from tess_ui.migrate_tdl import ConvertError, convert_view, migrate_tdl, with_single_variable
-from tess_ui.spec.nodes import load_marked
-from tess_ui.spec.tdl import load_marked_tdl
-from tess_ui.spec.widgets import Property, WidgetDecl
-from tests.tdl_helper import normal
+pytest.importorskip("tess_dl", reason="the TDL front end needs tess_dl (Python 3.14)")
+
+from tess_ui import cli  # noqa: E402
+from tess_ui.migrate_tdl import ConvertError, convert_view, migrate_tdl, with_single_variable  # noqa: E402
+from tess_ui.spec.nodes import load_marked  # noqa: E402
+from tess_ui.spec.tdl import load_marked_tdl  # noqa: E402
+from tess_ui.spec.widgets import Property, WidgetDecl  # noqa: E402
+from tests.tdl_helper import normal  # noqa: E402
 
 VIEWS = Path(__file__).parent.parent / "src" / "tess_ui" / "views"
 SHIPPED = sorted(VIEWS.glob("*_View.yaml"))
@@ -451,6 +454,7 @@ def test_a_second_run_changes_nothing(tmp_path):
     assert [r.status for r in again.results] == ["current", "current"] and not again.converted
     assert {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in tmp_path.iterdir()} == before
     assert "2 current" in again.render(tmp_path) and len(again.loops) == 1  # the reminder of the pair loop stays while the YAML is there
+    assert "0 files converted, 0 steps written, 1 tuple for-targets to adjust by hand" in again.render(tmp_path)
     assert convert_view(BUTTON, "Button").text == convert_view(BUTTON, "Button").text
 
 
@@ -471,8 +475,11 @@ def test_remove_source_deletes_the_yaml_only_with_write_and_only_for_files_that_
     assert sorted(p.name for p in tmp_path.iterdir()) == ["Bad_View.yaml", "Button_View.tdl"]  # the one that failed is left alone
     assert [r.status for r in report.results] == ["failed", "converted"] and report.results[1].removed
     assert "removed" in report.render(tmp_path)
-    again = migrate_tdl(tmp_path, write=True, remove_source=True)  # a current file whose YAML is still there is removed as well
-    assert [r.status for r in again.results] == ["failed"]
+    assert [r.status for r in migrate_tdl(tmp_path, write=True, remove_source=True).results] == ["failed"]  # the removed YAML is not looked for again
+    make_project(tmp_path, {"Button_View.yaml": BUTTON})  # a file whose TDL is already current has its YAML removed too
+    current = migrate_tdl(tmp_path, write=True, remove_source=True)
+    assert [(r.path.name, r.status, r.removed) for r in current.results] == [("Bad_View.yaml", "failed", False), ("Button_View.yaml", "current", True)]
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["Bad_View.yaml", "Button_View.tdl"]
 
 
 def test_a_file_that_fails_is_reported_with_its_line_and_the_others_are_still_written(tmp_path):
@@ -543,3 +550,35 @@ def test_the_command_exits_1_when_a_file_fails_and_2_for_a_mistake(tmp_path, cap
     assert "does not exist" in capsys.readouterr().err
     assert cli.main(["migrate-tdl", str(tmp_path), "--remove-source"]) == 2
     assert "--remove-source goes with --write" in capsys.readouterr().err
+
+
+def test_a_crlf_file_is_written_with_crlf_and_a_second_run_leaves_it_alone(tmp_path):
+    make_project(tmp_path, {"Sample_View.yaml": SAMPLE.replace("\n", "\r\n")})
+    migrate_tdl(tmp_path, write=True)
+    written = (tmp_path / "Sample_View.tdl").read_bytes()
+    assert written == SAMPLE_TDL.replace("\n", "\r\n").encode("utf-8") and b"\r\r" not in written
+    again = migrate_tdl(tmp_path, write=True)
+    assert [r.status for r in again.results] == ["current"] and (tmp_path / "Sample_View.tdl").read_bytes() == written
+
+
+def test_the_command_says_what_is_missing_when_tess_dl_cannot_be_imported(tmp_path, capsys, monkeypatch):
+    monkeypatch.setitem(sys.modules, "tess_ui.migrate_tdl", None)  # an import of it now fails, as without tess_dl
+    assert cli.main(["migrate-tdl", str(tmp_path)]) == 2
+    assert "migrate-tdl needs the `tess_dl` package, which needs Python 3.14" in capsys.readouterr().err
+
+
+def test_backslashes_in_text_and_an_empty_or_numeric_handler_are_written_as_the_text_they_are():
+    text = "widget: Button\nlabel: 'a\\\\b'\npath: 'C:\\temp'\nhandlers:\n  on_click: ''\n  on_hover_enter: 5\n  on_key: ~\n"
+    out = conv(text).text
+    assert '  Label: "a\\\\\\\\b"\n' in out and '  Path: "C:\\\\temp"\n' in out
+    assert '    On_Click: ""\n    On_Hover_Enter: 5\n    On_Key: null\n' in out
+    assert reads_equal(view(text), out)
+
+
+def test_a_conversion_that_does_not_read_back_the_same_is_refused_and_says_where(monkeypatch):
+    import tess_ui.migrate_tdl as module
+
+    monkeypatch.setattr(module, "_scalar", lambda value: "99")  # a converter that writes a wrong value
+    with pytest.raises(ConvertError, match=r"does not read back as the same view: style\.gap: .* read back as") as caught:
+        conv("widget: Container\nstyle:\n  gap: 8\n")
+    assert "no TDL form the converter knows" in (caught.value.hint or "")
