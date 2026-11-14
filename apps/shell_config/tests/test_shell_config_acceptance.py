@@ -245,3 +245,29 @@ def test_no_window_test_builds_a_session_on_the_default_state_folder():
             if "ConfigSession(" in line and "state_dir" not in line and not line.lstrip().startswith(("#", "class ")) and "def " not in line:
                 offenders.append(f"{path.name}:{number}: {line.strip()}")
     assert offenders == [], offenders
+
+
+# -- the user guide: every shortcut of the code is in one table of the README and of the guide ------------------------------------------------
+
+def table_keys(text):
+    """The first cells of the rows of every markdown table in `text`."""
+    return {line.split("|")[1].strip() for line in text.splitlines() if line.startswith("| ") and line.count("|") >= 3 and not line.startswith("| ---")}
+
+
+def test_every_shortcut_of_the_code_is_in_the_readmes_and_the_guides_keyboard_tables():
+    from tess_shell_config import shortcuts
+
+    wanted = {k for k in table_keys(shortcuts.__doc__) if k != "Keys"}
+    assert len(wanted) >= 15
+    readme = table_keys((HERE.parent / "README.md").read_text())
+    guide = table_keys((HERE.parents[2] / "docs" / "guide" / "shell-config.md").read_text())
+    assert wanted <= readme, sorted(wanted - readme)
+    assert wanted <= guide, sorted(wanted - guide)
+    for common in ("Tab, Shift+Tab", "Arrow keys, Enter", "Space, Enter", "Escape"):
+        assert common in readme and common in guide
+
+
+def test_every_screenshot_of_the_guide_is_a_file():
+    guide = HERE.parents[2] / "docs" / "guide"
+    pictures = re.findall(r"!\[[^\]]*\]\((img/[^)]+)\)", (guide / "shell-config.md").read_text())
+    assert len(pictures) == 3 and all((guide / p).stat().st_size > 20000 for p in pictures)

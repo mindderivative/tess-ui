@@ -26,6 +26,8 @@ __all__ = ["ShellConfigViewModel"]
 #: Tree values of the Files area: a file is `f:<path from the folder>`, a type's group `g:<label>`.
 FILE = "f:"
 GROUP = "g:"
+#: A folder with more files than this starts with the groups of the Files tree closed (the group of the open file excepted).
+MANY_FILES = 12
 
 
 class ShellConfigViewModel(ViewModel):
@@ -70,8 +72,17 @@ class ShellConfigViewModel(ViewModel):
         """Read the folder again and rebuild the Files tree (files grouped by type); every group opens."""
         self.session.refresh()
         self._relabel_files()
-        self.file_expanded.set([g["value"] for g in self.file_nodes.get()])
+        self.file_expanded.set(self._open_groups())
         self.folder.set(str(self.session.folder))
+
+    def _open_groups(self) -> list[str]:
+        """The groups of the Files tree that start open: every one while the folder has up to `MANY_FILES` files; in a larger folder only the group of the open file (every row of an open group is a dozen nodes the window composes again at each change, so a folder of many files would spend the 16 ms of an edit on rows nobody looks at)."""
+        groups = self.file_nodes.get()
+        if sum(len(g["children"]) for g in groups) <= MANY_FILES:
+            return [g["value"] for g in groups]
+        model = self.session.model
+        wanted = FILE + model.relative if model is not None else None
+        return [g["value"] for g in groups if any(c["value"] == wanted for c in g["children"])]
 
     def _relabel_files(self) -> None:
         """The Files tree from the files already read, with what each says about itself: unsaved changes, syntax errors. Set only when it differs."""
@@ -244,6 +255,10 @@ class ShellConfigViewModel(ViewModel):
         wanted = FILE + model.relative
         if self.file_selected.get() != wanted:
             self.file_selected.set(wanted)
+        opened = self.file_expanded.get()
+        group = next((g["value"] for g in self.file_nodes.get() if any(c["value"] == wanted for c in g["children"])), None)
+        if group is not None and group not in opened:  # the file that is open shows in the Files tree
+            self.file_expanded.set([*opened, group])
         if refresh_form:
             self.form.refresh()
 

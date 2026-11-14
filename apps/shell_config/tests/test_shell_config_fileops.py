@@ -255,3 +255,18 @@ def test_the_file_actions_have_keys(w, folder):
     w.settle()
     w.key("n", ctrl=True)
     assert w.vm.picker_title.get() == "New file of type"
+
+
+def test_a_folder_of_many_files_starts_with_only_the_open_files_group_open(folder, tmp_path, schema):
+    for number in range(8):
+        shutil.copy(folder / "Themes" / "Dark_Theme.tdl", folder / "Themes" / f"Copy{number}_Theme.tdl")
+    w = FormWindow(folder, tmp_path, schema)
+    assert len(w.session.files) > 12 and w.vm.file_expanded.get() == []
+    w.open("Shells/Main_Shell.tdl")
+    assert w.vm.file_expanded.get() == ["g:Shells"]
+    w.open("Themes/Copy3_Theme.tdl")
+    assert sorted(w.vm.file_expanded.get()) == ["g:Shells", "g:Themes"]
+    # a few files: every group is open, as before
+    shutil.copytree(CONFIG, tmp_path / "small_cfg")
+    small = FormWindow(tmp_path / "small_cfg", tmp_path / "small", schema)
+    assert len(small.vm.file_expanded.get()) == len(small.vm.file_nodes.get()) == 6

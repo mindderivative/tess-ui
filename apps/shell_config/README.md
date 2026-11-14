@@ -2,7 +2,7 @@
 
 `tesserae-shell-config` is the graphical editor for the files of [Tesserae Shell](https://github.com/mindderivative): the shell files, modules, styles, stylesheets, themes and `settings.tdl` in the shell's configuration folder. It is built on Tesserae UI and edits the `.tdl` files in place, so comments, blank lines, order and everything you did not touch stay byte for byte as you wrote them.
 
-This is the fourth part of the application: the window with the Files, Structure, Form, Text and Problems areas, opening and saving, the form for a block's keys, adding, removing, moving and duplicating blocks with undo and redo, `check` and its problems list, "Apply as I edit", the file watch and the shell's status. The stylesheet pages come later.
+The window has the Files, Structure, Form, Text and Problems areas; it opens and saves files, builds the form of a block's keys from the schema, adds, removes, moves and duplicates blocks with undo and redo, runs `check` and lists its findings, applies as you edit, watches the files, and has pages for themes, stylesheets and settings, module calls (the shipped modules and your own), a Files area that makes, copies, renames and deletes files, and the keyboard map below. The user guide (with pictures) is in the Tesserae UI documentation, `guide/shell-config.md`.
 
 ## Install and start
 
@@ -30,24 +30,32 @@ The toolbar has Save, Undo, Redo, Format file (formatting is never done unless y
 
 | Keys | Does |
 |---|---|
-| Tab, Shift+Tab | Move through the toolbar, the Files tree, the Structure tree and the text |
+| Tab, Shift+Tab | Move through the toolbar, the Files tree, the Structure tree, the form and the text |
 | Arrow keys, Enter | Move in a tree, open or select the row |
-| F6, Shift+F6 | Move to the next or previous area (the way out of the text editor, which takes Tab itself); Problems is one of them while it lists something |
-| F5 | Run `check` on the folder |
-| Ctrl+Shift+R | Ask the running shell to reload (the Reload shell button) |
-| Ctrl+Shift+A | Switch Apply as I edit on or off |
-| Ctrl+Shift+L, Ctrl+Shift+U | A file changed on disk: reload it from disk, or keep your version (use it) |
-| Ctrl+S | Save |
-| Ctrl+Z, Ctrl+Y (or Ctrl+Shift+Z) | Undo, redo |
-| Ctrl+Shift+N | Add a child to the selected block |
+| Space, Enter | Toggle a switch, press a button, open or close a group of keys |
+| Enter, or Tab out of a field | Write the field's value (nothing is written while you type) |
+| Up, Down (in a number field) | One step of the key's `step`, inside its range |
+| Escape | Close a list, a menu or a dialog |
+| Ctrl+S | Save the open file |
+| Ctrl+Z | Undo |
+| Ctrl+Y, Ctrl+Shift+Z | Redo |
+| F6, Shift+F6 | Move the focus to the next, or the previous, of the areas: Files, Structure, Form, Text, and Problems when it lists something |
+| F5 | Run `check` on the folder (the Check button) |
+| Ctrl+Shift+R | Ask the running shell to reload (Reload shell) |
+| Ctrl+Shift+A | Switch "Apply as I edit" on or off |
+| Ctrl+Shift+L, Ctrl+Shift+U | The file changed on disk: reload it from disk (L), or use your version, Keep mine (U; Ctrl+K and Ctrl+J are the text editor's own) |
+| Ctrl+N | A new file from a type (a list of the types, then a name) |
+| F2 | Rename the file chosen in the Files area |
+| Ctrl+Alt+D | Duplicate the file chosen in the Files area |
+| Delete (in the Files area) | Delete the file: it moves to the trash folder of the state folder |
+| Ctrl+Shift+N | Add a child to the selected block (a list of the blocks the schema lets it hold) |
 | Delete (in the Structure tree), Ctrl+Shift+Delete | Remove the selected block |
 | Alt+Up, Alt+Down | Move the selected block up or down among its siblings |
-| Ctrl+Shift+M | Move the selected block into another block |
-| Ctrl+Shift+D | Duplicate the selected block |
-| Menu key, Shift+F10, a right click in the Structure area | The Structure menu: every action with its shortcut, the ones that cannot be done now dimmed |
-| Space or Enter on a switch, button or group header | Toggle it, press it, open or close the group |
-| Enter, or Tab out of a field | Write the field's value (nothing is written while you type) |
-| Up, Down in a number field | One step of the key's `step`, inside its range |
+| Ctrl+Shift+M | Move the selected block into another block, chosen from a list |
+| Ctrl+Shift+D | Duplicate the selected block (a `Name:` becomes a name no other block has) |
+| Menu key, Shift+F10 | The Structure menu, with every action and its shortcut |
+
+A right click in the Structure area opens the same menu. Every area, button, form row and menu entry has an accessible name, and a description (the key's doc line for a form row).
 
 ## The form
 
@@ -66,13 +74,29 @@ Choosing a block (or a setting section, a module call, a theme token group) fill
 | font | The shipped `FontList`: the installed families (`fc-list : family`), each in its own face; written as one family, `"Roboto"`. A list of families is shown as TDL text and kept |
 | key_chord | The shipped `KeyChordField`: press Record and then the keys, or type the chord in any case; written `"Ctrl+Alt+Shift+Meta+Key"` in that order. Text that is not a chord is refused |
 | list | The shipped `ListEditor`: a row for each item in the schema's item kind (text, name, number or whole with the key's range, bool, enum with its choices, colour), move and remove buttons and Add; the schema's `length`, `unique` and `one_or_list` apply, and a lone item reads as a list of one. A list the editor cannot show (an item that is a token, say) or an item kind it has no row for is shown as TDL text |
-| shadows, block, tooltip, and a kind this version does not know | The value as TDL text (a list of these is in the coverage test) |
+| shadows, block | A button: **Add** writes the block (`Shadows { }`, `Inner_Border { ... }`) with its required keys, **Open** chooses it in the Structure (its own keys and children are edited there), Reset removes it. A token reference the key takes instead (`Shadows: $elevation.max`) is shown as TDL text |
+| tooltip, and a kind this version does not know | The value as TDL text: a tooltip is a Popup's name (a bare word), a short quoted text or an inline block, which what is typed does not say (the coverage test lists these with the reason of each) |
 
 A value the widget cannot show (a call, a token reference, a hand-written expression, a list it does not understand) is shown as its TDL text and never rewritten unless you edit it. A style key that is already inside a block's `Style { }` is read and changed there. A property the schema does not name is listed under "Not in the schema". Keys the shell does not build are grouped last; a key TDL reserves (`Key`) cannot be written by `tess_dl`'s edits and says so. In a theme, a token group shows one column for the base and one for each mode the file defines.
 
+## Themes, stylesheets and settings
+
+- **A theme file.** Choose a token group (`Color`, `Type`, `Shape`, `Space`, `Elevation`, `Motion`) in the Structure: the Form lists the group's tokens (from the schema's `tokens` table) with a column for the base and one for each mode the file defines under `Modes`; a colour token has a swatch in each column. **Add child** on the theme offers the token groups the file lacks and `Modes`; on `Modes` it offers the modes (Light, Dark, High_Contrast, Reduced_Motion), and a new mode is a new column; removing the mode's block removes the column.
+- **A stylesheet.** The Structure lists the `Rule`s in the order they are written, each with its selector (`Rule  Text:hovered`); order decides ties, so Move up and Move down (Alt+Up, Alt+Down) reorder. The Form of a rule starts with the **selector builder**: Applies to (a block or module name, a class, a name), Target, Part (`Module::part`, modules only) and State (`hovered`, `pressed`, `disabled`, `selected`, `checked`, `focused`); each change writes the whole `Selector:`. The style keys below are those of the selector's block type (a module's root block for a module name), every style key for a class or a name; a key the rule already has stays shown. A selector the builder cannot read (a descendant, a state the shell does not know) is shown as written with the union of style keys.
+- **settings.tdl.** Each section (`Logging`, `Validation`, `Appearance`, `Directories`, `Debug`, and `Shortcuts` when the shell exports it) is a page: choose it in the Structure. A section the file lacks is in the **Add child** list of the root block.
+- **Popups.** A `Popup` named like a default popup of the schema's `popups` table (`Tray_Menu`...) says which module opens it and that it replaces that popup whole, and shows its values (`Attach`, `Alignment`, `Gap`, `Max_Height`) as placeholders; any other `Popup` is told the names it could take.
+
+## Module calls
+
+The **Add child** list of a block that takes module calls has every module of the schema's `modules` table and then **your own modules**: every module file under the folder's `Modules/` folder, whose `Params` block the application reads with `tess_dl` (`name { Type: string, Default: "world" }` or `Param { Name: ..., Type: ... }`). A user module's params show with their name and `type ...` and no doc line (the file has none); a `Type` that is not a schema kind (`boolean`, `int` and `float` are mapped) gets the generic TDL field. A shipped module is never replaced by a user module of its name. The form of a call is the module's params (type, default, doc), then the keys every module takes.
+
+## The Files area
+
+Above the Files tree: **New** (Ctrl+N: the type, then a name; the file is `Name_Type.tdl` in its type's folder, a module in a folder of its own name, with its metadata block and an empty root block; `settings.tdl` asks for no name and exists once), **Duplicate** (Ctrl+Alt+D; the metadata `Name` follows the new name), **Rename** (F2; the file moves, a module's folder too, and its `Name` follows) and **Delete** (Delete in the Files area). A delete moves the file to `trash/<time>/<path>` in the application's state folder and never removes it; a rename keeps the old file there too. A name is letters, digits and `_`, starting with a letter; a name in use is refused with the reason, in the prompt. A file with unsaved changes is not renamed or deleted (save or undo first); a copy is of the saved file. A folder of more than 12 files starts with only the open file's group open in the Files tree.
+
 ## Editing the structure
 
-The row of buttons above the Structure tree, the Structure menu and the shortcuts do the same five things on the selected block. Each is one edit of the file (one undo step), writes only the lines of that entry, and leaves the selection on the block it was on (the block that was moved or copied keeps being the selected one, the copy is not). A button is dimmed when the action cannot be done to the selected block.
+The row of buttons above the Structure tree, the Structure menu and the shortcuts do the same five things on the selected block (a theme, a mode and a settings root offer their own children: see above). Each is one edit of the file (one undo step), writes only the lines of that entry, and leaves the selection on the block it was on (the block that was moved or copied keeps being the selected one, the copy is not). A button is dimmed when the action cannot be done to the selected block.
 
 | Action | What it does |
 |---|---|
@@ -103,4 +127,4 @@ A block inside an `If` or `For` can have blocks added to it (and keys changed in
 
 The application's tests are in `tests/` here and run in the repository's `pytest` run (they are skipped on a Python without `tess_dl`). They use a recorded schema (`tests/fixtures/schema.json`, schema 1.2) and the recorded `check`, `status` and `version` answers (`tests/fixtures/recorded/`), the `tess_dl` corpus, the shell's shipped files and a fake `tesserae-shell` script written under `tmp_path` that prints those answers; the real shell and the real configuration folder are never touched, and the real-session guard of the repository's tests applies.
 
-`tools/perf.py` measures the two budgeted actions (selecting a block, one committed edit) on a headless window over a temporary copy of the test configuration: `PYTHONPATH=src:apps/shell_config/src python apps/shell_config/tools/perf.py`. `tests/test_shell_config_perf.py` asserts the counts that make them fast: the window is composed once for each.
+`tests/test_shell_config_acceptance.py` holds the criteria that need the whole application (the shipped default configuration opens with no finding, byte-for-byte opening of every shipped file, ranges and tokens over the whole schema, one key-only pass), `tests/test_shell_config_a11y.py` the names, descriptions and Tab order. `tools/perf.py` measures the two budgeted actions (selecting a block, one committed edit) on a headless window over a temporary copy of the test configuration: `PYTHONPATH=src:apps/shell_config/src python apps/shell_config/tools/perf.py`. `tests/test_shell_config_perf.py` asserts the counts that make them fast: the window is composed once for each.
