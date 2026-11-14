@@ -1,4 +1,4 @@
-"""The form's side of the window's ViewModel: the Signals the view binds, the handlers its widgets call, the picker list (choices, units, theme tokens) and the file dialog.
+"""The form's side of the window's ViewModel: the Signals the view binds, the handlers its widgets call, the picker list (choices, units) and the file dialog.
 
 `FormController(viewmodel)` puts its names on the ViewModel, as the toolkit's own `FileDialogRequest` does (`form_items`, `form_commit`, `picker_open`, `file_open`, ...), so the view's handlers find them there. It owns the
 `Form` (the part that knows the schema and writes the document) and does only the window's work: publish the rows, keep the focus on the row being edited while the row is rebuilt from the file, tell the ViewModel
@@ -45,7 +45,7 @@ class FormController:
         for name, signal in {"form_items": self.items, "form_notes": self.notes, "form_title": self.title, "picker_open": self.picker_open, "picker_title": self.picker_title,
                              "picker_items": self.picker_items, "picker_current": self.picker_current}.items():
             setattr(viewmodel, name, signal)
-        for name in ("commit", "reset", "expression", "tokens", "choices", "units", "pick_option", "browse", "colour", "key", "group"):
+        for name in ("commit", "reset", "expression", "token", "choices", "units", "pick_option", "browse", "colour", "key", "group"):
             setattr(viewmodel, ("form_" if name != "pick_option" else "") + name, getattr(self, name))
 
     # -- publishing --------------------------------------------------------------------------------------------------------------
@@ -173,13 +173,10 @@ class FormController:
         options = [{"value": u["value"], "label": u["label"], "hint": "", "colour": ""} for u in cell.shown.get("units", [])]
         self._open_picker("unit", str(cell_id), f"Unit of {self._label(cell_id)}", options, str(cell.shown.get("unit", "")), str(number))
 
-    def tokens(self, cell_id: str) -> None:
-        """Open the token list for a key: the tokens of the groups the key accepts, the preferred ones first, each with its value (a colour with its swatch). Choosing one writes `$group.name`."""
-        if self.form is None:
-            return
-        options = [{"value": t["ref"], "label": t["label"], "hint": " ".join(p for p in (t["value"], t["doc"]) if p), "colour": t["colour"]} for t in self.form.tokens_for(str(cell_id))]
-        cell = self.form.cell(str(cell_id))
-        self._open_picker("token", str(cell_id), f"Theme token for {self._label(cell_id)}", options, cell.text.strip())
+    def token(self, cell_id: str, ref: str) -> None:
+        """The shipped token button picked a token: write `$group.name` (a reference is a plain word, written as it is). The button lists only the groups the key accepts, the preferred tokens first."""
+        if self.form is not None and not self._busy and str(ref).strip():
+            self._done(self.form.use_token(str(cell_id), str(ref).strip()))
 
     def _label(self, cell_id: str) -> str:
         assert self.form is not None
@@ -204,8 +201,6 @@ class FormController:
             self._done(self.form.commit(cell_id, {"value": str(value)}))
         elif what == "unit":
             self._done(self.form.commit(cell_id, {"text": number, "unit": str(value)}))
-        elif what == "token":
-            self._done(self.form.use_token(cell_id, str(value)))
 
     def browse(self, cell_id: str) -> None:
         """Open the shipped file dialog in the key's mode and filters, starting where the path already points (else beside the open file)."""

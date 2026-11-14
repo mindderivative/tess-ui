@@ -305,16 +305,19 @@ def test_an_enum_is_chosen_from_a_list_with_each_choice(w):
     assert w.diff(before) == ["-Edge: TOP", "+Edge: RIGHT"]
 
 
-def test_the_token_button_lists_the_accepted_groups_preferred_first_and_writes_into_the_style_block_that_has_the_key(w):
+def test_the_token_button_is_the_shipped_one_with_the_accepted_groups_preferred_first_and_writes_into_the_style_block_that_has_the_key(w):
     w.open_group("Fill")
     before = w.session.model.text
     assert w.node("k:Background", "field").get("text") == "$color.surface", "the key is in the block's Style { }: the form reads it there"
-    w.focus("k:Background", "token_button")
-    w.key("enter")
-    items = w.vm.picker_items.get()
-    assert w.vm.picker_title.get() == "Theme token for Background" and items[0]["value"] == "$color.surface" and items[0]["colour"] == "#12171d"
-    assert {o["label"].split(".")[0] for o in items} == {"color"}
-    w.vm.pick_option("$color.primary")
+    button = w.node("k:Background", "token_button")
+    assert type(w.built.view.control(w.node_id("k:Background", "token_button.mind"))).__name__ == "TokenListControl"
+    cell = next(c for i in w.vm.form_items.get() if i["id"] == "k:Background" for c in i["cells"])
+    assert [g["name"] for g in cell["token_groups"]] == ["color"] and cell["token_ref"] == "$color.surface"
+    assert cell["token_preferred"][0] == "$color.surface" or cell["token_preferred"] == []
+    first = cell["token_groups"][0]["tokens"][0]
+    assert set(first) == {"name", "ref", "kind", "value", "doc"} and first["kind"] == "colour" and first["value"].startswith("#")
+    assert button is not None
+    w.vm.form_token("k:Background|", "$color.primary")
     w.settle()
     assert w.diff(before) == ["-Style { Background: $color.surface }   # a token, not a colour", "+Style { Background: $color.primary }   # a token, not a colour"]
 

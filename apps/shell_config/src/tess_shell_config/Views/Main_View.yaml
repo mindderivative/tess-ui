@@ -129,6 +129,8 @@ children:
                                   d1: "{{ (cell.get('fields', []) + ['', '', '', ''])[1] }}"
                                   d2: "{{ (cell.get('fields', []) + ['', '', '', ''])[2] }}"
                                   d3: "{{ (cell.get('fields', []) + ['', '', '', ''])[3] }}"
+                                  items: "{{ cell.get('items', []) }}"
+                                  token: "{{ cell['token_ref'] }}"
                                   lastkey: ""
                                 style: {flex_direction: horizontal, align_content: left, gap: 4, width: 100%}
                                 children:
@@ -238,14 +240,51 @@ children:
                                     label: "{{ item['label'] }}"
                                     handlers: {on_change: "after(300, \"form_colour(cell['id'], colour)\", 'colour')"}
                                   - {widget: Text, name: colour_text, if: "cell['ui'] == 'colour'", text: "{{ cell['text'] if cell['present'] else cell['placeholder'] }}", typography_role: body_small, style: {flex: expand_horizontal, min_width: 0, foreground: on_surface_variant}}
-                                  - widget: Button
+                                  - widget: IconPicker
+                                    name: icon_picker
+                                    if: "cell['ui'] == 'icon'"
+                                    popup: true
+                                    value: "{{ draft }}"
+                                    icons_folder: "{{ cell['icons_folder'] }}"
+                                    label: "{{ item['label'] }}"
+                                    placeholder: "{{ cell['placeholder'] if cell['placeholder'] != '' else 'Choose an icon' }}"
+                                    on_change: "form_commit(cell['id'], {'text': draft})"
+                                  - widget: FontList
+                                    name: font_list
+                                    if: "cell['ui'] == 'font'"
+                                    popup: true
+                                    value: "{{ draft }}"
+                                    label: "{{ item['label'] }}"
+                                    on_change: "form_commit(cell['id'], {'text': draft})"
+                                  - widget: KeyChordField
+                                    name: chord_field
+                                    if: "cell['ui'] == 'chord'"
+                                    value: "{{ draft }}"
+                                    label: "{{ item['label'] }}"
+                                    on_change: "form_commit(cell['id'], {'text': draft})"
+                                  - widget: ListEditor
+                                    name: list_editor
+                                    if: "cell['ui'] == 'list'"
+                                    value: "{{ items }}"
+                                    item_kind: "{{ cell['item_kind'] }}"
+                                    choices: "{{ cell['choices'] }}"
+                                    least: "{{ cell['least'] }}"
+                                    most: "{{ cell['most'] }}"
+                                    step: "{{ cell['step'] }}"
+                                    min_items: "{{ cell['min_items'] }}"
+                                    max_items: "{{ cell['max_items'] }}"
+                                    label: "{{ item['label'] }}"
+                                    on_change: "form_commit(cell['id'], {'items': items})"
+                                  - widget: TokenButton
                                     name: token_button
                                     if: "cell['tokens']"
-                                    label: "$"
-                                    variant: text
-                                    size: xs
-                                    a11y: {label: "Theme token for {{ item['label'] }}"}
-                                    handlers: {on_click: "form_tokens(cell['id'])", on_focus_enter: "active = True", on_focus_exit: "active = False"}
+                                    value: "{{ token }}"
+                                    groups: "{{ cell['token_groups'] }}"
+                                    preferred: "{{ cell['token_preferred'] }}"
+                                    label: "Theme token for {{ item['label'] }}"
+                                    placeholder: "$ token"
+                                    width: 360
+                                    on_pick: "form_token(cell['id'], token)"
                                   - widget: Button
                                     name: expression_button
                                     if: "cell['slot']"

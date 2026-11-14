@@ -27,8 +27,10 @@ The Form area shows the keys of the selected block, one row each, **generated en
 
 | Part | Does |
 |---|---|
-| `widgets.py` | A *registry* from a schema kind to a widget (switch, choice, number, length, sides, colour, text, path, and the generic TDL field). A widget reads a value from the file, says what it shows, and turns an edit into TDL text or refuses it with a message. A new widget plugs in with one line: `registry.register("icon", IconPickerWidget)` (and the cell shape it draws, in `Views/Main_View.yaml`) |
+| `widgets.py` | A *registry* from a schema kind to a widget (switch, choice, number, length, sides, colour, text, path, icon, font, key chord, list, and the generic TDL field). A widget reads a value from the file, says what it shows, and turns an edit into TDL text or refuses it with a message. A new widget plugs in with one line: `registry.register("icon", IconWidget)` (and the cell shape it draws, in `Views/Main_View.yaml`) |
 | `form.py` | `Form.build(model)` makes the rows by the schema's groups; `commit`, `reset`, `toggle_expression`, `use_token` are one `DocumentModel` edit each; `coverage(schema)` lists the keys that got the generic field, with the reason |
 | `formcontrol.py` | Puts the form's `Signal`s and handlers on the window's ViewModel, keeps the focus on the row being edited while it is built again from the file, and drives the picker list and the file dialog |
 
 Things the toolkit made us do, which any big generated view meets: the view language redraws the whole window after a change, so the form builds only the groups that are open (a closed group is one header), the window is updated inside one `batch(...)`, and a commit that arrives while the form is being rebuilt (the old field losing its focus) is ignored.
+
+The icon, font, key-chord, list and token widgets are the toolkit's own: `IconPicker` (given the configuration folder's `Icons/` folder through the toolkit's file system), `FontList`, `KeyChordField`, `ListEditor` (given the schema's item kind, choices and range) and `TokenButton` (given the tokens of the groups a key accepts and its `preferred_tokens`). Each is a `widget:` call inside the cell of `Views/Main_View.yaml` and a handler that passes what it holds to `form_commit`.

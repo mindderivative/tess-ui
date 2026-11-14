@@ -23,7 +23,7 @@ from tess_dl import Block, Document, Property, Slot, Value
 from tess_shell_config.model import DocumentModel, EditError
 from tess_shell_config.schema import KeyInfo, ModuleInfo, ParamInfo, Schema, TokenInfo
 from tess_shell_config.tdl import IndexPath, child_named, properties_of
-from tess_shell_config.values import EXPRESSION_STUB, key_problem, normal_colour, value_text
+from tess_shell_config.values import EXPRESSION_STUB, is_reference, key_problem, normal_colour, value_text
 from tess_shell_config.widgets import Context, PathWidget, Refused, TdlWidget, Widget, WidgetRegistry, default_registry
 
 __all__ = ["Outcome", "Fallback", "Coverage", "Cell", "Row", "FormView", "Form", "coverage", "key_of_param", "key_of_token", "file_name"]
@@ -223,13 +223,16 @@ class Cell:
     expression: bool = False
     slot: bool = False
     tokens: bool = False
+    token_groups: list[dict[str, Any]] = field(default_factory=list)
+    token_preferred: list[str] = field(default_factory=list)
 
     def view(self) -> dict[str, Any]:
         """The cell as the window's view draws it."""
         ui = "field" if (self.tdl or self.expression or self.readonly) else self.widget.ui
         data: dict[str, Any] = {
             "id": self.id, "ui": ui, "column": self.column, "present": self.present, "text": self.text, "default": self.widget.default, "error": self.error, "expression": self.expression,
-            "slot": self.slot, "tokens": self.tokens, "readonly": self.readonly, "note": self.note, "fallback": self.widget.reason is not None, "stepping": False, "browse": False, "suffix": "",
+            "slot": self.slot, "tokens": self.tokens, "token_groups": self.token_groups, "token_preferred": self.token_preferred,
+            "token_ref": self.text.strip() if self.present and is_reference(self.text) else "", "readonly": self.readonly, "note": self.note, "fallback": self.widget.reason is not None, "stepping": False, "browse": False, "suffix": "",
             "hint": "", "mono": False, "placeholder": self.widget.default,
         }
         data.update(self.shown)
@@ -315,6 +318,7 @@ class Form:
         self._scope: tuple[str, IndexPath | None] = ("", None)
         self._seen: dict[str, tuple[Any, int]] = {}
         self._folder: Path | None = None
+        self._token_lists: dict[tuple[tuple[str, ...], tuple[str, ...]], tuple[list[dict[str, Any]], list[str]]] = {}
 
     # -- building ----------------------------------------------------------------------------------------------------------------
 
@@ -442,6 +446,8 @@ class Form:
 
     def _cell(self, cell_id: str, widget: Widget, store: Store | None, document: Document | None, column: str, key: KeyInfo) -> Cell:
         cell = Cell(cell_id, widget, store, column, slot=key.slot, tokens=bool(key.tokens))
+        if key.tokens:
+            cell.token_groups, cell.token_preferred = self._token_data(key)
         found = store.read(document) if store is not None and document is not None else Found()
         if found.value is not None:
             cell.present, cell.text = True, value_text(document, found.value)  # type: ignore[arg-type]
@@ -650,6 +656,23 @@ class Form:
         found = self.schema.tokens_for(key)
         return [{"group": t.group, "name": t.name, "ref": t.ref, "value": (t.default or ""), "doc": t.doc, "colour": _swatch(t), "label": f"{t.group}.{t.name}"} for t in found]
 
+    def _token_data(self, key: KeyInfo) -> tuple[list[dict[str, Any]], list[str]]:
+        """What the shipped `TokenButton` is given for a key: its tokens in one set for each group the key accepts (each `{name, ref, kind, value, doc}`; a colour's value is `#rrggbb`), and the refs it
+        prefers, in the order they are listed first. The same for every key with the same groups, so it is made once."""
+        cache_key = (key.tokens, key.preferred_tokens)
+        found = self._token_lists.get(cache_key)
+        if found is None:
+            groups = []
+            for group in key.tokens:
+                entries = []
+                for token in self.schema.tokens.get(group, {}).values():
+                    swatch = _swatch(token)
+                    entries.append({"name": f"{token.group}.{token.name}", "ref": token.ref, "kind": "colour" if swatch else token.kind, "value": swatch or (token.default or ""), "doc": token.doc})
+                if entries:
+                    groups.append({"name": group, "tokens": entries})
+            found = self._token_lists[cache_key] = (groups, self.schema.preferred_refs(key))
+        return found
+
     def use_token(self, cell_id: str, ref: str) -> Outcome:
         """Write `$group.name` for the cell (a reference is a plain word, written as it is)."""
         cell = self.cell(cell_id)
@@ -698,6 +721,8 @@ def _overlay(edit: Mapping[str, Any]) -> dict[str, Any]:
         shown["fields"] = [str(f) for f in edit["fields"]]
     if "linked" in edit:
         shown["linked"] = bool(edit["linked"])
+    if "items" in edit:
+        shown["items"] = list(edit["items"])
     return shown
 
 

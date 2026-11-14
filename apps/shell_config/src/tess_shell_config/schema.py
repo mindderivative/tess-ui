@@ -391,6 +391,16 @@ class Schema:
 
         return sorted(found, key=rank)
 
+    def preferred_refs(self, key: KeyInfo) -> list[str]:
+        """The refs of the tokens `key` prefers, in the order `tokens_for` lists them (the ones the token button puts first)."""
+        none = len(key.preferred_tokens)
+        found = []
+        for token in self.tokens_for(key):
+            dotted = f"{token.group}.{token.name}"
+            if any(p == token.group or fnmatchcase(dotted, p) for p in key.preferred_tokens):
+                found.append(token.ref)
+        return found if none else []
+
     def module_names(self) -> tuple[str, ...]:
         return tuple(self.modules)
 

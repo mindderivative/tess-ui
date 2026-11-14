@@ -7,9 +7,9 @@ A `Widget` is made for one key (`factory(key, context)`). It does three things a
   the value as TDL text and never rewrites it unless the person edits it;
 - `write(edit)`: the TDL text of the value the person made, `None` to remove the property, or `Refused` (with the message to show) when the value is not allowed and nothing is written.
 
-`ui` is the cell shape the window's view draws (`switch`, `choice`, `field`, `length`, `sides`, `colour`). The registry maps a schema kind to a widget factory; a kind with no entry (a kind a higher schema
+`ui` is the cell shape the window's view draws (`switch`, `choice`, `field`, `length`, `sides`, `colour`, `icon`, `font`, `chord`, `list`). The registry maps a schema kind to a widget factory; a kind with no entry (a kind a higher schema
 minor version adds) and a kind with no widget yet get the generic TDL text field, and the form reports which keys did (`Widget.reason`). A widget of another branch (the icon picker, the font list, the key-chord recorder, the list
-editor) plugs in with one line: `registry.register("icon", IconPickerWidget)`, plus the `ui` branch its cell needs in `Views/Main_View.yaml`.
+editor) plugs in with one line: `registry.register("icon", IconWidget)`, plus the `ui` branch its cell needs in `Views/Main_View.yaml`. The registry ships with all of them.
 """
 
 from __future__ import annotations
@@ -22,12 +22,14 @@ from pathlib import Path
 from typing import Any
 
 from tess_dl import List, Number, Percent, String, Value, Word
+from tess_ui import filesystem
+from tess_ui.key_chords import normalise as normal_chord
 
 from tess_shell_config.schema import KeyInfo, Schema
 from tess_shell_config.values import colour_text, format_number, is_reference, normal_colour, parse_number, quote
 
 __all__ = ["Refused", "Context", "Widget", "WidgetFactory", "WidgetRegistry", "TdlWidget", "SwitchWidget", "ChoiceWidget", "NumberWidget", "LengthWidget", "SidesWidget", "ColourWidget",
-           "TextWidget", "PathWidget", "fallback", "default_registry"]
+           "TextWidget", "PathWidget", "IconWidget", "FontWidget", "KeyChordWidget", "ListWidget", "list_widget", "fallback", "default_registry"]
 
 
 class Refused(Exception):
@@ -152,6 +154,13 @@ class ChoiceWidget(Widget):
 
 
 # -- numbers -----------------------------------------------------------------------------------------------------------------------
+
+def _range(low: float | None, high: float | None) -> str:
+    """`from 0 to 9`, `at least 0`, `at most 9`: a range written for a message."""
+    if low is not None and high is not None:
+        return f"from {format_number(Decimal(str(low)))} to {format_number(Decimal(str(high)))}"
+    return f"at least {format_number(Decimal(str(low)))}" if low is not None else f"at most {format_number(Decimal(str(high)))}"
+
 
 class NumberWidget(Widget):
     """number, whole, duration and percent: a number field with the schema's minimum, maximum, step and unit; a value outside them is refused with the range."""
@@ -461,6 +470,226 @@ class PathWidget(TextWidget):
         return {"text": "sample.file"}
 
 
+# -- icon, font, key chord ---------------------------------------------------------------------------------------------------------
+
+class _QuotedWidget(Widget):
+    """A value that is one quoted string, chosen with a toolkit widget that holds it as text (`draft` in the cell): shown from a string, written as a string, an empty one removes the property."""
+
+    def empty(self) -> dict[str, Any]:
+        return {"field": "", "placeholder": self.default}
+
+    def read(self, value: Value, text: str) -> dict[str, Any] | None:
+        if isinstance(value, String):
+            return {"field": value.value, "placeholder": self.default}
+        return None
+
+    def write(self, edit: Mapping[str, Any]) -> str | None:
+        text = str(edit.get("text", "")).strip()
+        return quote(text) if text else None
+
+
+class IconWidget(_QuotedWidget):
+    """The shipped `IconPicker` over the built-in icons and the `Icons` folder of the configuration folder, when it has one (found through the toolkit's file system, so a test can swap it)."""
+
+    ui = "icon"
+
+    def _folder(self) -> str:
+        folder = self.context.folder
+        if folder is None:
+            return ""
+        icons = str(folder / "Icons")
+        try:
+            return icons if filesystem.default().is_dir(icons) else ""
+        except filesystem.FileSystemError:
+            return ""
+
+    def empty(self) -> dict[str, Any]:
+        return {**super().empty(), "icons_folder": self._folder()}
+
+    def read(self, value: Value, text: str) -> dict[str, Any] | None:
+        shown = super().read(value, text)
+        return None if shown is None else {**shown, "icons_folder": self._folder()}
+
+    def sample_edit(self) -> dict[str, Any]:
+        return {"text": "home"}
+
+
+class FontWidget(_QuotedWidget):
+    """The shipped `FontList`: one family, written as a string. A list of families (the key allows a fallback order) is shown as TDL text and kept as it is."""
+
+    ui = "font"
+
+    def sample_edit(self) -> dict[str, Any]:
+        return {"text": "Roboto"}
+
+
+class KeyChordWidget(_QuotedWidget):
+    """The shipped `KeyChordField`: the chord as `Ctrl+Alt+Shift+Meta+Key` (the recorder writes that order; a typed chord in any case is written in it). Text that is not a chord is refused."""
+
+    ui = "chord"
+
+    def read(self, value: Value, text: str) -> dict[str, Any] | None:
+        shown = super().read(value, text)
+        return shown if shown is not None and normal_chord(shown["field"]) is not None else None
+
+    def write(self, edit: Mapping[str, Any]) -> str | None:
+        text = str(edit.get("text", "")).strip()
+        if not text:
+            return None
+        chord = normal_chord(text)
+        if chord is None:
+            raise Refused(f"{_label(self.key)} takes a key chord such as Ctrl+Shift+F1: modifiers (Ctrl, Alt, Shift, Meta) and one key; {text!r} is not one.")
+        return quote(chord)
+
+    def sample_edit(self) -> dict[str, Any]:
+        return {"text": "Ctrl+Shift+F1"}
+
+
+# -- lists -------------------------------------------------------------------------------------------------------------------------
+
+#: The schema's list item kinds the shipped `ListEditor` has a row for, and the editor's name for each.
+_ITEM_UI = {"string": "text", "text": "text", "name": "text", "number": "number", "whole": "number", "bool": "bool", "enum": "enum", "color": "colour"}
+_NOT_NAME = re.compile(r"[\s,\[\]{}\":#]")
+
+
+class ListWidget(Widget):
+    """The shipped `ListEditor`: rows of the schema's item kind (`item_kind`: text, name, number, whole, bool, enum, colour), with the schema's range, choices and length. A lone item where the key says
+    `one_or_list` reads as a list of one; the list is written `[a, b]`. An empty list is written `[]` where the key allows it (`min_length` 0), else it removes the property."""
+
+    ui = "list"
+
+    def __init__(self, key: KeyInfo, context: Context) -> None:
+        super().__init__(key, context)
+        self.kind = str(key.extra.get("item_kind") or "")
+        self.editor = _ITEM_UI[self.kind]
+        self.whole = self.kind == "whole"
+        self.length = key.extra.get("length")
+        self.least_items = int(self.length) if self.length else int(key.extra.get("min_length") or 0)
+        self.most_items = int(self.length) if self.length else int(key.extra.get("max_length") or 0)
+        self.unique = bool(key.extra.get("unique"))
+        self.one_or_list = bool(key.extra.get("one_or_list"))
+
+    @property
+    def choices(self) -> tuple[str, ...]:
+        found = [str(c) for c in self.key.choices] if self.key.choices else []
+        if not found and self.key.enum:
+            found = list(self.context.schema.enums.get(self.key.enum, ()))
+        return tuple(found)
+
+    def _props(self, items: list[Any]) -> dict[str, Any]:
+        step = self.key.step or 1
+        return {"items": items, "item_kind": self.editor, "choices": list(self.choices), "least": self.key.minimum, "most": self.key.maximum, "step": step,
+                "min_items": self.least_items, "max_items": self.most_items, "placeholder": self.default, "hint": self._hint()}
+
+    def _hint(self) -> str:
+        if self.length:
+            return f"exactly {self.length} items"
+        return ", ".join(p for p in ("each one of: " + ", ".join(self.choices) if self.kind == "enum" and self.choices else "", "no repeats" if self.unique else "") if p)
+
+    def empty(self) -> dict[str, Any]:
+        return self._props([])
+
+    def _item(self, value: Value) -> Any:
+        """One item of a list in the file as the editor holds it, or raises `ValueError` when this item kind cannot show it."""
+        if self.kind in ("string", "text"):
+            if isinstance(value, String):
+                return value.value
+        elif self.kind == "name":
+            if isinstance(value, Word) and not value.text.startswith("$"):
+                return value.text
+        elif self.kind in ("number", "whole"):
+            if isinstance(value, Number):
+                number = parse_number(value.text)
+                if number is not None:
+                    return int(number) if number == number.to_integral_value() else float(number)
+        elif self.kind == "bool":
+            if isinstance(value, Word) and value.text in ("true", "false"):
+                return value.text == "true"
+        elif self.kind == "enum":
+            if isinstance(value, Word) and value.text in self.choices:
+                return value.text
+        elif self.kind == "color":
+            if isinstance(value, String):
+                shown = normal_colour(value.value)
+                if shown is not None:
+                    return shown
+        raise ValueError(value.text if hasattr(value, "text") else "")
+
+    def read(self, value: Value, text: str) -> dict[str, Any] | None:
+        entries = list(value.items) if isinstance(value, List) else [value] if self.one_or_list else None
+        if entries is None:
+            return None
+        try:
+            return self._props([self._item(e) for e in entries])
+        except ValueError:
+            return None
+
+    def _text_of(self, item: Any, position: int) -> str:
+        name = f"{_label(self.key)}, item {position}"
+        if self.kind in ("string", "text"):
+            return quote(str(item))
+        if self.kind == "name":
+            word = str(item).strip()
+            if not word or _NOT_NAME.search(word):
+                raise Refused(f"{name} takes a name (letters, digits and underscores, no spaces); {word!r} is not one.")
+            pattern = self.key.extra.get("pattern")
+            if pattern and not re.fullmatch(str(pattern), word):
+                raise Refused(f"{name} must match {pattern}; {word!r} does not.")
+            return word
+        if self.kind in ("number", "whole"):
+            number = parse_number(str(item))
+            if number is None:
+                raise Refused(f"{name} takes a number; {str(item)!r} is not one.")
+            if self.whole and number != number.to_integral_value():
+                raise Refused(f"{name} takes a whole number.")
+            low, high = self.key.minimum, self.key.maximum
+            if (low is not None and number < Decimal(str(low))) or (high is not None and number > Decimal(str(high))):
+                raise Refused(f"{name} must be {_range(low, high)}.")
+            return format_number(number)
+        if self.kind == "bool":
+            return "true" if item else "false"
+        if self.kind == "enum":
+            if str(item) not in self.choices:
+                raise Refused(f"{name} takes one of: {', '.join(self.choices)}.")
+            return str(item)
+        shown = normal_colour(str(item))
+        if shown is None:
+            raise Refused(f"{name} takes a colour such as #4682B4; {str(item)!r} is not one.")
+        return colour_text(shown)
+
+    def write(self, edit: Mapping[str, Any]) -> str | None:
+        items = list(edit.get("items") or [])
+        name = _label(self.key)
+        if not items:
+            return "[]" if self.key.extra.get("min_length") == 0 else None
+        if self.length and len(items) != self.length:
+            raise Refused(f"{name} takes exactly {self.length} items; there are {len(items)}.")
+        if self.least_items and len(items) < self.least_items:
+            raise Refused(f"{name} takes at least {self.least_items} items.")
+        if self.most_items and len(items) > self.most_items:
+            raise Refused(f"{name} takes at most {self.most_items} items.")
+        texts = [self._text_of(item, i) for i, item in enumerate(items, start=1)]
+        if self.unique and len(set(texts)) != len(texts):
+            raise Refused(f"{name} takes no repeated item.")
+        return "[" + ", ".join(texts) + "]"
+
+    def sample_edit(self) -> dict[str, Any]:
+        count = int(self.length) if self.length else 1
+        low = self.key.minimum
+        sample: Any = {"text": "sample", "number": low if low is not None else 0, "bool": True, "enum": self.choices[0] if self.choices else "", "colour": "#336699"}[self.editor]
+        if self.kind == "name":
+            sample = "Sample_Name"
+        return {"items": [sample] * count if self.editor != "enum" else [sample]}
+
+
+def list_widget(key: KeyInfo, context: Context) -> Widget:
+    """The list editor for a list whose item kind it has a row for; any other list keeps the generic TDL field, and the report says which item kind and why."""
+    kind = str(key.extra.get("item_kind") or "")
+    if kind not in _ITEM_UI:
+        return TdlWidget(key, context, f"the list editor has no row for the item kind {kind or '(none given)'!r}: the list is edited as TDL text")
+    return ListWidget(key, context)
+
+
 # -- the registry ------------------------------------------------------------------------------------------------------------------
 
 @dataclass
@@ -501,8 +730,9 @@ def default_registry() -> WidgetRegistry:
     composite = "a composite value (a block or a token reference): edited as TDL text"
     for kind in ("shadows", "block", "tooltip"):
         registry.register(kind, fallback(composite))
-    pending = {"icon": "icon picker (branch feat/icon-picker)", "font": "font list (branch feat/font-list)", "key_chord": "key-chord recorder (branch feat/key-chord)", "list": "list editor (branch feat/list-editor)"}
-    for kind, widget in pending.items():
-        registry.register(kind, fallback(f"the {widget} is not merged yet: edited as TDL text"))
+    registry.register("icon", IconWidget)
+    registry.register("font", FontWidget)
+    registry.register("key_chord", KeyChordWidget)
+    registry.register("list", list_widget)
     registry.register("expression", fallback("an expression is TDL text"))
     return registry

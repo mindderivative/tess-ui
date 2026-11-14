@@ -14,7 +14,7 @@ from tess_shell_config.form import Form, coverage
 from tess_shell_config.model import DocumentModel
 from tess_shell_config.schema import Schema
 from tess_shell_config.tdl import walk
-from tess_shell_config.widgets import ChoiceWidget, LengthWidget, NumberWidget, PathWidget, SidesWidget, SwitchWidget, WidgetRegistry, default_registry
+from tess_shell_config.widgets import ChoiceWidget, Context, LengthWidget, NumberWidget, PathWidget, SidesWidget, SwitchWidget, WidgetRegistry, default_registry
 
 DOC = """---
 TDL: 0.1
@@ -546,17 +546,18 @@ def test_with_no_file_no_tree_or_no_block_selected_the_form_says_why(tmp_path, s
 
 # -- the registry ------------------------------------------------------------------------------------------------------------------
 
-def test_a_widget_of_another_branch_plugs_in_with_one_registry_line(schema):
+def test_a_widget_plugs_in_with_one_registry_line_and_the_icon_font_chord_and_list_kinds_have_theirs(schema):
     keys = {key.name: key for _, key in schema.walk_keys()}
     registry = default_registry()
-    assert registry.create(keys["Icon"], None).reason.startswith("the icon picker") and registry.create(keys["Font_Family"], None).reason.startswith("the font list")
+    assert [type(registry.create(keys[n], Context(schema))).__name__ for n in ("Icon", "Font_Family", "Class", "Adjust")] == ["IconWidget", "FontWidget", "ListWidget", "ListWidget"]
+    assert all(registry.create(keys[n], Context(schema)).reason is None for n in ("Icon", "Font_Family", "Class", "Adjust"))
 
-    class IconPicker(ChoiceWidget):
+    class MyIcon(ChoiceWidget):
         ui = "icon"
 
-    registry.register("icon", IconPicker)
+    registry.register("icon", MyIcon)
     created = registry.create(keys["Icon"], None)
-    assert isinstance(created, IconPicker) and created.reason is None and created.ui == "icon"
+    assert isinstance(created, MyIcon) and created.reason is None and created.ui == "icon"
     form_with = Form(schema, registry)
     assert form_with.registry is registry
     assert isinstance(WidgetRegistry().create(keys["Edge"], None), object) and WidgetRegistry().create(keys["Edge"], None).reason, "an empty registry falls back to the generic field, with its reason"
@@ -602,9 +603,6 @@ EXPECTED_FALLBACKS = {
     "shadows": "a composite value",
     "block": "a composite value",
     "tooltip": "a composite value",
-    "list": "the list editor (branch feat/list-editor) is not merged yet",
-    "icon": "the icon picker (branch feat/icon-picker) is not merged yet",
-    "font": "the font list (branch feat/font-list) is not merged yet",
 }
 
 
@@ -618,6 +616,7 @@ def test_the_coverage_report_lists_every_key_that_got_the_generic_field_each_wit
     for fallback in fallbacks:
         by_kind.setdefault(fallback.kind, []).append(f"{fallback.where}.{fallback.key}")
     assert len(by_kind[""]) == 13, "ten keys and three tokens with no kind"
+    assert set(by_kind) == {"", "shadows", "block", "tooltip"}, "the list, icon, font and key_chord kinds have widgets now"
     assert len(report.entries) == len(list(schema.walk_keys())) + sum(len(m.params) for m in schema.modules.values()) + sum(len(t) for t in schema.tokens.values())
     print("generic TDL field:", {kind: len(names) for kind, names in by_kind.items()})
 
