@@ -8,9 +8,11 @@ from dataclasses import dataclass
 import tess_dl
 from tess_dl import Block, Document, For, If, Property
 
-__all__ = ["IndexPath", "Node", "Mark", "Parsed", "parse_text", "child_entries", "properties_of", "child_named", "node_type", "node_source", "walk"]
+__all__ = ["IndexPath", "OrdPath", "ordinals", "from_ordinals", "is_node", "dedented_source", "Node", "Mark", "Parsed", "parse_text", "child_entries", "properties_of", "child_named", "node_type", "node_source", "walk"]
 
 type IndexPath = tuple[int, ...]
+#: A place in the tree counted in blocks, `If`s and `For`s only (the entry numbers of an index path also count properties and comments, and an edit can take a comment away with a block).
+type OrdPath = tuple[int, ...]
 #: What a selection points at: a block, or an `If` or `For` node.
 type Node = Block | If | For
 
@@ -99,3 +101,45 @@ def walk(node: Node) -> Iterator[Node]:
     for entry in child_entries(node):
         if isinstance(entry, (Block, If, For)):
             yield from walk(entry)
+
+
+def is_node(entry: object) -> bool:
+    """Whether an entry is a block, an `If` or a `For` (a place in the structure tree), not a property or a comment."""
+    return isinstance(entry, (Block, If, For))
+
+
+def ordinals(document: Document, path: IndexPath) -> OrdPath:
+    """`path` counted in blocks, `If`s and `For`s: `(0, 3, 4)` for the block that is the 5th entry of a block whose ordinal is 1 (an entry before it that is a property or a comment is not counted)."""
+    node: Node = document.root
+    found: list[int] = []
+    for i in path:
+        entries = child_entries(node)
+        found.append(sum(1 for e in entries[:i] if is_node(e)))
+        node = entries[i]  # type: ignore[assignment]
+    return tuple(found)
+
+
+def from_ordinals(document: Document, ords: OrdPath) -> IndexPath | None:
+    """The index path of the node whose ordinal path is `ords`, or `None` when there is none."""
+    node: Node = document.root
+    found: list[int] = []
+    for o in ords:
+        places = [i for i, e in enumerate(child_entries(node)) if is_node(e)]
+        if not 0 <= o < len(places):
+            return None
+        found.append(places[o])
+        node = child_entries(node)[places[o]]  # type: ignore[assignment]
+    return tuple(found)
+
+
+def dedented_source(document: Document, node: Node) -> str:
+    """`node_source` with the indentation of the line the node starts on taken off every later line, so `Block.with_child` (which adds the new place's indentation to every line) lays it out as it was."""
+    text = document.text
+    line_start = text.rfind("\n", 0, node.start) + 1
+    indent = text[line_start:node.start]
+    indent = indent if not indent.strip() else ""
+    source = text[node.start:node.end]
+    if not indent:
+        return source
+    first, *rest = source.split("\n")
+    return "\n".join([first, *(line[len(indent):] if line.startswith(indent) else line.lstrip(" \t") for line in rest)])

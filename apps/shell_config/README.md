@@ -2,7 +2,7 @@
 
 `tesserae-shell-config` is the graphical editor for the files of [Tesserae Shell](https://github.com/mindderivative): the shell files, modules, styles, stylesheets, themes and `settings.tdl` in the shell's configuration folder. It is built on Tesserae UI and edits the `.tdl` files in place, so comments, blank lines, order and everything you did not touch stay byte for byte as you wrote them.
 
-This is the second part of the application: the window with the Files, Structure, Form and Text areas, opening and saving, and the form for a block's keys. The problems list from `check`, the file watch, add and remove, and the stylesheet pages come later.
+This is the third part of the application: the window with the Files, Structure, Form and Text areas, opening and saving, the form for a block's keys, and adding, removing, moving and duplicating blocks with undo and redo. The problems list from `check`, the file watch, and the stylesheet pages come later.
 
 ## Install and start
 
@@ -22,7 +22,7 @@ Without the `tesserae-shell` command, or with a schema whose major version the a
 | Area | Shows | Does |
 |---|---|---|
 | Files | The folder's files by type, read from each file's root block: Shells, Modules, Styles, Stylesheets, Themes, Settings | Enter on a file opens it. A file with syntax errors or unsaved changes says so in words |
-| Structure | The open file's blocks as a tree, with `If` and `For` as labelled nodes (an `If` with an `Else` shows the else body under an `Else` node) | Choosing a row selects that block |
+| Structure | The open file's blocks as a tree, with `If` and `For` as labelled nodes (an `If` with an `Else` shows the else body under an `Else` node) | Choosing a row selects that block. Add a child, remove, move up or down, move into another block, duplicate (buttons above the tree, a menu, shortcuts; see below) |
 | Text | The file as TDL | Edit it by hand; the structure follows when the text parses. A file with syntax errors is edited here only, with its errors listed (line, column, what is wrong, what to write) |
 
 The toolbar has Save, Undo, Redo and Format file (formatting is never done unless you press it). Everything works from the keyboard:
@@ -34,6 +34,12 @@ The toolbar has Save, Undo, Redo and Format file (formatting is never done unles
 | F6, Shift+F6 | Move to the next or previous area (the way out of the text editor, which takes Tab itself) |
 | Ctrl+S | Save |
 | Ctrl+Z, Ctrl+Y (or Ctrl+Shift+Z) | Undo, redo |
+| Ctrl+Shift+N | Add a child to the selected block |
+| Delete (in the Structure tree), Ctrl+Shift+Delete | Remove the selected block |
+| Alt+Up, Alt+Down | Move the selected block up or down among its siblings |
+| Ctrl+Shift+M | Move the selected block into another block |
+| Ctrl+Shift+D | Duplicate the selected block |
+| Menu key, Shift+F10, a right click in the Structure area | The Structure menu: every action with its shortcut, the ones that cannot be done now dimmed |
 | Space or Enter on a switch, button or group header | Toggle it, press it, open or close the group |
 | Enter, or Tab out of a field | Write the field's value (nothing is written while you type) |
 | Up, Down in a number field | One step of the key's `step`, inside its range |
@@ -58,6 +64,20 @@ Choosing a block (or a setting section, a module call, a theme token group) fill
 | shadows, block, tooltip, and a kind this version does not know | The value as TDL text (a list of these is in the coverage test) |
 
 A value the widget cannot show (a call, a token reference, a hand-written expression, a list it does not understand) is shown as its TDL text and never rewritten unless you edit it. A style key that is already inside a block's `Style { }` is read and changed there. A property the schema does not name is listed under "Not in the schema". Keys the shell does not build are grouped last; a key TDL reserves (`Key`) cannot be written by `tess_dl`'s edits and says so. In a theme, a token group shows one column for the base and one for each mode the file defines.
+
+## Editing the structure
+
+The row of buttons above the Structure tree, the Structure menu and the shortcuts do the same five things on the selected block. Each is one edit of the file (one undo step), writes only the lines of that entry, and leaves the selection on the block it was on (the block that was moved or copied keeps being the selected one, the copy is not). A button is dimmed when the action cannot be done to the selected block.
+
+| Action | What it does |
+|---|---|
+| Add child | Opens a list of what the block may hold: the `allowed_children` of its schema entry and, where the block takes module calls, every shipped module. The new block is written with its required keys only, laid out by `tess_dl.format_block` (`Bar` gets `Name: Bar_1`, `Edge`, `Width` and `Height`; a `Box` is `Box { }`); a `Name` is the type and a number no other block of the file has. It goes last. A block the schema does not know has nothing to add |
+| Remove | Takes the block with its lines and the comment at the end of its closing line; comment lines above it stay. The selection moves to its parent |
+| Move up, Move down | Moves it past the next block, `If` or `For` of its parent (properties and comments between them are not places). A comment line above a block stays where it is, so moving a block and moving it back is not always the same bytes: undo is |
+| Move to | Opens a list of the blocks the schema lets hold this one (not the one it is in, not itself or anything below it), each with its place (`Shell › Monitor  Primary › Bar  Top_Bar`); it goes last in the one you pick. This is the keyboard's way to another parent |
+| Duplicate | Copies the block's text after it. A `Name:` becomes `Name_Copy`, then `Name_Copy_2`..., so no two blocks of a file share a name. An `If` or `For` cannot be copied here |
+
+A block inside an `If` or `For` can have blocks added to it (and keys changed in the form), but `tess_dl` has no edit that removes, moves or copies the entries of an `If` or `For`: those say so in the status line and change nothing; do them in the text view. An `If` or `For` itself can be removed or moved among its siblings when it is in a block. Undo and redo step through the file's states: a form edit, a structure edit and a run of typing in the text view are one step each, the selection comes back to what it was, and the toolbar's Undo and Redo are dimmed when there is nothing to undo or redo.
 
 ## What it keeps and what it never does
 

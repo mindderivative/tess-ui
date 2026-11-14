@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from tess_ui import App
+from tess_ui.listeners import handled
 
 from tess_shell_config.session import ConfigSession
 from tess_shell_config.shortcuts import Shortcuts
@@ -38,5 +39,7 @@ def build(session: ConfigSession, *, width: int = 1280, height: int = 800, dark:
     view = app.open_view("Main")
     window = app.show("main")
     viewmodel.shortcuts = shortcuts = Shortcuts(view, viewmodel)
+    # a right click anywhere in the Structure area opens the Structure menu (the Menu key and Shift+F10 do too: see `shortcuts.py`)
+    view._listen(view.node("root.panes.structure_pane"), "secondary_click", handled(lambda event: viewmodel.structure_actions.open_menu()))
     shortcuts.move_focus(1)  # a key press goes to the focused node, so the window starts with the focus in the Files area
     return Built(app, view, viewmodel, window, shortcuts)

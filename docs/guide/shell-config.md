@@ -34,3 +34,14 @@ The Form area shows the keys of the selected block, one row each, **generated en
 Things the toolkit made us do, which any big generated view meets: the view language redraws the whole window after a change, so the form builds only the groups that are open (a closed group is one header), the window is updated inside one `batch(...)`, and a commit that arrives while the form is being rebuilt (the old field losing its focus) is ignored.
 
 The icon, font, key-chord, list and token widgets are the toolkit's own: `IconPicker` (given the configuration folder's `Icons/` folder through the toolkit's file system), `FontList`, `KeyChordField`, `ListEditor` (given the schema's item kind, choices and range) and `TokenButton` (given the tokens of the groups a key accepts and its `preferred_tokens`). Each is a `widget:` call inside the cell of `Views/Main_View.yaml` and a handler that passes what it holds to `form_commit`.
+
+## Editing the structure (add, remove, move, duplicate, undo)
+
+| Part | Does |
+|---|---|
+| `blocks.py` | What a block may hold (`children_of`: the schema's `allowed_children`, then the shipped modules for a block that takes module calls) and what a new block is written as (`new_block_text`: the required keys, a unique `Name`, laid out by `tess_dl.format_block`) |
+| `model.py` | `add_block`, `remove_block`, `move_block`, `duplicate_block`: each is one `tess_dl` edit and one history state. The selection is followed across the edit as a place counted in blocks only (`tdl.ordinals`), because an edit can take a comment away with a block and shift every entry number after it |
+| `actions.py` | `StructureActions`: which actions the selection allows (the buttons and the menu are dimmed from it), the choice lists for Add and Move to, and the messages. A refused edit (`EditError`) is shown in the status line and changes nothing |
+| `shortcuts.py` | Ctrl+Shift+N, Delete, Alt+Up and Down, Ctrl+Shift+M, Ctrl+Shift+D, the Menu key and Shift+F10; a right click in the Structure area is wired in `app.py` |
+
+Two things any editor over a lossless tree meets. A selection kept as an index path is wrong after an edit that removes a block together with the comment on its line (every later entry number is one or two lower), so the model keeps it as a count of blocks, `If`s and `For`s only and converts it back with `Document.at`'s paths. And a block moved or copied as text carries its original indentation on every line after the first, while `Block.with_child` adds the new place's indentation to every line, so the text is dedented first.

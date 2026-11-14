@@ -36,10 +36,22 @@ children:
       - widget: Container
         name: structure_pane
         a11y: {role: group, label: Structure}
-        style: {flex_direction: vertical, width: 230, gap: 4, background: surface_container_low, corner_radius: 12, padding: 8}
+        style: {flex_direction: vertical, width: 270, gap: 4, background: surface_container_low, corner_radius: 12, padding: 8}
         children:
           - {widget: Text, name: structure_heading, text: Structure, typography_role: title_small}
           - {widget: Text, name: selection_text, text: "{{ selected_label }}", typography_role: body_small, max_lines: 1, overflow: ellipsis, style: {foreground: on_surface_variant}}
+          - widget: Container
+            name: structure_actions
+            a11y: {role: group, label: Structure actions}
+            style: {flex_direction: horizontal, align_content: left, gap: 0, width: 100%}
+            children:
+              - {widget: IconButton, name: add_button, icon: add, size: xs, label: "Add a child block (Ctrl+Shift+N)", disabled: "{{ not can_add }}", handlers: {on_click: structure_add}}
+              - {widget: IconButton, name: remove_button, icon: delete, size: xs, label: "Remove the block (Delete)", disabled: "{{ not can_remove }}", handlers: {on_click: structure_remove}}
+              - {widget: IconButton, name: up_button, icon: arrow_up, size: xs, label: "Move the block up (Alt+Up)", disabled: "{{ not can_move_up }}", handlers: {on_click: structure_move_up}}
+              - {widget: IconButton, name: down_button, icon: arrow_down, size: xs, label: "Move the block down (Alt+Down)", disabled: "{{ not can_move_down }}", handlers: {on_click: structure_move_down}}
+              - {widget: IconButton, name: move_button, icon: folder, size: xs, label: "Move the block into another block (Ctrl+Shift+M)", disabled: "{{ not can_move_to }}", handlers: {on_click: structure_move_to}}
+              - {widget: IconButton, name: duplicate_button, icon: content_copy, size: xs, label: "Duplicate the block (Ctrl+Shift+D)", disabled: "{{ not can_duplicate }}", handlers: {on_click: structure_duplicate}}
+              - {widget: IconButton, name: menu_button, icon: dots_vertical, size: xs, label: "Structure menu (Menu key)", disabled: "{{ not has_tree }}", handlers: {on_click: structure_menu}}
           - widget: Text
             name: structure_off
             if: "has_file and not has_tree"
@@ -339,6 +351,15 @@ children:
     children:
       - {widget: Icon, name: status_icon, if: status_is_error, icon: error, style: {width: 18, height: 18, foreground: error}}
       - {widget: Text, name: status_text, text: "{{ status }}", typography_role: body_small, a11y: {live: polite}, style: {flex: expand_horizontal, min_width: 0, foreground: "{{ 'error' if status_is_error else 'on_surface_variant' }}"}}
+  - widget: Menu
+    name: structure_menu
+    open: "{{ menu_open }}"
+    anchor: structure_actions
+    items: "{{ menu_items }}"
+    chosen: "{{ menu_chosen }}"
+    focus_first: true
+    width: 260
+    on_pick: "structure_command(menu_chosen)"
   - widget: Dialog
     name: picker
     if: picker_open

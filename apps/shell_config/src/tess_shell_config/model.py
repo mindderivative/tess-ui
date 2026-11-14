@@ -14,18 +14,25 @@ from pathlib import Path
 from typing import Any
 
 import tess_dl
-from tess_dl import Block, Document, For, If
+from tess_dl import Block, Document, For, If, String, Word
 from tess_shell_config.files import display_text, encode, is_utf8
 from tess_shell_config.tdl import (
     IndexPath,
     Mark,
     Node,
+    OrdPath,
     Parsed,
     child_entries,
     child_named,
-    node_source,
+    dedented_source,
+    from_ordinals,
+    is_node,
+    ordinals,
     parse_text,
+    properties_of,
+    walk,
 )
+from tess_shell_config.values import quote
 
 __all__ = ["EditError", "Snapshot", "DocumentModel"]
 
@@ -205,19 +212,47 @@ class DocumentModel:
     def add_block(self, parent: IndexPath, block_text: str, index: int | None = None, *, select: bool = False) -> IndexPath:
         """Add the block written in `block_text` to the block at `parent`, at entry `index` (`None`: last). Returns the new block's index path. The selection stays on the block
         that was selected, followed to its new path when the new block lands before it; `select=True` selects the new block instead."""
+        return self._insert(parent, lambda block: block.with_child(block_text, index), select)
+
+    def duplicate_block(self, path: IndexPath, *, select: bool = False) -> IndexPath:
+        """Copy the block at `path` (its text as written) and insert the copy after it. A block with a `Name:` gets a name no other block of the file has (`Top_Bar` -> `Top_Bar_Copy`,
+        then `Top_Bar_Copy_2`), so names stay unique; it is one edit, so one undo step. The selection stays where it was (`select=True` selects the copy). Returns the copy's path."""
+        path = tuple(path)
+        if not path:
+            raise EditError("The root block cannot be duplicated.")
+        document = self._need_document()
+        parent = self._need_at(document, path[:-1])
+        if not isinstance(parent, Block):
+            raise EditError("A block inside an If or For cannot be copied from the structure; copy it in the text view.")
+        child = self._need_at(document, path)
+        if not isinstance(child, Block):
+            raise EditError("An If or For cannot be copied from the structure; copy it in the text view.")
+        source = dedented_source(document, child)
+        renamed = _copy_name(document, child)
+
+        def build(block: Block) -> tuple[Document, Block]:
+            copied, added = block.with_child(source, path[-1] + 1)
+            return (added.with_property("Name", renamed), added) if renamed is not None else (copied, added)
+
+        return self._insert(path[:-1], build, select)
+
+    def _insert(self, parent: IndexPath, build: Any, select: bool) -> IndexPath:
+        """One edit that inserts a block into the block at `parent`: `build(block)` gives the new document and the added block. The selection follows its block; `select` selects the new one."""
         block = self._need_block(parent)
-        parent = tuple(parent)
         results: list[IndexPath] = []
 
         def make() -> Document:
-            document, added = block.with_child(block_text, index)
+            document, added = build(block)
             results.append(added.index_path)
             return document
 
-        selection = self.selection
+        selection = self._ordinal_selection()
         self._edit(make, selection=None)
         new = results[0]
-        self._history[self._at] = replace(self.snapshot, selection=new if select else _after_insert(selection, new))
+        document = self.document
+        assert document is not None
+        new_ords = ordinals(document, new)
+        self._keep(new_ords if select else _ord_after_insert(selection, new_ords))
         return new
 
     def remove_block(self, path: IndexPath) -> IndexPath:
@@ -230,8 +265,26 @@ class DocumentModel:
         if not isinstance(parent, Block):
             raise EditError("A block inside an If or For is removed in the text view; the structure edits work on the blocks of a block.")
         child = self._need_at(document, path)
-        self._edit(lambda: parent.without_child(child), selection=_after_remove(self.selection, path))
+        selection = _ord_after_remove(self._ordinal_selection(), ordinals(document, path))
+        self._edit(lambda: parent.without_child(child), selection=None)
+        self._keep(selection)
         return path[:-1]
+
+    def neighbour(self, path: IndexPath, step: int) -> int | None:
+        """The entry index of the block, `If` or `For` before (`step` -1) or after (1) the one at `path` in its parent; properties and comments between are not places. `None` when there is none, or the parent is an `If` or `For`."""
+        path = tuple(path)
+        if not path:
+            return None
+        parent = self._need_at(self._need_document(), path[:-1])
+        if not isinstance(parent, Block):
+            return None
+        entries = child_entries(parent)
+        i = path[-1] + step
+        while 0 <= i < len(entries):
+            if is_node(entries[i]):
+                return i
+            i += step
+        return None
 
     def move_block(self, path: IndexPath, to_parent: IndexPath | None = None, index: int | None = None, *, select: bool = False) -> IndexPath:
         """Move the block at `path` to entry `index` of the block at `to_parent` (`None`: its own parent; `index` `None`: last). Within one parent this is `Block.move_child`; to
@@ -245,7 +298,8 @@ class DocumentModel:
         target_path = parent_path if to_parent is None else tuple(to_parent)
         parent = self._need_block(parent_path)
         child = self._need_at(document, path)
-        selection = self.selection
+        selection = self._ordinal_selection()
+        old_ords = ordinals(document, path)
         new_path: list[IndexPath] = []
         if target_path == parent_path:
             entries = child_entries(parent)
@@ -254,33 +308,36 @@ class DocumentModel:
                 raise EditError(f"There is no place {to} in {tuple(parent_path) or 'the root block'} to move it to.")
 
             def within() -> Document:
-                new_path.append((*parent_path, to))
-                return parent.move_child(child, to)
+                moved = parent.move_child(child, to)
+                new_path.append(_find_moved(moved, parent_path, child, document, to))
+                return moved
 
             self._edit(within, selection=None)
-            followed = _after_reorder(selection, path, to)
+            moved_ords = ordinals(self._need_document(), new_path[0])
+            followed = _ord_after_reorder(selection, old_ords, moved_ords)
         else:
             if target_path[: len(path)] == path:
                 raise EditError("A block cannot be moved into itself.")
             if not isinstance(child, Block):
                 raise EditError("An If or For can be moved only inside its own block.")
             self._need_block(target_path)
-            source = node_source(document, child)
-            shifted = _after_remove(target_path, path)  # the target's own path once the block has left its old place
+            source = dedented_source(document, child)
+            target_ords = _ord_after_remove(ordinals(document, target_path), old_ords)  # the target's own place once the block has left its old one
 
             def across() -> Document:
                 without = parent.without_child(child)
-                added_document, added = without.at(tuple(shifted or ())).with_child(source, index)  # type: ignore[union-attr]
+                target = from_ordinals(without, target_ords or ())
+                added_document, added = without.at(target or ()).with_child(source, index)  # type: ignore[union-attr]
                 new_path.append(added.index_path)
                 return added_document
 
             self._edit(across, selection=None)
-            moved = new_path[0]
-            if selection is not None and selection[: len(path)] == path:
-                followed = (*moved, *selection[len(path):])  # a selection in the moved block goes with it
+            moved_ords = ordinals(self._need_document(), new_path[0])
+            if selection is not None and selection[: len(old_ords)] == old_ords:
+                followed = (*moved_ords, *selection[len(old_ords):])  # a selection in the moved block goes with it
             else:
-                followed = _after_insert(_after_remove(selection, path), moved)
-        self._history[self._at] = replace(self.snapshot, selection=new_path[0] if select else self._kept(Parsed(self.text, self.document, ()), followed))
+                followed = _ord_after_insert(_ord_after_remove(selection, old_ords), moved_ords)
+        self._keep(moved_ords if select else followed)
         return new_path[0]
 
     def set_metadata(self, key: str, value_text: str) -> None:
@@ -360,6 +417,21 @@ class DocumentModel:
             raise EditError("That is an If or For, which holds blocks but has no keys of its own.")
         return found
 
+    def _ordinal_selection(self) -> OrdPath | None:
+        """The selection counted in blocks, so it can be followed across an edit that takes comments away with a block."""
+        document, selection = self.document, self.selection
+        return ordinals(document, selection) if document is not None and selection is not None else None
+
+    def _keep(self, selection: OrdPath | None) -> None:
+        """Put the selection (counted in blocks) in the current state, as an index path in its tree; the nearest ancestor that exists when it does not."""
+        document = self.document
+        assert document is not None
+        found = from_ordinals(document, selection) if selection is not None else ()
+        while found is None and selection:
+            selection = selection[:-1]
+            found = from_ordinals(document, selection)
+        self._history[self._at] = replace(self.snapshot, selection=found if found is not None else ())
+
     def _kept(self, parsed: Parsed, selection: IndexPath | None) -> IndexPath | None:
         """`selection` in the new tree: the same path when it still points at a node, else the nearest ancestor that does; `None` without a tree."""
         if parsed.document is None:
@@ -372,8 +444,33 @@ class DocumentModel:
         return path
 
 
-def _after_insert(selection: IndexPath | None, new: IndexPath) -> IndexPath | None:
-    """`selection` once a block was inserted at `new`: a selection below a later (or the same) entry of that parent moves down one."""
+def block_names(document: Document) -> set[str]:
+    """Every `Name` in the file, without regard to case: the names a new or copied block must not take."""
+    return {n.name.lower() for n in walk(document.root) if isinstance(n, Block) and n.name}
+
+
+def unique_name(base: str, taken: set[str]) -> str:
+    """`base` when no block has it, else `base_2`, `base_3`..."""
+    if base.lower() not in taken:
+        return base
+    number = 2
+    while f"{base}_{number}".lower() in taken:
+        number += 1
+    return f"{base}_{number}"
+
+
+def _copy_name(document: Document, block: Block) -> str | None:
+    """The `Name` text for a copy of `block` (`Top_Bar_Copy`, `Top_Bar_Copy_2`), written the way the original writes its name; `None` when it has no name, or one that is not a word or a string."""
+    prop = properties_of(block).get("Name")
+    if prop is None or not isinstance(prop.value, (Word, String)):
+        return None
+    base = block.name or ""
+    name = unique_name(base + "_Copy", block_names(document))
+    return quote(name) if isinstance(prop.value, String) else name
+
+
+def _ord_after_insert(selection: OrdPath | None, new: OrdPath) -> OrdPath | None:
+    """`selection` (counted in blocks) once a block was inserted at `new`: a selection below a later (or the same) entry of that parent moves down one."""
     if selection is None:
         return None
     at = len(new) - 1
@@ -382,8 +479,8 @@ def _after_insert(selection: IndexPath | None, new: IndexPath) -> IndexPath | No
     return selection
 
 
-def _after_remove(selection: IndexPath | None, removed: IndexPath) -> IndexPath | None:
-    """`selection` once the entry at `removed` is gone: on it or below it, the parent; below a later entry of that parent, up one; otherwise unchanged."""
+def _ord_after_remove(selection: OrdPath | None, removed: OrdPath) -> OrdPath | None:
+    """`selection` once the block at `removed` is gone: on it or below it, the parent; below a later entry of that parent, up one; otherwise unchanged."""
     if selection is None:
         return None
     if selection[: len(removed)] == removed:
@@ -394,14 +491,14 @@ def _after_remove(selection: IndexPath | None, removed: IndexPath) -> IndexPath 
     return selection
 
 
-def _after_reorder(selection: IndexPath | None, old: IndexPath, to: int) -> IndexPath | None:
-    """`selection` once the entry at `old` moved to index `to` of the same parent (as `list.insert` after `list.pop`): the entries between shift by one, the moved one and what is below it follow."""
+def _ord_after_reorder(selection: OrdPath | None, old: OrdPath, new: OrdPath) -> OrdPath | None:
+    """`selection` once the block at `old` moved to `new` in the same parent (as `list.insert` after `list.pop`): the blocks between shift by one, the moved one and what is below it follow."""
     if selection is None:
         return None
     at = len(old) - 1
     if len(selection) <= at or selection[:at] != old[:at]:
         return selection
-    start, here = old[at], selection[at]
+    start, to, here = old[at], new[at], selection[at]
     if here == start:
         shifted = to
     elif start < here <= to:
@@ -411,6 +508,16 @@ def _after_reorder(selection: IndexPath | None, old: IndexPath, to: int) -> Inde
     else:
         shifted = here
     return (*selection[:at], shifted, *selection[at + 1:])
+
+
+def _find_moved(document: Document, parent_path: IndexPath, child: object, before: Document, to: int) -> IndexPath:
+    """The index path, in `document` (after `Block.move_child(child, to)`), of the moved entry: the one in the same parent with the same text that lies nearest to `to`."""
+    parent = document.at(parent_path)
+    text = before.text[child.start:child.end].strip()  # type: ignore[attr-defined]
+    found = [i for i, entry in enumerate(child_entries(parent)) if is_node(entry) and document.text[entry.start:entry.end].strip() == text]  # type: ignore[arg-type, attr-defined]
+    if not found:
+        raise EditError("The moved block was not found after the move.")
+    return (*parent_path, min(found, key=lambda i: abs(i - to)))
 
 
 def _why(error: tess_dl.TDLError) -> str:

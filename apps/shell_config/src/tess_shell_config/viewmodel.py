@@ -13,6 +13,7 @@ from tess_ui import Effect, Signal, ViewModel, batch, untrack
 
 from tess_shell_config.files import SaveError
 from tess_shell_config.folder import FileType
+from tess_shell_config.actions import StructureActions
 from tess_shell_config.formcontrol import FormController
 from tess_shell_config.model import DocumentModel, EditError
 from tess_shell_config.session import ConfigSession
@@ -56,6 +57,7 @@ class ShellConfigViewModel(ViewModel):
         self._known_branches: set[str] = set()
         self.shortcuts: Any = None  # a `Shortcuts`, set by `build`, which has the view to move the focus in
         self.form = FormController(self)  # the form's Signals and handlers (`form_*`, `picker_*`, `file_*`) are put on this ViewModel
+        self.structure_actions = StructureActions(self)  # the Structure area's actions (`structure_*`, `can_*`, `menu_*`)
         self._effects = [Effect(self._file_picked), Effect(self._structure_picked)]
         self.refresh_files()
 
@@ -126,6 +128,7 @@ class ShellConfigViewModel(ViewModel):
             return
         self._describe_selection(model)
         self.form.refresh()
+        self.structure_actions.refresh()
 
     # -- the Text area -----------------------------------------------------------------------------------------------------------
 
@@ -202,7 +205,14 @@ class ShellConfigViewModel(ViewModel):
 
     def _show(self, model: DocumentModel, *, new_file: bool, set_text: bool | None = None, refresh_form: bool = True) -> None:
         """Bring every Signal in step with the model, in one batch so the window is composed once. The text is written back to the editor only when the model changed it (a new file, undo, format), never while the person types."""
-        batch(lambda: self._show_now(model, new_file=new_file, set_text=set_text, refresh_form=refresh_form))
+        form = self.form
+        focused = form._focused()  # the form field that holds the focus: its row is built again from the file, and the focus goes back to the same field of the new row
+        held, form._busy = form._busy, True  # a field that loses its focus in the process is not a commit of what it held
+        try:
+            batch(lambda: self._show_now(model, new_file=new_file, set_text=set_text, refresh_form=refresh_form))
+        finally:
+            form._busy = held
+        form._restore(focused)
 
     def _show_now(self, model: DocumentModel, *, new_file: bool, set_text: bool | None, refresh_form: bool) -> None:
         if new_file or set_text:
@@ -245,6 +255,7 @@ class ShellConfigViewModel(ViewModel):
         self.dirty.set(model.dirty)
         self.can_undo.set(model.can_undo)
         self.can_redo.set(model.can_redo)
+        self.structure_actions.refresh()
 
     def _say(self, message: str, *, error: bool = False) -> None:
         self.status.set(message)

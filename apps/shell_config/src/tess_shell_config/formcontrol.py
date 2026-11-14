@@ -42,6 +42,7 @@ class FormController:
         self.files = FileDialogRequest(viewmodel)
         self._picking: tuple[str, str, str] | None = None  # (what, cell id, the number typed beside a unit choice)
         self._busy = False
+        self._hooks: dict[str, Any] = {}
         for name, signal in {"form_items": self.items, "form_notes": self.notes, "form_title": self.title, "picker_open": self.picker_open, "picker_title": self.picker_title,
                              "picker_items": self.picker_items, "picker_current": self.picker_current}.items():
             setattr(viewmodel, name, signal)
@@ -190,13 +191,24 @@ class FormController:
         self.picker_current.set(current)
         self.picker_open.set(True)
 
+    def open_choice(self, what: str, title: str, options: list[dict[str, str]], current: str = "", hooks: dict[str, Any] | None = None) -> None:
+        """Open the choice list for an action that is not a form cell (the Structure area's Add and Move to): `hooks[what](value)` is called with the value of the row the person picks."""
+        self._hooks = hooks or {}
+        self._open_picker(what, "", title, options, current)
+
     def pick_option(self, value: str) -> None:
         """The person chose a row of the picker list."""
         picking, self._picking = self._picking, None
         self.picker_open.set(False)
-        if picking is None or self.form is None:
+        if picking is None:
             return
         what, cell_id, number = picking
+        hook = self._hooks.get(what)
+        if hook is not None:
+            hook(str(value))
+            return
+        if self.form is None:
+            return
         if what == "choice":
             self._done(self.form.commit(cell_id, {"value": str(value)}))
         elif what == "unit":
