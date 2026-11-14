@@ -45,3 +45,12 @@ Every slot, condition and handler text in the 110 shipped view and stylesheet fi
 | `handlers:` | 107 | **0** | 107 | TEL is expression-only: `open = not open`, `n = n + 1; cmd = ...`, `a(); b()` are assignments and statement sequences, which TEL refuses |
 
 Reading: slots and conditions are practically compatible (99%, the rest needing the built-in functions registered). **Handlers are the gap.** tess-ui handlers are small statements (assign, sequence, call). Moving to TEL needs a decision: a handler language of its own on top of TEL (assignment targets plus `;`), TEL growing an assignment/sequence form, or rewriting handlers as calls to named actions on the ViewModel. This is the main design question for the switch.
+
+## Handlers as TDL step blocks (`Set { Target, Value }`, `Call { Action, args }`), values as TEL (checked 2026-11-14)
+All `handlers:` texts of the 110 shipped view and stylesheet files (113 unique event/text pairs) were parsed as Python statements and mapped to steps, then each step's value expression was compiled with `tess_el.compile_expression`.
+
+- **113 of 113 convert**; none needs a loop, a conditional statement or anything but assignment and calls. 180 steps in all.
+- **Targets are plain names in all 144 assignments** (no attribute or subscript targets), so `Target` can be a plain name.
+- **0 value expressions fail in TEL** (including conditional expressions such as `x if c else y`, and `event.key == 'space'`).
+- Call steps: the callee (`on_toggle`, `surface.dismiss`) is not an expression TEL evaluates; it is checked by tess-ui against the ViewModel and its built-in actions, as today. Only the arguments go to TEL.
+- Not checked: how `event` and loop variables are scoped in a step's TEL expression; the order of writes inside one handler (a later step reads an earlier step's write, as in `n = n + 1; cmd = str(n)`), which needs a stated rule: each step sees the writes of the earlier ones.
