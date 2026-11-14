@@ -862,6 +862,11 @@ _SHEET = re.compile(r"^(.+)_Stylesheet\.yaml$")
 _OTHER = re.compile(r"^.+_(Theme|Component)\.yaml$")
 
 
+def _is_theme(name: str) -> bool:
+    """A theme file: `*_Theme.yaml` and Tesserae's own `default_theme.yaml` (converted by `migrate_tdl_theme`)."""
+    return name.endswith("_Theme.yaml") or name == "default_theme.yaml"
+
+
 @dataclass
 class FileResult:
     """What one file becomes. `status`: `converted`, `current` (its `.tdl` is already what the conversion writes), `skipped` or `failed`."""
@@ -969,14 +974,20 @@ def migrate_tdl(path: str | Path, *, write: bool = False, remove_source: bool = 
         root = path.parent
     else:
         root = path
-        found = sorted(p for p in _files(root, "*.yaml") if _VIEW.match(p.name) or _SHEET.match(p.name) or _OTHER.match(p.name))
+        found = sorted(p for p in _files(root, "*.yaml") if _VIEW.match(p.name) or _SHEET.match(p.name) or _OTHER.match(p.name) or _is_theme(p.name))
     resolver: Callable[[str], WidgetDecl | None] | None = None
     for file in found:
         match = _VIEW.match(file.name)
         sheet = None if match else _SHEET.match(file.name)
         if match is None and sheet is None:
+            if _is_theme(file.name):
+                from tess_ui.migrate_tdl_theme import theme_result  # a module of its own (piece 5)
+
+                result = theme_result(file, root)
+                report.results.append(result)
+                continue
             if _OTHER.match(file.name):
-                report.results.append(FileResult(file, "skipped", error="a theme or component: only views and stylesheets are converted so far"))
+                report.results.append(FileResult(file, "skipped", error="a component: only views, stylesheets and themes are converted so far"))
             else:
                 raise ValueError(f"{file.name} is not a *_View.yaml or *_Stylesheet.yaml file")
             continue

@@ -492,16 +492,16 @@ def test_a_file_that_fails_is_reported_with_its_line_and_the_others_are_still_wr
     assert "1 failed" in report.render(tmp_path)
 
 
-def test_themes_and_components_are_skipped_with_a_note_and_stylesheets_are_converted(tmp_path):
+def test_components_are_skipped_with_a_note_and_stylesheets_and_themes_are_converted(tmp_path):  # stylesheets since piece 4, themes since piece 5
     make_project(tmp_path, {"A_Stylesheet.yaml": "tesserae: 0.6\nstyles: []\n", "B_Theme.yaml": "tesserae: 0.6\nseed: blue\n",
                             "C_Component.yaml": "kind: Text\n", "notes.yaml": "a: 1\n", "D_View.yaml": BUTTON})
     report = migrate_tdl(tmp_path, write=True)
     assert [(r.path.name, r.status) for r in report.results] == [
-        ("A_Stylesheet.yaml", "converted"), ("B_Theme.yaml", "skipped"), ("C_Component.yaml", "skipped"), ("D_View.yaml", "converted")]
-    assert all("only views and stylesheets are converted" in (r.error or "") for r in report.results[1:3])
+        ("A_Stylesheet.yaml", "converted"), ("B_Theme.yaml", "converted"), ("C_Component.yaml", "skipped"), ("D_View.yaml", "converted")]
+    assert "only views, stylesheets and themes are converted" in (report.results[2].error or "")
     assert sorted(p.name for p in tmp_path.iterdir()) == sorted(
-        ["A_Stylesheet.yaml", "A_Stylesheet.tdl", "B_Theme.yaml", "C_Component.yaml", "notes.yaml", "D_View.yaml", "D_View.tdl"])
-    assert "2 skipped" in report.render(tmp_path) and migrate_tdl(tmp_path / "B_Theme.yaml").results[0].status == "skipped"
+        ["A_Stylesheet.yaml", "A_Stylesheet.tdl", "B_Theme.yaml", "B_Theme.tdl", "C_Component.yaml", "notes.yaml", "D_View.yaml", "D_View.tdl"])
+    assert "1 skipped" in report.render(tmp_path) and migrate_tdl(tmp_path / "C_Component.yaml").results[0].status == "skipped"
 
 
 def test_a_single_file_is_converted_and_a_file_of_another_kind_is_refused(tmp_path):
