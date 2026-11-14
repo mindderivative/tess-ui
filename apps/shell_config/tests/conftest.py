@@ -23,8 +23,20 @@ real_session.ensure()
 HERE = Path(__file__).resolve().parent
 FIXTURES = HERE / "fixtures"
 
-if importlib.util.find_spec("tess_dl") is None or sys.platform == "win32":
-    collect_ignore_glob = ["test_*.py"]
+UNAVAILABLE = importlib.util.find_spec("tess_dl") is None or sys.platform == "win32"
+if UNAVAILABLE:
+    collect_ignore_glob = ["test_*.py"]  # a directory run; a file named on the command line (CI's partial run) is not ignored, so the hook below skips it
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_make_collect_report(collector):
+    """A test module of the application that cannot be imported here (no `tess_dl`: it needs Python 3.14; Windows is not run) is skipped, not an error."""
+    outcome = yield
+    report = outcome.get_result()
+    path = getattr(collector, "path", None)
+    if UNAVAILABLE and report.failed and path is not None and HERE in Path(path).parents:
+        report.outcome = "skipped"
+        report.longrepr = (str(path), 0, "Skipped: the Configuration Application needs tess_dl (Python 3.14) and is not run on Windows")
 
 
 @pytest.fixture(scope="session")
