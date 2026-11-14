@@ -263,7 +263,7 @@ def _read(value: Any) -> Any:
     """A value as an expression reads it: a `Signal` or `Computed` as what it holds, an object of the application's as a `_Host`."""
     if isinstance(value, (Signal, Computed)):
         value = value.get()
-    if isinstance(value, _PLAIN) or isinstance(value, _DENIED) or callable(value):
+    if isinstance(value, (*_PLAIN, *_DENIED)) or callable(value):
         return value
     return _Host(value)
 
@@ -339,7 +339,7 @@ class TelExpr:
     def is_reactive(self, scope: Any) -> bool:
         """Whether any name it reads is reactive in `scope` (conservative: a name that may hold a Signal counts)."""
         check = getattr(scope, "is_reactive", None)
-        return bool(check) and any(check(name) for name in self.names)
+        return check is not None and any(check(name) for name in self.names)
 
     def evaluate(self, scope: Any, *, event: Any = MISSING) -> Any:
         """The value, with Signals read as their values. Raises `ExprError`."""
