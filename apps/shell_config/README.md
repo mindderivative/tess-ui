@@ -2,7 +2,7 @@
 
 `tesserae-shell-config` is the graphical editor for the files of [Tesserae Shell](https://github.com/mindderivative): the shell files, modules, styles, stylesheets, themes and `settings.tdl` in the shell's configuration folder. It is built on Tesserae UI and edits the `.tdl` files in place, so comments, blank lines, order and everything you did not touch stay byte for byte as you wrote them.
 
-This is the third part of the application: the window with the Files, Structure, Form and Text areas, opening and saving, the form for a block's keys, and adding, removing, moving and duplicating blocks with undo and redo. The problems list from `check`, the file watch, and the stylesheet pages come later.
+This is the fourth part of the application: the window with the Files, Structure, Form, Text and Problems areas, opening and saving, the form for a block's keys, adding, removing, moving and duplicating blocks with undo and redo, `check` and its problems list, "Apply as I edit", the file watch and the shell's status. The stylesheet pages come later.
 
 ## Install and start
 
@@ -23,15 +23,20 @@ Without the `tesserae-shell` command, or with a schema whose major version the a
 |---|---|---|
 | Files | The folder's files by type, read from each file's root block: Shells, Modules, Styles, Stylesheets, Themes, Settings | Enter on a file opens it. A file with syntax errors or unsaved changes says so in words |
 | Structure | The open file's blocks as a tree, with `If` and `For` as labelled nodes (an `If` with an `Else` shows the else body under an `Else` node) | Choosing a row selects that block. Add a child, remove, move up or down, move into another block, duplicate (buttons above the tree, a menu, shortcuts; see below) |
+| Problems | The findings of the last `check` (below the three areas): an icon and a word (Error, Warning, Note), `file:line:column`, the message and what to write instead. A message row says when `check` did not run | Click a finding, or Tab to it and press Enter: its file opens, the block it points at is selected and the key's widget in the Form has the focus |
 | Text | The file as TDL | Edit it by hand; the structure follows when the text parses. A file with syntax errors is edited here only, with its errors listed (line, column, what is wrong, what to write) |
 
-The toolbar has Save, Undo, Redo and Format file (formatting is never done unless you press it). Everything works from the keyboard:
+The toolbar has Save, Undo, Redo, Format file (formatting is never done unless you press it), Check, Reload shell and the switch Apply as I edit. Everything works from the keyboard:
 
 | Keys | Does |
 |---|---|
 | Tab, Shift+Tab | Move through the toolbar, the Files tree, the Structure tree and the text |
 | Arrow keys, Enter | Move in a tree, open or select the row |
-| F6, Shift+F6 | Move to the next or previous area (the way out of the text editor, which takes Tab itself) |
+| F6, Shift+F6 | Move to the next or previous area (the way out of the text editor, which takes Tab itself); Problems is one of them while it lists something |
+| F5 | Run `check` on the folder |
+| Ctrl+Shift+R | Ask the running shell to reload (the Reload shell button) |
+| Ctrl+Shift+A | Switch Apply as I edit on or off |
+| Ctrl+Shift+L, Ctrl+Shift+U | A file changed on disk: reload it from disk, or keep your version (use it) |
 | Ctrl+S | Save |
 | Ctrl+Z, Ctrl+Y (or Ctrl+Shift+Z) | Undo, redo |
 | Ctrl+Shift+N | Add a child to the selected block |
@@ -79,13 +84,21 @@ The row of buttons above the Structure tree, the Structure menu and the shortcut
 
 A block inside an `If` or `For` can have blocks added to it (and keys changed in the form), but `tess_dl` has no edit that removes, moves or copies the entries of an `If` or `For`: those say so in the status line and change nothing; do them in the text view. An `If` or `For` itself can be removed or moved among its siblings when it is in a block. Undo and redo step through the file's states: a form edit, a structure edit and a run of typing in the text view are one step each, the selection comes back to what it was, and the toolbar's Undo and Redo are dimmed when there is nothing to undo or redo.
 
+## Check, saving and the shell
+
+- **Check.** `tesserae-shell check --json --config-dir <folder>` runs on a worker thread (10 s timeout) after each save, on F5 or the Check button, and the window never waits for it. A check that cannot run or does not answer in time is one message in the list and editing goes on. The check reads the files on disk, so findings are for what is saved; clicking one in a file with unsaved changes says the place may have moved. A file with syntax errors opens in the text view with its errors (there is no structure to select in).
+- **Save.** Save writes the open file (atomic, with the first-save backup), then runs `check`. A failed save (a read-only folder, a full disk) leaves the old file whole, keeps your changes in the window and names the cause.
+- **Apply as I edit.** A switch in the toolbar, kept in the application's state folder (`settings.json`), off at first. On, each commit (a form value, a structure edit, undo, redo, format) is written at once, typing in the text view once it rests for 200 ms and only when it parses; each write runs `check`. Off, nothing is written until you save.
+- **The shell.** The status line says `Shell: running (Top_Bar shown)`, `not running` or `unknown`, from `tesserae-shell status --json`, asked at the start and after each save. After a save the application asks the shell to `reload` only when it is running and Apply as I edit is on; the Reload shell button (enabled while it is running) asks it at any time, for saved files. With no shell running everything else still works.
+- **A file changed by another program.** The folder is watched (`watchfiles`, on a worker thread). When the open file's content on disk is not what this application last read or wrote, a banner asks **Reload** (take the disk's version, your unsaved changes for that file are dropped and its undo history starts over) or **Keep mine** (the next save replaces the disk's). The application's own saves never ask. A save over a file that changed is refused until you choose, even when the watch was late, so nothing is overwritten silently.
+
 ## What it keeps and what it never does
 
 - Opening a file and saving it without a change leaves it byte for byte the same (a byte order mark, CRLF or a missing final newline included).
-- A save writes a temporary file in the same folder and renames it over the old one, so a refused write or a full disk leaves the old file whole, and the message names the cause.
+- A save writes a temporary file in the same folder and renames it over the old one, so a refused write or a full disk leaves the old file whole, and the message names the cause. It never writes over a file another program changed since it was read or written here.
 - Before the first save of a file in a session, its old content is copied to `backups/` in the application's own state folder (`$XDG_STATE_HOME/tesserae-shell-config`).
 - It reads and writes only inside the chosen folder and its own state folder.
 
 ## Development
 
-The application's tests are in `tests/` here and run in the repository's `pytest` run (they are skipped on a Python without `tess_dl`). They use a recorded schema (`tests/fixtures/schema.json`), the `tess_dl` corpus, the shell's shipped files and a fake `tesserae-shell` script written under `tmp_path`; the real shell and the real configuration folder are never touched, and the real-session guard of the repository's tests applies.
+The application's tests are in `tests/` here and run in the repository's `pytest` run (they are skipped on a Python without `tess_dl`). They use a recorded schema (`tests/fixtures/schema.json`, schema 1.2) and the recorded `check`, `status` and `version` answers (`tests/fixtures/recorded/`), the `tess_dl` corpus, the shell's shipped files and a fake `tesserae-shell` script written under `tmp_path` that prints those answers; the real shell and the real configuration folder are never touched, and the real-session guard of the repository's tests applies.

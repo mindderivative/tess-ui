@@ -11,11 +11,11 @@ from typing import Any
 
 from tess_ui import Effect, Signal, ViewModel, batch, untrack
 
-from tess_shell_config.files import SaveError
 from tess_shell_config.folder import FileType
 from tess_shell_config.actions import StructureActions
 from tess_shell_config.formcontrol import FormController
 from tess_shell_config.model import DocumentModel, EditError
+from tess_shell_config.services import Services
 from tess_shell_config.session import ConfigSession
 from tess_shell_config.structure import ancestors, label_of, nodes_for, path_of, value_of
 from tess_shell_config.tdl import Node
@@ -58,6 +58,7 @@ class ShellConfigViewModel(ViewModel):
         self.shortcuts: Any = None  # a `Shortcuts`, set by `build`, which has the view to move the focus in
         self.form = FormController(self)  # the form's Signals and handlers (`form_*`, `picker_*`, `file_*`) are put on this ViewModel
         self.structure_actions = StructureActions(self)  # the Structure area's actions (`structure_*`, `can_*`, `menu_*`)
+        self.services = Services(self)  # check and the problems list, status, reload, Apply as I edit, the file watch (`problems`, `check_run`, `shell_state`, `disk_*`, ...)
         self._effects = [Effect(self._file_picked), Effect(self._structure_picked)]
         self.refresh_files()
 
@@ -144,6 +145,7 @@ class ShellConfigViewModel(ViewModel):
             self.text.set(model.display_text)
             return
         self._show(model, new_file=False)
+        self.services.edited(typing=True)
 
     def key_pressed(self, key: str, ctrl: bool, shift: bool, alt: bool) -> None:
         """Every key that reaches the window's root: the shortcuts (`shortcuts.py`) act on it, once `build` has attached them."""
@@ -153,40 +155,29 @@ class ShellConfigViewModel(ViewModel):
     # -- actions -----------------------------------------------------------------------------------------------------------------
 
     def save(self) -> None:
-        """Write the open file (a temporary file and a rename; the first save keeps the old content in the application's state folder)."""
-        model = self.session.model
-        if model is None:
-            self._say("There is no open file to save.", error=True)
-            return
-        if not model.dirty:
-            self._say(f"{model.relative} has no unsaved changes")
-            return
-        try:
-            self.session.save()
-        except SaveError as error:
-            self._say(str(error), error=True)
-            return
-        self._say(f"Saved {model.relative}")
-        self._flags(model)
-        self._relabel_files()
+        """Write the open file (a temporary file and a rename; the first save keeps the old content in the application's state folder), then check it. A file another program changed since is not overwritten."""
+        self.services.save()
 
     def sync(self) -> None:
         """The model changed by a structure edit (the form, a menu): bring the text, the structure, the selection and the flags in step with it."""
         model = self.session.model
         if model is not None:
             self._show(model, new_file=False, set_text=True)
+            self.services.edited()
 
     def undo(self) -> None:
         model = self.session.model
         if model is not None and model.undo():
             self._show(model, new_file=False, set_text=True)
             self._say("Undone")
+            self.services.edited()
 
     def redo(self) -> None:
         model = self.session.model
         if model is not None and model.redo():
             self._show(model, new_file=False, set_text=True)
             self._say("Redone")
+            self.services.edited()
 
     def format_file(self) -> None:
         """Run `tess_dl.format` on the open file. Never done unless asked."""
@@ -200,6 +191,7 @@ class ShellConfigViewModel(ViewModel):
             return
         self._show(model, new_file=False, set_text=True)
         self._say("Formatted")
+        self.services.edited()
 
     # -- showing the model -------------------------------------------------------------------------------------------------------
 

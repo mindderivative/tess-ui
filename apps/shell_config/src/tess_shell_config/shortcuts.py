@@ -6,7 +6,11 @@ focus is; the text editor takes Tab and the arrow keys itself, so a shortcut is 
 | Ctrl+S | Save the open file |
 | Ctrl+Z | Undo |
 | Ctrl+Y, Ctrl+Shift+Z | Redo |
-| F6, Shift+F6 | Move the focus to the next, or the previous, of the four areas: Files, Structure, Form, Text |
+| F6, Shift+F6 | Move the focus to the next, or the previous, of the areas: Files, Structure, Form, Text, and Problems when it lists something |
+| F5 | Run `check` on the folder (the Check button) |
+| Ctrl+Shift+R | Ask the running shell to reload (Reload shell) |
+| Ctrl+Shift+A | Switch "Apply as I edit" on or off |
+| Ctrl+Shift+L, Ctrl+Shift+U | The file changed on disk: reload it from disk (L), or use your version, Keep mine (U; Ctrl+K and Ctrl+J are the text editor's own) |
 | Ctrl+Shift+N | Add a child to the selected block (a list of the blocks the schema lets it hold) |
 | Delete (in the Structure tree), Ctrl+Shift+Delete | Remove the selected block |
 | Alt+Up, Alt+Down | Move the selected block up or down among its siblings |
@@ -25,10 +29,22 @@ from tess_shell_config.viewmodel import ShellConfigViewModel
 
 __all__ = ["REGIONS", "Shortcuts"]
 
+#: The form's widgets that take the keyboard focus, by the name they have in `Main_View.yaml`.
+_FOCUSABLE = ("switch", "choose", "field", "unit_button", "side_0", "colour_picker", "icon_picker", "font_list", "chord_field", "list_editor", "token_button")
+
 #: The structure actions that have a Ctrl+Shift+letter, by the letter.
 _STRUCTURE = {"n": "add", "m": "move_to", "d": "duplicate"}
 #: The four areas in the order F6 visits them: (the node that takes the focus, the pane it is in).
-REGIONS = (("files_tree", "files_pane"), ("structure_tree", "structure_pane"), ("form_pane", "form_pane"), ("editor", "text_pane"))
+REGIONS = (("files_tree", "files_pane"), ("structure_tree", "structure_pane"), ("form_pane", "form_pane"), ("editor", "text_pane"), ("problem_row", "problems_pane"))
+
+
+#: The Ctrl+Shift+letter shortcuts of the shell and disk actions, by the letter.
+_SERVICES: dict[str, Any] = {
+    "r": lambda services: services.reload_shell(),
+    "a": lambda services: services.apply_changed(not services.apply_on_edit.get()),
+    "l": lambda services: services.disk_reload(),
+    "u": lambda services: services.disk_keep(),
+}
 
 
 class Shortcuts:
@@ -57,6 +73,10 @@ class Shortcuts:
             self.viewmodel.redo()
         elif key == "f6" and not ctrl:
             self.move_focus(-1 if shift else 1)
+        elif key == "f5" and not ctrl and not shift:
+            self.viewmodel.services.request_check()
+        elif ctrl and shift and key in _SERVICES:
+            _SERVICES[key](self.viewmodel.services)
         else:
             return False
         return True
@@ -75,6 +95,11 @@ class Shortcuts:
                     return i
         return None
 
+    def keep_focus(self) -> None:
+        """Give the focus to the Files area when a rebuild of the window took it from every node (the keys go to the focused node, so with none the shortcuts would not be heard)."""
+        if not any(self._focused(inst.id) for inst in self.view.handle.composition.walk()):
+            self._focus(REGIONS[0][0])
+
     def _focused(self, node_id: str) -> bool:
         try:
             return bool(self.view.node(node_id).get("focused"))
@@ -92,6 +117,8 @@ class Shortcuts:
                 continue
             if name == "form_pane" and not getattr(self.viewmodel, "form_items").get():
                 continue
+            if name == "problem_row" and not self.viewmodel.services.has_problems.get():
+                continue
             self._focus(name)
             return
 
@@ -99,6 +126,27 @@ class Shortcuts:
         """Give the focus to the Structure tree's row `value` (after an edit rebuilt the rows: the block that moved is on a row of its own, and its row may be built by the next frame, so this tries now and once more after it)."""
         if not self._focus_row(value):
             self.view.window.after(0.0, lambda: self._focus_row(value))
+
+    def focus_form_key(self, key: str) -> None:
+        """Give the focus to the widget of the form row of `key` (its row may be built by the next frame only, so this tries now and once more after it)."""
+        if not self._focus_form_row(key):
+            self.view.window.after(0.0, lambda: self._focus_form_row(key))
+
+    def _focus_form_row(self, key: str) -> bool:
+        wanted = f"form_item[k:{key}#"
+        for inst in self.view.handle.composition.walk():
+            if wanted in inst.id and inst.name in _FOCUSABLE:
+                try:
+                    node = self.view.node(inst.id)
+                    node.focus()
+                except (KeyError, ValueError):
+                    continue
+                return True
+        return False
+
+    def focus_structure_selection(self) -> None:
+        """Give the focus to the Structure tree's selected row."""
+        self._focus("structure_tree")
 
     def _focus_row(self, value: str) -> bool:
         for inst in self.view.handle.composition.walk():
@@ -113,6 +161,11 @@ class Shortcuts:
             headers = [inst.id for inst in self.view.handle.composition.walk() if inst.name == "group_header"]
             if headers:
                 self.view.node(headers[0]).focus()
+            return
+        if name == "problem_row":
+            rows = [inst.id for inst in self.view.handle.composition.walk() if inst.name == "problem_row"]
+            if rows:
+                self.view.node(rows[0]).focus()
             return
         if not name.endswith("_tree"):
             self.view.focus(None, name)

@@ -13,7 +13,8 @@ It is its own package (`tesserae-shell-config`, import `tess_shell_config`, comm
 | `shell.py` | Runs `tesserae-shell schema`, `check` and `status` as short-lived subprocesses with a timeout, off the UI thread (`Offload` posts the answer to the loop with `app.thread_handle().call_soon`) |
 | `files.py`, `folder.py` | Lossless reading and an atomic write of the `.tdl` files, a backup of the first save, the folder's files by type |
 | `model.py` | One open file: its text, its lossless tree, a history of snapshots for undo and redo, and a selection kept by index path |
-| `viewmodel.py`, `Views/` | The window: `Signal`s for the three areas and a handler for each action |
+| `viewmodel.py`, `Views/` | The window: `Signal`s for the areas and a handler for each action |
+| `services.py`, `problems.py`, `watcher.py`, `settings.py` | `check` and the problems list, status, reload, "Apply as I edit", saving, the file watch (see below) |
 
 ## Driving a window from a test
 
@@ -45,3 +46,16 @@ The icon, font, key-chord, list and token widgets are the toolkit's own: `IconPi
 | `shortcuts.py` | Ctrl+Shift+N, Delete, Alt+Up and Down, Ctrl+Shift+M, Ctrl+Shift+D, the Menu key and Shift+F10; a right click in the Structure area is wired in `app.py` |
 
 Two things any editor over a lossless tree meets. A selection kept as an index path is wrong after an edit that removes a block together with the comment on its line (every later entry number is one or two lower), so the model keeps it as a count of blocks, `If`s and `For`s only and converts it back with `Document.at`'s paths. And a block moved or copied as text carries its original indentation on every line after the first, while `Block.with_child` adds the new place's indentation to every line, so the text is dedented first.
+
+## Check, saving and the file watch (what the shell command and the disk do to a window)
+
+A window that talks to a command and to the disk has three jobs that must never run inside a frame, and one that must never run behind the person's back.
+
+| Job | How |
+|---|---|
+| `check`, `status`, `reload` | `Services` hands each call to an `Offload`: a worker thread runs the subprocess (10 s timeout) and posts its answer with `app.thread_handle().call_soon`, so the callback runs on the loop thread and may touch Signals. One `check` runs at a time; one asked for meanwhile runs when the first ends. A run that fails or times out is one row in the Problems list and editing goes on. A test that has no loop gives `Services.offload` an `InlineOffload` (the same call, at once) or its own `post` queue (to prove the call returns before the answer) |
+| The Problems list | `problems.rows_for` makes a row of each finding with an icon and a word (an icon alone is not a message). A click, or Enter on the row, calls `problems.locate`: the deepest block, `If` or `For` of the open document whose `node.origin` holds the finding's line and column, and the property inside it. The path comes from `node.index_path`; a key in a nested `Style { }` belongs to the block that holds the `Style` |
+| Saving | An explicit save, and "Apply as I edit" (a switch kept in the app's own state folder): after each commit the file is written by the same atomic save, a text edit once it rests 200 ms and only when it parses. After a save the app runs `check`, asks `status`, and asks the shell to `reload` only when it is running and the setting is on (or on the Reload button) |
+| The file watch | `watchfiles.watch` runs on a worker thread and posts the bytes of each changed `.tdl` file. The decision is made on the loop thread: a file whose bytes are what the model last read or wrote is the app's own save and is ignored (no timing guess), anything else asks Reload or Keep in a banner. A save is also refused (`ChangedOnDisk`) when the file on disk is not what the model expects, so nothing is ever overwritten silently even if the watch is late |
+
+Two lessons. A multi-line `TextInput` takes some Ctrl+letter keys for its own (Ctrl+J and Ctrl+K), so a shortcut meant to work while the editor has the focus must use another letter. And a rebuild of a form row (a new `key` in a `for:`) takes the keyboard focus from every node, after which no key press reaches the view's root: a handler that rebuilds the window gives the focus back (`Shortcuts.keep_focus`).

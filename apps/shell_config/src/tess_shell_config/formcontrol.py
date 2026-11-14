@@ -124,6 +124,20 @@ class FormController:
         finally:
             self._busy = False
         self._restore(held)
+        if outcome.changed:
+            self.vm.services.edited()
+
+    def reveal(self, key: str) -> bool:
+        """Open the group that holds the row of the key `key` (so its row is built) and publish the rows. `False` when the form has no such row."""
+        if self.form is None:
+            return False
+        try:
+            row = self.form.view.row(f"k:{key}")
+        except KeyError:
+            return False
+        self.form.open_group(row.group)
+        batch(self._set_signals)
+        return True
 
     # -- the handlers the view's widgets call ----------------------------------------------------------------------------------------
 

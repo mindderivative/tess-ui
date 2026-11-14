@@ -30,9 +30,14 @@ class Built:
     window: Any
     shortcuts: Shortcuts
 
+    def close(self) -> None:
+        """Stop what `live` started (the file watch)."""
+        self.viewmodel.services.stop()
 
-def build(session: ConfigSession, *, width: int = 1280, height: int = 800, dark: bool | str = "system", **options: Any) -> Built:
-    """The app for `session`. `options` go to `App` (a test passes `reduced_motion=True`, a theme seed...)."""
+
+def build(session: ConfigSession, *, width: int = 1280, height: int = 800, dark: bool | str = "system", live: bool = False, **options: Any) -> Built:
+    """The app for `session`. `options` go to `App` (a test passes `reduced_motion=True`, a theme seed...). `live` starts what runs beside the window: the file watch, the first `status` and `check`, each
+    command on a worker thread whose answer is posted to the loop (`close` stops the watch). Without it nothing runs a command or watches the folder."""
     app = App(root=ROOT, width=width, height=height, title=TITLE, dark=dark, stylesheet=ROOT / "Views" / "Main_Stylesheet.yaml", **options)
     viewmodel = ShellConfigViewModel(session)
     app.bind(viewmodel)
@@ -41,5 +46,7 @@ def build(session: ConfigSession, *, width: int = 1280, height: int = 800, dark:
     viewmodel.shortcuts = shortcuts = Shortcuts(view, viewmodel)
     # a right click anywhere in the Structure area opens the Structure menu (the Menu key and Shift+F10 do too: see `shortcuts.py`)
     view._listen(view.node("root.panes.structure_pane"), "secondary_click", handled(lambda event: viewmodel.structure_actions.open_menu()))
+    if live:
+        viewmodel.services.start(app.thread_handle().call_soon, lambda ms, fn: window.after(ms, fn))
     shortcuts.move_focus(1)  # a key press goes to the focused node, so the window starts with the focus in the Files area
     return Built(app, view, viewmodel, window, shortcuts)

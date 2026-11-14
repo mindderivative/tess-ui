@@ -604,6 +604,12 @@ class Form:
             self.opened.add(group)
         self.view.items = self._items(self.view)
 
+    def open_group(self, group: str) -> None:
+        """Show the rows of `group`: it is opened, and stays so from block to block like a group the person opened."""
+        self.closed.discard(group)
+        self.opened.add(group)
+        self.view.items = self._items(self.view)
+
     def _items(self, view: FormView) -> list[dict[str, Any]]:
         """Each group is a header; only an open group builds its rows, which keeps the window light (every row is a dozen nodes the toolkit lays out again after any change)."""
         items: list[dict[str, Any]] = []

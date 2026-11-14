@@ -51,8 +51,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         return CANNOT_START
     from tess_shell_config.app import build
 
-    built = build(session)
-    built.app.run()
+    built = build(session, live=True)
+    try:
+        built.app.run()
+    finally:
+        built.close()
     return 0
 
 

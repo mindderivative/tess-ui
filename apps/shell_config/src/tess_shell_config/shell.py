@@ -20,7 +20,7 @@ from typing import Any
 from tess_shell_config.schema import Schema
 
 __all__ = ["DEFAULT_COMMAND", "DEFAULT_TIMEOUT", "ShellCommandError", "ShellNotFound", "ShellTimeout", "ShellFailed", "Finding", "CheckResult", "Status", "ReloadResult",
-           "ShellCommand", "Offload"]
+           "ShellCommand", "Offload", "InlineOffload"]
 
 DEFAULT_COMMAND = "tesserae-shell"
 #: `check` that does not answer within this many seconds is one message in the problems list (the spec's failure table).
@@ -235,3 +235,15 @@ class Offload:
         thread = threading.Thread(target=work, name="tess-shell-config-command", daemon=True)
         thread.start()
         return thread
+
+
+class InlineOffload:
+    """The same `submit`, run on the calling thread at once: for a window that is not running (a test, a script), where there is no loop to post to. Never used by the running application."""
+
+    def submit(self, fn: Callable[[], Any], on_result: Callable[[Any], None], on_error: Callable[[BaseException], None]) -> None:
+        try:
+            value = fn()
+        except BaseException as error:  # same contract as `Offload`: the error goes to `on_error`
+            on_error(error)
+        else:
+            on_result(value)
