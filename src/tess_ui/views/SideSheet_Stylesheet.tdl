@@ -1,0 +1,14 @@
+---
+TDL: 0.1
+Name: SideSheet
+Tesserae: "0.6"
+---
+# The look of the standard side sheet: a `surface` column.
+Styles {
+  Rule {
+    Widget: SideSheet
+    Style {
+      Background: surface
+    }
+  }
+}

@@ -1,0 +1,18 @@
+---
+TDL: 0.1
+Name: NavigationRail
+Tesserae: "0.6"
+---
+# The look of NavigationRail (Material 3): a surface column 80 pixels wide, with 44 pixels above the first destination (less when there is a header),
+# 12 between destinations. An expanded rail has 20 pixels of padding each side.
+Styles {
+  Rule {
+    Widget: NavigationRail
+    Style {
+      Background: <| 'surface@72%' if frosted else 'surface' |>
+      Backdrop_Blur: <| 20 if frosted else 0 |>
+      Padding: <| {'left': 20, 'right': 20, 'top': 44, 'bottom': 56} if expanded else {'left': 0, 'right': 0, 'top': 44, 'bottom': 56} |>
+      Gap: 12
+    }
+  }
+}

@@ -1,0 +1,78 @@
+---
+TDL: 0.1
+Name: IconButton
+Tesserae: "0.6"
+---
+# The look of IconButton (Material 3, with the Expressive sizes, widths and shapes). The icon is 20, 24, 24, 32 or 40 pixels for the five sizes. A toggle
+# that is on takes the selected colours and the other shape; a press squares a round button off.
+Styles {
+  Rule {
+    Widget: IconButton
+    Style {
+      Height: 40
+      Width: 40
+      Transition { Corner_Radius: 200, Background: 150 }
+    }
+  }
+  Rule { Widget: IconButton, Size: xs, Style { Height: 32 } }
+  Rule { Widget: IconButton, Size: s, Style { Height: 40 } }
+  Rule { Widget: IconButton, Size: m, Style { Height: 56 } }
+  Rule { Widget: IconButton, Size: l, Style { Height: 96 } }
+  Rule { Widget: IconButton, Size: xl, Style { Height: 136 } }
+  Rule {
+    Widget: IconButton
+    Style {
+      Width: <| {'xs': {'narrow': 28, 'default': 32, 'wide': 40}, 's': {'narrow': 32, 'default': 40, 'wide': 52}, 'm': {'narrow': 48, 'default': 56, 'wide': 72}, 'l': {'narrow': 64, 'default': 96, 'wide': 128}, 'xl': {'narrow': 104, 'default': 136, 'wide': 184}}[size][width_kind] |>
+    }
+  }
+  # shapes
+  Rule { Widget: IconButton, Shape: round, Style { Corner_Radius: full } }
+  Rule { Widget: IconButton, Shape: square, Style { Corner_Radius: <| {'xs': 12, 's': 12, 'm': 16, 'l': 28, 'xl': 28}[size] |> } }
+  Rule { Widget: IconButton, Shape: round, State: selected, Style { Corner_Radius: <| {'xs': 12, 's': 12, 'm': 16, 'l': 28, 'xl': 28}[size] |> } }
+  Rule { Widget: IconButton, Shape: square, State: selected, Style { Corner_Radius: full } }
+  Rule { Widget: IconButton, Shape: round, State: pressed, Style { Corner_Radius: <| {'xs': 12, 's': 12, 'm': 16, 'l': 28, 'xl': 28}[size] |> } }
+  # variants
+  Rule { Widget: IconButton, Variant: standard, Style { Background: transparent } }
+  Rule { Widget: IconButton, Variant: filled, Style { Background: <| 'primary' if (not toggle or selected) else 'surface_container_highest' |> } }
+  Rule { Widget: IconButton, Variant: tonal, Style { Background: <| 'secondary_container' if (not toggle or not selected) else 'secondary' |> } }
+  Rule {
+    Widget: IconButton
+    Variant: outlined
+    Style {
+      Background: <| 'transparent' if (not toggle or not selected) else 'inverse_surface' |>
+      Border_Width: <| 1 if (not toggle or not selected) else 0 |>
+      Border_Color: outline
+    }
+  }
+  # the icon
+  Rule { Widget: IconButton, Part: icon, Style { Transition { Icon: 200 } } }
+  Rule {
+    Widget: IconButton
+    Part: icon
+    Style { Width: <| {'xs': 20, 's': 24, 'm': 24, 'l': 32, 'xl': 40}[size] |>, Height: <| {'xs': 20, 's': 24, 'm': 24, 'l': 32, 'xl': 40}[size] |> }
+  }
+  Rule {
+    Widget: IconButton
+    Variant: standard
+    Part: icon
+    Style { Foreground: <| tint if tint != '' else ('primary' if (toggle and selected) else 'on_surface_variant') |> }
+  }
+  Rule {
+    Widget: IconButton
+    Variant: filled
+    Part: icon
+    Style { Foreground: <| 'on_primary' if (not toggle or selected) else 'on_surface_variant' |> }
+  }
+  Rule {
+    Widget: IconButton
+    Variant: tonal
+    Part: icon
+    Style { Foreground: <| 'on_secondary_container' if (not toggle or not selected) else 'on_secondary' |> }
+  }
+  Rule {
+    Widget: IconButton
+    Variant: outlined
+    Part: icon
+    Style { Foreground: <| 'on_surface_variant' if (not toggle or not selected) else 'inverse_on_surface' |> }
+  }
+}

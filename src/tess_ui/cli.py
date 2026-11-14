@@ -16,7 +16,7 @@ Neither overwrites a file. The templates are in `tess_ui/templates/`.
 `schema` says where the YAML schemas for Red Hat's YAML language
 server are, and with `--settings` prints the `yaml.schemas` setting for them. `--project` writes a schema of the views too that the project
 DIR (here by default) has of its own, in `DIR/.tesserae/`, and maps the views to it.
-`migrate-tdl` writes the `*_View.yaml` files of a file or folder as `*_View.tdl`, keeping comments and key order (see `tess_ui.migrate_tdl`).
+`migrate-tdl` writes the `*_View.yaml` and `*_Stylesheet.yaml` files of a file or folder as `*_View.tdl` and `*_Stylesheet.tdl`, keeping comments and key order (see `tess_ui.migrate_tdl`).
 """
 
 from __future__ import annotations
@@ -196,8 +196,8 @@ def _parser() -> argparse.ArgumentParser:
     migrate_cmd.add_argument("path", nargs="?", type=Path, default=Path("."), help="the project's folder (default: here)")
     migrate_cmd.add_argument("--write", action="store_true", help="write the files (without it, only report what would change)")
     migrate_cmd.add_argument("--force", action="store_true", help="with --write: write what translated even if some files did not")
-    tdl_cmd = commands.add_parser("migrate-tdl", help="write a project's view files as TDL (`*_View.tdl`)")
-    tdl_cmd.add_argument("path", nargs="?", type=Path, default=Path("."), help="a *_View.yaml file or the project's folder (default: here)")
+    tdl_cmd = commands.add_parser("migrate-tdl", help="write a project's view and stylesheet files as TDL (`*_View.tdl`, `*_Stylesheet.tdl`)")
+    tdl_cmd.add_argument("path", nargs="?", type=Path, default=Path("."), help="a *_View.yaml or *_Stylesheet.yaml file or the project's folder (default: here)")
     tdl_cmd.add_argument("--write", action="store_true", help="write the files (without it, only report what would change)")
     tdl_cmd.add_argument("--remove-source", action="store_true", help="with --write: delete each YAML file once its TDL file is written")
     schema_cmd = commands.add_parser("schema", help="where the YAML schemas for editors are")

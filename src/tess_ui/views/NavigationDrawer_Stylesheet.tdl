@@ -1,0 +1,15 @@
+---
+TDL: 0.1
+Name: NavigationDrawer
+Tesserae: "0.6"
+---
+# The look of the standard navigation drawer: a `surface` column.
+Styles {
+  Rule {
+    Widget: NavigationDrawer
+    Style {
+      Background: <| 'surface@72%' if frosted else 'surface' |>
+      Backdrop_Blur: <| 20 if frosted else 0 |>
+    }
+  }
+}

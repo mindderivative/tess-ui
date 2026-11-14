@@ -1,0 +1,55 @@
+---
+TDL: 0.1
+Name: SearchBar
+Tesserae: "0.6"
+---
+# The look of SearchBar (Material 3): a surface_container_high pill, 56 tall, at level 3; 4 pixels in from the edge, the icons 24 pixels in a 48 pixel button, the text
+# in on_surface and the placeholder dimmed, the avatar a 30 pixel circle in primary_container.
+Styles {
+  Rule {
+    Widget: SearchBar
+    Style {
+      Background: <| 'surface_container_high@72%' if frosted else 'surface_container_high' |>
+      Backdrop_Blur: <| 20 if frosted else 0 |>
+      Corner_Radius: full
+      Elevation: 3
+      Padding { Left: 4, Right: 12, Top: 0, Bottom: 0 }
+      Gap: 4
+    }
+  }
+  Rule {
+    Widget: SearchBar
+    Part: back
+    Style { Width: 48, Height: 48, Corner_Radius: 24, Align_Content: center }
+  }
+  Rule {
+    Widget: SearchBar
+    Part: leading
+    Style { Width: 48, Height: 48, Corner_Radius: 24, Align_Content: center }
+  }
+  Rule {
+    Widget: SearchBar
+    Part: clear
+    Style { Width: 48, Height: 48, Corner_Radius: 24, Align_Content: center }
+  }
+  Rule {
+    Widget: SearchBar
+    Part: trailing
+    Style { Width: 48, Height: 48, Corner_Radius: 24, Align_Content: center }
+  }
+  Rule { Widget: SearchBar, Part: back_icon, Style { Width: 24, Height: 24, Foreground: on_surface } }
+  Rule { Widget: SearchBar, Part: leading_glyph, Style { Width: 24, Height: 24, Foreground: on_surface } }
+  Rule { Widget: SearchBar, Part: clear_icon, Style { Width: 24, Height: 24, Foreground: on_surface_variant } }
+  Rule { Widget: SearchBar, Part: trailing_glyph, Style { Width: 24, Height: 24, Foreground: on_surface_variant } }
+  Rule {
+    Widget: SearchBar
+    Part: input
+    Style { Foreground: on_surface, Background: transparent }
+  }
+  Rule {
+    Widget: SearchBar
+    Part: avatar
+    Style { Width: 30, Height: 30, Corner_Radius: full, Background: primary_container, Align_Content: center }
+  }
+  Rule { Widget: SearchBar, Part: avatar_text, Style { Foreground: on_primary_container } }
+}

@@ -1,0 +1,23 @@
+---
+TDL: 0.1
+Name: Link
+Tesserae: "0.6"
+---
+# The look of Link: primary text, a different colour once it has been followed, dimmed while disabled. The underline is drawn by the renderer
+# (while the pointer is over it or it has the keyboard focus, unless `underline:` says otherwise).
+Styles {
+  Rule {
+    Widget: Link
+    Style { Foreground: primary }
+  }
+  Rule {
+    Widget: Link
+    State: visited
+    Style { Foreground: secondary }
+  }
+  Rule {
+    Widget: Link
+    State: disabled
+    Style { Foreground: on_surface, Opacity: 0.38 }
+  }
+}

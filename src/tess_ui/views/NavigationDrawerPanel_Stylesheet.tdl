@@ -1,0 +1,19 @@
+---
+TDL: 0.1
+Name: NavigationDrawerPanel
+Tesserae: "0.6"
+---
+# The look of the inside of a drawer: 12 pixels in from the edge, section headings in on_surface_variant, a little space above the first destination.
+Styles {
+  Rule {
+    Widget: NavigationDrawerPanel
+    Style {
+      Padding { Left: 12, Right: 12, Top: 12, Bottom: 12 }
+    }
+  }
+  Rule {
+    Widget: NavigationDrawerPanel
+    Part: heading
+    Style { Foreground: on_surface_variant, Padding { Left: 16, Right: 16, Top: 18, Bottom: 18 } }
+  }
+}

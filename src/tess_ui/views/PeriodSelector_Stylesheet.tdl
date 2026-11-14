@@ -1,0 +1,13 @@
+---
+TDL: 0.1
+Name: PeriodSelector
+Tesserae: "0.6"
+---
+# The look of PeriodSelector: an outlined frame with 8 pixel corners. The halves' colours are in the view, because a rule cannot see the loop variable that
+# says which half is which.
+Styles {
+  Rule {
+    Widget: PeriodSelector
+    Style { Corner_Radius: 8, Border_Width: 1, Border_Color: outline }
+  }
+}

@@ -1,0 +1,23 @@
+---
+TDL: 0.1
+Name: DatePickerDay
+Tesserae: "0.6"
+---
+# The look of DatePickerDay: the selected day is a primary circle with on_primary text; today a 1 pixel primary outline with primary text; a day outside the month is
+# on_surface_variant; the rest on_surface.
+Styles {
+  Rule {
+    Widget: DatePickerDay
+    Part: circle
+    Style {
+      Background: <| 'primary' if selected else 'transparent' |>
+      Border_Width: <| 1 if (today and not selected) else 0 |>
+      Border_Color: primary
+    }
+  }
+  Rule {
+    Widget: DatePickerDay
+    Part: number
+    Style { Foreground: <| 'on_primary' if selected else ('primary' if today else ('on_surface_variant' if outside else 'on_surface')) |> }
+  }
+}

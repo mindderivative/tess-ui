@@ -1,0 +1,14 @@
+---
+TDL: 0.1
+Name: KeyChordField
+Tesserae: "0.6"
+---
+# The look of KeyChordField: the record button is 56 pixels tall (the height of the field beside it) with 12 pixel corners and 16 pixels of padding, a 1 pixel `outline` border, and `primary_container`
+# while it is recording. It has the state layer, ripple and focus ring of any pressable node, and a disabled one fades to 38%.
+Styles {
+  Rule {
+    Widget: KeyChordField
+    Part: record
+    Style { Corner_Radius: 12, Border_Width: 1, Border_Color: outline, Padding { Left: 16, Right: 16, Top: 0, Bottom: 0 } }
+  }
+}

@@ -1,0 +1,169 @@
+---
+TDL: 0.1
+Name: Button
+Tesserae: "0.6"
+---
+# The look of Button (Material 3, with the Expressive sizes). Sizes set the height, the padding (by size: 12 for `xs`, 24 for `s` and `m` (16 on the side with an icon on `s`), 48 for `l`, 64 for `xl`) and the gap; variants set the colours; the shape is a pill or a rounded square, and a toggle that is on, or a press, takes the other.
+# A state layer and a ripple come from the node's interaction; a filled, tonal or elevated button lifts when hovered.
+Styles {
+  Rule {
+    Widget: Button
+    Style {
+      Height: 40
+      Transition { Corner_Radius: 200, Elevation: 200, Background: 150 }
+    }
+  }
+  # sizes
+  Rule { Widget: Button, Size: xs, Style { Height: 32, Gap: 4 } }
+  Rule { Widget: Button, Size: s, Style { Height: 40, Gap: 8 } }
+  Rule { Widget: Button, Size: m, Style { Height: 56, Gap: 8 } }
+  Rule { Widget: Button, Size: l, Style { Height: 96, Gap: 12 } }
+  Rule { Widget: Button, Size: xl, Style { Height: 136, Gap: 16 } }
+  Rule {
+    Widget: Button
+    Style {
+      Padding: <| {'left': (({'xs': 12, 's': 16, 'm': 24, 'l': 48, 'xl': 64}[size]) if (icon != '' or loading) else ({'xs': 12, 's': 24, 'm': 24, 'l': 48, 'xl': 64}[size])) if variant != 'text' else 12, 'right': (({'xs': 12, 's': 16, 'm': 24, 'l': 48, 'xl': 64}[size]) if trailing_icon != '' else ({'xs': 12, 's': 24, 'm': 24, 'l': 48, 'xl': 64}[size])) if variant != 'text' else 12, 'top': 0, 'bottom': 0} |>
+    }
+  }
+  # shapes: a pill, or a rounded square; a toggle that is on (and a press) takes the other
+  Rule {
+    Widget: Button
+    Shape: round
+    Style { Corner_Radius: full }
+  }
+  Rule {
+    Widget: Button
+    Shape: square
+    Style { Corner_Radius: <| {'xs': 12, 's': 12, 'm': 16, 'l': 28, 'xl': 28}[size] |> }
+  }
+  Rule {
+    Widget: Button
+    Shape: round
+    State: selected
+    Style { Corner_Radius: <| {'xs': 12, 's': 12, 'm': 16, 'l': 28, 'xl': 28}[size] |> }
+  }
+  Rule {
+    Widget: Button
+    Shape: square
+    State: selected
+    Style { Corner_Radius: full }
+  }
+  Rule {
+    Widget: Button
+    Shape: round
+    State: pressed
+    Style { Corner_Radius: <| {'xs': 12, 's': 12, 'm': 16, 'l': 28, 'xl': 28}[size] |> }
+  }
+  # variants
+  Rule {
+    Widget: Button
+    Variant: filled
+    Style { Background: <| 'primary' if (not toggle or selected) else 'surface_container_highest' |> }
+  }
+  Rule {
+    Widget: Button
+    Variant: tonal
+    Style { Background: <| 'secondary_container' if (not toggle or not selected) else 'secondary' |> }
+  }
+  Rule {
+    Widget: Button
+    Variant: elevated
+    Style { Background: <| 'surface_container_low' if (not toggle or not selected) else 'primary' |>, Elevation: 1 }
+  }
+  Rule {
+    Widget: Button
+    Variant: outlined
+    Style {
+      Background: <| 'transparent' if (not toggle or not selected) else 'inverse_surface' |>
+      Border_Width: <| 1 if (not toggle or not selected) else 0 |>
+      Border_Color: outline
+    }
+  }
+  Rule {
+    Widget: Button
+    Variant: text
+    Style { Background: transparent }
+  }
+  # lifting
+  Rule { Widget: Button, Variant: filled, State: hovered, Style { Elevation: 1 } }
+  Rule { Widget: Button, Variant: tonal, State: hovered, Style { Elevation: 1 } }
+  Rule { Widget: Button, Variant: elevated, State: hovered, Style { Elevation: 2 } }
+  Rule { Widget: Button, Variant: elevated, State: pressed, Style { Elevation: 1 } }
+  # content colours
+  Rule {
+    Widget: Button
+    Variant: filled
+    Part: label
+    Style { Foreground: <| 'on_primary' if (not toggle or selected) else 'on_surface_variant' |> }
+  }
+  Rule {
+    Widget: Button
+    Variant: tonal
+    Part: label
+    Style { Foreground: <| 'on_secondary_container' if (not toggle or not selected) else 'on_secondary' |> }
+  }
+  Rule {
+    Widget: Button
+    Variant: elevated
+    Part: label
+    Style { Foreground: <| 'primary' if (not toggle or not selected) else 'on_primary' |> }
+  }
+  Rule {
+    Widget: Button
+    Variant: outlined
+    Part: label
+    Style { Foreground: <| 'primary' if not toggle else ('inverse_on_surface' if selected else 'on_surface_variant') |> }
+  }
+  Rule {
+    Widget: Button
+    Variant: text
+    Part: label
+    Style { Foreground: primary }
+  }
+  Rule { Widget: Button, Variant: filled, Part: icon, Style { Foreground: <| 'on_primary' if (not toggle or selected) else 'on_surface_variant' |> } }
+  Rule {
+    Widget: Button
+    Variant: tonal
+    Part: icon
+    Style { Foreground: <| 'on_secondary_container' if (not toggle or not selected) else 'on_secondary' |> }
+  }
+  Rule { Widget: Button, Variant: elevated, Part: icon, Style { Foreground: <| 'primary' if (not toggle or not selected) else 'on_primary' |> } }
+  Rule {
+    Widget: Button
+    Variant: outlined
+    Part: icon
+    Style { Foreground: <| 'primary' if not toggle else ('inverse_on_surface' if selected else 'on_surface_variant') |> }
+  }
+  Rule { Widget: Button, Variant: text, Part: icon, Style { Foreground: primary } }
+  Rule {
+    Widget: Button
+    Variant: filled
+    Part: trailing
+    Style { Foreground: <| 'on_primary' if (not toggle or selected) else 'on_surface_variant' |> }
+  }
+  Rule {
+    Widget: Button
+    Variant: tonal
+    Part: trailing
+    Style { Foreground: <| 'on_secondary_container' if (not toggle or not selected) else 'on_secondary' |> }
+  }
+  Rule { Widget: Button, Variant: elevated, Part: trailing, Style { Foreground: <| 'primary' if (not toggle or not selected) else 'on_primary' |> } }
+  Rule {
+    Widget: Button
+    Variant: outlined
+    Part: trailing
+    Style { Foreground: <| 'primary' if not toggle else ('inverse_on_surface' if selected else 'on_surface_variant') |> }
+  }
+  Rule { Widget: Button, Variant: text, Part: trailing, Style { Foreground: primary } }
+  # icon sizes
+  Rule {
+    Widget: Button
+    Part: icon
+    Style { Width: <| {'xs': 20, 's': 18, 'm': 24, 'l': 32, 'xl': 40}[size] |>, Height: <| {'xs': 20, 's': 18, 'm': 24, 'l': 32, 'xl': 40}[size] |> }
+  }
+  Rule {
+    Widget: Button
+    Part: trailing
+    Style { Width: <| {'xs': 20, 's': 18, 'm': 24, 'l': 32, 'xl': 40}[size] |>, Height: <| {'xs': 20, 's': 18, 'm': 24, 'l': 32, 'xl': 40}[size] |> }
+  }
+}

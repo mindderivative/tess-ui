@@ -11,8 +11,8 @@ the converter cannot express is a `ConvertError` that names the line and says wh
 target (`i, it in enumerate(items)`): a TDL `For` has one variable, so the loop is written with one variable (`i_it`, the pair), a `# TODO tuple for-target: ...` line
 above it, and is reported as a `Loop` whose body the person must adjust.
 
-`migrate_tdl(path, write=, remove_source=)` does it for a file or a project folder; without `write` it only reports. Stylesheets, themes and components are skipped
-with a note (their converters come later). Running it again changes nothing.
+`migrate_tdl(path, write=, remove_source=)` does it for a file or a project folder; without `write` it only reports. A `*_Stylesheet.yaml` is converted by `migrate_tdl_sheets.convert_sheet`; themes and components are
+skipped with a note (their converters come later). Running it again changes nothing.
 """
 
 from __future__ import annotations
@@ -858,7 +858,8 @@ def convert_view(text: str, name: str, file: str = "<view>", *, resolver: Callab
 
 
 _VIEW = re.compile(r"^(.+)_View\.yaml$")
-_OTHER = re.compile(r"^.+_(Stylesheet|Theme|Component)\.yaml$")
+_SHEET = re.compile(r"^(.+)_Stylesheet\.yaml$")
+_OTHER = re.compile(r"^.+_(Theme|Component)\.yaml$")
 
 
 @dataclass
@@ -935,7 +936,7 @@ class Report:
         extra = [f"{counts[s]} {s}" for s in ("current", "skipped", "failed") if counts[s]]
         lines.append(", ".join(summary + extra))
         if not self.results:
-            lines.append("no view files found")
+            lines.append("no view or stylesheet files found")
         lines.append("written" if self.written else "nothing written: use --write to write the files")
         return "\n".join(lines)
 
@@ -957,8 +958,10 @@ def _resolver(root: Path) -> Callable[[str], WidgetDecl | None]:
 
 
 def migrate_tdl(path: str | Path, *, write: bool = False, remove_source: bool = False) -> Report:
-    """Works out (and with `write=True`, writes) the TDL for the `*_View.yaml` file `path`, or every one under the folder `path`. `remove_source` (with `write`)
+    """Works out (and with `write=True`, writes) the TDL for the `*_View.yaml` or `*_Stylesheet.yaml` file `path`, or every one under the folder `path`. `remove_source` (with `write`)
     deletes each YAML file whose `.tdl` is then written or already current. A file that fails is reported and left alone; the others are still written."""
+    from tess_ui.migrate_tdl_sheets import convert_sheet  # it builds on this module's converter
+
     path = Path(path).resolve()
     report = Report()
     if path.is_file():
@@ -966,27 +969,33 @@ def migrate_tdl(path: str | Path, *, write: bool = False, remove_source: bool = 
         root = path.parent
     else:
         root = path
-        found = sorted(p for p in _files(root, "*.yaml") if _VIEW.match(p.name) or _OTHER.match(p.name))
+        found = sorted(p for p in _files(root, "*.yaml") if _VIEW.match(p.name) or _SHEET.match(p.name) or _OTHER.match(p.name))
     resolver: Callable[[str], WidgetDecl | None] | None = None
     for file in found:
         match = _VIEW.match(file.name)
-        if match is None:
+        sheet = None if match else _SHEET.match(file.name)
+        if match is None and sheet is None:
             if _OTHER.match(file.name):
-                report.results.append(FileResult(file, "skipped", error="a stylesheet, theme or component: only views are converted so far"))
+                report.results.append(FileResult(file, "skipped", error="a theme or component: only views and stylesheets are converted so far"))
             else:
-                raise ValueError(f"{file.name} is not a *_View.yaml file")
+                raise ValueError(f"{file.name} is not a *_View.yaml or *_Stylesheet.yaml file")
             continue
-        stem = match.group(1)
-        new_path = file.with_name(f"{stem}_View.tdl")
+        found_name = match or sheet
+        assert found_name is not None
+        stem = found_name.group(1)
+        new_path = file.with_name(f"{stem}_{'View' if match else 'Stylesheet'}.tdl")
         try:
             raw = file.read_bytes().decode("utf-8")
         except UnicodeDecodeError as exc:
             report.results.append(FileResult(file, "failed", error=f"not UTF-8: {exc.reason}", line=1))
             continue
-        if resolver is None:
-            resolver = _resolver(root)
         try:
-            converted = convert_view(raw, stem, file.name, resolver=resolver)
+            if sheet:
+                converted = convert_sheet(raw, stem, file.name)
+            else:
+                if resolver is None:
+                    resolver = _resolver(root)
+                converted = convert_view(raw, stem, file.name, resolver=resolver)
         except ConvertError as exc:
             report.results.append(FileResult(file, "failed", error=str(exc), line=exc.line))
             continue

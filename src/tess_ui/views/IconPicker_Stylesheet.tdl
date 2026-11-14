@@ -1,0 +1,20 @@
+---
+TDL: 0.1
+Name: IconPicker
+Tesserae: "0.6"
+---
+# The look of IconPicker: the button that opens a popup (`field`, with `trigger` pressable over it) is 48 pixels tall with 12 pixel corners, 12 pixels of padding and a 1 pixel `outline` border, and the layer is a
+# `surface_container` surface with 12 pixel corners and 8 pixels of padding at level 2. The button has the state layer, ripple and focus ring of any pressable node, and a disabled one fades to 38%.
+Styles {
+  Rule {
+    Widget: IconPicker
+    Part: field
+    Style { Min_Height: 48, Corner_Radius: 12, Border_Width: 1, Border_Color: outline, Padding { Left: 12, Right: 12, Top: 0, Bottom: 0 } }
+  }
+  Rule { Widget: IconPicker, Part: trigger, Style { Corner_Radius: 12 } }
+  Rule {
+    Widget: IconPicker
+    Part: surface
+    Style { Background: surface_container, Corner_Radius: 12, Padding: 8, Elevation: 2 }
+  }
+}

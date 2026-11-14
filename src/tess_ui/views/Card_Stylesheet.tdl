@@ -1,0 +1,37 @@
+---
+TDL: 0.1
+Name: Card
+Tesserae: "0.6"
+---
+# The look of Card (Material 3): 12 pixel corners, 16 pixels of padding around the text. Elevated is surface_container_low at level 1 (2 when an
+# actionable one is hovered), filled is surface_container_highest, outlined is surface with a 1 pixel outline_variant border. A selected outlined card has
+# an outline border; a selected filled or elevated one is secondary_container.
+Styles {
+  Rule {
+    Widget: Card
+    Style {
+      Corner_Radius: 12
+      Transition { Elevation: 200, Background: 150 }
+    }
+  }
+  Rule {
+    Widget: Card
+    Variant: elevated
+    Style { Background: <| 'secondary_container' if selected else 'surface_container_low' |>, Elevation: 1 }
+  }
+  Rule { Widget: Card, Variant: elevated, State: hovered, Style { Elevation: <| 2 if actionable else 1 |> } }
+  Rule { Widget: Card, Variant: filled, Style { Background: <| 'secondary_container' if selected else 'surface_container_highest' |> } }
+  Rule {
+    Widget: Card
+    Variant: outlined
+    Style {
+      Background: surface
+      Border_Width: 1
+      Border_Color: <| 'outline' if selected else 'outline_variant' |>
+    }
+  }
+  Rule { Widget: Card, Part: body, Style { Padding: 16, Gap: 4 } }
+  Rule { Widget: Card, Part: headline, Style { Foreground: on_surface } }
+  Rule { Widget: Card, Part: subhead, Style { Foreground: on_surface_variant } }
+  Rule { Widget: Card, Part: text, Style { Foreground: on_surface_variant } }
+}

@@ -1,0 +1,30 @@
+---
+TDL: 0.1
+Name: ListItem
+Tesserae: "0.6"
+---
+# The look of ListItem (Material 3): 16 pixels of padding each side, 16 between the parts; the headline in on_surface, the supporting text and the
+# small text in on_surface_variant; a selected item is secondary_container.
+Styles {
+  Rule {
+    Widget: ListItem
+    Style {
+      Padding { Left: 16, Right: 16, Top: 8, Bottom: 8 }
+      Gap: 16
+      Background: <| 'secondary_container' if selected else 'transparent' |>
+    }
+  }
+  Rule { Widget: ListItem, Part: headline, Style { Foreground: on_surface } }
+  Rule { Widget: ListItem, Part: supporting, Style { Foreground: on_surface_variant } }
+  Rule { Widget: ListItem, Part: overline, Style { Foreground: on_surface_variant } }
+  Rule { Widget: ListItem, Part: trailing_text, Style { Foreground: on_surface_variant } }
+  Rule { Widget: ListItem, Part: leading_icon, Style { Foreground: on_surface_variant, Width: 24, Height: 24 } }
+  Rule { Widget: ListItem, Part: trailing_icon, Style { Foreground: on_surface_variant, Width: 24, Height: 24 } }
+  Rule {
+    Widget: ListItem
+    Part: avatar
+    Style { Width: 40, Height: 40, Corner_Radius: full, Background: primary_container, Align_Content: center }
+  }
+  Rule { Widget: ListItem, Part: avatar_text, Style { Foreground: on_primary_container } }
+  Rule { Widget: ListItem, Part: picture, Style { Width: 56, Height: 56, Corner_Radius: 4 } }
+}

@@ -65,7 +65,7 @@ lines for `app.py`, because Python is not rewritten. A call of a shipped fragmen
 `variant: filled`) fails the check with `no widget named 'ButtonFilled'`, and is written by hand from the table in Migrating. The exit code is 1 if any file failed,
 A view, stylesheet or theme whose `tesserae:` first line names an older series is also moved to the current one: that line only, nothing else in the file changes, and a file already current, newer or without the line is left alone. and 2 for a wrong argument (`--force` without `--write` is one). [Migrating](../migration.md#to-050) has the table of every change and of the shipped names.
 
-## Write views as TDL
+## Write views and stylesheets as TDL
 
 ```bash
 tesserae migrate-tdl                      # lists what it would convert; writes nothing
@@ -73,7 +73,7 @@ tesserae migrate-tdl --write              # writes Views/Name_View.tdl beside ea
 tesserae migrate-tdl Views/Main_View.yaml --write --remove-source   # one file, and deletes its YAML afterwards
 ```
 
-`tesserae migrate-tdl [PATH]` writes each `*_View.yaml` under `PATH` (a file or the project's folder, here by default) as a `*_View.tdl` file beside it:
+`tesserae migrate-tdl [PATH]` writes each `*_View.yaml` under `PATH` (a file or the project's folder, here by default) as a `*_View.tdl` file beside it, and each `*_Stylesheet.yaml` as a `*_Stylesheet.tdl` (a root `Styles { }` of `Rule { Widget: Button, Variant: filled, Style { Height: 40 } }` blocks, in order; a style field that holds a map is a block of its own: `Padding { Left: 12 }`; themes are skipped for now). A view:
 keys in `Title_Case` (`typography_role` is `Typography_Role`), a node a block headed by its widget (`Button { ... }`), `if:` and `for:` as `If` and `For`
 blocks around the node, a handler as `Set` and `Call` steps (`open = not open; on_toggle()` is a `Set { Target: open, Value: <| not open |> }` and a
 `Call { Action: "on_toggle" }`), `{{ expression }}` as `<| expression |>`, and a metadata block with the view's `Name` and the `Tesserae` series.
@@ -93,7 +93,7 @@ joins the names (`For i_item In <| enumerate(items) |> ...`), with a `# TODO tup
 report with its file and line. The loop's body still uses `i` and `item`: change it by hand to `i_item[0]` and `i_item[1]`.
 
 Running it again changes nothing. It never replaces a file that differs without `--write`; the YAML is kept unless `--remove-source` is given with `--write`, and
-then it is deleted only for the files that were written (or already current). Stylesheets (`*_Stylesheet.yaml`), themes and components are skipped with a note. The
+then it is deleted only for the files that were written (or already current). Themes (`*_Theme.yaml`) and components are skipped with a note. The
 exit code is 1 if any file failed and 2 for a wrong argument. The command needs the `tess_dl` package, which needs Python 3.14.
 
 ## Build an executable

@@ -1,0 +1,19 @@
+---
+TDL: 0.1
+Name: MenuItem
+Tesserae: "0.6"
+---
+# The look of MenuItem (Material 3): 12 pixels each side and between the parts, the label in on_surface, the icon and the trailing text in on_surface_variant.
+Styles {
+  Rule {
+    Widget: MenuItem
+    Style {
+      Padding { Left: 12, Right: 12, Top: 0, Bottom: 0 }
+      Gap: 12
+    }
+  }
+  Rule { Widget: MenuItem, Part: label, Style { Foreground: on_surface } }
+  Rule { Widget: MenuItem, Part: lead, Style { Width: 24, Height: 24, Foreground: on_surface_variant } }
+  Rule { Widget: MenuItem, Part: trailing, Style { Foreground: on_surface_variant } }
+  Rule { Widget: MenuItem, Part: chevron, Style { Width: 24, Height: 24, Foreground: on_surface_variant } }
+}

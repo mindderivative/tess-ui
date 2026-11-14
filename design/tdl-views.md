@@ -67,9 +67,9 @@ Handlers {
 - A key that is not Title_Case, a map block where a node is expected and a `Set` whose `Target` is not a plain name are errors that say what to write.
 
 ## Stylesheets and themes
-- A stylesheet is a root `Styles { }` (the old `styles:` list) holding one `Rule { ... }` block per rule, in order (order breaks ties); a rule's keys are Title_Case (`Widget: Button`, `Variant: filled`, `State: hovered`, a `Style { ... }` block). Detailed in piece 4.
+- A stylesheet is a root `Styles { }` (the old `styles:` list) holding one `Rule { ... }` block per rule, in order (order breaks ties); a rule's keys are Title_Case (`Widget: Button`, `Variant: filled`, `State: hovered`, a `Style { ... }` block). Exact shape: "What piece 4 decided", below.
 - A theme is a root `Theme { }` with the old keys as Title_Case blocks and properties (`Seed`, `Dark`, `Colors { ... }`, `Typography { ... }`, `Components { ... }`). Detailed in piece 5.
-- These two are sketches: pieces 4 and 5 start by converting two real files each and write the exact shape here.
+- The stylesheet is written exactly (piece 4); the theme is still a sketch: piece 5 starts by converting two real files and writes the exact shape here.
 
 ## What is not decided
 - Whether `If` and `For` ever get a `Name` of their own (not needed today).
@@ -102,3 +102,37 @@ Entry points: `load_marked_tdl(text, file, resolver=None)` and `load_tdl_file(pa
 - **Pair loops.** `for: i, it in enumerate(items)` is written `For i_it In <| enumerate(items) |> Key <| ... |>` (the names joined by `_`) with `# TODO tuple for-target: i, it in enumerate(items)` above the `For`, and reported (file, line of the `for:`, original text, rewrite, and that the body still uses the second name and must use `i_it[0]`, `i_it[1]`). The converter never rewrites the body.
 - **Refused**, with file, line and what to write: a key that is not lower snake_case or is `if`/`else`/`for` (or a block named `in`/`key`), a widget name that cannot head a block, an anchor or alias, a value that is not text, a number, yes/no or null (a YAML date), a list of lists or a list that mixes maps and text, `key:` without `for:`, a `for:` that is not `name in expression`, an expression that has `|>` or a line end, a view in the older syntax (`kind:`; run `tesserae migrate-yaml`), a series line that is not the current one.
 - **Files.** A dry run lists what would be converted and writes nothing; `--write` writes `<Name>_View.tdl` beside the YAML (only when it differs: a second run is `current` and touches nothing); a differing `.tdl` is replaced only with `--write`; the YAML stays unless `--remove-source` (with `--write`) and then only for the files written or already current. Stylesheets, themes and components found under PATH are skipped with a note (pieces 4 and 5). Exit code 1 when a file failed, 2 for a wrong argument. Python 3.14 (`tess_dl`) is needed, and the command says so when it is missing.
+
+## What piece 4 decided (stylesheets: `src/tess_ui/spec/tdl_stylesheet.py`, `src/tess_ui/migrate_tdl_sheets.py`)
+Surveyed first: the 49 shipped sheets (276 rules), the 9 under `examples/` and `apps/shell_config`, and the tests'. Every one is `tesserae:` + `styles:`; a rule has only `widget`, `style` and optionally `part`, `variant`, `size`, `shape`, `state`, `classes` (a list of names; `name` is allowed by the loader and unused in the shipped files); of the 525 style values in the shipped sheets 112 are slots (all of them one whole-value `"{{ ... }}"`, none mixed with text), 42 are a map one level deep (`padding`, `transition`, `corner_radius`, `margin`) and the rest are numbers, words (token names such as `on_surface_variant`) and `true`. No anchors, no handlers, no `style:` that names a `*_Style.yaml` in a shipped file.
+```
+---
+TDL: 0.1
+Name: Button
+Tesserae: "0.6"
+---
+# comments
+Styles {
+  Rule { Widget: Button, Size: xs, Style { Height: 32, Gap: 4 } }
+  Rule {
+    Widget: Button
+    Part: label
+    State: hovered
+    Classes: [a, b]
+    Style {
+      Background: <| 'primary' if (not toggle or selected) else 'surface_container_highest' |>
+      Padding { Left: 12, Right: 12 }
+      Transition { Corner_Radius: 200, Elevation: 200 }
+    }
+  }
+}
+```
+- **Root and rules.** The root block is `Styles` and holds `Rule` blocks only, in file order (`order` of the rule is its place). The metadata `Name` is the file stem (`Button_Stylesheet.tdl` is `Button`); `Tesserae` as in a view. Nothing is a node: `If`, `For`, `Children`, `Handlers` are errors here; a property or a block that is not `Rule` directly in `Styles` is an error that says `Styles holds Rule blocks`.
+- **A rule** has its keys as `Title_Case` properties (`Widget`, `Variant`, `Size`, `Shape`, `State`, `Part`, `Name`, `Classes: [a, b]`) and one `Style { }` block. Any key is read, so `RuleSheet.of` says `a rule has no 'colour'` in its own words, with the position in the `.tdl`.
+- **Style fields** are properties (`Height: 40`); a field that holds a map is a block of its own (`Padding { Left: 12 }`, `Transition { ... }`); a block holding nothing but `Item` blocks is a list of maps (as in a view). A slot is the `{{ expr }}` string the YAML had (`Padding: <| {'left': 12} |>` is a whole-value expression: TEL's braces need no care). Token references (`outline`, `on_surface_variant`, `primary`) are words and stay bare; text that is not a word is quoted. A `style:` that names a `*_Style.yaml` file is the text it is (`Style: Compact_Style.yaml`); the includes are expanded by `load_stylesheet`, not by the marked path.
+- **What the front end returns** is the mapping the marked YAML loader hands `RuleSheet.of`: `{styles: PSeq of rule PMaps}` with `at`, `key_at`, `val_at`, `item_at` everywhere. A rule's position is its `Rule` word, a key's the key text, a value's its first character (a quoted string after its quote, a slot at `<|`), a block's its head word (`Style`, `Padding`), the `styles` key and list the `Styles` word. A mistake `RuleSheet.of` finds therefore keeps its message and hint and points at the same word in the `.tdl`; an `Expr`'s origin lands on the expression text (checked for the 224 templates of the shipped sheets in both files). Entry points: `load_marked_tdl_stylesheet(text, file)`, `load_tdl_stylesheet_file(path)`, `load_rule_sheet_tdl(path, parts_of=None)` (`load_rule_sheet` for a `.tdl`). Nothing calls them yet (piece 6 chooses by suffix). `load_stylesheet` (themes.py, the plain dict with includes expanded) has no TDL twin yet: it is piece 6's, with discovery.
+- **Errors** from `tess_dl` keep its wording (a duplicate property key is its "The key X is already used on line N"); mine: not `Styles`, `Styles holds Rule blocks, got 'Rul'` (nearest name), a property in `Styles`, an `If`/`For` anywhere, a key that is not Title_Case (as views), a duplicate `Style` block.
+- **The converter** (`convert_sheet(text, name, file)`, in `migrate_tdl_sheets.py`) is `migrate_tdl`'s own, with the stylesheet's two levels: a `_Converter` subclass whose `styles:` list is `Styles { }` and each rule `map_block("Rule", ...)`, so comments, blank lines, layout and the 150-column rule are the views' (a flow rule `- {widget: Button, size: xs, style: {...}}` is one `Rule { ... }` line when it fits, a block rule is opened one entry to a line, its `Style` stays inline when the YAML had it inline). No `on_` key is a handler here. The result is read back through the front end and compared (types kept, key order not) with the YAML loader's mapping; `styles:` empty or absent is `Styles { }` and reads back as no rules.
+- **Refused** (with the YAML line, what to write): a top-level key other than `styles` (with `looks_like`'s hint: a theme or a view), `styles:` that is not a list, a rule that is not a mapping, an empty file or one that is not a mapping, and every refusal of a view's values and keys (anchor, date, a key not lower snake_case or a TDL keyword, text with a slot that cannot sit unquoted, a list of lists, a series line that is not the current one).
+- **Files.** `tesserae migrate-tdl` now also converts `*_Stylesheet.yaml` to `*_Stylesheet.tdl` beside it (same rules: a dry run writes nothing, a second run is `current`, `--remove-source`, exit codes). Themes and components are still skipped with the note `a theme or component: only views and stylesheets are converted so far`; a single file that is none of view or stylesheet is `is not a *_View.yaml or *_Stylesheet.yaml file`; an empty folder says `no view or stylesheet files found`. `migrate_tdl.py` changed only in its driver (`_SHEET`, the dispatch and these messages).
+- **Shipped.** The 49 `src/tess_ui/views/*_Stylesheet.tdl` are written beside their YAML; `tests/test_tdl_shipped_sheets.py` checks each is current, loads to the YAML mapping, gives `RuleSheet` the same rules and has expression origins on the text.

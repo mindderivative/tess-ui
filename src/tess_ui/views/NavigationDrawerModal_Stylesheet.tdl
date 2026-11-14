@@ -1,0 +1,18 @@
+---
+TDL: 0.1
+Name: NavigationDrawerModal
+Tesserae: "0.6"
+---
+# The look of the modal navigation drawer: surface_container_low at level 1, 16 pixel corners on the right (the side that opens onto the content).
+Styles {
+  Rule {
+    Widget: NavigationDrawerModal
+    Part: sheet
+    Style {
+      Background: <| 'surface_container_low@72%' if frosted else 'surface_container_low' |>
+      Backdrop_Blur: <| 20 if frosted else 0 |>
+      Elevation: 1
+      Corner_Radius { Top_Right: 16, Bottom_Right: 16 }
+    }
+  }
+}

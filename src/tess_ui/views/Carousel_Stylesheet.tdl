@@ -1,0 +1,10 @@
+---
+TDL: 0.1
+Name: Carousel
+Tesserae: "0.6"
+---
+# The look of Carousel: the item captions in white over a darkened band.
+Styles {
+  Rule { Widget: Carousel, Part: title, Style { Foreground: "#FFFFFF" } }
+  Rule { Widget: Carousel, Part: supporting, Style { Foreground: "#FFFFFFCC" } }
+}

@@ -1,0 +1,20 @@
+---
+TDL: 0.1
+Name: Accordion
+Tesserae: "0.6"
+---
+# The look of Accordion: the header's title in on_surface and its chevron in on_surface_variant, 16 pixels in from each side; the content 16 pixels in and 16 below.
+Styles {
+  Rule {
+    Widget: Accordion
+    Part: header
+    Style { Padding { Left: 16, Right: 16, Top: 0, Bottom: 0 }, Gap: 12 }
+  }
+  Rule { Widget: Accordion, Part: title, Style { Foreground: on_surface } }
+  Rule { Widget: Accordion, Part: chevron, Style { Width: 24, Height: 24, Foreground: on_surface_variant } }
+  Rule {
+    Widget: Accordion
+    Part: content
+    Style { Padding { Left: 16, Right: 16, Top: 0, Bottom: 16 } }
+  }
+}

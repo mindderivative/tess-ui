@@ -1,0 +1,32 @@
+---
+TDL: 0.1
+Name: Divider
+Tesserae: "0.6"
+---
+# The look of Divider (Material 3): a line in outline_variant that fills the length it is in (in a container that does not set `align_content`). The insets are margins at the ends it keeps clear.
+Styles {
+  Rule {
+    Widget: Divider
+    Style {
+      Background: outline_variant
+      Width: <| thickness if orientation == 'vertical' else 'auto' |>
+      Height: <| thickness if orientation == 'horizontal' else 'auto' |>
+    }
+  }
+
+  Rule {
+    Widget: Divider
+    Variant: inset
+    Style {
+      Margin: <| {'left': 16} if orientation == 'horizontal' else {'top': 16} |>
+    }
+  }
+
+  Rule {
+    Widget: Divider
+    Variant: middle
+    Style {
+      Margin: <| {'left': 16, 'right': 16} if orientation == 'horizontal' else {'top': 16, 'bottom': 16} |>
+    }
+  }
+}

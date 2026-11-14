@@ -1,0 +1,19 @@
+---
+TDL: 0.1
+Name: StatusBar
+Tesserae: "0.6"
+---
+# The look of StatusBar: a thin surface_container strip with label_small text in on_surface_variant; an item that can be pressed has a state layer.
+Styles {
+  Rule {
+    Widget: StatusBar
+    Style {
+      Background: surface_container
+      Padding { Left: 8, Right: 8, Top: 0, Bottom: 0 }
+    }
+  }
+  Rule { Widget: StatusBar, Part: text, Style { Foreground: on_surface_variant } }
+  Rule { Widget: StatusBar, Part: note_text, Style { Foreground: on_surface_variant } }
+  Rule { Widget: StatusBar, Part: icon, Style { Foreground: on_surface_variant, Width: 16, Height: 16 } }
+  Rule { Widget: StatusBar, Part: note_icon, Style { Foreground: on_surface_variant, Width: 16, Height: 16 } }
+}

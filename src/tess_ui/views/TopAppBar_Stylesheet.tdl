@@ -1,0 +1,20 @@
+---
+TDL: 0.1
+Name: TopAppBar
+Tesserae: "0.6"
+---
+# The look of TopAppBar (Material 3): a `surface` bar that becomes `surface_container` once content has scrolled under it; 4 pixels in from the edge for the icons, the
+# title in on_surface (16 pixels from the left of a medium or large bar's title), 16 pixels of room at each end.
+Styles {
+  Rule {
+    Widget: TopAppBar
+    Style {
+      Background: <| ('surface_container' if scrolled else 'surface') + ('@72%' if frosted else '') |>
+      Backdrop_Blur: <| 20 if frosted else 0 |>
+      Padding { Left: 4, Right: 4, Top: 0, Bottom: 0 }
+      Clip_Children: true
+    }
+  }
+  Rule { Widget: TopAppBar, Part: title, Style { Foreground: on_surface } }
+  Rule { Widget: TopAppBar, Part: big_title, Style { Foreground: on_surface, Padding { Left: 12, Right: 12, Top: 0, Bottom: 0 } } }
+}

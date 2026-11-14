@@ -1,0 +1,41 @@
+---
+TDL: 0.1
+Name: NavigationRailItem
+Tesserae: "0.6"
+---
+# The look of NavigationRailItem (Material 3): a 56 by 32 pill that is secondary_container when selected, with a 24 pixel icon in on_secondary_container
+# (on_surface_variant otherwise) and the label in on_surface (on_surface_variant otherwise). In an expanded rail the pill is 56 high and as wide as the
+# item, with the label inside it.
+Styles {
+  Rule {
+    Widget: NavigationRailItem
+    Style {
+      Corner_Radius: 16
+      Transition { Background: 150 }
+    }
+  }
+  Rule {
+    Widget: NavigationRailItem
+    Part: pill
+    Style {
+      Width: <| 'auto' if expanded else 56 |>
+      Height: <| 56 if expanded else 32 |>
+      Corner_Radius: <| 28 if expanded else 16 |>
+      Padding: <| {'left': 16, 'right': 24, 'top': 0, 'bottom': 0} if expanded else 0 |>
+      Background: <| 'secondary_container' if selected else 'transparent' |>
+      Transition { Background: 150 }
+    }
+  }
+  Rule {
+    Widget: NavigationRailItem
+    Part: icon
+    Style { Width: 24, Height: 24, Foreground: <| 'on_secondary_container' if selected else 'on_surface_variant' |> }
+  }
+  Rule {
+    Widget: NavigationRailItem
+    Part: badged_icon
+    Style { Width: 24, Height: 24, Foreground: <| 'on_secondary_container' if selected else 'on_surface_variant' |> }
+  }
+  Rule { Widget: NavigationRailItem, Part: label, Style { Foreground: <| 'on_surface' if selected else 'on_surface_variant' |> } }
+  Rule { Widget: NavigationRailItem, Part: inline_label, Style { Foreground: <| 'on_secondary_container' if selected else 'on_surface_variant' |> } }
+}

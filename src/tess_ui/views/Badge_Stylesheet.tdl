@@ -1,0 +1,29 @@
+---
+TDL: 0.1
+Name: Badge
+Tesserae: "0.6"
+---
+# The look of Badge (Material 3): an error-coloured dot or pill, with the label in on_error. Anchored, the mark is placed over the host's top right
+# corner: a dot overlaps it by 4, a pill starts 12 in from the corner and sits 4 above it.
+Styles {
+  Rule {
+    Widget: Badge
+    Part: mark
+    Style {
+      Background: error
+      Width: <| 6 if value == '' else (16 if len(str(value)) < 2 else 8 + 6 * len(str(value))) |>
+      Height: <| 6 if value == '' else 16 |>
+      Corner_Radius: <| 3 if value == '' else 8 |>
+      Align_Content: center
+      Position: <| 'absolute' if anchored else 'relative' |>
+      X: <| '100%' if anchored else 'auto' |>
+      Y: <| (0 if value == '' else -4) if anchored else 'auto' |>
+      Translate_X: <| (-4 if value == '' else -12) if anchored else 0 |>
+    }
+  }
+  Rule {
+    Widget: Badge
+    Part: label
+    Style { Foreground: on_error }
+  }
+}

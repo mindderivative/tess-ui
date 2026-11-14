@@ -1,0 +1,55 @@
+---
+TDL: 0.1
+Name: Chip
+Tesserae: "0.6"
+---
+# The look of Chip (Material 3): 8 pixel corners, 8 pixels between parts, 16 pixels of padding (8 beside an icon or the close button). Assist, suggestion,
+# filter and input chips are outlined in `outline_variant`; elevated ones are `surface_container_low` at level 1 with no outline; a selected filter or input chip
+# is `secondary_container` with no outline.
+Styles {
+  Rule {
+    Widget: Chip
+    Style {
+      Corner_Radius: 8
+      Gap: 8
+      Padding: <| {'left': 8 if (avatar_text != '' or icon != '' or (variant == 'filter' and selected)) else 16, 'right': 8 if removable else 16, 'top': 0, 'bottom': 0} |>
+      Transition { Background: 150 }
+      Border_Width: <| 0 if (elevated or (selected and variant in ('filter', 'input'))) else 1 |>
+      Border_Color: outline_variant
+      Background: <| 'secondary_container' if (selected and variant in ('filter', 'input')) else ('surface_container_low' if elevated else 'transparent') |>
+      Elevation: <| 1 if (elevated and not (selected and variant in ('filter', 'input'))) else 0 |>
+    }
+  }
+  Rule {
+    Widget: Chip
+    Part: label
+    Style {
+      Foreground: <| 'on_secondary_container' if (selected and variant in ('filter', 'input')) else ('on_surface_variant' if variant in ('filter', 'input') else 'on_surface') |>
+    }
+  }
+  Rule {
+    Widget: Chip
+    Part: icon
+    Style {
+      Width: 18
+      Height: 18
+      Foreground: <| 'on_secondary_container' if (selected and variant in ('filter', 'input')) else ('primary' if variant in ('assist', 'suggestion') else 'on_surface_variant') |>
+    }
+  }
+  Rule {
+    Widget: Chip
+    Part: avatar
+    Style { Width: 24, Height: 24, Corner_Radius: full, Background: primary_container, Align_Content: center }
+  }
+  Rule { Widget: Chip, Part: avatar_text, Style { Foreground: on_primary_container } }
+  Rule {
+    Widget: Chip
+    Part: close
+    Style { Width: 18, Height: 18, Corner_Radius: 9, Align_Content: center }
+  }
+  Rule {
+    Widget: Chip
+    Part: close_icon
+    Style { Width: 18, Height: 18, Foreground: <| 'on_secondary_container' if selected else 'on_surface_variant' |> }
+  }
+}

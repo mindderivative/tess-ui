@@ -1,0 +1,21 @@
+---
+TDL: 0.1
+Name: TimePicker
+Tesserae: "0.6"
+---
+# The look of TimePicker (Material 3): a surface_container_high dialog with 28 pixel corners and 24 pixels of padding; the heading in on_surface_variant,
+# the time in on_surface.
+Styles {
+  Rule {
+    Widget: TimePicker
+    Part: panel
+    Style {
+      Background: surface_container_high
+      Corner_Radius: 28
+      Padding: 24
+      Elevation: 3
+    }
+  }
+  Rule { Widget: TimePicker, Part: heading, Style { Foreground: on_surface_variant } }
+  Rule { Widget: TimePicker, Part: colon, Style { Foreground: on_surface } }
+}

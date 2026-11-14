@@ -1,0 +1,35 @@
+---
+TDL: 0.1
+Name: FileDialog
+Tesserae: "0.6"
+---
+# The look of FileDialog: a `surface_container_high` panel with 28 pixel corners, 24 pixels of padding and 12 between its parts at level 3, as Dialog has; the title in `on_surface`; the column
+# headings and the list's size and time columns in `on_surface_variant`; a row 40 pixels tall with 12 pixel corners; a message in `error`, or in `on_surface_variant` for the empty folder.
+Styles {
+  Rule {
+    Widget: FileDialog
+    Part: panel
+    Style { Background: surface_container_high, Corner_Radius: 28, Padding: 24, Gap: 12, Elevation: 3 }
+  }
+  Rule { Widget: FileDialog, Part: headline, Style { Foreground: on_surface } }
+  Rule { Widget: FileDialog, Part: browser, Style { Position: absolute, Width: 0, Height: 0 } }
+  Rule { Widget: FileDialog, Part: columns, Style { Padding { Left: 8, Right: 8, Top: 0, Bottom: 0 } } }
+  Rule { Widget: FileDialog, Part: column_name, Style { Foreground: on_surface_variant } }
+  Rule { Widget: FileDialog, Part: column_size, Style { Foreground: on_surface_variant } }
+  Rule { Widget: FileDialog, Part: column_modified, Style { Foreground: on_surface_variant } }
+  Rule { Widget: FileDialog, Part: row, Style { Corner_Radius: 12 } }
+  Rule { Widget: FileDialog, Part: row_icon, Style { Foreground: on_surface_variant, Width: 24, Height: 24 } }
+  Rule { Widget: FileDialog, Part: row_name, Style { Foreground: on_surface } }
+  Rule { Widget: FileDialog, Part: row_size, Style { Foreground: on_surface_variant } }
+  Rule { Widget: FileDialog, Part: row_modified, Style { Foreground: on_surface_variant } }
+  Rule { Widget: FileDialog, Part: empty, Style { Foreground: on_surface_variant } }
+  Rule { Widget: FileDialog, Part: message_text, Style { Foreground: error } }
+  Rule { Widget: FileDialog, Part: crumb_gap, Style { Foreground: on_surface_variant, Width: 20, Height: 20 } }
+  Rule {
+    Widget: FileDialog
+    Part: replace_panel
+    Style { Background: surface_container_high, Corner_Radius: 28, Padding: 24, Gap: 16, Elevation: 3 }
+  }
+  Rule { Widget: FileDialog, Part: replace_headline, Style { Foreground: on_surface } }
+  Rule { Widget: FileDialog, Part: replace_body, Style { Foreground: on_surface_variant } }
+}

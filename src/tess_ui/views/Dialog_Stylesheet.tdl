@@ -1,0 +1,26 @@
+---
+TDL: 0.1
+Name: Dialog
+Tesserae: "0.6"
+---
+# The look of Dialog (Material 3): a raised panel with 28 pixel corners, 24 pixels of padding, an icon in `secondary`, the supporting text in
+# `on_surface_variant`. The scrim is the modal Overlay's.
+Styles {
+  Rule {
+    Widget: Dialog
+    Part: panel
+    Style {
+      Background: <| 'surface' if fullscreen else 'surface_container_high' |>
+      Corner_Radius: <| 0 if fullscreen else 28 |>
+      Padding: <| 0 if fullscreen else 24 |>
+      Gap: <| 0 if fullscreen else 16 |>
+      Elevation: <| 0 if fullscreen else 3 |>
+    }
+  }
+  Rule { Widget: Dialog, Part: icon, Style { Foreground: secondary, Width: 24, Height: 24 } }
+  Rule { Widget: Dialog, Part: headline, Style { Foreground: on_surface } }
+  Rule { Widget: Dialog, Part: body, Style { Foreground: on_surface_variant } }
+  Rule { Widget: Dialog, Part: bar, Style { Padding { Left: 4, Right: 16, Top: 0, Bottom: 0 }, Gap: 8 } }
+  Rule { Widget: Dialog, Part: bar_title, Style { Foreground: on_surface } }
+  Rule { Widget: Dialog, Part: content, Style { Padding: <| {'left': 24, 'right': 24, 'top': 16, 'bottom': 16} if fullscreen else 0 |> } }
+}

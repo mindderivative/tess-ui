@@ -492,22 +492,23 @@ def test_a_file_that_fails_is_reported_with_its_line_and_the_others_are_still_wr
     assert "1 failed" in report.render(tmp_path)
 
 
-def test_stylesheets_themes_and_components_are_skipped_with_a_note(tmp_path):
+def test_themes_and_components_are_skipped_with_a_note_and_stylesheets_are_converted(tmp_path):
     make_project(tmp_path, {"A_Stylesheet.yaml": "tesserae: 0.6\nstyles: []\n", "B_Theme.yaml": "tesserae: 0.6\nseed: blue\n",
                             "C_Component.yaml": "kind: Text\n", "notes.yaml": "a: 1\n", "D_View.yaml": BUTTON})
     report = migrate_tdl(tmp_path, write=True)
     assert [(r.path.name, r.status) for r in report.results] == [
-        ("A_Stylesheet.yaml", "skipped"), ("B_Theme.yaml", "skipped"), ("C_Component.yaml", "skipped"), ("D_View.yaml", "converted")]
-    assert all("only views are converted" in (r.error or "") for r in report.results[:3])
-    assert sorted(p.name for p in tmp_path.iterdir()) == sorted(["A_Stylesheet.yaml", "B_Theme.yaml", "C_Component.yaml", "notes.yaml", "D_View.yaml", "D_View.tdl"])
-    assert "3 skipped" in report.render(tmp_path) and migrate_tdl(tmp_path / "A_Stylesheet.yaml").results[0].status == "skipped"
+        ("A_Stylesheet.yaml", "converted"), ("B_Theme.yaml", "skipped"), ("C_Component.yaml", "skipped"), ("D_View.yaml", "converted")]
+    assert all("only views and stylesheets are converted" in (r.error or "") for r in report.results[1:3])
+    assert sorted(p.name for p in tmp_path.iterdir()) == sorted(
+        ["A_Stylesheet.yaml", "A_Stylesheet.tdl", "B_Theme.yaml", "C_Component.yaml", "notes.yaml", "D_View.yaml", "D_View.tdl"])
+    assert "2 skipped" in report.render(tmp_path) and migrate_tdl(tmp_path / "B_Theme.yaml").results[0].status == "skipped"
 
 
 def test_a_single_file_is_converted_and_a_file_of_another_kind_is_refused(tmp_path):
     make_project(tmp_path, {"Button_View.yaml": BUTTON, "other.yaml": "a: 1\n"})
     report = migrate_tdl(tmp_path / "Button_View.yaml", write=True)
     assert report.results[0].status == "converted" and (tmp_path / "Button_View.tdl").is_file()
-    with pytest.raises(ValueError, match="other.yaml is not a \\*_View.yaml file"):
+    with pytest.raises(ValueError, match="other.yaml is not a \\*_View.yaml or \\*_Stylesheet.yaml file"):
         migrate_tdl(tmp_path / "other.yaml")
 
 
@@ -523,7 +524,7 @@ def test_a_project_folder_resolves_its_own_widgets_for_node_properties(tmp_path)
 
 def test_an_empty_folder_says_so(tmp_path):
     report = migrate_tdl(tmp_path)
-    assert report.results == [] and "no view files found" in report.render(tmp_path)
+    assert report.results == [] and "no view or stylesheet files found" in report.render(tmp_path)
 
 
 # -- (h) the command ---------------------------------------------------------------------------------------------------------
@@ -538,8 +539,8 @@ def test_the_command_reports_writes_and_says_what_goes_with_what(tmp_path, capsy
     assert "the body still uses i and it" in out and "i_it[0] for i, i_it[1] for it" in out
     assert cli.main(["migrate-tdl", str(tmp_path), "--write", "--remove-source"]) == 0
     assert sorted(p.name for p in tmp_path.iterdir()) == ["Button_View.tdl", "Check_View.tdl"]
-    assert cli.main(["migrate-tdl", str(tmp_path / "Button_View.tdl")]) == 2  # not a *_View.yaml file
-    assert "is not a *_View.yaml file" in capsys.readouterr().err
+    assert cli.main(["migrate-tdl", str(tmp_path / "Button_View.tdl")]) == 2  # not a *_View.yaml or *_Stylesheet.yaml file
+    assert "is not a *_View.yaml or *_Stylesheet.yaml file" in capsys.readouterr().err
 
 
 def test_the_command_exits_1_when_a_file_fails_and_2_for_a_mistake(tmp_path, capsys):

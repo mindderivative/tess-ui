@@ -1,0 +1,20 @@
+---
+TDL: 0.1
+Name: SearchView
+Tesserae: "0.6"
+---
+# The look of SearchView (Material 3): a surface_container_high panel with 28 pixel corners, 8 pixels above and below the rows.
+Styles {
+  Rule {
+    Widget: SearchView
+    Part: panel
+    Style {
+      Background: <| 'surface_container_high@72%' if frosted else 'surface_container_high' |>
+      Backdrop_Blur: <| 20 if frosted else 0 |>
+      Corner_Radius: 28
+      Padding { Left: 0, Right: 0, Top: 8, Bottom: 8 }
+    }
+  }
+  Rule { Widget: SearchView, Part: none, Style { Foreground: on_surface_variant, Padding { Left: 16, Right: 16, Top: 12, Bottom: 12 } } }
+  Rule { Widget: SearchView, Part: count, Style { Foreground: on_surface_variant } }
+}
