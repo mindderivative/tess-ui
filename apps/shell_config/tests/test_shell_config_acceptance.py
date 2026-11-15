@@ -232,8 +232,8 @@ def test_the_guard_makes_the_xdg_folders_private_so_the_app_never_reaches_the_re
     for name in ("XDG_CONFIG_HOME", "XDG_STATE_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME", "XDG_RUNTIME_DIR"):
         assert Path(desktop[name]).is_absolute() and not desktop[name].startswith("/home/someone") and desktop[name] != "/run/user/1000" and Path(desktop[name]).is_dir(), name
     assert state_dir(desktop) == Path(desktop["XDG_STATE_HOME"]) / "tesserae-shell-config" and not str(state_dir(desktop)).startswith("/home/someone")
-    # and in this run, unless the environment allows the real session on purpose (CI, or TESS_UI_ALLOW_REAL_SESSION), the same holds for the real environment
-    if not (os.environ.get("CI") or os.environ.get("TESS_UI_ALLOW_REAL_SESSION") == "1"):
+    # and in this run, unless the environment allows the real session on purpose (GitHub Actions, or TESS_UI_ALLOW_REAL_SESSION), the same holds for the real environment
+    if not (os.environ.get("GITHUB_ACTIONS") == "true" or os.environ.get("TESS_UI_ALLOW_REAL_SESSION") == "1"):
         assert not os.environ.get("DISPLAY") and not os.environ.get("WAYLAND_DISPLAY") and not os.environ.get("DBUS_SESSION_BUS_ADDRESS")
         assert state_dir().is_relative_to(Path(os.environ["XDG_STATE_HOME"])) and not state_dir().is_relative_to(Path.home() / ".local")
 

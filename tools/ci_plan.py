@@ -13,10 +13,10 @@ The mode, first rule that matches:
            one affects them). If nothing is picked, a few smoke tests run, so a change to a file no test names is not unchecked.
 
 The docs checks (`tools/docs_audit.py`, `mkdocs build --strict`, the doc tests) run in every mode; the platform jobs (a clean install, a built
-executable) run in `full`, and in `partial` when a packaging file changed.
+executable) run in `full`, and in `partial` when a packaging file changed; the installers (the slowest part) run in `full` and when `src/tess_ui/build.py` changed.
 
 Environment, set by the workflow: EVENT_NAME, DISPATCH_MODE (auto, docs, partial or full), LABELS (a JSON list), MESSAGE (the head commit's message
-and a pull request's title). Writes `mode`, `reason`, `tests`, `doc_tests`, `packaging` to $GITHUB_OUTPUT when it is set, and prints them.
+and a pull request's title). Writes `mode`, `reason`, `tests`, `doc_tests`, `packaging`, `installers` to $GITHUB_OUTPUT when it is set, and prints them.
 """
 
 import argparse
@@ -37,7 +37,9 @@ DOC_FILES = ("mkdocs.yml", "AGENTS.md", "CLAUDE.md")
 SMOKE = ("tests/test_app.py", "tests/test_build.py", "tests/test_composed.py", "tests/test_pixels.py", "tests/test_examples_run.py")
 PACKAGING = ("tools/clean_install_smoke.py", "apps/*/pyproject.toml", "src/tess_ui/templates/*", "src/tess_ui/cli.py", "src/tess_ui/build.py",
              ".github/workflows/ci.yml")
-OUTPUTS = ("mode", "reason", "tests", "doc_tests", "packaging")  # what `plan` declares in .github/workflows/ci.yml
+#: The installers (a .dmg, a Windows setup, and five Linux formats) take longer than everything else in the run: only `full` and a change to the code that builds them runs them.
+INSTALLERS = ("src/tess_ui/build.py", ".github/workflows/ci.yml")
+OUTPUTS = ("mode", "reason", "tests", "doc_tests", "packaging", "installers")  # what `plan` declares in .github/workflows/ci.yml
 FULL_MARKS = ("[full-ci]", "[full ci]", "[full test]")
 
 
@@ -103,6 +105,11 @@ def packaging_changed(files, base, head):
     return any(line[:1] in "+-" and not line.startswith(("+++", "---")) and not re.match(r"[+-]version\s*=", line) for line in diff)
 
 
+def wants_installers(mode, files):
+    """The installers run in `full`, and when the code that builds them changed."""
+    return mode == "full" or any(fnmatch.fnmatch(f, p) for f in files for p in INSTALLERS)
+
+
 def changed(base, head):
     zero = not base or set(base) == {"0"}
     if zero:  # a new branch: against the trunk
@@ -135,7 +142,9 @@ def main(argv=None):
     if fallback:
         reason += "; no test covers these files, so only the smoke tests run"
     packaging = mode == "full" or packaging_changed(files, base, args.head)
-    emit({"mode": mode, "reason": reason, "tests": " ".join(tests), "doc_tests": " ".join(doc_tests()), "packaging": str(packaging).lower()})
+    installers = wants_installers(mode, files)
+    emit({"mode": mode, "reason": reason, "tests": " ".join(tests), "doc_tests": " ".join(doc_tests()), "packaging": str(packaging).lower(),
+          "installers": str(installers).lower()})
     print(f"::notice title=CI mode: {mode}::{reason}" if os.environ.get("GITHUB_ACTIONS") else f"(changed: {', '.join(files[:6])}{' ...' if len(files) > 6 else ''})",
           file=sys.stderr)
     return 0

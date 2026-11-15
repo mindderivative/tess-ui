@@ -135,6 +135,16 @@ def test_a_packaging_file_is_a_packaging_change():
     assert plan.packaging_changed(["src/tess_ui/composed.py"], "HEAD", "HEAD") is False
 
 
+def test_the_installers_run_in_full_and_when_the_code_that_builds_them_changed_and_not_for_a_dependency_move():
+    """They take longer than the rest of the run together (five Linux formats, two container images, a Flatpak runtime): a pull request that only moves a dependency, or edits the CLI, runs the executable and stops."""
+    assert plan.wants_installers("full", []) is True
+    assert plan.wants_installers("partial", ["src/tess_ui/build.py"]) is True
+    assert plan.wants_installers("partial", [".github/workflows/ci.yml"]) is True
+    assert plan.wants_installers("partial", ["pyproject.toml", "src/tess_ui/cli.py", "src/tess_ui/composed.py"]) is False
+    assert plan.wants_installers("docs", ["docs/index.md"]) is False
+    assert "installers" in plan.OUTPUTS
+
+
 def test_a_new_branch_is_compared_with_the_trunk(tmp_path, monkeypatch):
     git = repo(tmp_path, monkeypatch)
     git("update-ref", "refs/remotes/origin/main", "HEAD")
