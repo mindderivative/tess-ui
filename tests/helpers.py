@@ -1,8 +1,12 @@
 """Small helpers shared by tests."""
 
+from collections.abc import Callable, Iterable, Mapping
+from typing import Any, Optional
+
 import yaml
 
 from tess_ui import tokens
+from tess_ui.reactive import Signal
 
 
 def window_unthemed(window) -> bool:
@@ -49,3 +53,39 @@ def view_from(spec, **kwargs):
 
         spec = plain(load_marked_tdl(spec, "T_View.tdl"))
     return View(spec, **kwargs)
+
+
+class MapScope:
+    """A scope over a dict, for tests of expressions and handlers. `reactive` names read as reactive, `writable` names can be assigned in a handler,
+    `actions` maps a dotted name (`window.close`, `save`) to a function a handler may call."""
+
+    def __init__(self, values: Optional[Mapping[str, Any]] = None, *, reactive: Iterable[str] = (), writable: Iterable[str] = (),
+                 actions: Optional[Mapping[str, Callable[..., Any]]] = None) -> None:
+        self.values = dict(values or {})
+        self.reactive = set(reactive)
+        self.writable = set(writable)
+        self.actions = dict(actions or {})
+
+    def lookup(self, name: str) -> Any:
+        return self.values[name]
+
+    def names(self) -> list[str]:
+        return list(self.values)
+
+    def is_reactive(self, name: str) -> bool:
+        return name in self.reactive
+
+    def assign(self, name: str, value: Any) -> None:
+        if name not in self.writable:
+            raise KeyError(name)
+        current = self.values.get(name)
+        if isinstance(current, Signal):
+            current.set(value)
+        else:
+            self.values[name] = value
+
+    def is_action(self, path: str) -> bool:
+        return path in self.actions
+
+    def call_action(self, path: str, args: list[Any], kwargs: dict[str, Any]) -> Any:
+        return self.actions[path](*args, **kwargs)
