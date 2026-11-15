@@ -49,13 +49,26 @@ def settle(view, n=6):
 def opened(tmp_path, options="", *, dark=False, size=(900, 800), show=True):
     """A window with a view that holds a `FileDialog` named `fd`: `options` are its properties (`start`, `mode`, ...), `open` and `value` are the ViewModel's."""
     (tmp_path / "Views").mkdir(parents=True, exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""tesserae: 0.6
-name: main
-widget: Container
-style: {{flex_direction: vertical, width: {size[0]}, height: {size[1]}}}
-children:
-  - {{widget: Rect, name: elsewhere, style: {{width: 80, height: 80, background: surface_variant}}}}
-  - {{widget: FileDialog, name: fd, open: "{{{{ shown }}}}", value: "{{{{ got }}}}", on_accept: accepted, on_cancel: cancelled, {options}}}
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Width: {size[0]}, Height: {size[1]} }}
+  Children {{
+    Rect {{ Name: elsewhere, Style {{ Width: 80, Height: 80, Background: surface_variant }} }}
+    FileDialog {{
+      Name: fd
+      Open: <| shown |>
+      Value: <| got |>
+      On_Accept: accepted
+      On_Cancel: cancelled
+      {options}
+    }}
+  }}
+}}
 """)
     app = App(root=tmp_path, width=size[0], height=size[1], theme_seed=(0x67, 0x50, 0xA4, 0xFF), dark=dark)
     app.bind(VM)
@@ -147,7 +160,7 @@ def test_the_dialog_and_its_control_are_shipped_and_declared():
 
 
 def test_the_view_checks_against_its_viewmodel(tmp_path):
-    view, vm = opened(tmp_path, f'start: "{tree(tmp_path)}"', show=False)
+    view, vm = opened(tmp_path, f'Start: "{tree(tmp_path)}"', show=False)
     assert view.handle.viewmodel is vm
 
 
@@ -166,7 +179,7 @@ def test_a_closed_dialog_reads_nothing_and_each_opening_reads_its_folder_afresh(
     base = tree(tmp_path)
     fs = Counting()
     monkeypatch.setattr(filesystem, "_default", fs)
-    view, vm = opened(tmp_path, f'start: "{base}"', show=False)
+    view, vm = opened(tmp_path, f'Start: "{base}"', show=False)
     assert fs.listed == []
     vm.shown.set(True)
     settle(view)
@@ -184,7 +197,7 @@ def test_a_closed_dialog_reads_nothing_and_each_opening_reads_its_folder_afresh(
 
 def test_it_lists_the_folder_folders_first_and_shows_the_path_and_the_trail(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}"')
+    view, vm = opened(tmp_path, f'Start: "{base}"')
     assert shown_names(view) == ["Alpha", "beta", "A.TDL", "b.txt", "c.tdl", "notes.md"]
     assert ctl(view).folder.get() == str(base)
     assert view._built.nodes[f"{PANEL}.toolbar.path_field.box.body.input"].get("text") == str(base)
@@ -196,7 +209,7 @@ def test_it_lists_the_folder_folders_first_and_shows_the_path_and_the_trail(tmp_
 
 def test_a_press_picks_a_file_and_turns_ok_on_and_a_folder_only_moves_the_cursor(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}"')
+    view, vm = opened(tmp_path, f'Start: "{base}"')
     pick(view, "b.txt")
     assert ctl(view).selection.get() == [str(base / "b.txt")] and ctl(view).valid.get()
     assert not node(view, "actions.accept").get("disabled")
@@ -209,7 +222,7 @@ def test_a_press_picks_a_file_and_turns_ok_on_and_a_folder_only_moves_the_cursor
 
 def test_ok_writes_the_path_closes_the_dialog_and_calls_on_accept_once(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}"')
+    view, vm = opened(tmp_path, f'Start: "{base}"')
     pick(view, "b.txt")
     click(view, "actions.accept")
     assert vm.got.get() == str(base / "b.txt") and vm.shown.get() is False
@@ -218,7 +231,7 @@ def test_ok_writes_the_path_closes_the_dialog_and_calls_on_accept_once(tmp_path)
 
 def test_cancel_closes_without_an_answer(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}"')
+    view, vm = opened(tmp_path, f'Start: "{base}"')
     pick(view, "b.txt")
     click(view, "actions.cancel")
     assert vm.got.get() == "" and vm.shown.get() is False and vm.log == [("cancel",)]
@@ -226,7 +239,7 @@ def test_cancel_closes_without_an_answer(tmp_path):
 
 def test_escape_cancels_once(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}"')
+    view, vm = opened(tmp_path, f'Start: "{base}"')
     pick(view, "b.txt")
     view._built.nodes[f"{PANEL}.list_group.list_box"].focus()
     view.window.simulate("key_down", key="escape")
@@ -236,7 +249,7 @@ def test_escape_cancels_once(tmp_path):
 
 def test_a_double_press_on_a_file_accepts_it_and_on_a_folder_goes_in(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}"')
+    view, vm = opened(tmp_path, f'Start: "{base}"')
     pick(view, "Alpha")
     pick(view, "Alpha")
     assert ctl(view).folder.get() == str(base / "Alpha") and shown_names(view) == ["deeper", "inner.txt"] and vm.shown.get()
@@ -247,7 +260,7 @@ def test_a_double_press_on_a_file_accepts_it_and_on_a_folder_goes_in(tmp_path):
 
 def test_enter_in_the_list_opens_the_row_the_cursor_is_on(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}"')
+    view, vm = opened(tmp_path, f'Start: "{base}"')
     key(view, "arrow_down")
     key(view, "enter")
     assert ctl(view).folder.get() == str(base / "Alpha")
@@ -259,7 +272,7 @@ def test_enter_in_the_list_opens_the_row_the_cursor_is_on(tmp_path):
 
 def test_several_files_come_back_as_a_list_when_multiple_is_on(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}", multiple: true')
+    view, vm = opened(tmp_path, f'Start: "{base}", Multiple: true')
     pick(view, "A.TDL")
     pick(view, "c.tdl", ctrl=True)
     pick(view, "notes.md", ctrl=True)
@@ -276,7 +289,7 @@ def test_several_files_come_back_as_a_list_when_multiple_is_on(tmp_path):
 
 def test_folder_mode_chooses_the_folder_picked_or_the_one_it_is_in(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}", mode: folder')
+    view, vm = opened(tmp_path, f'Start: "{base}", Mode: folder')
     assert shown_names(view) == ["Alpha", "beta"] and ctl(view).valid.get()
     assert not node(view, "actions.accept").get("disabled")
     assert node(view, "actions.accept.label").get("text") == "Choose"
@@ -293,7 +306,7 @@ def test_folder_mode_chooses_the_folder_picked_or_the_one_it_is_in(tmp_path):
 
 def test_save_takes_the_typed_name_and_the_extension_of_the_type(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}", mode: save, filters: [{{label: TDL files, patterns: ["*.tdl"]}}]')
+    view, vm = opened(tmp_path, f'Start: "{base}", Mode: save, Filters {{ Item {{ Label: "TDL files", Patterns: ["*.tdl"] }} }}')
     assert node(view, "actions.accept").get("disabled") and node(view, "actions.accept.label").get("text") == "Save"
     typed(view, "filename_field", "plan")
     assert ctl(view).valid.get() and ctl(view).target.get() == [str(base / "plan.tdl")]
@@ -303,7 +316,7 @@ def test_save_takes_the_typed_name_and_the_extension_of_the_type(tmp_path):
 
 def test_save_starts_with_the_name_it_is_given_and_a_picked_file_names_the_save(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}", mode: save, filename: "draft.txt"')
+    view, vm = opened(tmp_path, f'Start: "{base}", Mode: save, Filename: "draft.txt"')
     assert ctl(view).filename.get() == "draft.txt" and ctl(view).valid.get()
     assert view._built.nodes[f"{PANEL}.filename_field.box.body.input"].get("text") == "draft.txt"
     pick(view, "b.txt")
@@ -312,7 +325,7 @@ def test_save_starts_with_the_name_it_is_given_and_a_picked_file_names_the_save(
 
 def test_saving_over_a_file_that_is_there_asks_first(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}", mode: save')
+    view, vm = opened(tmp_path, f'Start: "{base}", Mode: save')
     typed(view, "filename_field", "b.txt")
     assert ctl(view).exists.get() and ctl(view).chosen.get() == "b.txt"
     click(view, "actions.accept")
@@ -327,7 +340,7 @@ def test_saving_over_a_file_that_is_there_asks_first(tmp_path):
 
 def test_a_new_name_needs_no_confirmation_and_enter_in_the_name_field_saves(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}", mode: save')
+    view, vm = opened(tmp_path, f'Start: "{base}", Mode: save')
     typed(view, "filename_field", "fresh.txt")
     assert not ctl(view).exists.get()
     enter(view, "filename_field")
@@ -336,7 +349,7 @@ def test_a_new_name_needs_no_confirmation_and_enter_in_the_name_field_saves(tmp_
 
 def test_a_save_name_that_is_a_folder_is_a_problem_not_an_answer(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}", mode: save')
+    view, vm = opened(tmp_path, f'Start: "{base}", Mode: save')
     typed(view, "filename_field", "Alpha")
     assert not ctl(view).valid.get() and ctl(view).problem.get() == "Alpha is a folder"
     assert f"{PANEL}.message_text" in view._built.nodes
@@ -346,7 +359,7 @@ def test_a_save_name_that_is_a_folder_is_a_problem_not_an_answer(tmp_path):
 
 def test_up_back_forward_and_the_trail_move_the_dialog_and_the_path_bar(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}"')
+    view, vm = opened(tmp_path, f'Start: "{base}"')
     def path_text():
         return view._built.nodes[f"{PANEL}.toolbar.path_field.box.body.input"].get("text")
 
@@ -375,14 +388,14 @@ def test_home_goes_to_the_file_systems_home(tmp_path, monkeypatch):
             return str(base / "beta")
 
     monkeypatch.setattr(filesystem, "_default", Homed())
-    view, vm = opened(tmp_path, f'start: "{base}"')
+    view, vm = opened(tmp_path, f'Start: "{base}"')
     click(view, "toolbar.home")
     assert ctl(view).folder.get() == str(base / "beta")
 
 
 def test_the_path_bar_goes_where_it_is_told_with_enter_and_says_when_it_cannot(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}"')
+    view, vm = opened(tmp_path, f'Start: "{base}"')
     typed(view, "toolbar.path_field", str(base / "Alpha"))
     assert ctl(view).folder.get() == str(base)  # typing alone goes nowhere
     enter(view, "toolbar.path_field")
@@ -399,7 +412,7 @@ def test_the_path_bar_goes_where_it_is_told_with_enter_and_says_when_it_cannot(t
 
 def test_a_root_keeps_the_dialog_inside_it(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base / "Alpha"}", root: "{base}"')
+    view, vm = opened(tmp_path, f'Start: "{base / "Alpha"}", Root: "{base}"')
     assert [k for k in view._built.nodes if k.endswith("].crumb_button")][0].endswith(f"[{base}].crumb_button")
     assert not node(view, "toolbar.up").get("disabled")
     click(view, "toolbar.up")
@@ -419,7 +432,7 @@ def test_a_root_keeps_the_dialog_inside_it(tmp_path):
 
 def test_a_file_type_hides_the_files_that_do_not_match_and_never_a_folder(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}", filters: [{{label: TDL files, patterns: ["*.tdl"]}}, {{label: Text, patterns: ["*.txt", "*.md"]}}]')
+    view, vm = opened(tmp_path, f'Start: "{base}", Filters {{ Item {{ Label: "TDL files", Patterns: ["*.tdl"] }} Item {{ Label: "Text", Patterns: ["*.txt", "*.md"] }} }}')
     assert shown_names(view) == ["Alpha", "beta", "A.TDL", "c.tdl"]
     assert node(view, "options.filter_button.label").get("text") == "TDL files"
     click(view, "options.filter_button")
@@ -433,20 +446,20 @@ def test_a_file_type_hides_the_files_that_do_not_match_and_never_a_folder(tmp_pa
 
 def test_without_filters_there_is_no_type_button_and_everything_shows(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}"')
+    view, vm = opened(tmp_path, f'Start: "{base}"')
     assert f"{PANEL}.options.filter_button" not in view._built.nodes and len(shown_names(view)) == 6
 
 
 def test_hidden_names_are_off_until_the_box_is_ticked(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}"')
+    view, vm = opened(tmp_path, f'Start: "{base}"')
     assert ".secret" not in shown_names(view) and ".hidden_dir" not in shown_names(view)
     click(view, "options.show_hidden_box")
     assert shown_names(view) == [".hidden_dir", "Alpha", "beta", ".secret", "A.TDL", "b.txt", "c.tdl", "notes.md"]
     click(view, "options.show_hidden_box")
     assert ".secret" not in shown_names(view)
     (tmp_path / "two").mkdir()
-    view2, _ = opened(tmp_path / "two", f'start: "{base}", show_hidden: true')
+    view2, _ = opened(tmp_path / "two", f'Start: "{base}", Show_Hidden: true')
     assert ".secret" in shown_names(view2)
 
 
@@ -454,7 +467,7 @@ def test_hidden_names_are_off_until_the_box_is_ticked(tmp_path):
 
 def test_new_folder_is_offered_when_saving_or_choosing_a_folder_and_makes_it(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}", mode: save')
+    view, vm = opened(tmp_path, f'Start: "{base}", Mode: save')
     assert f"{PANEL}.new_folder_row" not in view._built.nodes
     click(view, "options.new_folder_button")
     typed(view, "new_folder_row.new_folder_field", "fresh")
@@ -469,11 +482,11 @@ def test_new_folder_is_offered_when_saving_or_choosing_a_folder_and_makes_it(tmp
 
 def test_open_mode_has_no_new_folder_button_and_folder_mode_has_one(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}"')
+    view, vm = opened(tmp_path, f'Start: "{base}"')
     assert f"{PANEL}.options.new_folder_button" not in view._built.nodes
     other = tmp_path / "other"
     other.mkdir()
-    view, vm = opened(other, f'start: "{base}", mode: folder')
+    view, vm = opened(other, f'Start: "{base}", Mode: folder')
     assert f"{PANEL}.options.new_folder_button" in view._built.nodes
     assert node(view, "options.new_folder_button.label").get("text") == "New folder"
 
@@ -485,7 +498,7 @@ def test_the_keys_in_the_list_move_the_cursor_and_the_list_follows_it(tmp_path):
     data.mkdir()
     for i in range(40):
         (data / f"f{i:02d}.txt").write_text("")
-    view, vm = opened(tmp_path, f'start: "{data}", rows: 6')
+    view, vm = opened(tmp_path, f'Start: "{data}", Rows: 6')
     scroller = view._built.outer[f"{PANEL}.list_group.list_box.list"]
     assert len(row_ids(view)) <= 12 and ctl(view).cursor.get() == -1
     key(view, "arrow_down")
@@ -507,7 +520,7 @@ def test_the_keys_in_the_list_move_the_cursor_and_the_list_follows_it(tmp_path):
 
 def test_alt_arrows_and_backspace_go_back_forward_and_up(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}"')
+    view, vm = opened(tmp_path, f'Start: "{base}"')
     pick(view, "Alpha")
     pick(view, "Alpha")
     key(view, "arrow_left", alt=True)
@@ -520,19 +533,19 @@ def test_alt_arrows_and_backspace_go_back_forward_and_up(tmp_path):
 
 def test_ctrl_a_picks_every_file_when_several_are_allowed_and_nothing_otherwise(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}", multiple: true')
+    view, vm = opened(tmp_path, f'Start: "{base}", Multiple: true')
     key(view, "a", ctrl=True)
     assert [os.path.basename(p) for p in ctl(view).selection.get()] == ["A.TDL", "b.txt", "c.tdl", "notes.md"]
     other = tmp_path / "other"
     other.mkdir()
-    view, vm = opened(other, f'start: "{base}"')
+    view, vm = opened(other, f'Start: "{base}"')
     key(view, "a", ctrl=True)
     assert ctl(view).selection.get() == []
 
 
 def test_shift_with_the_arrows_extends_the_picks(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}", multiple: true')
+    view, vm = opened(tmp_path, f'Start: "{base}", Multiple: true')
     pick(view, "A.TDL")
     key(view, "arrow_down", shift=True)
     key(view, "arrow_down", shift=True)
@@ -544,7 +557,7 @@ def test_a_folder_of_ten_thousand_entries_opens_at_once_and_builds_only_the_rows
     data.mkdir()
     for i in range(10_000):
         (data / f"file{i:05d}.dat").write_text("")
-    view, vm = opened(tmp_path, f'start: "{data}"', show=False)
+    view, vm = opened(tmp_path, f'Start: "{data}"', show=False)
     vm.shown.set(True)
     settle(view)
     assert len(ctl(view).entries.get()) == 10_000
@@ -563,7 +576,7 @@ def test_a_folder_of_ten_thousand_entries_opens_at_once_and_builds_only_the_rows
 
 def test_the_dialog_the_list_and_the_buttons_have_roles_and_labels(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}"')
+    view, vm = opened(tmp_path, f'Start: "{base}"')
     panel = view._built.nodes[PANEL]
     assert panel.get("role") == "dialog" and panel.get("label") == "Open file"
     assert node(view, "list_group.list_box").get("role") == "list" and node(view, "list_group.list_box").get("label") == "Files and folders"
@@ -575,17 +588,17 @@ def test_the_dialog_the_list_and_the_buttons_have_roles_and_labels(tmp_path):
     assert row(view, str(base / "b.txt")).get("selected") is True and row(view, str(base / "Alpha")).get("selected") is False
     other = tmp_path / "other"
     other.mkdir()
-    view, vm = opened(other, f'start: "{base}", mode: save, headline: "Save the plan", accept_label: "Store"')
+    view, vm = opened(other, f'Start: "{base}", Mode: save, Headline: "Save the plan", Accept_Label: "Store"')
     assert view._built.nodes[PANEL].get("label") == "Save the plan" and node(view, "actions.accept.label").get("text") == "Store"
     third = tmp_path / "third"
     third.mkdir()
-    view, vm = opened(third, f'start: "{base}", mode: folder')
+    view, vm = opened(third, f'Start: "{base}", Mode: folder')
     assert view._built.nodes[PANEL].get("label") == "Choose folder" and node(view, "list_group.list_box").get("label") == "Folders"
 
 
 def test_an_error_is_announced_as_an_alert(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}"')
+    view, vm = opened(tmp_path, f'Start: "{base}"')
     typed(view, "toolbar.path_field", str(base / "missing"))
     enter(view, "toolbar.path_field")
     assert node(view, "message_text").get("role") == "alert"
@@ -632,7 +645,7 @@ def test_an_unreadable_folder_is_a_message_in_the_dialog_and_the_dialog_stays_us
     fake = Fake({"/home": [entry("/home", "locked", True), entry("/home", "gone", True), entry("/home", "f.txt")], "/home/gone": [], "/home/locked": []})
     fake.denied.add("/home/locked")
     monkeypatch.setattr(filesystem, "_default", fake)
-    view, vm = opened(tmp_path, 'start: "/home"')
+    view, vm = opened(tmp_path, 'Start: "/home"')
     assert shown_names(view) == ["gone", "locked", "f.txt"]
     pick(view, "locked")
     pick(view, "locked")
@@ -646,7 +659,7 @@ def test_an_unreadable_folder_is_a_message_in_the_dialog_and_the_dialog_stays_us
 def test_a_folder_that_goes_while_the_dialog_shows_it_is_an_empty_list_with_the_reason(tmp_path, monkeypatch):
     fake = Fake({"/home": [entry("/home", "x.txt")], "/home/sub": [entry("/home/sub", "y.txt")]})
     monkeypatch.setattr(filesystem, "_default", fake)
-    view, vm = opened(tmp_path, 'start: "/home/sub"')
+    view, vm = opened(tmp_path, 'Start: "/home/sub"')
     assert shown_names(view) == ["y.txt"]
     del fake.folders["/home/sub"]
     click(view, "toolbar.refresh")
@@ -659,14 +672,14 @@ def test_a_folder_that_goes_while_the_dialog_shows_it_is_an_empty_list_with_the_
 def test_a_start_that_cannot_be_read_opens_the_nearest_folder_above_it_with_the_reason(tmp_path, monkeypatch):
     fake = Fake({"/home": [entry("/home", "x.txt")]})
     monkeypatch.setattr(filesystem, "_default", fake)
-    view, vm = opened(tmp_path, 'start: "/home/nowhere/deeper"')
+    view, vm = opened(tmp_path, 'Start: "/home/nowhere/deeper"')
     assert ctl(view).folder.get() == "/home" and node(view, "message_text").get("text") == "There is no folder /home/nowhere/deeper"
 
 
 def test_an_empty_folder_says_so(tmp_path):
     base = tmp_path / "empty"
     base.mkdir()
-    view, vm = opened(tmp_path, f'start: "{base}"')
+    view, vm = opened(tmp_path, f'Start: "{base}"')
     assert node(view, "empty").get("text") == "This folder is empty"
     assert f"{PANEL}.message_text" not in view._built.nodes
 
@@ -674,7 +687,7 @@ def test_an_empty_folder_says_so(tmp_path):
 def test_new_folder_that_the_place_refuses_is_a_message(tmp_path, monkeypatch):
     fake = Fake({"/home": [entry("/home", "x.txt")]})
     monkeypatch.setattr(filesystem, "_default", fake)
-    view, vm = opened(tmp_path, 'start: "/home", mode: save')
+    view, vm = opened(tmp_path, 'Start: "/home", Mode: save')
     click(view, "options.new_folder_button")
     typed(view, "new_folder_row.new_folder_field", "made")
     click(view, "new_folder_row.new_folder_make")
@@ -694,28 +707,35 @@ class PythonVM(ViewModel):
 
 def requested(tmp_path):
     (tmp_path / "Views").mkdir(parents=True, exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text("""tesserae: 0.6
-name: main
-widget: Container
-style: {flex_direction: vertical, width: 900, height: 800}
-children:
-  - {widget: Rect, name: elsewhere, style: {width: 80, height: 80, background: surface_variant}}
-  - widget: FileDialog
-    name: fd
-    open: "{{ file_open }}"
-    mode: "{{ file_mode }}"
-    start: "{{ file_start }}"
-    root: "{{ file_root }}"
-    filters: "{{ file_filters }}"
-    filter: "{{ file_filter }}"
-    filename: "{{ file_filename }}"
-    multiple: "{{ file_multiple }}"
-    headline: "{{ file_headline }}"
-    accept_label: "{{ file_accept_label }}"
-    show_hidden: "{{ file_show_hidden }}"
-    value: "{{ file_value }}"
-    on_accept: file_accepted
-    on_cancel: file_cancelled
+    (tmp_path / "Views" / "Main_View.tdl").write_text("""---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {
+  Name: main
+  Style { Flex_Direction: vertical, Width: 900, Height: 800 }
+  Children {
+    Rect { Name: elsewhere, Style { Width: 80, Height: 80, Background: surface_variant } }
+    FileDialog {
+      Name: fd
+      Open: <| file_open |>
+      Mode: <| file_mode |>
+      Start: <| file_start |>
+      Root: <| file_root |>
+      Filters: <| file_filters |>
+      Filter: <| file_filter |>
+      Filename: <| file_filename |>
+      Multiple: <| file_multiple |>
+      Headline: <| file_headline |>
+      Accept_Label: <| file_accept_label |>
+      Show_Hidden: <| file_show_hidden |>
+      Value: <| file_value |>
+      On_Accept: file_accepted
+      On_Cancel: file_cancelled
+    }
+  }
+}
 """)
     app = App(root=tmp_path, width=900, height=800)
     app.bind(PythonVM)
@@ -775,7 +795,7 @@ def test_showing_again_while_open_replaces_the_request_and_close_calls_nothing(t
 
 def test_opening_puts_the_focus_in_the_list_so_the_keys_work_at_once(tmp_path):
     base = tree(tmp_path)
-    view, vm = opened(tmp_path, f'start: "{base}"')
+    view, vm = opened(tmp_path, f'Start: "{base}"')
     assert view._built.nodes[f"{PANEL}.list_group.list_box"].get("focused")
     view.window.simulate("key_down", key="arrow_down")
     settle(view)

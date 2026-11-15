@@ -23,9 +23,22 @@ class VM(ViewModel):
         self.clicks += 1
 
 
-HEAD = "name: main\nwidget: Container\nstyle: {width: 300, height: 200, flex_direction: vertical}\nstate: {open: false}\nchildren:\n"
-V1 = HEAD + "  - {widget: Text, name: label, text: \"Count {{ count }}\", typography_role: body_large, style: {foreground: on_surface}}\n  - {widget: Button, name: go, label: Go, handlers: {on_click: bump}}\n"
-V2 = HEAD + "  - {widget: Text, name: label, text: \"Total {{ count }}\", typography_role: body_large, style: {foreground: on_surface}}\n  - {widget: Button, name: go, label: Go, handlers: {on_click: bump}}\n  - {widget: Text, name: extra, text: new, typography_role: body_large, style: {foreground: on_surface}}\n"
+HEAD = """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Width: 300, Height: 200, Flex_Direction: vertical }
+  State { Open: false }
+  Children {
+"""
+TAIL = "  }\n}\n"
+LABEL = '    Text { Name: label, Text: %s <| count |>, Typography_Role: body_large, Style { Foreground: on_surface } }\n'
+GO = "    Button { Name: go, Label: Go, Handlers { On_Click: bump } }\n"
+EXTRA = "    Text { Name: extra, Text: new, Typography_Role: body_large, Style { Foreground: on_surface } }\n"
+V1 = HEAD + LABEL % "Count" + GO + TAIL
+V2 = HEAD + LABEL % "Total" + GO + EXTRA + TAIL
 
 
 def bump_time(path):
@@ -42,7 +55,7 @@ def write(path, text):
 @pytest.fixture
 def opened(tmp_path):
     (tmp_path / "Views").mkdir()
-    path = tmp_path / "Views" / "Main_View.yaml"
+    path = tmp_path / "Views" / "Main_View.tdl"
     path.write_text(V1)
     app = App(root=tmp_path)
     app.bind(VM)
@@ -108,9 +121,9 @@ def test_state_of_a_node_that_keeps_its_id_survives(opened):
     assert view.handle.state("open").get() is True
 
 
-def test_a_yaml_mistake_leaves_the_view_as_it_was(opened):
+def test_a_syntax_mistake_leaves_the_view_as_it_was(opened):
     app, view, path, watcher, vm = opened
-    write(path, V1.replace("widget: Text", "widget: Textt"))
+    write(path, V1.replace("    Text {", "    Textt {"))
     with pytest.raises(Exception):
         watcher.poll()
     view.window.advance(16)
@@ -122,7 +135,7 @@ def test_a_yaml_mistake_leaves_the_view_as_it_was(opened):
 
 def test_a_fixed_file_reloads_after_a_mistake(opened):
     app, view, path, watcher, vm = opened
-    write(path, "widget: [")
+    write(path, "Container {")
     with pytest.raises(Exception):
         watcher.poll()
     write(path, V2)
@@ -134,7 +147,7 @@ def test_a_fixed_file_reloads_after_a_mistake(opened):
 def test_a_view_the_engine_rejects_leaves_the_view_as_it_was(opened):
     """The parse is fine and the build fails (a Text with no type role): the old composition is drawn again, bound and clickable."""
     app, view, path, watcher, vm = opened
-    write(path, V2.replace("typography_role: body_large, ", "", 1))
+    write(path, V2.replace("Typography_Role: body_large, ", "", 1))
     with pytest.raises(Exception):
         watcher.poll()
     view.window.advance(16)
@@ -145,14 +158,25 @@ def test_a_view_the_engine_rejects_leaves_the_view_as_it_was(opened):
     assert view.handle.composition.find("root.extra") is None
 
 
-CALLED = "name: Chip\nwidget: Container\nparams: {title: {type: str, default: x}}\nchildren:\n  - {widget: Text, name: t, text: \"{{ title }}\", typography_role: body_large, style: {foreground: on_surface}}\n"
-WITH_CALL = HEAD + "  - {widget: Chip, name: chip, title: Hello}\n"
+CALLED = """---
+TDL: 0.2
+Name: Chip
+---
+Container {
+  Name: Chip
+  Params { Title { Type: str, Default: x } }
+  Children {
+    Text { Name: t, Text: <| title |>, Typography_Role: body_large, Style { Foreground: on_surface } }
+  }
+}
+"""
+WITH_CALL = HEAD + "    Chip { Name: chip, Title: Hello }\n" + TAIL
 
 
 @pytest.fixture
 def calling(tmp_path):
     (tmp_path / "Views").mkdir()
-    main, chip = tmp_path / "Views" / "Main_View.yaml", tmp_path / "Views" / "Chip_View.yaml"
+    main, chip = tmp_path / "Views" / "Main_View.tdl", tmp_path / "Views" / "Chip_View.tdl"
     main.write_text(WITH_CALL)
     chip.write_text(CALLED)
     app = App(root=tmp_path)
@@ -168,7 +192,7 @@ def test_a_view_it_calls_is_watched_and_an_edit_to_it_reloads(calling):
     app, view, main, chip, watcher = calling
     assert chip.resolve() in watcher.files
     assert text_of(view, "chip.t") == "Hello"
-    write(chip, CALLED.replace("{{ title }}", "{{ title }}!"))
+    write(chip, CALLED.replace("<| title |>", "<| title |>!"))
     assert watcher.poll() is True
     view.window.advance(16)
     assert text_of(view, "chip.t") == "Hello!"
@@ -184,26 +208,29 @@ def test_the_shipped_views_are_not_watched(opened):
 
 def test_a_view_called_by_a_view_it_calls_is_watched_too(tmp_path):
     (tmp_path / "Views").mkdir()
-    main, chip, inner = (tmp_path / "Views" / f"{n}_View.yaml" for n in ("Main", "Chip", "Inner"))
+    main, chip, inner = (tmp_path / "Views" / f"{n}_View.tdl" for n in ("Main", "Chip", "Inner"))
     main.write_text(WITH_CALL)
-    chip.write_text("name: Chip\nwidget: Container\nparams: {title: {type: str, default: x}}\nchildren:\n  - {widget: Inner, name: in, title: \"{{ title }}\"}\n")
-    inner.write_text(CALLED.replace("name: Chip", "name: Inner"))
+    chip.write_text(CALLED.replace("Text { Name: t, Text: <| title |>, Typography_Role: body_large, Style { Foreground: on_surface } }", "Inner { Name: in, Title: <| title |> }"))
+    inner.write_text(CALLED.replace("Name: Chip", "Name: Inner"))
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")
     view.window.advance(16)
     watcher = ComposedWatcher(view, view.source, app._composed_docs, lambda library, doc: app._composed_rules(library, doc=doc)[0])
     assert inner.resolve() in watcher.files
-    write(inner, inner.read_text().replace("{{ title }}", "<{{ title }}>"))
+    write(inner, inner.read_text().replace("<| title |>", "(<| title |>)"))
     assert watcher.poll() is True
     view.window.advance(16)
-    assert text_of(view, "chip.in.t") == "<Hello>"
+    assert text_of(view, "chip.in.t") == "(Hello)"
 
 
 def test_the_old_instances_are_let_go_and_a_list_still_follows_its_data_after_a_reload(tmp_path):
     (tmp_path / "Views").mkdir()
-    rows = HEAD.replace("state: {open: false}", "state: {open: false}") + "  - for: n in rows\n    widget: Text\n    key: n\n    text: \"{{ n }}\"\n    typography_role: body_large\n    style: {foreground: on_surface}\n"
-    path = tmp_path / "Views" / "Main_View.yaml"
+    rows = HEAD + """    For n In <| rows |> Key <| n |> {
+      Text { Text: <| n |>, Typography_Role: body_large, Style { Foreground: on_surface } }
+    }
+""" + TAIL
+    path = tmp_path / "Views" / "Main_View.tdl"
     path.write_text(rows)
 
     class Rows(VM):
@@ -232,7 +259,7 @@ def test_the_old_instances_are_let_go_and_a_list_still_follows_its_data_after_a_
 
 def test_a_view_the_file_starts_to_call_is_watched_from_then_on(tmp_path):
     (tmp_path / "Views").mkdir()
-    main, chip = tmp_path / "Views" / "Main_View.yaml", tmp_path / "Views" / "Chip_View.yaml"
+    main, chip = tmp_path / "Views" / "Main_View.tdl", tmp_path / "Views" / "Chip_View.tdl"
     main.write_text(V1)
     chip.write_text(CALLED)
     app = App(root=tmp_path)
@@ -252,7 +279,7 @@ def test_a_picture_it_draws_is_watched(tmp_path):
 
     (tmp_path / "Views").mkdir()
     Image.new("RGBA", (4, 4), (255, 0, 0, 255)).save(tmp_path / "Views" / "dot.png")
-    (tmp_path / "Views" / "Main_View.yaml").write_text(HEAD + "  - {widget: Image, name: pic, src: dot.png, style: {width: 8, height: 8}}\n")
+    (tmp_path / "Views" / "Main_View.tdl").write_text(HEAD + "    Image { Name: pic, Src: dot.png, Style { Width: 8, Height: 8 } }\n" + TAIL)
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")
@@ -309,7 +336,7 @@ def test_a_mistake_found_on_the_watcher_thread_is_logged_and_nothing_is_queued(o
     watcher.start(loop)
     try:
         time.sleep(0.3)
-        write(path, "widget: [")
+        write(path, "Container {")
         deadline = time.time() + 10
         while not messages and time.time() < deadline:
             time.sleep(0.05)
@@ -324,7 +351,7 @@ def test_app_run_with_hot_reload_watches_an_opened_view(tmp_path):
     from loguru import logger
 
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(V1)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(V1)
     app = App(root=tmp_path)
     app.bind(VM)
     app.open_view("Main")
@@ -341,8 +368,8 @@ def test_app_run_with_hot_reload_watches_an_opened_view(tmp_path):
 
 def test_a_view_opened_while_hot_reload_runs_is_watched_too(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(V1)
-    (tmp_path / "Views" / "Other_View.yaml").write_text(V1.replace("name: main", "name: other"))
+    (tmp_path / "Views" / "Main_View.tdl").write_text(V1)
+    (tmp_path / "Views" / "Other_View.tdl").write_text(V1.replace("Name: main", "Name: other"))
     app = App(root=tmp_path)
 
     class Other(VM):
@@ -359,8 +386,8 @@ def test_a_view_opened_while_hot_reload_runs_is_watched_too(tmp_path):
 
 
 @pytest.mark.parametrize("broken", [
-    V1.replace("Count {{ count }}", "Count {{ nope }}"),                       # a name nothing defines
-    V1 + "  - {widget: Button, name: two, label: Go, colour: red}\n",           # a property the widget does not have
+    V1.replace("Count <| count |>", "Count <| nope |>"),                       # a name nothing defines
+    V1.replace(TAIL, "    Button { Name: two, Label: Go, Colour: red }\n" + TAIL),           # a property the widget does not have
 ])
 def test_a_wrong_name_or_property_in_an_edit_leaves_the_view_as_it_was(opened, broken):
     app, view, path, watcher, vm = opened
@@ -374,9 +401,30 @@ def test_a_wrong_name_or_property_in_an_edit_leaves_the_view_as_it_was(opened, b
 def test_hot_reload_starts_in_an_app_with_routed_screens(tmp_path):
     """A routed call is registered as a screen of the window's view; hot reload used to ask it for the older view's components and fail."""
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Window_View.yaml").write_text(
-        "name: Window\nwidget: Window\ntitle: T\nstyle: {width: 300, height: 200}\nchildren:\n  - {widget: Screen, name: screen, route: \"\", style: {flex: fill}}\n")
-    (tmp_path / "Views" / "Screen_View.yaml").write_text("widget: Container\nchildren:\n  - {widget: Text, name: t, text: hi, typography_role: body_large, style: {foreground: on_surface}}\n")
+    (tmp_path / "Views" / "Window_View.tdl").write_text(
+        """---
+TDL: 0.2
+Name: Window
+---
+Window {
+  Name: Window
+  Title: T
+  Style { Width: 300, Height: 200 }
+  Children {
+    Screen { Name: screen, Route: "", Style { Flex: fill } }
+  }
+}
+""")
+    (tmp_path / "Views" / "Screen_View.tdl").write_text("""---
+TDL: 0.2
+Name: Screen
+---
+Container {
+  Children {
+    Text { Name: t, Text: hi, Typography_Role: body_large, Style { Foreground: on_surface } }
+  }
+}
+""")
 
     class Win(ViewModel):
         views = "Window"

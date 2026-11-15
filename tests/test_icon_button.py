@@ -20,11 +20,17 @@ class VM(ViewModel):
 
 def opened(tmp_path, props="", label="Home"):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{flex_direction: vertical, align_content: top_left, width: 400, height: 400}}
-children:
-  - {{widget: IconButton, name: b, icon: home, label: '{label}', handlers: {{on_click: bump}}{', ' + props if props else ''}}}
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Align_Content: top_left, Width: 400, Height: 400 }}
+  Children {{
+    IconButton {{ Name: b, Icon: home, Label: "{label}", Handlers {{ On_Click: bump }}{', ' + props if props else ''} }}
+  }}
+}}
 """)
     app = App(root=tmp_path)
     app.bind(VM)
@@ -72,30 +78,30 @@ def test_a_standard_icon_button_has_no_container_and_a_24_pixel_icon_in_a_40_pix
     ("filled", "primary", "on_primary"), ("tonal", "secondary_container", "on_secondary_container"),
 ])
 def test_filled_and_tonal_have_their_containers(tmp_path, variant, fill, content):
-    view, _ = opened(tmp_path, f"variant: {variant}")
+    view, _ = opened(tmp_path, f"Variant: {variant}")
     assert b(view).get("fill") == role(view, fill) and icon(view).get("fill") == role(view, content)
 
 
 def test_outlined_has_a_one_pixel_outline(tmp_path):
-    view, _ = opened(tmp_path, "variant: outlined")
+    view, _ = opened(tmp_path, "Variant: outlined")
     assert b(view).get("stroke_width") == 1.0 and b(view).get("stroke_color") == role(view, "outline") and b(view).get("fill")[3] == 0
 
 
 @pytest.mark.parametrize("size, height, glyph", [("xs", 32, 20), ("s", 40, 24), ("m", 56, 24), ("l", 96, 32), ("xl", 136, 40)])
 def test_the_five_sizes(tmp_path, size, height, glyph):
-    view, _ = opened(tmp_path, f"size: {size}")
+    view, _ = opened(tmp_path, f"Size: {size}")
     assert b(view).get("layout_height") == float(height) and b(view).get("layout_width") == float(height)
     assert icon(view).get("layout_width") == float(glyph)
 
 
 @pytest.mark.parametrize("kind, width", [("narrow", 32), ("default", 40), ("wide", 52)])
 def test_the_three_widths(tmp_path, kind, width):
-    view, _ = opened(tmp_path, f"width_kind: {kind}")
+    view, _ = opened(tmp_path, f"Width_Kind: {kind}")
     assert b(view).get("layout_width") == float(width) and b(view).get("layout_height") == 40.0
 
 
 def test_a_square_one_has_rounded_corners(tmp_path):
-    view, _ = opened(tmp_path, "shape: square")
+    view, _ = opened(tmp_path, "Shape: square")
     assert b(view).get("corner_radius") == 12.0
 
 
@@ -118,13 +124,13 @@ def test_a_press_runs_the_calls_handler_unless_disabled(tmp_path):
     view, vm = opened(tmp_path)
     click(view)
     assert vm.clicks.get() == 1
-    view2, vm2 = opened(tmp_path / "x" if (tmp_path / "x").mkdir() is None else tmp_path, "disabled: true")
+    view2, vm2 = opened(tmp_path / "x" if (tmp_path / "x").mkdir() is None else tmp_path, "Disabled: true")
     click(view2)
     assert vm2.clicks.get() == 0 and b(view2).get("disabled") is True and b(view2).get("opacity") < 0.5
 
 
 def test_a_toggle_flips_swaps_its_icon_and_its_colours_and_shape(tmp_path):
-    view, _ = opened(tmp_path, "variant: filled, toggle: true, selected_icon: search")
+    view, _ = opened(tmp_path, "Variant: filled, Toggle: true, Selected_Icon: search")
     assert b(view).get("pressed") is False and b(view).get("fill") == role(view, "surface_container_highest")
     assert icon(view).get("fill") == role(view, "on_surface_variant") and b(view).get("corner_radius") >= 20
     assert view._built.specs["root.b.icon"]["icon"] == {"name": "home"}
@@ -135,13 +141,13 @@ def test_a_toggle_flips_swaps_its_icon_and_its_colours_and_shape(tmp_path):
 
 
 def test_a_standard_toggle_turns_its_icon_primary_when_on(tmp_path):
-    view, _ = opened(tmp_path, "toggle: true")
+    view, _ = opened(tmp_path, "Toggle: true")
     click(view)
     assert icon(view).get("fill") == role(view, "primary")
 
 
 def test_a_toggle_bound_to_a_signal_writes_it(tmp_path):
-    view, vm = opened(tmp_path, 'toggle: true, selected: "{{ on }}"')
+    view, vm = opened(tmp_path, 'Toggle: true, Selected: <| on |>')
     click(view)
     assert vm.on.get() is True
     click(view)
@@ -159,6 +165,6 @@ def test_a_pressed_circle_squares_off(tmp_path):
 
 
 def test_a_toggle_flips_even_when_the_call_has_its_own_click_handler(tmp_path):
-    view, vm = opened(tmp_path, "toggle: true")  # the call's `on_click: bump` runs after the view's own flip
+    view, vm = opened(tmp_path, "Toggle: true")  # the call's `on_click: bump` runs after the view's own flip
     click(view)
     assert vm.clicks.get() == 1 and b(view).get("pressed") is True

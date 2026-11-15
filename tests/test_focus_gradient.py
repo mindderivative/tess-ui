@@ -8,9 +8,20 @@ from tess_ui import App, tokens
 
 def opened(tmp_path, ring="gradient", **kw):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {width: 300, height: 200, flex_direction: vertical}\nchildren:\n"
-        "  - {widget: Button, name: a, label: One, variant: filled}\n  - {widget: Button, name: b, label: Two, variant: filled}\n")
+    (tmp_path / "Views" / "Main_View.tdl").write_text(
+        """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Width: 300, Height: 200, Flex_Direction: vertical }
+  Children {
+    Button { Name: a, Label: One, Variant: filled }
+    Button { Name: b, Label: Two, Variant: filled }
+  }
+}
+""")
     app = App(root=tmp_path, width=300, height=200, focus_ring=ring, **kw)
     view = app.open_view("Main")
     app.show("main")
