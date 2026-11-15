@@ -3,58 +3,63 @@
 import copy
 
 import pytest
-import yaml
 
 from tess_ui import App, View
 from tess_ui.spec.dock import DockError, expand_docks
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
-DOCK = """
-id: root
-kind: Container
-style: {width: 800, height: 500}
-children:
-  - id: dock
-    kind: Dock
-    children:
-      - id: files
-        kind: DockPanel
-        title: Files
-        style: {zone: left, width: 200}
-        children:
-          - {id: files_text, kind: Text, text: {content: "Files", typography_role: body_large}, style: {foreground: on_surface}}
-      - id: outline
-        kind: DockPanel
-        title: Outline
-        style: {zone: left}
-        children:
-          - {id: outline_text, kind: Text, text: {content: "Outline", typography_role: body_large}, style: {foreground: on_surface}}
-      - id: editor
-        kind: DockPanel
-        title: Editor
-        style: {zone: center}
-        children:
-          - id: left_half
-            kind: DockPanel
-            style: {width: 300}
-            children:
-              - {id: left_text, kind: Text, text: {content: "Left half", typography_role: body_large}, style: {foreground: on_surface}}
-          - id: right_half
-            kind: DockPanel
-            children:
-              - {id: right_text, kind: Text, text: {content: "Right half", typography_role: body_large}, style: {foreground: on_surface}}
-      - id: console
-        kind: DockPanel
-        title: Console
-        style: {zone: bottom, height: 120}
-        children:
-          - {id: console_text, kind: Text, text: {content: "Console", typography_role: body_large}, style: {foreground: on_surface}}
-"""
+DOCK = {'id': 'root',
+        'kind': 'Container',
+        'style': {'width': 800, 'height': 500},
+        'children': [{'id': 'dock',
+                      'kind': 'Dock',
+                      'children': [{'id': 'files',
+                                    'kind': 'DockPanel',
+                                    'title': 'Files',
+                                    'style': {'zone': 'left', 'width': 200},
+                                    'children': [{'id': 'files_text',
+                                                  'kind': 'Text',
+                                                  'text': {'content': 'Files', 'typography_role': 'body_large'},
+                                                  'style': {'foreground': 'on_surface'}}]},
+                                   {'id': 'outline',
+                                    'kind': 'DockPanel',
+                                    'title': 'Outline',
+                                    'style': {'zone': 'left'},
+                                    'children': [{'id': 'outline_text',
+                                                  'kind': 'Text',
+                                                  'text': {'content': 'Outline', 'typography_role': 'body_large'},
+                                                  'style': {'foreground': 'on_surface'}}]},
+                                   {'id': 'editor',
+                                    'kind': 'DockPanel',
+                                    'title': 'Editor',
+                                    'style': {'zone': 'center'},
+                                    'children': [{'id': 'left_half',
+                                                  'kind': 'DockPanel',
+                                                  'style': {'width': 300},
+                                                  'children': [{'id': 'left_text',
+                                                                'kind': 'Text',
+                                                                'text': {'content': 'Left half', 'typography_role': 'body_large'},
+                                                                'style': {'foreground': 'on_surface'}}]},
+                                                 {'id': 'right_half',
+                                                  'kind': 'DockPanel',
+                                                  'children': [{'id': 'right_text',
+                                                                'kind': 'Text',
+                                                                'text': {'content': 'Right half', 'typography_role': 'body_large'},
+                                                                'style': {'foreground': 'on_surface'}}]}]},
+                                   {'id': 'console',
+                                    'kind': 'DockPanel',
+                                    'title': 'Console',
+                                    'style': {'zone': 'bottom', 'height': 120},
+                                    'children': [{'id': 'console_text',
+                                                  'kind': 'Text',
+                                                  'text': {'content': 'Console', 'typography_role': 'body_large'},
+                                                  'style': {'foreground': 'on_surface'}}]}]}]}
 
 
-def _view(text=DOCK, dark=True):
+def _view(spec=None, dark=True):
+    """A window holding the view of `spec` (a copy of `DOCK` when none is given)."""
     app = App(width=800, height=500, theme_seed=SEED, dark=dark)
-    view = View(yaml.safe_load(text), window=app.window)
+    view = View(copy.deepcopy(DOCK if spec is None else spec), window=app.window)
     app.window.root.add_child(view.root)
     app.window.advance(32)
     return app, view
@@ -63,7 +68,7 @@ def _view(text=DOCK, dark=True):
 # -- the spec ------------------------------------------------------------------------------------
 
 def test_a_dock_becomes_containers_with_its_panels_and_sizes():
-    spec = expand_docks(yaml.safe_load(DOCK))
+    spec = expand_docks(copy.deepcopy(DOCK))
     dock = spec["children"][0]
     assert dock["kind"] == "Container" and dock["dock"]["panels"] == [
         {"id": "files", "title": "Files", "zone": "left"}, {"id": "outline", "title": "Outline", "zone": "left"},
@@ -75,12 +80,13 @@ def test_a_dock_becomes_containers_with_its_panels_and_sizes():
 
 
 def test_a_split_has_a_handle_between_its_halves():
-    spec = expand_docks(yaml.safe_load(DOCK))
+    spec = expand_docks(copy.deepcopy(DOCK))
     editor = spec["children"][0]["children"][2]
     first, handle, second = editor["children"]
     assert handle["split_handle"] == {"axis": "x", "before": "left_half", "after": "right_half"}
     assert first["style"]["flex"] == "none" and second["style"]["flex"] == "fill"  # one with a width keeps it
-    vertical = yaml.safe_load(DOCK.replace("style: {zone: center}", "style: {zone: center, flex_direction: vertical}"))
+    vertical = copy.deepcopy(DOCK)
+    vertical["children"][0]["children"][2]["style"]["flex_direction"] = "vertical"
     assert expand_docks(vertical)["children"][0]["children"][2]["children"][1]["split_handle"]["axis"] == "y"
 
 
@@ -98,7 +104,7 @@ def test_a_split_has_a_handle_between_its_halves():
     (lambda d: d["children"].append({"id": "r", "kind": "Rect", "style": {"zone": "left"}}), "style.zone is for a DockPanel in a Dock"),
 ])
 def test_a_badly_written_dock_is_refused(change, message):
-    spec = yaml.safe_load(DOCK)
+    spec = copy.deepcopy(DOCK)
     change(spec)
     with pytest.raises(DockError, match=message):
         expand_docks(spec)
@@ -198,7 +204,7 @@ def test_the_dock_follows_the_apps_theme():
 # -- reloads ----------------------------------------------------------------------------------
 
 def _reload(view, change):
-    spec = yaml.safe_load(DOCK)
+    spec = copy.deepcopy(DOCK)
     change(spec)
     view.reconcile(spec)
     view.window.advance(16)

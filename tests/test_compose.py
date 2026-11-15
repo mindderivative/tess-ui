@@ -29,7 +29,9 @@ class VM:
 
 
 def tdl(body, name="Main"):
-    """A view file in TDL: the metadata block, then `body`, the root block."""
+    """A view file in TDL: the metadata block, then `body`, the root block (a `body` that has its own `---` block is returned as it is)."""
+    if body.lstrip().startswith("---"):
+        return body
     return f"---\nTDL: 0.2\nName: {name}\n---\n{body}\n"
 
 

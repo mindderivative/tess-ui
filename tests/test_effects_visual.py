@@ -1,14 +1,12 @@
 """#90: what the effects look like, read back from the window's headless snapshot (`window.snapshot()`)."""
 
-import yaml
-
 from tess_ui import App, View
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 
 
 def _render(children, **app_args):
-    spec = yaml.safe_load("id: root\nkind: Container\nstyle: {width: 300, height: 120, background: '#000000'}\nchildren: []")
+    spec = {"id": "root", "kind": "Container", "style": {"width": 300, "height": 120, "background": "#000000"}, "children": []}
     spec["children"] = children
     app = App(width=300, height=120, theme_seed=SEED, dark=True, **app_args)
     view = View(spec, window=app.window)

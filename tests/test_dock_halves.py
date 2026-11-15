@@ -4,8 +4,9 @@ split made collapsing when it empties, the "Move to" menu, and a reload leaving 
 with `simulate`; a real window was checked for the one thing it decides (the root's `pointer_move`s keep arriving during a tess_re drag:
 tools/spikes/drag_events.py)."""
 
+import copy
+
 import pytest
-import yaml
 
 from tess_ui.docking import DRAG_THRESHOLD, HALF, HALF_EDGE, TAB_HEIGHT
 from tess_ui.dockhost import HANDLE_SPAN, MIN_SPLIT
@@ -104,9 +105,9 @@ def test_each_half_is_a_column_with_a_tab_strip_over_its_content_titled_by_its_p
 
 
 def test_a_halfs_title_is_the_panels_title():
-    spec = yaml.safe_load(DOCK)
+    spec = copy.deepcopy(DOCK)
     spec["children"][0]["children"][2]["children"][0]["title"] = "Source"
-    app, view = _view(yaml.safe_dump(spec))
+    app, view = _view(spec)
     assert view.dock_host("dock").dock.titles(HALF + "left_half") == ["Source"]
 
 
@@ -308,9 +309,9 @@ def test_a_hidden_panel_leaving_a_half_is_shown_again_in_its_zone():
 
 
 def test_closing_a_panel_in_a_half_leaves_the_half_and_it_reopens_in_its_zone():
-    spec = yaml.safe_load(DOCK)
+    spec = copy.deepcopy(DOCK)
     spec["children"][0]["children"][1]["closable"] = True  # Outline
-    app, view = _view(yaml.safe_dump(spec))
+    app, view = _view(spec)
     host = view.dock_host("dock")
     _join(app, host, "left_half")
     close_button = next(c for c in host.dock._zones[HALF + "left_half"].tabs[1].node.children() if c.get("role") == "button")
@@ -520,9 +521,9 @@ def test_dragging_the_only_panel_of_a_made_half_onto_another_half_moves_it_and_c
 
 
 def test_closing_the_only_panel_of_a_made_half_collapses_it():
-    spec = yaml.safe_load(DOCK)
+    spec = copy.deepcopy(DOCK)
     spec["children"][0]["children"][1]["closable"] = True
-    app, view = _view(yaml.safe_dump(spec))
+    app, view = _view(spec)
     host = view.dock_host("dock")
     before = _structure(view, host)
     _split(app, host, "right_half", "bottom")

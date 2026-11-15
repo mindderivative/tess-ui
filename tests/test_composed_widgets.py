@@ -119,6 +119,7 @@ def test_arguments_reach_the_button():
         button(window, "x", 10, 10, variant="huge")
 
 
+# legacy syntax: deleted with spec/expand.py at the cutover
 def test_the_python_and_yaml_paths_are_one_definition():
     """`button()` expands the same fragment a `component: ButtonFilled` does."""
     from tess_ui import View

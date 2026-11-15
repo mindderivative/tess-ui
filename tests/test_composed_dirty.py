@@ -175,10 +175,11 @@ def test_the_spec_copy_is_the_deep_copy_it_replaces():
 
 
 def test_walk_visits_parts_then_children_in_order_like_the_recursion_it_replaces():
-    from test_composed import BASE, TEXT, render  # the same composed view the other tests build
+    from test_composed import TEXT, page, render  # the same composed view the other tests build
 
-    view, vm, _ = render(BASE + "  - widget: Container\n    name: row\n    for: r in rows\n    key: r.id\n    children:\n      - widget: Text\n        name: t\n        text: '{{ r.t }}'\n        typography_role: body_large\n        style: {width: 100, height: 20, foreground: '#000000'}\n"
-                         "  - widget: Text\n    name: last\n    text: 'z'\n    " + TEXT + "\n")
+    view, vm, _ = render(page("For r In <| rows |> Key <| r.id |> { Container { Name: row, Children { "
+                              "Text { Name: t, Text: <| r.t |>, " + TEXT + " } } } }",
+                              "Text { Name: last, Text: z, " + TEXT + " }"))
     vm.rows.set([{"id": 1, "t": "a"}, {"id": 2, "t": "b"}, {"id": 3, "t": "c"}])
 
     def reference(inst):
