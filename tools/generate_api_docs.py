@@ -31,7 +31,7 @@ THEME_MARKS = ("<!-- api:begin (written by tools/generate_api_docs.py) -->", "<!
 SECTIONS = (
     ("tess_ui.app", "App", "The entry point: screens, one window, the loop.", ("App",)),
     ("tess_ui.reactive", "Reactivity", "Signals, computed values, effects and the ViewModel base class."),
-    ("tess_ui.view", "Views and components", "A loaded `*_View.yaml`, and an embedded instance of one."),
+    ("tess_ui.view", "Views and components", "A loaded `*_View.tdl`, and an embedded instance of one."),
     ("tess_ui.component", "Embedding", "A component with a ViewModel of its own, inside a view.", ("instantiate",)),
     ("tess_ui.repeater", "Repeater", "A list signal kept in step with a list of components.", ("Repeater",)),
     ("tess_ui.project", "Projects", "A project's files, found by name.", ("Project", "ProjectError")),

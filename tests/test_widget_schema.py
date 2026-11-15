@@ -1,17 +1,21 @@
-"""#275: the editor schemas of the current language. Every view of the repository validates against the widget schema (with the project's own views in it, as
-`tesserae schema --project` writes it), every stylesheet of rules against the stylesheet schema, and the mistakes an editor should flag are flagged."""
+"""#275: the JSON schemas of the current language, of the data a `.tdl` file loads to. Every view of the repository (read through the TDL front end) validates against
+the widget schema (with the project's own views in it, as `tesserae schema --project` writes it), every stylesheet of rules against the stylesheet schema, and the
+mistakes a tool should flag are flagged."""
 
-import importlib.util
 import json
 import sys
 from pathlib import Path
 
 import jsonschema
 import pytest
-import yaml
 
-from tess_ui import cli
-from tess_ui.spec.rules import is_rule_sheet
+pytest.importorskip("tess_dl", reason="the views and stylesheets are TDL, which needs tess_dl (Python 3.14)")
+
+from tess_ui import cli  # noqa: E402
+from tess_ui.spec.rules import is_rule_sheet  # noqa: E402
+from tess_ui.spec.tdl import load_tdl_file  # noqa: E402
+from tess_ui.spec.tdl_stylesheet import load_tdl_stylesheet_file  # noqa: E402
+from tess_ui.spec.tdl_theme import plain  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 SCHEMAS = ROOT / "src" / "tess_ui" / "schema"
@@ -19,39 +23,18 @@ WIDGET = json.loads((SCHEMAS / "tess-ui-widget-schema.json").read_text(encoding=
 STYLESHEET = json.loads((SCHEMAS / "tess-ui-stylesheet-schema.json").read_text(encoding="utf-8"))
 
 
-def _load(path):
-    if path.suffix == ".tdl":  # the examples: read through the TDL front end, as the app reads them
-        if importlib.util.find_spec("tess_dl") is None:
-            return None  # the examples are TDL and need tess_dl (Python 3.14): the count test below skips
-        from tess_ui.spec.tdl_theme import plain
-
-        if path.name.endswith("_View.tdl"):
-            from tess_ui.spec.tdl import load_tdl_file
-
-            return plain(load_tdl_file(path))
-        from tess_ui.spec.tdl_stylesheet import load_tdl_stylesheet_file
-
-        return plain(load_tdl_stylesheet_file(path))
-    try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except yaml.YAMLError:
-        return None
-    return data if isinstance(data, dict) else None
-
-
 def _view_files():
     """Each view file of the current language, with the folder whose views it can call: its example project, or the shipped ones alone."""
-    for path in sorted([*(ROOT / "src").rglob("*_View.yaml"), *(ROOT / "examples").rglob("*_View.tdl")]):
-        data = _load(path)
-        if data is not None and "widget" in data:
-            project = next((p for p in path.parents if (p / "app.py").is_file()), None) if "examples" in path.parts else None
-            yield pytest.param(path, project, data, id=path.relative_to(ROOT).as_posix())
+    for path in sorted([*(ROOT / "src").rglob("*_View.tdl"), *(ROOT / "examples").rglob("*_View.tdl")]):
+        data = plain(load_tdl_file(path))
+        project = next((p for p in path.parents if (p / "app.py").is_file()), None) if "examples" in path.parts else None
+        yield pytest.param(path, project, data, id=path.relative_to(ROOT).as_posix())
 
 
 def _rule_sheets():
-    for path in sorted([*(ROOT / "src").rglob("*_Stylesheet.yaml"), *(ROOT / "examples").rglob("*_Stylesheet.tdl")]):
-        data = _load(path)
-        if data is not None and is_rule_sheet(data):  # the older `kind:` sheets (the fragments') have the theme schema
+    for path in sorted([*(ROOT / "src").rglob("*_Stylesheet.tdl"), *(ROOT / "examples").rglob("*_Stylesheet.tdl")]):
+        data = plain(load_tdl_stylesheet_file(path))
+        if is_rule_sheet(data):
             yield pytest.param(path, data, id=path.relative_to(ROOT).as_posix())
 
 
@@ -65,7 +48,6 @@ def _problems(validator, data):
 
 
 def test_there_are_views_and_stylesheets_to_check():
-    pytest.importorskip("tess_dl", reason="the examples' views are TDL")
     assert len(list(_view_files())) > 80 and len(list(_rule_sheets())) > 40
 
 
@@ -112,46 +94,56 @@ def test_a_rule_of_a_stylesheet_is_checked():
     assert check({"widget": "Button"})  # a rule sets something
 
 
+def _write_view(path, name, root, *, header=""):
+    path.write_text(f"---\nTDL: 0.2\nName: {name}\n---\n{header}{root}\n")
+
+
 def test_a_project_view_is_a_widget_in_its_project_schema(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Stat_View.yaml").write_text("params: {label: {type: str, required: true}, value: {type: int, min: 0}}\nwidget: Container\n")
-    (tmp_path / "Views" / "Window_View.yaml").write_text("name: Window\nwidget: Window\ntitle: T\n")
+    _write_view(tmp_path / "Views" / "Stat_View.tdl", "Stat",
+                "Container {\n  Params {\n    Label { Type: str, Required: true }\n    Value { Type: int, Min: 0 }\n  }\n}")
+    _write_view(tmp_path / "Views" / "Window_View.tdl", "Window", "Window { Name: Window, Title: T }")
     validator = _validator_for(tmp_path)
     assert not _flagged({"widget": "Stat", "label": "x", "value": 3}, tmp_path)
     assert _flagged({"widget": "Stat", "label": "x", "valuee": 3}, tmp_path)  # a misspelt param of the project's own view
     assert _flagged({"widget": "Stat", "label": "x", "value": -1}, tmp_path)  # a bound the view declares
     assert _flagged({"widget": "Stat"}, tmp_path)  # a required param
-    assert not _problems(validator, yaml.safe_load((tmp_path / "Views" / "Window_View.yaml").read_text()))  # the window's file is the built-in Window
+    assert not _problems(validator, plain(load_tdl_file(tmp_path / "Views" / "Window_View.tdl")))  # the window's file is the built-in Window
     assert _flagged({"widget": "Stat", "label": "x"}, None) and "Stat" not in WIDGET["properties"]["widget"]["enum"]  # the packaged schema does not know it
 
 
 def test_a_view_of_a_project_that_shares_a_name_with_a_shipped_one_replaces_it(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Button_View.yaml").write_text("params: {caption: str}\nwidget: Container\n")
+    _write_view(tmp_path / "Views" / "Button_View.tdl", "Button", "Container {\n  Params { Caption { Type: str } }\n}")
     assert not _flagged({"widget": "Button", "caption": "x"}, tmp_path)
     assert _flagged({"widget": "Button", "label": "x"}, tmp_path)
 
 
-def test_the_command_maps_views_to_the_widget_schema_and_the_project_one_on_request(tmp_path, capsys):
-    assert cli.main(["schema", "--settings"]) == 0
-    setting = json.loads(capsys.readouterr().out)["yaml.schemas"]
-    assert setting[str(cli.SCHEMAS / "tess-ui-widget-schema.json")] == ["**/*_View.yaml"]
-    assert str(cli.SCHEMAS / cli.OLDER_VIEW_SCHEMA) not in setting  # the older syntax is for a file that names it in a comment
-    assert setting[str(cli.SCHEMAS / "tess-ui-stylesheet-schema.json")][0] == "**/*_Stylesheet.yaml"
+def test_the_command_lists_the_schemas_and_writes_the_project_one_on_request(tmp_path, capsys):
+    assert cli.main(["schema"]) == 0
+    listing = capsys.readouterr().out
+    for name in cli.SCHEMA_FILES:
+        assert str(cli.SCHEMAS / name) in listing and (cli.SCHEMAS / name).is_file()
+    assert "*_View.tdl" in listing and "*_Stylesheet.tdl" in listing and "*_Theme.tdl" in listing
+    assert "YAML" not in listing and ".yaml" not in listing
+    assert sorted(p.name for p in cli.SCHEMAS.glob("*.json")) == sorted(cli.SCHEMA_FILES)  # the older syntax's schemas are not shipped any more
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Mine_View.yaml").write_text("params: {x: int}\nwidget: Container\n")
-    assert cli.main(["schema", "--settings", "--project", str(tmp_path)]) == 0
-    setting = json.loads(capsys.readouterr().out)["yaml.schemas"]
+    _write_view(tmp_path / "Views" / "Mine_View.tdl", "Mine", "Container {\n  Params { X { Type: int } }\n}")
+    assert cli.main(["schema", "--project", str(tmp_path)]) == 0
     written = tmp_path / ".tesserae" / "tess-ui-widget-schema.json"
-    assert written.is_file() and setting[str(written)] == ["**/*_View.yaml"]
+    assert written.is_file() and str(written) in capsys.readouterr().out
     assert "Mine" in json.loads(written.read_text())["properties"]["widget"]["enum"]
+
+
+def test_the_command_has_no_yaml_language_server_setting(capsys):
+    with pytest.raises(SystemExit):
+        cli.main(["schema", "--settings"])
+    assert "--settings" in capsys.readouterr().err
 
 
 @pytest.mark.parametrize("flags", [[], ["--window"]])
 def test_a_new_project_validates_against_its_own_schema(tmp_path, flags):
-    pytest.importorskip("tess_dl", reason="a new project's views are TDL")
     from tess_ui.spec.nodes import read_marked
-    from tess_ui.spec.tdl_theme import plain
 
     assert cli.main(["new", "fresh", *flags, "--no-venv", "--dir", str(tmp_path)]) == 0
     validator = _validator_for(tmp_path / "fresh")

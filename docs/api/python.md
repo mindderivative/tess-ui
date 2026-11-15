@@ -6,7 +6,7 @@ Every public class, function and constant, with its signature and what it does. 
 
 - [App](#app): The entry point: screens, one window, the loop.
 - [Reactivity](#reactivity): Signals, computed values, effects and the ViewModel base class.
-- [Views and components](#views-and-components): A loaded `*_View.yaml`, and an embedded instance of one.
+- [Views and components](#views-and-components): A loaded `*_View.tdl`, and an embedded instance of one.
 - [Embedding](#embedding): A component with a ViewModel of its own, inside a view.
 - [Repeater](#repeater): A list signal kept in step with a list of components.
 - [Projects](#projects): A project's files, found by name.
@@ -223,7 +223,7 @@ Runs `fn()` and returns its result, without its reads being recorded by the encl
 
 ## Views and components
 
-`tess_ui.view`: A loaded `*_View.yaml`, and an embedded instance of one.
+`tess_ui.view`: A loaded `*_View.tdl`, and an embedded instance of one.
 
 ### `Component`
 

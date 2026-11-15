@@ -1,4 +1,4 @@
-"""M33: Tesserae's own YAML is right for `tess_re` 0.3.4's paint model.
+"""M33: Tesserae's own views are right for `tess_re` 0.3.4's paint model.
 
 `tess_re` 0.3.4 (its M95) changed two things a static spec can get wrong,
 and neither shows up anywhere but on screen:
@@ -11,7 +11,9 @@ and neither shows up anywhere but on screen:
   from its color, or the panel fades with it.
 
 `tess_re` 0.3.4 can't read pixels back from Python, so this checks what
-every view, fragment and docs snippet declares.
+every view, fragment and docs snippet declares: the shipped and example views
+(`widget` nodes, read through the TDL front end), the built-in fragments
+(`*_Component.yaml`, the older syntax, still read), and every whole TDL view on a docs page.
 """
 
 import importlib.util
@@ -21,35 +23,43 @@ from pathlib import Path
 import pytest
 import yaml
 
+import doc_blocks
+
 ROOT = Path(__file__).resolve().parent.parent
-FENCE = re.compile(r"^```ya?ml\n(.*?)^```", re.MULTILINE | re.DOTALL)
 HEX = re.compile(r"^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$")
+HAS_TDL = importlib.util.find_spec("tess_dl") is not None
 
 
 def _documents():
-    """`(label, parsed YAML)` for every view and fragment file, and every
-    `yaml` block in the docs that parses."""
-    for path in sorted(ROOT.glob("src/tess_ui/**/*.yaml")):
+    """`(label, parsed data)` for every fragment file, and (with `tess_dl`) every view file and every whole `tdl` block in the docs that is a view."""
+    for path in sorted(ROOT.glob("src/tess_ui/**/*_Component.yaml")):
         yield path.relative_to(ROOT).as_posix(), yaml.safe_load(path.read_text())  # "/" on Windows too
-    if importlib.util.find_spec("tess_dl") is not None:  # the examples' views are TDL (Python 3.14): read through the front end
-        from tess_ui.spec.tdl import load_tdl_file
-        from tess_ui.spec.tdl_theme import plain
+    if not HAS_TDL:  # the views are TDL (Python 3.14): read through the front end
+        return
+    from tess_ui.spec.tdl import load_tdl_file
+    from tess_ui.spec.tdl_theme import plain
 
-        for path in sorted(ROOT.glob("examples/**/*_View.tdl")):
-            yield path.relative_to(ROOT).as_posix(), plain(load_tdl_file(path))
-    for path in sorted([*ROOT.glob("docs/**/*.md"), ROOT / "README.md"]):
-        for i, block in enumerate(FENCE.findall(path.read_text())):
-            try:
-                data = yaml.safe_load(block)
-            except yaml.YAMLError:
-                continue
-            yield f"{path.relative_to(ROOT).as_posix()} (yaml block {i + 1})", data
+    for path in sorted([*ROOT.glob("src/tess_ui/**/*_View.tdl"), *ROOT.glob("examples/**/*_View.tdl")]):
+        yield path.relative_to(ROOT).as_posix(), plain(load_tdl_file(path))
+    for block in doc_blocks.blocks():
+        if block.is_tdl and not block.old and block.included is None and doc_blocks.kind_of(block.text) == "view":
+            yield f"docs/{block.id}", _view_data(block.text)
+
+
+def _view_data(text):
+    from tess_ui.shipped import ViewLibrary
+    from tess_ui.spec.tdl import load_marked_tdl
+    from tess_ui.spec.tdl_theme import plain
+    from tess_ui.spec.widgets import WidgetDecl
+
+    library = ViewLibrary()
+    return plain(load_marked_tdl(doc_blocks.document(text), "Doc_View.tdl", resolver=lambda name: library.decl(name) or WidgetDecl(name, view=True, container=True)))
 
 
 def _nodes(data):
-    """Every mapping with a `kind:` or `component:` -- a widget node."""
+    """Every mapping with a `widget:` (the current language) or a `kind:` or `component:` (the fragments') -- a widget node."""
     if isinstance(data, dict):
-        if "kind" in data or "component" in data:
+        if "widget" in data or "kind" in data or "component" in data:
             yield data
         for value in data.values():
             yield from _nodes(value)
@@ -70,9 +80,11 @@ DOCS = list(_documents())
 
 def test_the_scan_covers_views_fragments_and_docs():
     labels = [label for label, _ in DOCS]
-    assert any(label.startswith("examples/") for label in labels) or importlib.util.find_spec("tess_dl") is None  # the examples are TDL: read only with tess_dl
     assert sum(label.startswith("src/tess_ui/spec/components/") for label in labels) >= 60
-    assert any("yaml block" in label for label in labels)
+    if HAS_TDL:
+        assert any(label.startswith("examples/") for label in labels)
+        assert sum(label.startswith("src/tess_ui/views/") for label in labels) >= 50
+        assert any(label.startswith("docs/") for label in labels)
 
 
 @pytest.mark.parametrize("label,data", DOCS, ids=[label for label, _ in DOCS])
@@ -81,12 +93,16 @@ def test_no_glyph_color_is_translucent(label, data):
         style = node.get("style")
         color = style.get("foreground") if isinstance(style, dict) else None  # a `*_Style.yaml` file (M75) isn't read here
         if isinstance(color, str) and HEX.match(color):
-            assert _alpha(color) == 255, f"{label}: {node.get('id')!r} has glyph color {color}, invisible on tre 0.3.4"
+            assert _alpha(color) == 255, f"{label}: {node.get('id') or node.get('name')!r} has glyph color {color}, invisible on tre 0.3.4"
 
 
 @pytest.mark.parametrize("label,data", DOCS, ids=[label for label, _ in DOCS])
 def test_no_node_with_children_sets_opacity(label, data):
+    """A *constant* opacity on a node with children is the scrim shape that fades its panel with it. An opacity that is an expression (`<| 0.38 if disabled else 1 |>`,
+    which the data holds as `{{ }}`) is a fade of the whole node on purpose: a disabled segment, a toolbar that hides; the widened scan (the `widget` nodes of the TDL
+    views) found exactly those two in the shipped views."""
     for node in _nodes(data):
         style = node.get("style") if isinstance(node.get("style"), dict) else {}  # (a style file, M75: not read here)
-        if "opacity" in style and node.get("children"):
-            pytest.fail(f"{label}: {node.get('id')!r} sets opacity {style['opacity']} and has children, which fade too on tre 0.3.4")
+        opacity = style.get("opacity")
+        if opacity is not None and node.get("children") and not (isinstance(opacity, str) and "{{" in opacity):
+            pytest.fail(f"{label}: {node.get('id') or node.get('name')!r} sets opacity {opacity} and has children, which fade too on tre 0.3.4")

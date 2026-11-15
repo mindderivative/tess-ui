@@ -160,18 +160,15 @@ def test_the_command_and_python_m_run(tmp_path):
     assert bad.returncode == 2 and bad.stderr.startswith("tesserae: ")
 
 
-def test_schema_says_where_the_yaml_schemas_are_and_prints_the_setting(capsys):
-    """0.3.2 (#79): `tesserae schema` and `--settings`, for Red Hat's YAML language server."""
+def test_schema_says_where_the_json_schemas_are_and_what_each_is_for(capsys):
+    """0.3.2 (#79): `tesserae schema` lists the JSON schemas of the data a `.tdl` file loads to; there is no `--settings` (that was Red Hat's YAML language server)."""
     assert cli.main(["schema"]) == 0
     listing = capsys.readouterr().out
     for name in cli.SCHEMA_FILES:
         assert str(cli.SCHEMAS / name) in listing and (cli.SCHEMAS / name).is_file()
-    assert "**/*_View.yaml" in listing and "editor-support" in listing
-
-    assert cli.main(["schema", "--settings"]) == 0
-    setting = json.loads(capsys.readouterr().out)["yaml.schemas"]
-    assert setting[str(cli.SCHEMAS / "tess-ui-widget-schema.json")] == ["**/*_View.yaml"]
-    assert set(setting) == {str(cli.SCHEMAS / name) for name in cli.SCHEMA_FILES}
+    assert "*_View.tdl" in listing and "editor-support" in listing and "YAML" not in listing and ".yaml" not in listing
+    with pytest.raises(SystemExit):
+        cli.main(["schema", "--settings"])
 
 
 def _fake_run(monkeypatch, fail=False):
