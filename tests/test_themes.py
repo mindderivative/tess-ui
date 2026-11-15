@@ -90,6 +90,62 @@ def test_load_stylesheet_reads_a_mapping(tmp_path: Path):
     assert load_stylesheet(sheet) == {"styles": [{"widget": "Rect", "style": {"corner_radius": 8}}]}
 
 
+TEXT_VIEW = '---\nTDL: 0.2\nName: Box\n---\nContainer {{\n  Name: box\n  Children {{\n    Text {{ Name: t, Text: Hi, Font_Family: {family}, Font_Size: 16, Style {{ Width: 50, Height: 20, Foreground: on_surface }} }}\n  }}\n}}\n'
+
+
+def test_a_view_naming_an_unavailable_font_warns(tmp_path: Path):
+    _view(tmp_path, TEXT_VIEW.format(family="Comic Sans"))
+    app = App(root=tmp_path, theme_seed=SEED)
+    app.bind(BoxViewModel)
+    with pytest.warns(FontFallbackWarning, match=r"Box_View\.tdl: font_family 'Comic Sans' is not bundled or registered"):
+        app.open_view("Box")
+
+
+def test_a_view_naming_a_bundled_or_registered_font_does_not_warn(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(tess_re, "register_font", lambda data: ["Inter"])
+    font = tmp_path / "Inter.ttf"
+    font.write_bytes(b"x")
+    tess_ui.register_font(font)
+    for family in ("Inter", "Roboto"):
+        _view(tmp_path, TEXT_VIEW.format(family=family))
+        app = App(root=tmp_path, theme_seed=SEED)
+        app.bind(BoxViewModel)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", FontFallbackWarning)
+            app.open_view("Box")
+
+
+def test_an_unavailable_font_is_said_once_for_a_view_however_often_it_is_redrawn(tmp_path: Path):
+    """A font a binding chooses is checked when it first shows, and each family once: a redraw does not say it again."""
+    _view(tmp_path, """---
+TDL: 0.2
+Name: Box
+---
+Container {
+  Name: box
+  State { Family: Roboto }
+  Children {
+    Text { Name: t, Text: Hi, Font_Family: <| family |>, Font_Size: 16, Style { Width: 50, Height: 20, Foreground: on_surface } }
+    Rect { Name: go, Style { Width: 10, Height: 10, Background: primary }, Handlers { On_Click { Set { Target: family, Value: <| 'Nope' |> } } } }
+  }
+}
+""")
+    app = App(root=tmp_path, theme_seed=SEED)
+    app.bind(BoxViewModel)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", FontFallbackWarning)
+        view = app.open_view("Box")
+        app.show("box")
+    with pytest.warns(FontFallbackWarning, match="font_family 'Nope'") as seen:
+        app.window.simulate("click", view.node("root.go"))
+        app.window.advance(16)
+    assert len(seen) == 1
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", FontFallbackWarning)
+        view.handle.composition.root.on_dirty()  # a redraw of the same families says nothing
+        app.window.advance(16)
+
+
 # -- an app and its theme and stylesheet files --------------------------------
 
 

@@ -331,7 +331,7 @@ def test_state_in_a_loop_survives_by_key():
 
 def test_the_keys_of_a_call_lie_over_the_callees_root():
     views = {"Btn": "Rect { Params: [label], Style { Width: 10, Height: 4 }, Classes: [btn], Handlers { On_Hover_Enter: save }, A11y { Label: <| label |> } }"}
-    comp, vm, _ = make(views, "Container { State { K: 1 }, Children { Btn { Name: b, Label: Go, Style { Width: 99 }, Classes: [extra], Interaction: true, Route: \"\", "
+    comp, vm, _ = make(views, "Window { Title: T, State { K: 1 }, Children { Btn { Name: b, Label: Go, Style { Width: 99 }, Classes: [extra], Interaction: true, Route: \"\", "
                        "Handlers { On_Click { Set { Target: k, Value: <| k + 1 |> } } }, A11y { Role: button } } } }")
     b = comp.find("root.b")
     assert b.style_value("width") == 99 and b.style_value("height") == 4

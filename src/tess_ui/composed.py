@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any, Callable, Optional
 
 from tess_ui import a11y as a11y_module, tokens, urls
+from tess_ui.fonts import check_font_families
 from tess_ui.follow import app_of
 from tess_ui.listeners import handled, listen_window
 from tess_ui.reactive import Computed, Effect, Signal, untrack
@@ -34,6 +35,7 @@ from tess_ui.spec.mask import Mask
 from tess_ui.spec import placement as placement_module
 from tess_ui.spec.placement import offset_pair
 from tess_ui.spec.nodes import ViewDoc
+from tess_ui.spec.themes import view_font_families
 from tess_ui.view import _EVENTS, SURFACE_ACTIONS, WINDOW_ACTIONS, View
 
 #: Events the renderer adds to the engine's: a key press, Enter in a field that is not multiline, and a pointer press (which, unlike a click,
@@ -163,6 +165,7 @@ def builtin_actions(view_ref: Callable[[], Any], window: Any = None) -> Callable
         return None
 
     resolve.app = lambda: app_of(window if window is not None else getattr(view_ref(), "window", None))  # type: ignore[attr-defined]  # `app` in an expression
+    resolve.families = {"window": ("window action", WINDOW_ACTIONS), "surface": ("surface action", SURFACE_ACTIONS)}  # type: ignore[attr-defined]  # the actions `window.<name>` and `surface.<name>` may name, checked when a view loads
     resolve.wants_scope = True  # type: ignore[attr-defined]  # `focus` needs the widget the handler was written in
     resolve.names = ("focus", "open_url", "copy", "paste", "capture", "release", "cursor", "after", "every", "cancel", "open_window",  # type: ignore[attr-defined]
                      "navigate_to", "navigate_route")  # the bare names, offered when a handler calls one that does not exist (#251)
@@ -206,6 +209,7 @@ class ComposedView(View):
         self._observed: set[int] = set()
         self._extracted: dict[int, tuple[Any, Any, list[Any], set[Path]]] = {}  # the lowered nodes that were looked through for images, by identity (see `extract_images`)
         self._synced = False
+        self._font_said: set[str] = set()  # the font families a warning has named (each is said once, however often the view is lowered again)
         self.source: Optional[Path] = None  # the view file it was opened from (set by `App.open_view`), which a hot reload watches
         self.image_files: set[Path] = set()  # the pictures the view draws, for a hot reload to watch
         self._effect: Optional[Effect] = None
@@ -297,6 +301,10 @@ class ComposedView(View):
 
     def _lowered(self) -> tuple[dict[str, Any], dict[str, tuple[bytes, int, int]]]:
         spec = lower(self.handle.composition.root)
+        unsaid = set(view_font_families(spec)) - self._font_said
+        if unsaid:  # a family the engine cannot draw is replaced by a bundled face without a word: say so, naming the file
+            self._font_said |= unsaid
+            check_font_families(unsaid, self.handle.doc.file if self.handle.doc is not None else "the view")
         images: set[Path] = set()
         if len(self._extracted) > 4 * max(len(self._observed), 64):  # what nodes that are gone had: not kept for ever
             self._extracted.clear()
@@ -329,6 +337,12 @@ class ComposedView(View):
             self._effect = Effect(self._sync, deferred=True)  # the old composition drawn again
             raise
         old.dispose()
+        app = app_of(self.window)
+        frame = getattr(app, "_frame", None)
+        if app is not None and frame is not None and frame.view is self:  # a lazy screen the app is on was built before and is not now: build it again, or the window shows nothing
+            for record in new.routes:
+                if record.view == app._current:
+                    record.activate()
 
     def _sync(self) -> None:
         spec, frames = self._lowered()  # read inside the effect: these are the values the view depends on

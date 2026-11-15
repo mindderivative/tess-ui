@@ -24,11 +24,12 @@ its `name` or `<slot>[i]` (`content[i]` for the default slot).
 
 from __future__ import annotations
 
+import difflib
 from typing import Any, Callable, Iterable, Iterator, Mapping, Optional
 
 from loguru import logger
 
-from tess_ui.expr import (BUILTIN_FUNCTIONS, Expr, ExprError, Template, check_handler_calls, check_handler_targets, compile_statements, is_action_name,
+from tess_ui.expr import (BUILTIN_FUNCTIONS, Expr, ExprError, Template, check_handler_actions, check_handler_calls, check_handler_targets, compile_statements, is_action_name,
                            timer_handlers)
 from tess_ui.reactive import Computed, Effect, Signal, untrack
 from tess_ui.spec.nodes import VISIBLE, Handler, LoadError, Node, ViewDoc
@@ -201,6 +202,22 @@ class Scope:
         """Whether this scope can say what a handler may call at load: an app's built-in actions are listed in `actions.names` (the resolver itself
         needs the view, which does not exist while it is composed, so it is never asked here)."""
         return getattr(self.actions, "names", None) is not None
+
+    def action_problem(self, path: str) -> Optional[tuple[str, Optional[str]]]:
+        """What is wrong with a handler's call of the dotted built-in action `path`, as `(message, hint)`, or None: `window.<name>` and `surface.<name>`
+        name a fixed set of actions, so one that is not there is found when the view loads, not when it is pressed. A scope that does not know its
+        actions cannot judge, and neither can one where the head names a local or a ViewModel's own attribute."""
+        families = getattr(self.actions, "families", None)
+        head, _, rest = path.partition(".")
+        if not families or head not in families or not rest or self._frame(head) is not None or (self.root is not None and hasattr(self.root, head)):
+            return None
+        noun, known = families[head]
+        if rest in known:
+            return None
+        listed = ", ".join(f"{head}.{name}" for name in known)
+        near = difflib.get_close_matches(rest, known, n=3)
+        hint = f"did you mean {' or '.join(repr(f'{head}.{n}') for n in near)}? " if near else ""
+        return f"'{path}' isn't a {noun}", f"{hint}the {noun}s are {listed}"
 
     def is_known_call(self, name: str) -> bool:
         """Whether a handler may call the bare `name` here: a handler parameter, a built-in action, or a callable of the ViewModel."""
@@ -757,6 +774,7 @@ class Composer:
         self.rules = [sheet for sheet in rules if sheet.rules]
         self.by_id: dict[str, Instance] = {}
         self.routes: list[RouteRecord] = []
+        self._windowed = False  # whether the view being composed is a window view (its root is a `Window`): the only one whose calls may be routed
         self._records: dict[int, RouteRecord] = {}  # a routed node (by identity) -> its record, for the call that is being made
         self.states: dict[tuple[str, str, str], Signal] = {}
         self._previous = previous._composer.states if previous is not None else {}
@@ -765,6 +783,7 @@ class Composer:
 
     def compose(self, doc: ViewDoc) -> Composition:
         ctx = _Ctx(doc, 0, (doc.name or doc.file,))
+        self._windowed = doc.root.widget == "Window"
         self._check_root(doc.root, ctx)
         scope = Scope(None, {}, root=self.viewmodel, actions=self.actions)
         return Composition(self._instance(doc.root, "root", scope, ctx, forced_id="root"), self)
@@ -776,6 +795,11 @@ class Composer:
 
     def _check_handler(self, ctx: _Ctx, handler: Handler, scope: "Scope") -> None:
         """A name a handler calls that nothing here answers to is a load error, with the line (#251)."""
+        if handler.action is not None:
+            problem = scope.action_problem(handler.action)
+            if problem is not None:
+                at = handler.at or (1, 0)
+                raise LoadError(problem[0], file=ctx.doc.file, line=at[0], column=at[1], hint=problem[1], text=ctx.doc.text)
         if handler.statements is None:
             return
         try:
@@ -788,6 +812,7 @@ class Composer:
         (they run in this scope too, later; their position is the handler's, since the text has none of its own)."""
         check_handler_calls(statements, scope)
         check_handler_targets(statements, scope)
+        check_handler_actions(statements, scope)
         for text in timer_handlers(statements):
             if not is_action_name(text):
                 self._check_statements(compile_statements(text, origin=statements.origin), scope)
@@ -809,6 +834,9 @@ class Composer:
                 suffix: str = "", looped: bool = False, virtual: Optional[Virtual] = None) -> _Region:
         if node.widget == "Slot":
             return self._slot(node, ctx, notify)
+        if node.route is not None and not self._windowed:  # a screen is a call in the window view (a routed call inside a screen is nested, and the window view still holds it)
+            raise self._fail(ctx, node.prop_at.get("route", node.at), "a `route:` is for a view in the window view (a view whose root is a `Window`)",
+                             "a screen is a view called with a route inside the app's Window view")
         if node.loop is not None and not looped:
             def element(el_scope: Scope, key_suffix: str, changed: Callable[[], None]) -> _Region:
                 return self._region(node, seg, parent_id, el_scope, ctx, changed, suffix=key_suffix, looped=True)
@@ -914,7 +942,9 @@ class Composer:
         if not isinstance(text, str) or not text.strip():
             raise self._fail(ctx, node.prop_at.get(pname, node.at), f"{node.widget}: '{pname}' is an action name or statements")
         if is_action_name(text):
-            return HandlerRef(Handler(text.strip(), action=text.strip()), call_scope)
+            handler = Handler(text.strip(), action=text.strip(), at=node.prop_at.get(pname, node.at))
+            self._check_handler(ctx, handler, call_scope)
+            return HandlerRef(handler, call_scope)
         try:
             handler = Handler(text, statements=compile_statements(text, origin=Origin(ctx.doc.file, *node.prop_at.get(pname, node.at))))
         except ExprError as exc:

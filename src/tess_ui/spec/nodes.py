@@ -175,6 +175,7 @@ class Handler:
     source: str
     action: Optional[str] = None
     statements: Optional[Statements] = None
+    at: Optional[Position] = None  # where it was written, for an error about the action it names
 
 
 @dataclass
@@ -494,7 +495,7 @@ class _Parser:
             if not isinstance(action, str) or not action.strip():
                 raise self.fail(avat, f"a handler is an action name or statements, got {_describe(action)}")
             if is_action_name(action):
-                node.handlers[event] = Handler(action.strip(), action=action.strip())
+                node.handlers[event] = Handler(action.strip(), action=action.strip(), at=avat)
                 continue
             try:
                 statements = compile_statements(action, origin=self.origin(avat))
@@ -545,7 +546,7 @@ class _Parser:
             if not isinstance(label, str) or not isinstance(click, str) or not click.strip():
                 raise self.fail(item.val_at["label"], "a tooltip action's label is text and its on_click an action name or statements")
             if is_action_name(click):
-                handler = Handler(click.strip(), action=click.strip())
+                handler = Handler(click.strip(), action=click.strip(), at=item.val_at["on_click"])
             else:
                 try:
                     handler = Handler(click, statements=compile_statements(click, origin=self.origin(item.val_at["on_click"])))

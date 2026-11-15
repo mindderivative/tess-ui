@@ -81,3 +81,8 @@ def test_a_loop_variable_is_in_the_handler(tmp_path):
 def test_a_mistake_in_the_statements_is_a_load_error_at_the_call(tmp_path):
     with pytest.raises(LoadError):
         opened(tmp_path, 'Callee { Name: c, On_Done: "count = = 1" }')
+
+
+def test_an_unknown_window_action_given_as_the_handler_is_a_load_error_at_the_call(tmp_path):
+    with pytest.raises(LoadError, match=r"Main_View\.tdl:\d+:\d+: error: 'window\.fullscreen' isn't a window action"):
+        opened(tmp_path, "Callee { Name: c, On_Done: window.fullscreen }")

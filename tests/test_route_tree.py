@@ -311,3 +311,37 @@ Window {
     (tmp_path / "Views" / "Home_View.tdl").write_text(LEAF.replace("NNN", "home"))
     with pytest.raises(LoadError, match="redirect"):
         App(root=tmp_path).open_view("Shell")
+
+
+def _reloaded(app, view, tmp_path):
+    """The window view edited (its title) and the view recomposed from the file, as the hot reload does."""
+    import os
+
+    from tess_ui.spec.watch import ComposedWatcher
+
+    path = tmp_path / "Views" / "Shell_View.tdl"
+    watcher = ComposedWatcher(view, view.source, app._composed_docs, lambda library, doc: app._composed_rules(library, doc=doc)[0])
+    path.write_text(path.read_text().replace("Title: App", "Title: Edited"))
+    stat = path.stat()
+    os.utime(path, ns=(stat.st_atime_ns, stat.st_mtime_ns + 5_000_000_000))
+    assert watcher.poll() is True
+    app.window.advance(16)
+
+
+def test_a_reload_keeps_a_nested_current_screen_and_what_shows(shell, tmp_path):
+    app, view = shell
+    app.navigate_to("settings/profile")
+    app.window.advance(16)
+    before = shown(view, "home", "settings", "profile", "account")
+    assert app.current == "Profile" and before == {"home": False, "settings": True, "profile": True, "account": False}
+    _reloaded(app, view, tmp_path)
+    assert app.current == "Profile" and shown(view, "home", "settings", "profile", "account") == before
+
+
+def test_a_reload_builds_a_current_lazy_screen_again(shell, tmp_path):
+    app, view = shell
+    app.navigate_to("reports")
+    app.window.advance(16)
+    assert app.current == "Reports" and shown(view, "reports") == {"reports": True}
+    _reloaded(app, view, tmp_path)
+    assert app.current == "Reports" and shown(view, "reports") == {"reports": True}

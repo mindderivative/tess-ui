@@ -5,6 +5,7 @@ import os
 import pytest
 
 from tess_ui import App
+from tess_ui.spec.nodes import LoadError
 from tess_ui.spec.watch import ComposedWatcher
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
@@ -171,13 +172,45 @@ def test_editing_the_window_view_adds_and_removes_screens(project):
     assert watcher.poll() is True
     view.window.advance(16)
     assert "Pref" not in app._registered
+    assert app.current == "Home"  # the screen the app is on is still there
     with pytest.raises(KeyError):
         app.navigate_to("settings")
     write(original)  # and comes back
     assert watcher.poll() is True
     view.window.advance(16)
+    assert app.current == "Home"
     app.navigate_to("settings")
     assert app.current == "Pref" and view.node("root.screens.settings").get("visible")
+
+
+def _reload(view, app, path, text):
+    watcher = ComposedWatcher(view, view.source, app._composed_docs, lambda library, doc: app._composed_rules(library, doc=doc)[0])
+    path.write_text(text)
+    stat = path.stat()
+    os.utime(path, ns=(stat.st_atime_ns, stat.st_mtime_ns + 5_000_000_000))
+    assert watcher.poll() is True
+    view.window.advance(16)
+
+
+def test_a_reload_of_the_window_view_keeps_the_current_screen(project):
+    """The screens are built again by a reload; the one the app is on is still there, so it stays current and showing."""
+    app, view = _app(project)
+    app.navigate_to("settings")
+    assert app.current == "Pref"
+    path = project / "Views" / "Window_View.tdl"
+    _reload(view, app, path, path.read_text().replace("Title: App", "Title: Renamed"))
+    assert app.current == "Pref" and app.current_screen.get() == "Pref"
+    assert _shown(view) == {"main": False, "settings": True}
+    app.navigate_to("")  # and it navigates on from there
+    assert app.current == "Home" and _shown(view) == {"main": True, "settings": False}
+
+
+def test_a_reload_that_removes_the_current_screen_falls_back_to_the_window(project):
+    app, view = _app(project)
+    app.navigate_to("settings")
+    path = project / "Views" / "Window_View.tdl"
+    _reload(view, app, path, path.read_text().replace("        Pref { Name: settings, Route: settings }\n", ""))
+    assert app.current == "window" and "Pref" not in app._registered
 
 
 def test_a_rail_of_screens_follows_the_current_screen(project):
@@ -205,14 +238,21 @@ def test_a_rail_of_screens_follows_the_current_screen(project):
     assert view.node("root.nav.item[Pref].label").get("fill") == app.theme.role("on_surface")
 
 
-# Old View(path) pipeline only (deleted with it at the YAML cutover): `view.py` raises this, the composed pipeline ignores a `Route` outside a window view.
-OLD_HOME = "id: root\nkind: Container\nstyle: {width: 200, height: 100}\nchildren:\n  - {id: hi, kind: Text, text: {content: Home, typography_role: body_large}, style: {foreground: on_surface}}\n"
+def _host(tmp_path, call):
+    (tmp_path / "Views").mkdir()
+    (tmp_path / "Views" / "Home_View.tdl").write_text(HOME)
+    (tmp_path / "Views" / "Host_View.tdl").write_text(
+        f"---\nTDL: 0.2\nName: Host\n---\nContainer {{\n  Name: host\n  Children {{\n    {call}\n  }}\n}}\n")
+    return App(root=tmp_path, theme_seed=SEED)
 
 
 def test_a_route_outside_a_window_view_is_an_error(tmp_path):
-    from tess_ui import View
+    app = _host(tmp_path, "Home { Name: l, Route: x }")
+    with pytest.raises(LoadError, match=r"Host_View\.tdl:8:\d+: error: a `route:` is for a view in the window view"):
+        app.open_view("Host")
 
-    (tmp_path / "Left_View.yaml").write_text(OLD_HOME)
-    (tmp_path / "Host_View.yaml").write_text("id: root\nkind: Container\nchildren:\n  - {id: l, view: Left_View.yaml, route: x}\n")
-    with pytest.raises(ValueError, match="a `route:` is for a view in the window view"):
-        View(tmp_path / "Host_View.yaml")
+
+def test_a_lazy_route_outside_a_window_view_is_an_error_too(tmp_path):
+    app = _host(tmp_path, "Home { Name: l, Route { Path: x, Lazy: true } }")
+    with pytest.raises(LoadError, match="a `route:` is for a view in the window view"):
+        app.open_view("Host")

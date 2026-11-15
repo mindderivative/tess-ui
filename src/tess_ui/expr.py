@@ -37,7 +37,7 @@ from tess_ui.reactive import Computed, Signal
 
 __all__ = [
     "BUILTIN_FUNCTIONS", "DEFAULT_LIMITS", "Expr", "ExprError", "Limits", "MapScope", "Origin", "Statements", "Template",
-    "check_handler_calls", "compile_expr", "compile_statements", "compile_template", "is_action_name", "NestedTemplate"]
+    "check_handler_actions", "check_handler_calls", "compile_expr", "compile_statements", "compile_template", "is_action_name", "NestedTemplate"]
 
 MISSING = object()
 
@@ -577,6 +577,21 @@ def check_handler_calls(statements: Statements, scope: Any) -> None:
             continue
         near = _did_you_mean(name, [*BUILTIN_FUNCTIONS, *getattr(scope, "callable_names", lambda: [])()])
         raise _node_error(statements.source, statements.origin, call.func, f"'{name}' is not a function or an action you can call here", near)
+
+
+def check_handler_actions(statements: Statements, scope: Any) -> None:
+    """Raises `ExprError` for a call of a built-in action family's member that is not one (`window.fullscreen()`, `surface.explode()`), when its
+    `scope` can say (`action_problem`), so the mistake shows when the view loads."""
+    problem = getattr(scope, "action_problem", None)
+    if problem is None:
+        return
+    for statement in statements.body:
+        for node in ast.walk(statement):
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+                path = _Evaluator._dotted(node.func)
+                found = problem(path) if path is not None else None
+                if found is not None:
+                    raise _node_error(statements.source, statements.origin, node.func, found[0], found[1])
 
 
 def check_handler_targets(statements: Statements, scope: Any) -> None:
