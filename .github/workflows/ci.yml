@@ -291,7 +291,7 @@ jobs:
           cd work
           "$BIN/tesserae" new demo_bar --window --custom-title-bar --no-venv
           cd demo_bar
-          grep -q "borderless: true" Views/Window_View.yaml
+          grep -q "Borderless: true" Views/Window_View.tdl
           if [ "$RUNNER_OS" = "Linux" ]; then RUN="xvfb-run -a"; else RUN=""; fi
           $RUN "$BIN/tesserae" build --check
           ls -l dist
