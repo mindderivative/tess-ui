@@ -20,9 +20,10 @@ motion gets the new value at once.
 
 from __future__ import annotations
 
-from typing import Any, Optional, Union
+from contextlib import contextmanager
+from typing import Any, Iterator, Optional, Union
 
-__all__ = ["EASINGS", "LAYOUT_TRANSITIONABLE", "TRANSITIONABLE", "plan"]
+__all__ = ["EASINGS", "LAYOUT_TRANSITIONABLE", "TRANSITIONABLE", "at_once", "plan"]
 
 Easing = Union[str, tuple[float, float, float, float], tuple[str, float]]
 
@@ -89,10 +90,24 @@ def _entry(where: str, value: Any) -> tuple[float, Easing]:
     return float(duration), _easing(where, easing, bounce)
 
 
+_AT_ONCE = 0
+
+
+@contextmanager
+def at_once() -> Iterator[None]:
+    """While it is open a patch eases nothing: every change is made at once. A widget re-coloured for a new theme is, whatever its style says."""
+    global _AT_ONCE
+    _AT_ONCE += 1
+    try:
+        yield
+    finally:
+        _AT_ONCE -= 1
+
+
 def plan(node_id: str, kind: str, style: dict[str, Any]) -> dict[str, tuple[float, Easing]]:
     """The style's `transition:` as `{node property: (milliseconds, easing)}` for a node of `kind`. Raises `ValueError` naming the widget."""
     raw: Optional[Any] = style.get("transition")
-    if raw is None:
+    if raw is None or _AT_ONCE:
         return {}
     where = f'widget "{node_id}": style.transition'
     if not isinstance(raw, dict):

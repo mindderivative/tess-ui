@@ -1,6 +1,6 @@
-"""The composed MD3 widgets of `tess_ui.widgets`: each is built
-from its fragment in `spec/fragments.py`, expanded by `spec/expand.py`, so
-`button(window, ...)` and a `component: ButtonFilled` call are one definition.
+"""The composed MD3 widgets of `tess_ui.widgets`: each is built either from a call of a shipped view (`call=`, a `tess_ui.widgets._views.Call`: the
+button family so far, so `button(window, ...)` and a `Button` call in a view are one definition) or from its fragment in `spec/fragments.py`, expanded
+by `spec/expand.py`.
 
 A factory returns a `Widget`: `.node` (its root, attached to the window's
 root), `.part(name)` for a named piece (`"label"`), `on_click(fn)` and
@@ -13,6 +13,7 @@ from __future__ import annotations
 from typing import Any, Callable, Optional
 
 from tess_ui import a11y, tokens
+from tess_ui.composed import ComposedView
 from tess_ui.follow import initial_theme, unfollow
 from tess_ui.listeners import handled
 from tess_ui.spec.expand import expand_components_to_spec
@@ -44,7 +45,8 @@ class Widget:
     given, adjusts the spec before it's built (a factory's extra arguments)."""
 
     def __init__(self, window: Any, fragment_name: Optional[str] = None, params: Optional[dict[str, Any]] = None, *,
-                 spec: Optional[dict[str, Any]] = None, theme: Optional[Theme] = None,
+                 spec: Optional[dict[str, Any]] = None, call: Optional[Any] = None, components: Optional[dict[Optional[str], str]] = None,
+                 parts: Optional[dict[str, str]] = None, theme: Optional[Theme] = None,
                  label: Optional[str] = None, x: Optional[float] = None, y: Optional[float] = None,
                  interactive: Optional[dict[Optional[str], Optional[str]]] = None,
                  edit: Optional[Callable[[dict[str, Any]], None]] = None, name: str = "widget",
@@ -54,16 +56,24 @@ class Widget:
         self.window = window
         self.theme = initial_theme(window, theme, self)  # the app's, followed, without one (M50)
         self.name = name
-        if spec is None:
-            spec = fragment(fragment_name, params or {}, name)
-        if edit is not None:  # first, so the parts it adds can be interactive
-            edit(spec)
-        for part, role in (interactive or {}).items():
-            node_spec = self._spec_of(spec, part)
-            role = role or content_role(node_spec) or "on_surface"
-            node_spec["interaction"] = {"color": role}
-        self.spec = spec
-        self.view = View(spec, window=window, theme_seed=tokens.BASELINE["primary"], frames=frames)
+        self._parts = dict(parts or {})  # part names that are another id under `name` in the shipped view (`chevron` -> `trailing.icon`)
+        if call is not None:  # a call of a shipped view (`tess_ui.widgets._views`): composed and reactive, the part ids the view names
+            from tess_ui.widgets._views import open_factory_view
+
+            self.view = open_factory_view(call, window, root_id=name,
+                                          components={self._id(part): key for part, key in (components or {}).items()})
+            self.spec = self.view.spec
+        else:
+            if spec is None:
+                spec = fragment(fragment_name, params or {}, name)
+            if edit is not None:  # first, so the parts it adds can be interactive
+                edit(spec)
+            for part, role in (interactive or {}).items():
+                node_spec = self._spec_of(spec, part)
+                role = role or content_role(node_spec) or "on_surface"
+                node_spec["interaction"] = {"color": role}
+            self.spec = spec
+            self.view = View(spec, window=window, theme_seed=tokens.BASELINE["primary"], frames=frames)
         self.view._layers.components = dict(self.theme.components)  # its theme's shapes (M57)
         self.view._layers.typography = dict(self.theme.type_overrides)  # and its type scale (M64)
         self.view._use_scheme(self._scheme())
@@ -80,7 +90,7 @@ class Widget:
     # -- parts ----------------------------------------------------------------
 
     def _id(self, part: Optional[str]) -> str:
-        return self.name if part is None else f"{self.name}.{part}"
+        return self.name if part is None else f"{self.name}.{self._parts.get(part, part)}"
 
     def _spec_of(self, spec: dict[str, Any], part: Optional[str]) -> dict[str, Any]:
         wanted = self._id(part)
@@ -116,6 +126,11 @@ class Widget:
 
     def interactive(self, part: Optional[str] = None, role: Optional[str] = None) -> None:
         """Gives a part MD3's feedback (in its content's colour, or `role`'s)."""
+        if self.view.interaction(self._id(part)) is not None:
+            return
+        if isinstance(self.view, ComposedView):  # the shipped view says which of its parts answer a press; it cannot be changed from outside
+            self._spec_of(self.view.spec, part)
+            raise ValueError(f"{self.name}: {part or 'the root'} has no feedback in its view")
         node_spec = self._spec_of(self.view.spec, part)
         if node_spec.get("interaction") is None:
             node_spec["interaction"] = {"color": role or content_role(node_spec) or "on_surface"}
@@ -152,6 +167,8 @@ class Widget:
         self._undo = []
         self.view._drop_interactions()
         self.view._dispose_controls()
+        if isinstance(self.view, ComposedView):
+            self.view.close()
 
     def destroy(self) -> None:
         self.dispose()

@@ -2,10 +2,9 @@
 `button`, `icon_button`, `fab`, `extended_fab`, `split_button`,
 `button_group` and `segmented_button`.
 
-Each is built by Tesserae from its fragment (or several) with
-`tess_ui.widgets._composed.Widget`, with MD3's feedback in its
-content's colour. The split button's hover and the button group's press
-morph animate `corner_radius` on the part and its feedback's clip, which
+`button`, `icon_button`, `fab`, `extended_fab`, `split_button` and `button_group` are calls of the shipped views `Button`, `IconButton` and `Fab` (see
+`tess_ui.widgets._views`), with MD3's feedback in the content's colour; `segmented_button` is still built by hand. The split button's hover and the
+button group's press morph the corners and widths as Signals in the call's style (the view eases them) and the feedback's clip follows each sync, which
 `tess_re`'s own factories did in Rust with no public Python API.
 """
 
@@ -14,22 +13,42 @@ from __future__ import annotations
 import math
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
-from tess_ui.widgets._composed import Widget, fragment
+from tess_ui.widgets._composed import Widget
+from tess_ui.widgets._views import Call
 from tess_ui import motion
+from tess_ui.reactive import Signal, batch
 
 if TYPE_CHECKING:
     from tess_ui.theme import Theme
     from tess_re import Window
 
 
-#: `button`'s variants: the fragment, and its label's colour role (its feedback's too).
-_BUTTONS = {
-    "elevated": ("ButtonElevated", "primary"),
-    "filled": ("ButtonFilled", "on_primary"),
-    "filled_tonal": ("ButtonFilledTonal", "on_secondary_container"),
-    "outlined": ("ButtonOutlined", "primary"),
-    "text": ("ButtonText", "primary"),
-}
+#: `button`'s variants, and the shipped `Button`'s name for each. A button's label colour, and its feedback's, are the shipped sheet's.
+_BUTTONS = {"elevated": "elevated", "filled": "filled", "filled_tonal": "tonal", "outlined": "outlined", "text": "text"}
+#: The colour role of each variant's label, which is the tint of its state layer and ripple (MD3).
+_BUTTON_INK = {"elevated": "primary", "filled": "on_primary", "filled_tonal": "on_secondary_container", "outlined": "primary", "text": "primary"}
+_ICON_BUTTON_INK = {"standard": "on_surface_variant", "filled": "on_primary", "filled_tonal": "on_secondary_container", "outlined": "on_surface_variant"}
+_FAB_INK = {"surface": "primary", "primary": "on_primary_container", "secondary": "on_secondary_container", "tertiary": "on_tertiary_container"}
+
+
+def _border(border_color: tuple[int, int, int, int] | None, border_width: float | None) -> dict[str, Any]:
+    """The call-site style that gives a widget the caller's border."""
+    return {"border_color": None if border_color is None else _hex(border_color),
+            "border_width": None if border_width is None else float(border_width)}
+
+
+_PADDING_12 = {"left": 12, "right": 12, "top": 0, "bottom": 0}
+_SIZES = {32.0: "xs", 40.0: "s", 56.0: "m", 96.0: "l", 136.0: "xl"}  # the shipped sizes (`Size`), by their height
+
+
+def _size(pixels: float) -> str:
+    """The shipped `Size` nearest `pixels` (its type, icon and gap); the pixels themselves are the call's `Style`."""
+    return _SIZES[min(_SIZES, key=lambda height: abs(height - float(pixels)))]
+
+
+def _corners(top_left: float, top_right: float, bottom_right: float, bottom_left: float) -> dict[str, float]:
+    """Four corner radii as a style takes them."""
+    return {"top_left": top_left, "top_right": top_right, "bottom_right": bottom_right, "bottom_left": bottom_left}
 
 
 def _hex(color: tuple[int, int, int, int]) -> str:
@@ -55,19 +74,12 @@ def button(
     filled, filled_tonal, outlined or text. It's a pill (`corner_radius`
     half the height) unless told otherwise. `on_click` makes it a focusable
     button that Enter and Space activate, with MD3's feedback."""
-    if variant not in _BUTTONS:
-        raise ValueError(f"unknown button variant {variant!r}; expected one of {sorted(_BUTTONS)}")
-    fragment, content = _BUTTONS[variant]
+    variant_name = _variant("button", variant, _BUTTONS)
     radius = float(height) / 2 if corner_radius is None else float(corner_radius)
-
-    def edit(spec: dict[str, Any]) -> None:
-        if border_color is not None:
-            spec["style"]["border_color"] = _hex(border_color)
-        if border_width is not None:
-            spec["style"]["border_width"] = float(border_width)
-
-    widget = Widget(window, fragment, {"label": label, "width": width, "height": height, "corner_radius": radius},
-                    theme=theme, x=x, y=y, interactive={None: content}, edit=edit, name="button")
+    call = Call("Button", props={"label": label, "variant": variant_name, "size": "s"}, interaction=_BUTTON_INK[variant],
+                style={"width": width, "height": height, "corner_radius": radius, "padding": _PADDING_12,
+                       **_border(border_color, border_width)})
+    widget = Widget(window, call=call, components={None: f"button.{variant}"}, theme=theme, x=x, y=y, name="button")
     if on_click is not None:
         widget.on_click(on_click)
     return widget
@@ -95,8 +107,7 @@ def _variant(kind: str, variant: str, table: dict[str, str]) -> str:
     return table[variant]
 
 
-_ICON_BUTTONS = {"standard": "IconButtonStandard", "filled": "IconButtonFilled",
-                 "filled_tonal": "IconButtonFilledTonal", "outlined": "IconButtonOutlined"}
+_ICON_BUTTONS = {"standard": "standard", "filled": "filled", "filled_tonal": "tonal", "outlined": "outlined"}
 
 
 def icon_button(
@@ -116,18 +127,20 @@ def icon_button(
     """MD3's icon button. `variant`:
     standard, filled, filled_tonal or outlined. A circle `size` across.
     Give `label=` so a screen reader can name it."""
-    widget = Widget(window, _variant("icon button", variant, _ICON_BUTTONS),
-                    {"icon": icon, "size": size, "corner_radius": float(size) / 2}, theme=theme, label=label,
-                    x=x, y=y, interactive={None: None}, edit=_borders([None], border_color, border_width),
+    pixels = float(size)
+    call = Call("IconButton", props={"icon": icon, "variant": _variant("icon button", variant, _ICON_BUTTONS), "size": _size(pixels)},
+                interaction=_ICON_BUTTON_INK[variant],
+                style={"width": pixels, "height": pixels, "corner_radius": pixels / 2, **_border(border_color, border_width)})
+    widget = Widget(window, call=call, components={None: f"icon_button.{variant}"}, theme=theme, label=label, x=x, y=y,
                     name="icon_button")
     if on_click is not None:
         widget.on_click(on_click)
     return widget
 
 
-_FABS = {"surface": "FabSurface", "primary": "FabPrimary", "secondary": "FabSecondary", "tertiary": "FabTertiary"}
-#: MD3's FAB sizes: container, corner radius, icon.
-_FAB_SIZES = {"small": (40.0, 12.0, 24.0), "default": (56.0, 16.0, 24.0), "large": (96.0, 28.0, 36.0)}
+_FABS = {"surface": "surface", "primary": "primary", "secondary": "secondary", "tertiary": "tertiary"}
+#: `fab`'s sizes, and the shipped `Fab`'s name for each.
+_FAB_SIZES = {"small": "small", "default": "medium", "large": "large"}
 
 
 def fab(
@@ -149,24 +162,15 @@ def fab(
     `variant`: surface, primary, secondary or tertiary."""
     if size not in _FAB_SIZES:
         raise ValueError(f"unknown FAB size {size!r}; expected one of {sorted(_FAB_SIZES)}")
-    box, radius, glyph = _FAB_SIZES[size]
-    border = _borders([None], border_color, border_width)
-
-    def edit(spec: dict[str, Any]) -> None:
-        spec["children"][0]["style"].update(width=glyph, height=glyph)
-        if border is not None:
-            border(spec)
-
-    widget = Widget(window, _variant("FAB", variant, _FABS),
-                    {"icon": icon, "size": box, "corner_radius": radius, "fab_size": size},
-                    theme=theme, label=label, x=x, y=y, interactive={None: None}, edit=edit, name="fab")
+    call = Call("Fab", props={"icon": icon, "variant": _variant("FAB", variant, _FABS), "size": _FAB_SIZES[size]}, interaction=_FAB_INK[variant],
+                style=_border(border_color, border_width))
+    widget = Widget(window, call=call, components={None: f"fab.{size}"}, theme=theme, label=label, x=x, y=y, name="fab")
     if on_click is not None:
         widget.on_click(on_click)
     return widget
 
 
-_EXTENDED_FABS = {"surface": "ExtendedFabSurface", "primary": "ExtendedFabPrimary",
-                  "secondary": "ExtendedFabSecondary", "tertiary": "ExtendedFabTertiary"}
+_EXTENDED_FABS = {"surface": "surface", "primary": "primary", "secondary": "secondary", "tertiary": "tertiary"}
 
 
 def extended_fab(
@@ -185,19 +189,19 @@ def extended_fab(
 ) -> Widget:
     """MD3's extended FAB: an optional
     leading icon and a label, 56 px tall."""
-    # icon=None is the fragment's own text-only shape (M55, #8)
-    widget = Widget(window, _variant("extended FAB", variant, _EXTENDED_FABS),
-                    {"label": label, "icon": icon, "width": width}, theme=theme, x=x, y=y,
-                    interactive={None: None}, edit=_borders([None], border_color, border_width),
-                    name="extended_fab")
+    # a width of the caller's: with an icon the content starts at the left padding (16), without one it is centred with 20 px either side
+    call = Call("Fab", props={"label": label, "icon": icon, "variant": _variant("extended FAB", variant, _EXTENDED_FABS), "size": "medium"},
+                interaction=_FAB_INK[variant],
+                style={"width": width, "align_content": "left" if icon else None,
+                       "padding": None if icon else {"left": 20, "right": 20, "top": 0, "bottom": 0},
+                       **_border(border_color, border_width)})
+    widget = Widget(window, call=call, components={None: "extended_fab"}, theme=theme, x=x, y=y, name="extended_fab")
     if on_click is not None:
         widget.on_click(on_click)
     return widget
 
 
-_SPLIT_BUTTONS = {"elevated": "SplitButtonElevated", "filled": "SplitButtonFilled",
-                  "filled_tonal": "SplitButtonFilledTonal", "outlined": "SplitButtonOutlined",
-                  "text": "SplitButtonText"}
+_SPLIT_BUTTONS = {"elevated": "elevated", "filled": "filled", "filled_tonal": "tonal", "outlined": "outlined", "text": "text"}
 #: `tess_re`'s split button: the facing corners tighten to this on hover, over 100 ms.
 SPLIT_TIGHTENED = 8.0
 MORPH_MS = 100
@@ -223,10 +227,20 @@ def split_button(
     it's hovered, the corners where the two meet tighten, as `tess_re`'s did.
     `on_click` is the action, `on_menu` the chevron."""
     rest = float(height) / 2
-    widget = Widget(window, _variant("split button", variant, _SPLIT_BUTTONS),
-                    {"label": label, "width": width, "height": height, "corner_radius": rest}, theme=theme,
-                    x=x, y=y, interactive={"leading": None, "trailing": None},
-                    edit=_borders(["leading", "trailing"], border_color, border_width), name="split_button")
+    shipped = _variant("split button", variant, _SPLIT_BUTTONS)
+    border = _border(border_color, border_width)
+    # the corners are the view's own style, a Signal each: a hover re-styles the parts (the shipped rules), so a corner set by hand would be put back
+    radii = {part: Signal(_corners(rest, rest, rest, rest)) for part in ("leading", "trailing")}
+    easing = {"corner_radius": MORPH_MS, "elevation": 200, "background": 150}
+    call = Call("Container", style={"flex_direction": "horizontal", "gap": 2}, children=[
+        Call("Button", "leading", {"label": label, "variant": shipped, "size": "s"},
+             {"width": width, "height": height, "corner_radius": radii["leading"], "padding": _PADDING_12, "transition": easing, **border},
+             interaction=_BUTTON_INK[variant]),
+        Call("Button", "trailing", {"icon": "chevron_down", "variant": shipped, "size": "s"},
+             {"width": height, "height": height, "corner_radius": radii["trailing"], "padding": 0, "transition": easing, **border},
+             interaction=_BUTTON_INK[variant])])
+    widget = Widget(window, call=call, components={None: f"split_button.{variant}"}, parts={"label": "leading.label", "chevron": "trailing.icon"},
+                    theme=theme, x=x, y=y, name="split_button")
     tight = (widget.theme.shape("split_button", "tightened") if widget.theme.is_set else None) or SPLIT_TIGHTENED
     corners = {  # (top_left, top_right, bottom_right, bottom_left)
         "leading": ((rest,) * 4, (rest, tight, tight, rest)),
@@ -234,10 +248,13 @@ def split_button(
     }
 
     def morph(hovered: bool) -> None:
-        for part, (resting, tightened) in corners.items():
-            radius = tightened if hovered else resting
-            for node in (widget.part(part), widget.interaction(part).clip):
-                node.animate("corner_radius", radius, motion.duration(window, MORPH_MS))
+        batch(lambda: [radii[part].set(_corners(*(tightened if hovered else resting))) for part, (resting, tightened) in corners.items()])
+
+    def follow() -> None:  # the feedback's clip takes the part's corners (the view eases the part itself)
+        for part in corners:
+            widget.interaction(part).clip.animate("corner_radius", tuple(radii[part].get().values()), motion.duration(window, MORPH_MS))
+
+    widget._undo.append(widget.view.after_sync(follow))
 
     widget._undo.append(widget.view._listen(widget.node, "pointer_enter", lambda e: morph(True)))
     widget._undo.append(widget.view._listen(widget.node, "pointer_leave", lambda e: morph(False)))
@@ -275,41 +292,44 @@ def button_group(
     tighten and it grows 12 px, its neighbours sharing the loss, and it
     all comes back on release -- the intent of `tess_re`'s, whose reflow
     compounded and never restored. `on_click(index)` hears each."""
-    fragment_name, _ = _BUTTONS[variant] if variant in _BUTTONS else (None, None)
-    if fragment_name is None:
-        raise ValueError(f"unknown button group variant {variant!r}; expected one of {sorted(_BUTTONS)}")
+    shipped = _variant("button group", variant, _BUTTONS)
     rest = float(height) / 2
     name = "button_group"
-    children = [fragment(fragment_name, {"label": text, "width": width, "height": height, "corner_radius": rest},
-                         f"{name}.b{i}") for i, text in enumerate(labels)]
-    spec = {"id": name, "kind": "Container", "style": {"flex_direction": "horizontal", "gap": 8},
-            "children": children}
-    widget = Widget(window, spec=spec, theme=theme, x=x, y=y, interactive={f"b{i}": None for i in range(len(labels))},
-                    name=name)
+    count = len(labels)
+    # each button's width and corners are the view's own style, a Signal each (see `split_button`)
+    widths = [Signal(float(width)) for _ in range(count)]
+    radii = [Signal(rest) for _ in range(count)]
+    easing = {"corner_radius": MORPH_MS, "elevation": 200, "background": 150}
+    call = Call("Container", style={"flex_direction": "horizontal", "gap": 8}, children=[
+        Call("Button", f"b{i}", {"label": text, "variant": shipped, "size": "s"},
+             {"width": widths[i], "height": height, "corner_radius": radii[i], "padding": _PADDING_12, "transition": easing},
+             interaction=_BUTTON_INK[variant])
+        for i, text in enumerate(labels)])
+    widget = Widget(window, call=call, components={None: "button_group", **{f"b{i}": f"button.{variant}" for i in range(count)}},
+                    theme=theme, x=x, y=y, name=name)
     tight = (widget.theme.shape("button_group", "tightened") if widget.theme.is_set else None) or _group_tightened(
         float(height))
-    count = len(labels)
     pressed: list[int] = []
+
+    def follow() -> None:  # the feedback's clip takes the button's corners (the view eases the button itself)
+        for i in range(count):
+            widget.interaction(f"b{i}").clip.animate("corner_radius", radii[i].get(), motion.duration(window, MORPH_MS))
+
+    widget._undo.append(widget.view.after_sync(follow))
 
     def press(index: int) -> None:
         release()
         pressed.append(index)
         neighbours = [n for n in (index - 1, index + 1) if 0 <= n < count]
-        widths = {index: float(width) + GROUP_GROWTH}
+        grown = {index: float(width) + GROUP_GROWTH}
         for n in neighbours:
-            widths[n] = max(0.0, float(width) - GROUP_GROWTH / len(neighbours))
-        for i, w in widths.items():
-            widget.part(f"b{i}").set(width=w)
-        for node in (widget.part(f"b{index}"), widget.interaction(f"b{index}").clip):
-            node.animate("corner_radius", tight, motion.duration(window, MORPH_MS))
+            grown[n] = max(0.0, float(width) - GROUP_GROWTH / len(neighbours))
+        batch(lambda: ([widths[i].set(w) for i, w in grown.items()], radii[index].set(tight)))
 
     def release() -> None:
         while pressed:
             index = pressed.pop()
-            for i in range(count):
-                widget.part(f"b{i}").set(width=float(width))
-            for node in (widget.part(f"b{index}"), widget.interaction(f"b{index}").clip):
-                node.animate("corner_radius", rest, motion.duration(window, MORPH_MS))
+            batch(lambda index=index: ([widths[i].set(float(width)) for i in range(count)], radii[index].set(rest)))
 
     for i in range(count):
         part = widget.part(f"b{i}")

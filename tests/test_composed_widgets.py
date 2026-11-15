@@ -53,11 +53,10 @@ def test_the_label_is_sized_to_its_text_and_centred():
     # label_large: Roboto 14/20, 500; tess_re's line_height is a multiple of the font size
     width, height = window.measure_text("Save", font_family="Roboto", font_size=14.0, font_weight=500.0,
                                         line_height=20.0 / 14.0)
-    # at least its text, rounded up to whole pixels (the engine rounds a width down, which wrapped text that fit),
-    # and as wide as the button inside its padding: the engine aligns text within that width, so it is centred
-    assert (label.get("min_width"), label.get("height")) == (float(math.ceil(width)), 20.0)
-    assert label.get("text_align") == "center" and label.get("width") == "100%"
-    assert (label.get("layout_x") - b.node.get("layout_x"), label.get("layout_width")) == (12.0, 96.0)
+    # the shipped Button's label is as wide as its text (rounded up to whole pixels: the engine rounds a width down, which wrapped text that fit) and is
+    # centred in the button by the button's own alignment (the fragment's label was as wide as the button inside its padding and aligned its text)
+    assert label.get("height") == 20.0 and label.get("layout_width") == float(math.ceil(width))
+    assert label.get("layout_x") - b.node.get("layout_x") == pytest.approx((120.0 - label.get("layout_width")) / 2, abs=1.0)
 
 
 def test_on_click_makes_it_a_keyboard_button():
