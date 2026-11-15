@@ -1,3 +1,0 @@
-# A small dot that marks something as having news, with no number.
-# Structure only: its look is in BadgeDot_Stylesheet.yaml.
-{id: root, kind: Rect}

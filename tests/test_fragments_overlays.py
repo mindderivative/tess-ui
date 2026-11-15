@@ -10,7 +10,7 @@ import pytest
 from helpers import elevation, view_from
 from tess_re import Window
 
-from tess_ui.spec import expand_components
+from helpers import expand_components
 from tess_ui.widgets import dialog, menu_item, side_sheet, snackbar, tooltip
 
 THEME_SEED = (0x67, 0x50, 0xA4, 0xFF)

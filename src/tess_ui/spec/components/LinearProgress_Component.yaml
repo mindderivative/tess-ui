@@ -1,6 +1,0 @@
-# A linear progress indicator: determinate with a value, indeterminate without.
-# Structure only: its look is in LinearProgress_Stylesheet.yaml.
-params: [width, height, value]
-id: root
-kind: LinearProgress
-value: "{{ value }}"

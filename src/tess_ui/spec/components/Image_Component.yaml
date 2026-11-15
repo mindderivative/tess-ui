@@ -1,8 +1,0 @@
-# A picture from a file, fitted to its box.
-# Structure only: its look is in Image_Stylesheet.yaml.
-params: [src, width, height, fit]
-id: root
-kind: Image
-image:
-  src: "{{ src }}"
-  fit: "{{ fit }}"

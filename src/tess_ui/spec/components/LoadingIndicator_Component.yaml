@@ -1,5 +1,0 @@
-# A loading indicator: a shape that morphs while something loads.
-# Structure only: its look is in LoadingIndicator_Stylesheet.yaml.
-params: [size, background]
-id: root
-kind: LoadingIndicator

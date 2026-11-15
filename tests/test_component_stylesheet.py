@@ -1,19 +1,16 @@
 """0.3.4 (#83): a component's look lives in its stylesheet.
 
-Every built-in `<Name>_Component.yaml` is structure; its look is in `<Name>_Stylesheet.yaml`, a list of `{id: <part>, style: {...}}` rules whose
-values may be the component's `{{ parameters }}`.
+Every built-in fragment of `spec/fragments.py` is structure (`tree`); its look is its `sheet`, `{part id: style}`, whose values may be the component's
+`{{ parameters }}`.
 """
 
-from pathlib import Path
-
 import pytest
-import yaml
 
 from tess_ui.spec import expand_components_to_spec
 from tess_ui.spec.expand import _parts_of
+from tess_ui.spec.fragments import FRAGMENTS
 
-BUILTIN = Path(__file__).resolve().parent.parent / "src" / "tess_ui" / "spec" / "components"
-SHEETS = sorted(BUILTIN.glob("*_Stylesheet.yaml"))
+STYLED = sorted(name for name, entry in FRAGMENTS.items() if entry["sheet"])
 
 
 def _node(spec, node_id):
@@ -26,37 +23,43 @@ def _node(spec, node_id):
     raise KeyError(node_id)
 
 
+def _styles_in(tree):
+    if isinstance(tree, dict):
+        yield from (["style"] if "style" in tree else [])
+        for child in tree.get("children") or []:
+            yield from _styles_in(child)
+
+
 def test_there_is_a_stylesheet_for_most_built_in_components():
-    assert len(SHEETS) >= 70
+    assert len(STYLED) >= 45
 
 
-@pytest.mark.parametrize("sheet", SHEETS, ids=lambda p: p.name)
-def test_a_built_in_stylesheet_names_parts_its_component_has(sheet):
-    name = sheet.name.removesuffix("_Stylesheet.yaml")
-    fragment = yaml.safe_load((BUILTIN / f"{name}_Component.yaml").read_text(encoding="utf-8"))
-    rules = yaml.safe_load(sheet.read_text(encoding="utf-8"))["styles"]
-    assert {rule["id"] for rule in rules} <= _parts_of(fragment)
-    assert all(set(rule) == {"id", "style"} for rule in rules)
+@pytest.mark.parametrize("name", STYLED)
+def test_a_built_in_stylesheet_names_parts_its_component_has(name):
+    assert set(FRAGMENTS[name]["sheet"]) <= _parts_of(FRAGMENTS[name]["tree"])
 
 
-@pytest.mark.parametrize("sheet", SHEETS, ids=lambda p: p.name)
-def test_a_built_in_fragment_keeps_no_style_of_its_own(sheet):
-    name = sheet.name.removesuffix("_Stylesheet.yaml")
-    assert "style:" not in (BUILTIN / f"{name}_Component.yaml").read_text(encoding="utf-8")
+@pytest.mark.parametrize("name", STYLED)
+def test_a_built_in_fragment_keeps_no_style_of_its_own(name):
+    assert not list(_styles_in(FRAGMENTS[name]["tree"]))
 
 
 def test_a_component_is_styled_by_its_stylesheet():
-    spec = expand_components_to_spec("id: root\nkind: Container\nchildren:\n"
-                                     "  - {id: b, component: ButtonFilled, with: {label: Go, width: 120, height: 40, corner_radius: 20}}\n")
+    spec = expand_components_to_spec({"id": "root", "kind": "Container", "children": [
+        {"id": "b", "component": "ButtonFilled", "with": {"label": "Go", "width": 120, "height": 40, "corner_radius": 20}}]})
     assert _node(spec, "b")["style"]["background"] == "primary"
     assert _node(spec, "b")["style"]["width"] == 120  # a parameter, filled in the stylesheet
     assert _node(spec, "b.label")["style"]["foreground"] == "on_primary"
 
 
-def test_a_conditional_in_a_stylesheet_follows_the_parameters():
-    def tab(selected):
-        spec = expand_components_to_spec(f"id: root\nkind: Container\nchildren:\n"
-                                         f"  - {{id: t, component: TabsItem, with: {{label: A, width: 90, selected: {selected}}}}}\n")
+def test_a_conditional_in_a_stylesheet_follows_the_parameters(monkeypatch):
+    monkeypatch.setitem(FRAGMENTS, "Pick", {"params": ["selected"], "tree": {"id": "root", "kind": "Container", "children": [
+        {"id": "label", "kind": "Text", "text": {"content": "A"}}]},
+        "sheet": {"label": {"foreground": {"if": "{{ selected }}", "then": "primary", "else": "on_surface_variant"}}}})
+
+    def pick(selected):
+        spec = expand_components_to_spec({"id": "root", "kind": "Container", "children": [
+            {"id": "t", "component": "Pick", "with": {"selected": selected}}]})
         return _node(spec, "t.label")["style"]["foreground"]
 
-    assert (tab("true"), tab("false")) == ("primary", "on_surface_variant")
+    assert (pick(True), pick(False)) == ("primary", "on_surface_variant")

@@ -1,7 +1,6 @@
 """The composed MD3 widgets of `tess_ui.widgets`: each is built
-from its fragment in `spec/components/` by Tesserae's compiler, so a
-`component: ButtonFilled` in a view and `button(window, ...)` in Python
-are one definition.
+from its fragment in `spec/fragments.py`, expanded by `spec/expand.py`, so
+`button(window, ...)` and a `component: ButtonFilled` call are one definition.
 
 A factory returns a `Widget`: `.node` (its root, attached to the window's
 root), `.part(name)` for a named piece (`"label"`), `on_click(fn)` and
@@ -12,8 +11,6 @@ layer, ripple and focus ring in their content's colour.
 from __future__ import annotations
 
 from typing import Any, Callable, Optional
-
-import yaml
 
 from tess_ui import a11y, tokens
 from tess_ui.follow import initial_theme, unfollow
@@ -27,8 +24,7 @@ __all__ = ["Widget", "fragment"]
 def fragment(name: str, params: dict[str, Any], node_id: str) -> dict[str, Any]:
     """The spec `name`'s fragment expands to with `params`, its root `node_id`
     (its parts `node_id.part`): for widgets built from several fragments."""
-    return expand_components_to_spec(yaml.safe_dump({"id": node_id, "component": name, "with": params},
-                                                    sort_keys=False))
+    return expand_components_to_spec({"id": node_id, "component": name, "with": params})
 
 
 def content_role(spec: dict[str, Any]) -> Optional[str]:

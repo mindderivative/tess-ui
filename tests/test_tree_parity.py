@@ -6,9 +6,8 @@ laid-out box, fill, border, corner radius, opacity, elevation (`tess_re`)
 against `shadows` (Tesserae), and text and font. They must be identical.
 
 The corpus:
-- every fragment `tess_re` 0.3.4 can build, called with ordinary parameters
-  (the Image fragment with a real PNG; `items:` per fragment): 67 at M43,
-  76 of 77 since (`Tabs`' `width: "100%"` divider is beyond 0.3.4);
+- every fragment of `spec/fragments.py` `tess_re` 0.3.4 can build, called with ordinary parameters (the 67 recorded at M43 stay as they were
+  recorded, the fragments only the old tests used included);
 - every view written inline in the test suite that `tess_re` itself accepts;
 - the example views, built from their files (includes and images), as they were recorded;
 - every `yaml` block in the docs and README that is a whole view.
@@ -31,15 +30,13 @@ from pathlib import Path
 import pytest
 import tess_re
 import yaml
-from PIL import Image
 
 import reference
 import treediff
 from tess_ui.spec.expand import expand_components_to_spec
-from tess_ui.spec.images import extract_images
+from tess_ui.spec.fragments import FRAGMENTS
 
 ROOT = Path(__file__).resolve().parent.parent
-COMPONENTS = ROOT / "src/tess_ui/spec/components"
 FENCE = re.compile(r"^```ya?ml\n(.*?)^```", re.MULTILINE | re.DOTALL)
 VALUES = {
     "background": "#6750A4", "checked": True, "corner_radius": 12, "day": "12", "fit": "cover",
@@ -47,14 +44,6 @@ VALUES = {
     "minute": 30, "placeholder": "Search", "scrim_height": 300, "scrim_width": 400, "selected": True,
     "size": 40, "text": "Body", "title": "Title", "value": 0.5, "width": 120, "src": "pixel.png",
     "item_width": 120,
-}
-#: `items:` for the fragments that repeat one (M56): each item fragment's own params.
-ITEMS = {
-    "Tabs": [{"label": "One"}, {"label": "Two", "selected": True}],
-    "Menu": [{"label": "One"}, {"label": "Two"}],
-    "ButtonGroup": [{"label": "One"}, {"label": "Two"}],
-    "NavigationRail": [{"label": "One", "icon": "home"}, {"label": "Two", "icon": "search"}],
-    "NavigationDrawer": [{"label": "One", "icon": "home"}, {"label": "Two", "icon": "search"}],
 }
 
 @pytest.fixture(autouse=True)
@@ -66,16 +55,13 @@ def _the_engines_own_names(monkeypatch):
 
 
 def _fragment_calls():
-    for path in sorted(COMPONENTS.glob("*_Component.yaml")):
-        name = path.name.removesuffix("_Component.yaml")
-        params = (yaml.safe_load(path.read_text()) or {}).get("params", [])
-        # a `{name: default}` param (M55) keeps its default; `items` is the fragment's own
-        values = {k: ITEMS[name] if k == "items" else VALUES[k] for k in params if not isinstance(k, dict)}
-        if name == "SpinBox":
-            values["value"] = "5"  # SpinBox shows its value as text, so it's a string
+    for name, entry in sorted(FRAGMENTS.items()):
+        params = entry["params"]
+        # a `{name: default}` param (M55) keeps its default
+        values = {k: VALUES[k] for k in params if not isinstance(k, dict)}
         view = {"id": "root", "kind": "Container", "style": {"width": 500, "height": 400},
                 "children": [{"id": "w", "component": name, "with": values}]}
-        yield f"fragment:{name}", yaml.safe_dump(view)
+        yield f"fragment:{name}", view
 
 
 def _inline_test_views():
@@ -98,7 +84,7 @@ def _accepted(key, text):
     """The expanded spec, or None if it doesn't expand or `tess_re` itself
     rejects it (the suite's deliberately broken views)."""
     try:
-        spec = expand_components_to_spec(text)
+        spec = expand_components_to_spec(yaml.safe_load(text) if isinstance(text, str) else text)
     except Exception:
         return None
     if not isinstance(spec, dict) or "kind" not in spec or "id" not in spec:
@@ -125,9 +111,6 @@ def _corpus():
             corpus[key] = ("recorded", case)
     for key, text in [*_fragment_calls(), *_inline_test_views(), *_doc_views()]:
         if key in corpus:
-            continue
-        if key.startswith("fragment:Image"):
-            corpus[key] = ("image", text)
             continue
         spec = _accepted(key, text)
         if spec is not None:
@@ -167,10 +150,8 @@ def _case(key, tmp_path):
         frames = {k: (base64.b64decode(b64), w, h) for k, (b64, w, h) in source["frames"].items()} or None
     elif how == "spec":
         spec = source
-    else:  # "image": the Image fragment with a real PNG
-        Image.new("RGBA", (3, 2), (200, 30, 60, 255)).save(tmp_path / "pixel.png")
-        spec, raw = extract_images(expand_components_to_spec(source), tmp_path)
-        frames = {node_id: (rgba, w, h) for node_id, rgba, w, h in raw}
+    else:
+        raise AssertionError(how)
     if how != "recorded":
         spec = _without_cascade(spec)
     return {"spec": spec, "tess_re": treediff.tre_dump(spec, frames=frames),

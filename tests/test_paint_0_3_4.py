@@ -13,7 +13,7 @@ and neither shows up anywhere but on screen:
 `tess_re` 0.3.4 can't read pixels back from Python, so this checks what
 every view, fragment and docs snippet declares: the shipped and example views
 (`widget` nodes, read through the TDL front end), the built-in fragments
-(`*_Component.yaml`, the older syntax, still read), and every whole TDL view on a docs page.
+(`spec/fragments.py`, each with its look applied), and every whole TDL view on a docs page.
 """
 
 import importlib.util
@@ -21,7 +21,6 @@ import re
 from pathlib import Path
 
 import pytest
-import yaml
 
 import doc_blocks
 
@@ -32,8 +31,13 @@ HAS_TDL = importlib.util.find_spec("tess_dl") is not None
 
 def _documents():
     """`(label, parsed data)` for every fragment file, and (with `tess_dl`) every view file and every whole `tdl` block in the docs that is a view."""
-    for path in sorted(ROOT.glob("src/tess_ui/**/*_Component.yaml")):
-        yield path.relative_to(ROOT).as_posix(), yaml.safe_load(path.read_text())  # "/" on Windows too
+    from tess_ui.spec.expand import _apply_sheet, _plain
+    from tess_ui.spec.fragments import FRAGMENTS
+
+    for name, entry in FRAGMENTS.items():
+        tree = _plain(entry["tree"])
+        _apply_sheet(tree, _plain(entry["sheet"]), name)
+        yield f"src/tess_ui/spec/fragments.py::{name}", tree
     if not HAS_TDL:  # the views are TDL (Python 3.14): read through the front end
         return
     from tess_ui.spec.tdl import load_tdl_file
@@ -80,7 +84,7 @@ DOCS = list(_documents())
 
 def test_the_scan_covers_views_fragments_and_docs():
     labels = [label for label, _ in DOCS]
-    assert sum(label.startswith("src/tess_ui/spec/components/") for label in labels) >= 60
+    assert sum(label.startswith("src/tess_ui/spec/fragments.py::") for label in labels) >= 50
     if HAS_TDL:
         assert any(label.startswith("examples/") for label in labels)
         assert sum(label.startswith("src/tess_ui/views/") for label in labels) >= 50

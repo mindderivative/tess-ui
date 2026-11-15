@@ -1,5 +1,0 @@
-# A search view: the full-size surface search results appear on.
-# Structure only: its look is in SearchView_Stylesheet.yaml.
-params: [width, height]
-id: root
-kind: Rect

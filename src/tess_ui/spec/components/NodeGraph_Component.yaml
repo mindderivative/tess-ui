@@ -1,5 +1,0 @@
-# A pannable canvas for a node graph: its GraphNodes and the edges between them.
-# Structure only: its look is in NodeGraph_Stylesheet.yaml.
-params: [width, height]
-id: root
-kind: Rect

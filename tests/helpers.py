@@ -31,14 +31,21 @@ def elevation(node) -> float:
     raise AssertionError(f"shadows {shadows!r} aren't an MD3 elevation level")
 
 
-def view_from(expanded_text: str, **kwargs):
-    """A Tesserae `View` built from the text `expand_components` dumps (an expanded fragment spec: the internal form the Python widget factories build from), or from a
-    view's TDL text (it starts with the `---` metadata block)."""
+def expand_components(yaml_text: str) -> dict:
+    """The kind-tree a test's YAML node (`id`, `component`, `with`, `children`) expands to: tests write their input as YAML text, the package itself reads none."""
+    from tess_ui.spec import expand_components_to_spec
+
+    return expand_components_to_spec(yaml.safe_load(yaml_text))
+
+
+def view_from(spec, **kwargs):
+    """A Tesserae `View` built from an expanded kind-tree (what `expand_components` returns: the internal form the Python widget factories build from), or from
+    a view's TDL text (it starts with the `---` metadata block)."""
     from tess_ui import View
 
-    if expanded_text.lstrip().startswith("---"):
+    if isinstance(spec, str):
         from tess_ui.spec.tdl import load_marked_tdl
         from tess_ui.spec.tdl_theme import plain
 
-        return View(plain(load_marked_tdl(expanded_text, "T_View.tdl")), **kwargs)
-    return View(yaml.safe_load(expanded_text), **kwargs)
+        spec = plain(load_marked_tdl(spec, "T_View.tdl"))
+    return View(spec, **kwargs)

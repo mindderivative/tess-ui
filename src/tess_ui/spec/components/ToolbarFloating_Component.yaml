@@ -1,6 +1,0 @@
-# A floating toolbar: a rounded bar of actions over the content.
-# Structure only: its look is in ToolbarFloating_Stylesheet.yaml.
-params: [background, width, corner_radius]
-id: root
-kind: Container
-children: []

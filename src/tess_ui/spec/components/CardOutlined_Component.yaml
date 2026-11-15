@@ -1,5 +1,0 @@
-# An outlined card: a container with a border and no fill.
-# Structure only: its look is in CardOutlined_Stylesheet.yaml.
-params: [width, height]
-id: root
-kind: Rect

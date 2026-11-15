@@ -1,24 +1,22 @@
-"""Real coverage for `tess_ui.spec.expand_components` -- Part 3's
-macro-expansion engine. Exercises the real `Button_Component.yaml`
-fragment end to end (parsed by `yaml.safe_load`, constructed as a real
+"""Real coverage for `tess_ui.spec.expand_components_to_spec` -- Part 3's
+macro-expansion engine. Exercises the real `ButtonFilled` fragment
+end to end (constructed as a real
 `tess_re.View`), plus every real guard the engine states in its own module
 docstring: missing/unknown params, a missing call-site `id:`, an unknown
 component name, a cycle, id-namespacing across two uses of the same
 component, and a `{{ }}` binding forwarded as a param value surviving
 untouched. `repeat:` (M28) gets its own real coverage further down,
-using the already-shipped `ListItem_Component.yaml` fragment.
+using the already-shipped `ListItem` fragment.
 """
 
-from pathlib import Path
-
 import pytest
-
-from helpers import elevation, view_from
 import yaml
+from helpers import expand_components, view_from
 from tess_re import Window
 
-from tess_ui.spec import ComponentError, expand_components
+from tess_ui.spec import ComponentError
 from tess_ui.spec.expand import MAX_DEPTH
+from tess_ui.spec.fragments import FRAGMENTS
 from tess_ui.widgets import button as imperative_button
 from tess_ui.widgets import list_item as imperative_list_item
 
@@ -40,7 +38,7 @@ def _button_view_yaml(with_values: dict | None = None) -> str:
 
 def test_expand_produces_no_component_keys_left():
     expanded = expand_components(_button_view_yaml())
-    data = yaml.safe_load(expanded)
+    data = expanded
     child = data["children"][0]
     assert "component" not in child
     assert "with" not in child
@@ -49,7 +47,7 @@ def test_expand_produces_no_component_keys_left():
 
 def test_numeric_params_round_trip_as_real_numbers_not_quoted_strings():
     expanded = expand_components(_button_view_yaml())
-    data = yaml.safe_load(expanded)
+    data = expanded
     button = data["children"][0]
     assert button["style"]["width"] == 120
     assert isinstance(button["style"]["width"], int)
@@ -111,7 +109,7 @@ def test_two_uses_of_same_component_get_distinct_namespaced_ids():
             ],
         }
     )
-    expanded = yaml.safe_load(expand_components(yaml_text))
+    expanded = expand_components(yaml_text)
     ids = [child["id"] for child in expanded["children"]]
     label_ids = [child["children"][0]["id"] for child in expanded["children"]]
     assert ids == ["btn1", "btn2"]
@@ -133,31 +131,17 @@ def test_binding_forwarded_as_param_value_survives_untouched():
             ],
         }
     )
-    expanded = yaml.safe_load(expand_components(yaml_text))
+    expanded = expand_components(yaml_text)
     assert expanded["children"][0]["children"][0]["text"]["content"] == "{{ headline.get() }}"
 
 
-def test_cycle_raises_naming_the_chain(tmp_path: Path):
-    component_dir = tmp_path
-    (component_dir / "SelfReferencing_Component.yaml").write_text(
-        yaml.safe_dump(
-            {
-                "params": [],
-                "id": "root",
-                "kind": "Container",
-                "children": [{"id": "inner", "component": "SelfReferencing", "with": {}}],
-            }
-        )
-    )
-    yaml_text = yaml.safe_dump(
-        {
-            "id": "root",
-            "kind": "Container",
-            "children": [{"id": "x", "component": "SelfReferencing", "with": {}}],
-        }
-    )
+def test_cycle_raises_naming_the_chain(monkeypatch):
+    monkeypatch.setitem(FRAGMENTS, "SelfReferencing", {"params": [], "tree": {
+        "id": "root", "kind": "Container", "children": [{"id": "inner", "component": "SelfReferencing", "with": {}}]}})
+    yaml_text = yaml.safe_dump({"id": "root", "kind": "Container",
+                                "children": [{"id": "x", "component": "SelfReferencing", "with": {}}]})
     with pytest.raises(ComponentError, match="component cycle"):
-        expand_components(yaml_text, component_dirs=[component_dir])
+        expand_components(yaml_text)
 
 
 def test_extra_keys_at_call_site_are_rejected():
@@ -177,7 +161,7 @@ def test_extra_keys_at_call_site_are_rejected():
 
 def test_no_component_usage_is_a_true_no_op():
     yaml_text = yaml.safe_dump({"id": "root", "kind": "Container", "children": []})
-    expanded = yaml.safe_load(expand_components(yaml_text))
+    expanded = expand_components(yaml_text)
     assert expanded == {"id": "root", "kind": "Container", "children": []}
 
 
@@ -210,7 +194,7 @@ def test_repeat_expands_to_one_real_node_per_item():
         [{"headline": "Notifications"}, {"headline": "Privacy"}, {"headline": "About"}],
         extra_with={"width": 360},
     )
-    expanded = yaml.safe_load(expand_components(yaml_text))
+    expanded = expand_components(yaml_text)
     children = expanded["children"]
     assert len(children) == 3
     assert [c["id"] for c in children] == ["settings.0", "settings.1", "settings.2"]
@@ -238,7 +222,7 @@ def test_repeat_matches_the_imperative_catalog():
 
 def test_repeat_produces_real_namespaced_ids_with_no_collisions():
     yaml_text = _repeat_view_yaml([{"headline": f"Item {i}"} for i in range(5)], extra_with={"width": 360})
-    expanded = yaml.safe_load(expand_components(yaml_text))
+    expanded = expand_components(yaml_text)
     ids = [c["id"] for c in expanded["children"]]
     assert ids == [f"settings.{i}" for i in range(5)]
     assert len(set(ids)) == len(ids), "every repeated instance must get a real, unique id"
@@ -289,49 +273,18 @@ def test_repeat_at_the_document_root_is_rejected():
 
 def test_repeat_with_zero_items_produces_zero_nodes():
     yaml_text = _repeat_view_yaml([], extra_with={"width": 360})
-    expanded = yaml.safe_load(expand_components(yaml_text))
+    expanded = expand_components(yaml_text)
     assert expanded["children"] == []
 
 
-def test_nested_repeat_namespaces_correctly_under_the_outer_call(tmp_path: Path):
-    # A component that itself contains a `repeat:`, sourced from a
-    # param supplied by the OUTER call site -- proves `{{ items }}`
-    # substitution (already real, general-purpose) correctly resolves
-    # a `repeat:` value before `_walk` ever reaches the nested
-    # `component:` node, and that the outer call site's own id still
-    # prefixes every inner repeated instance, exactly once, matching
-    # ordinary nested-component namespacing.
-    from tess_ui.spec import expand as expand_module
-
-    real_components_dir = Path(expand_module.__file__).parent / "components"
-    (tmp_path / "Section_Component.yaml").write_text(
-        yaml.safe_dump(
-            {
-                "params": ["items"],
-                "id": "root",
-                "kind": "Container",
-                "children": [
-                    {"id": "rows", "component": "ListItem", "repeat": "{{ items }}", "with": {"width": 360}}
-                ],
-            }
-        )
-    )
-    yaml_text = yaml.safe_dump(
-        {
-            "id": "root",
-            "kind": "Container",
-            "children": [
-                {
-                    "id": "section",
-                    "component": "Section",
-                    "with": {"items": [{"headline": "One"}, {"headline": "Two"}]},
-                }
-            ],
-        }
-    )
-    expanded = yaml.safe_load(
-        expand_components(yaml_text, component_dirs=[tmp_path, real_components_dir])
-    )
-    section = expanded["children"][0]
+def test_nested_repeat_namespaces_correctly_under_the_outer_call(monkeypatch):
+    # A component that itself contains a `repeat:`, sourced from a param supplied by the OUTER call site: `{{ items }}` resolves the `repeat:` value
+    # before `_walk` reaches the nested `component:` node, and the outer call site's own id still prefixes every inner repeated instance, exactly once.
+    monkeypatch.setitem(FRAGMENTS, "Section", {"params": ["items"], "tree": {
+        "id": "root", "kind": "Container",
+        "children": [{"id": "rows", "component": "ListItem", "repeat": "{{ items }}", "with": {"width": 360}}]}})
+    yaml_text = yaml.safe_dump({"id": "root", "kind": "Container", "children": [
+        {"id": "section", "component": "Section", "with": {"items": [{"headline": "One"}, {"headline": "Two"}]}}]})
+    section = expand_components(yaml_text)["children"][0]
     row_ids = [c["id"] for c in section["children"]]
     assert row_ids == ["section.rows.0", "section.rows.1"]

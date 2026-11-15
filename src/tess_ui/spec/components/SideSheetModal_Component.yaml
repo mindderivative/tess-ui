@@ -1,7 +1,0 @@
-# A modal side sheet: a panel at the side of the window, over a scrim.
-# Structure only: its look is in SideSheetModal_Stylesheet.yaml.
-params: [width, height, scrim_width, scrim_height]
-id: root
-kind: Container
-children:
-  - {id: panel, kind: Rect}

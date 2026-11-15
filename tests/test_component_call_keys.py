@@ -5,24 +5,19 @@ root: mappings merged key by key (the call's win), `two_way:` replaced,
 ViewModel's bindings. So `component: ButtonFilled` can be clicked.
 """
 
-from pathlib import Path
-
 import pytest
-import yaml
-
-import tess_ui.spec.expand as expand_module
 
 from tess_ui import Signal, View, ViewModel
 from tess_ui.spec import expand_components_to_spec
 from tess_ui.spec.expand import ComponentError
+from tess_ui.spec.fragments import FRAGMENTS
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 SAVE = {"id": "save", "component": "ButtonFilled", "with": {"label": "Save", "width": 120, "height": 40, "corner_radius": 20}}
 
 
-def _expand(*children, **kwargs):
-    return expand_components_to_spec(yaml.safe_dump({"id": "root", "kind": "Container", "children": list(children)}),
-                                     **kwargs)
+def _expand(*children):
+    return expand_components_to_spec({"id": "root", "kind": "Container", "children": list(children)})
 
 
 class VM(ViewModel):
@@ -59,16 +54,15 @@ def test_bindings_and_classes_reach_the_root_and_the_calls_braces_are_the_viewmo
     assert view.node("save").get("opacity") == 1.0
 
 
-def test_they_merge_with_the_roots_own_and_the_call_wins(tmp_path):
-    (tmp_path / "Chip_Component.yaml").write_text(yaml.safe_dump({
-        "params": ["text"], "id": "root", "kind": "Rect", "classes": ["chip"],
+def test_they_merge_with_the_roots_own_and_the_call_wins(monkeypatch):
+    monkeypatch.setitem(FRAGMENTS, "Chip", {"params": ["text"], "tree": {
+        "id": "root", "kind": "Rect", "classes": ["chip"],
         "style": {"width": 60, "height": 24, "background": "surface"},
         "a11y": {"label": "Chip", "role": "button"}, "handlers": {"on_hover_enter": "hovered"},
         "bindings": {"opacity": "{{ text }}"},
-    }))
+    }})
     spec = _expand({"id": "c", "component": "Chip", "with": {"text": 0.7},
-                    "a11y": {"label": "Filter"}, "handlers": {"on_click": "pick"}, "classes": ["active", "chip"]},
-                   component_dirs=[tmp_path])
+                    "a11y": {"label": "Filter"}, "handlers": {"on_click": "pick"}, "classes": ["active", "chip"]})
     root = spec["children"][0]
     assert root["a11y"] == {"label": "Filter", "role": "button"}  # merged, the call's label winning
     assert root["handlers"] == {"on_hover_enter": "hovered", "on_click": "pick"}
@@ -82,14 +76,13 @@ def test_interaction_sets_the_feedback_colour():
     assert view.interaction("save").tint == (255, 0, 0, 255)
 
 
-def test_two_way_replaces_the_roots(tmp_path):
-    (tmp_path / "Field_Component.yaml").write_text(yaml.safe_dump({
-        "params": [], "id": "root", "kind": "TextField", "two_way": "text",
+def test_two_way_replaces_the_roots(monkeypatch):
+    monkeypatch.setitem(FRAGMENTS, "Field", {"params": [], "tree": {
+        "id": "root", "kind": "TextField", "two_way": "text",
         "text": {"content": "", "font_family": "Roboto", "font_size": 14},
         "style": {"width": 120, "height": 32, "foreground": "#000000", "background": "#FFFFFF"},
-    }))
-    spec = _expand({"id": "f", "component": "Field", "bindings": {"text": "{{ note.get() }}"}, "two_way": "text"},
-                   component_dirs=[tmp_path])
+    }})
+    spec = _expand({"id": "f", "component": "Field", "bindings": {"text": "{{ note.get() }}"}, "two_way": "text"})
     view = View(spec, theme_seed=SEED)
     vm = VM(view)
     field = view.node("f")
@@ -109,13 +102,12 @@ def test_every_repeated_item_gets_them():
     assert vm.saved == [1]
 
 
-def test_a_call_inside_a_fragment_takes_them_too(tmp_path):
-    (tmp_path / "Toolbar_Component.yaml").write_text(yaml.safe_dump({
-        "params": [], "id": "root", "kind": "Container",
+def test_a_call_inside_a_fragment_takes_them_too(monkeypatch):
+    monkeypatch.setitem(FRAGMENTS, "Bar", {"params": [], "tree": {
+        "id": "root", "kind": "Container",
         "children": [{**SAVE, "handlers": {"on_click": "save"}}],
-    }))
-    built_in = Path(expand_module.__file__).parent / "components"
-    spec = _expand({"id": "t", "component": "Toolbar"}, component_dirs=[tmp_path, built_in])
+    }})
+    spec = _expand({"id": "t", "component": "Bar"})
     assert spec["children"][0]["children"][0]["handlers"] == {"on_click": "save"}
 
 

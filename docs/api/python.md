@@ -2630,27 +2630,15 @@ Sends log messages at `level` and above to `sink` (stderr by default) in Tessera
 class ComponentError
 ```
 
-A `component:` reference that cannot be expanded, with the call chain that led to it.
-
-### `expand_components`
-
-```python
-expand_components(yaml_text: str, *, component_dirs: list[Path] | None = None) -> str
-```
-
-`expand_components_to_spec`, dumped back to YAML text -- for inspecting an expansion.
+A `component:` reference that cannot be expanded, with the call chain that led to it. (The picture loaders raise it too.)
 
 ### `expand_components_to_spec`
 
 ```python
-expand_components_to_spec(
-    yaml_text: str,
-    *,
-    component_dirs: list[Path] | None = None
-) -> Any
+expand_components_to_spec(spec: dict[str, Any]) -> Any
 ```
 
-Expands every `component:` entry in `yaml_text` (a node with the fragment it names), returning the finished `WidgetSpec`-shaped dict with no `component:`/`with:`/`params:`/`repeat:` keys remaining -- ready for `tess_ui.View(spec)`, with no YAML-text round-trip.
+Expands every `component:` entry in `spec` (a node, or a tree with such nodes in its `children:`), returning the finished kind-tree dict with no `component:`/`with:`/`params:`/`repeat:` keys remaining, ready for `tess_ui.View(spec)`. `spec` itself is not changed.
 
 ### `load_stylesheet`
 

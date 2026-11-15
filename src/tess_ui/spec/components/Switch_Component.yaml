@@ -1,6 +1,0 @@
-# A switch: a setting that is on or off, and takes effect at once.
-# Structure only: its look is in Switch_Stylesheet.yaml.
-params: [width, height, selected]
-id: root
-kind: Switch
-selected: "{{ selected }}"

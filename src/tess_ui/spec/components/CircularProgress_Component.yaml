@@ -1,6 +1,0 @@
-# A circular progress indicator: determinate with a value, indeterminate without.
-# Structure only: its look is in CircularProgress_Stylesheet.yaml.
-params: [size, value]
-id: root
-kind: CircularProgress
-value: "{{ value }}"

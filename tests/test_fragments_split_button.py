@@ -1,6 +1,6 @@
 from helpers import elevation, view_from
 """Real coverage for the `split_button` component fragment family
-(`src/tess_ui/spec/components/SplitButton*_Component.yaml`) -- all 5
+(the `SplitButton*` fragments of `src/tess_ui/spec/fragments.py`) -- all 5
 real MD3 variants, rest-state only (the real hover/press inner-corner
 shape-tightening animation has no public Python API, a stated scope
 boundary named in each fragment's own header comment).
@@ -8,7 +8,7 @@ boundary named in each fragment's own header comment).
 
 from tess_re import Window
 
-from tess_ui.spec import expand_components
+from helpers import expand_components
 from tess_ui.widgets import split_button
 
 SPLIT_BUTTON_VARIANTS = [

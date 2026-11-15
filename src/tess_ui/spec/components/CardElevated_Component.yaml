@@ -1,5 +1,0 @@
-# An elevated card: a container on a tinted surface with a shadow.
-# Structure only: its look is in CardElevated_Stylesheet.yaml.
-params: [width, height]
-id: root
-kind: Rect

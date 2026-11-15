@@ -7,7 +7,6 @@ restyle or reconcile never undoes it. A control keeps its own `disabled`.
 """
 
 import pytest
-import yaml
 
 from tess_ui import App, Signal, View, ViewModel
 from tess_ui.spec import expand_components_to_spec
@@ -126,11 +125,10 @@ def test_a_plain_node_and_a_text_field():
     assert view.node("f").get("focusable") is True and view.node("f").get("disabled") is False
 
 
-# legacy syntax: deleted with spec/expand.py at the cutover
 def test_a_fragment_button_binds_it_through_its_call():  # with M69
-    spec = expand_components_to_spec(yaml.safe_dump(_spec({
+    spec = expand_components_to_spec(_spec({
         "id": "b", "component": "ButtonFilled", "with": {"label": "Back", "width": 96, "height": 40, "corner_radius": 20},
-        "handlers": {"on_click": "go"}, "bindings": {"disabled": "{{ off.get() }}"}})))
+        "handlers": {"on_click": "go"}, "bindings": {"disabled": "{{ off.get() }}"}}))
     view = View(spec, theme_seed=SEED)
     vm = VM(view)
     view.click(view.node("b"))

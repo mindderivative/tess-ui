@@ -1,5 +1,0 @@
-# A thin line that separates content.
-# Structure only: its look is in Divider_Stylesheet.yaml.
-params: [width, height]
-id: root
-kind: Rect

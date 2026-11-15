@@ -11,6 +11,7 @@
 
 ### Changed
 
+- **`pyyaml` is no longer a dependency.** The Python widget factories (`button()`, the dialogs and menus of `tess_ui.overlays`, ...) build from fragments that are now Python data (`tess_ui.spec.fragments`), not `*_Component.yaml` files; the expander reads that data and no YAML. What the factories return is unchanged. A project that read YAML itself installs `pyyaml` on its own.
 - **Python 3.14 is the minimum, and `tesserae-dl` is a dependency** (it was an optional extra): TDL is read by `tess_dl`, which needs 3.14.
 
 ## 0.6.0.1

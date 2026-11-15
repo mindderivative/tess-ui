@@ -26,7 +26,6 @@ classifiers = [
 
 dependencies = [
     "tesserae-engine==0.6.7",  # tess_re, on PyPI as tesserae-engine (`import tess_re`; it was `import tre` before 0.6.0), pinned to the release the whole suite was run on. A new engine release is tried first, by the user: a new engine line is a new Tesserae line. PyPI's own `tre` is an unrelated regex library.
-    "pyyaml>=6.0",
     "tesserae-dl>=0.2.0,<0.3",  # tess_dl: TDL, the format of views, stylesheets and themes
     "Pillow>=10.0",
     "watchfiles>=1.0",
@@ -42,7 +41,7 @@ Repository = "https://github.com/mindderivative/tess-ui"
 
 [project.optional-dependencies]
 build = ["pyinstaller>=6.10"]
-dev = ["pytest>=8.0", "pytest-xdist>=3.5", "pyinstaller>=6.10", "jsonschema>=4.17", "ruff>=0.6", "mypy>=1.10"]
+dev = ["pytest>=8.0", "pytest-xdist>=3.5", "pyinstaller>=6.10", "jsonschema>=4.17", "ruff>=0.6", "mypy>=1.10", "pyyaml>=6.0"]  # pyyaml: the tests and tools read YAML (workflow files, docs data, a test's input text); the package reads none
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tess_ui"]
