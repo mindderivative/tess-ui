@@ -71,7 +71,7 @@ def test_a_bound_colour_may_carry_an_alpha():
 
 
 def test_the_new_syntax_takes_it_in_a_node_in_a_rule_and_as_a_colour_property():
-    view = open_composed(parse_view("widget: Rect\nstyle: {width: 50, height: 20, background: 'primary@12%'}\n", "T_View.yaml"), Bindings(), theme_seed=SEED)
+    view = open_composed(parse_view("---\nTDL: 0.2\nName: T\n---\nRect { Style { Width: 50, Height: 20, Background: \"primary@12%\" } }\n", "T_View.tdl"), Bindings(), theme_seed=SEED)
     assert view.node("root").get("fill")[3] == 31
     RuleSheet.of({"styles": [{"widget": "Rect", "style": {"background": "on_surface@38%"}}]})
     prop = Property("color")

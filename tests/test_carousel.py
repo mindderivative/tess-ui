@@ -5,7 +5,7 @@ import pytest
 from tess_ui import App, Signal, ViewModel, tokens
 from tess_ui.shipped import shipped_views
 
-ITEMS = "[" + ", ".join("{value: i%d, title: 'Item %d'}" % (n, n) for n in range(6)) + "]"
+ITEMS = "Items { " + " ".join('Item { Value: i%d, Title: "Item %d" }' % (n, n) for n in range(6)) + " }"
 
 
 class VM(ViewModel):
@@ -18,16 +18,23 @@ class VM(ViewModel):
 
 def opened(tmp_path, props="", items=ITEMS):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    lines = "\n    ".join(props.split(", ")) if props else ""
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{flex_direction: vertical, align_content: top_left, width: 500, height: 300}}
-children:
-  - widget: Carousel
-    name: c
-    items: {items}
-    chosen: "{{{{ chosen }}}}"
-    {lines}
+    lines = "\n      ".join(props.split(", ")) if props else ""
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Align_Content: top_left, Width: 500, Height: 300 }}
+  Children {{
+    Carousel {{
+      Name: c
+      {items}
+      Chosen: <| chosen |>
+      {lines}
+    }}
+  }}
+}}
 """)
     app = App(root=tmp_path, width=500, height=300)
     app.bind(VM)
@@ -67,7 +74,7 @@ def test_it_is_a_horizontal_scroll_view_of_the_size_it_is_given_that_settles_on_
 
 
 def test_uncontained_items_are_item_width_wide_28_pixel_rounded_and_8_pixels_apart(tmp_path):
-    view, _ = opened(tmp_path, "item_width: 150")
+    view, _ = opened(tmp_path, "Item_Width: 150")
     a, b = item(view, 0), item(view, 1)
     assert (a.get("layout_width"), a.get("layout_height"), a.get("corner_radius")) == (150.0, 200.0, 28.0) and b.get("layout_x") == a.get("layout_x") + 150 + 8
     assert a.get("fill") == role(view, "surface_container_highest")
@@ -81,33 +88,33 @@ def test_the_item_has_its_title_on_a_darkened_band_at_the_bottom(tmp_path):
 
 
 def test_multi_browse_has_a_large_item_a_medium_one_and_then_small_ones(tmp_path):
-    view, _ = opened(tmp_path, "variant: multi_browse")
+    view, _ = opened(tmp_path, "Variant: multi_browse")
     widths = [item(view, n).get("layout_width") for n in range(4)]
     assert widths[0] > widths[1] > widths[2] and widths[2] == widths[3] == 56.0
 
 
 def test_hero_items_are_large_with_a_peek_of_the_next(tmp_path):
-    view, _ = opened(tmp_path, "variant: hero")
+    view, _ = opened(tmp_path, "Variant: hero")
     a, b = item(view, 0), item(view, 1)
     assert a.get("layout_width") == 360 - 56 - 8 and b.get("layout_x") < strip(view).get("layout_x") + 360 and b.get("layout_x") + b.get("layout_width") > strip(view).get("layout_x") + 360
 
 
 def test_center_hero_items_snap_to_the_centre_with_room_either_side(tmp_path):
-    view, _ = opened(tmp_path, "variant: center_hero")
+    view, _ = opened(tmp_path, "Variant: center_hero")
     assert strip(view).get("scroll_snap") == "center" and item(view, 0).get("snap_align") == "center"
     a = item(view, 0)
     assert a.get("layout_width") == 360 - 2 * 56 - 2 * 8 and a.get("layout_x") == strip(view).get("layout_x") + 56 + 8
 
 
 def test_the_wheel_scrolls_it_sideways_and_it_settles_with_an_item_at_the_start(tmp_path):
-    view, _ = opened(tmp_path, "item_width: 150")
+    view, _ = opened(tmp_path, "Item_Width: 150")
     view.window.simulate("wheel", node=strip(view), delta_x=120.0, delta_y=0.0)
     settle(view, 60)
     assert strip(view).get("scroll_offset") == 158.0  # the second item (150 + 8)
 
 
 def test_a_small_wheel_turn_settles_back_on_the_first_item(tmp_path):
-    view, _ = opened(tmp_path, "item_width: 150")
+    view, _ = opened(tmp_path, "Item_Width: 150")
     view.window.simulate("wheel", node=strip(view), delta_x=40.0, delta_y=0.0)
     settle(view, 60)
     assert strip(view).get("scroll_offset") == 0.0
@@ -134,6 +141,6 @@ def test_a_picture_fills_the_item(tmp_path):
     from PIL import Image
     (tmp_path / "Views").mkdir()
     Image.new("RGBA", (40, 20), (200, 0, 0, 255)).save(tmp_path / "Views" / "pic.png")
-    view, _ = opened(tmp_path, items="[{value: a, title: A, image: pic.png}]")
+    view, _ = opened(tmp_path, items="Items { Item { Value: a, Title: A, Image: pic.png } }")
     pic = view.node("root.c.item[a].picture")
     assert (pic.get("layout_width"), pic.get("layout_height")) == (200.0, 200.0)

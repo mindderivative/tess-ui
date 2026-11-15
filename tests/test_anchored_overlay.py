@@ -16,25 +16,33 @@ class VM(ViewModel):
         self.placement = Signal("above")
 
 
-VIEW = """name: main
-widget: Container
-style: {width: 400, height: 300}
-children:
-  - {widget: Rect, name: target, style: {position: absolute, x: "{{ x }}", y: 100, width: 60, height: 40, background: primary}}
-  - widget: Overlay
-    name: tag
-    anchor: target
-    placement: "{{ placement }}"
-    open: true
-    dismissible: false
-    children:
-      - {widget: Rect, name: dot, style: {width: 12, height: 12, background: error}}
+VIEW = """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Width: 400, Height: 300 }
+  Children {
+    Rect { Name: target, Style { Position: absolute, X: <| x |>, Y: 100, Width: 60, Height: 40, Background: primary } }
+    Overlay {
+      Name: tag
+      Anchor: target
+      Placement: <| placement |>
+      Open: true
+      Dismissible: false
+      Children {
+        Rect { Name: dot, Style { Width: 12, Height: 12, Background: error } }
+      }
+    }
+  }
+}
 """
 
 
 def opened(tmp_path, text=VIEW):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(text)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(text)
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")

@@ -98,11 +98,11 @@ def test_a_field_dropped_in_a_reload_goes_back_to_unset():
 
 
 def test_the_loader_takes_the_states_fixed_or_bound_and_names_a_wrong_one():
-    node = parse_view("widget: Rect\na11y: {expanded: true, selected: '{{ on }}', value: 3, value_max: '{{ top }}'}", "T_View.yaml").root
+    node = parse_view("---\nTDL: 0.2\nName: T\n---\nRect { A11y { Expanded: true, Selected: <| on |>, Value: 3, Value_Max: <| top |> } }\n", "T_View.tdl").root
     assert node.a11y["expanded"] is True and node.a11y["value"] == 3
     with pytest.raises(LoadError, match="a11y expanded must be true or false"):
-        parse_view("widget: Rect\na11y: {expanded: open}", "T_View.yaml")
-    parse_view("widget: Rect\na11y: {role: '{{ x }}'}", "T_View.yaml")  # a role may be worked out from a view's params (see test_segmented_button)
+        parse_view("---\nTDL: 0.2\nName: T\n---\nRect { A11y { Expanded: open } }\n", "T_View.tdl")
+    parse_view("---\nTDL: 0.2\nName: T\n---\nRect { A11y { Role: <| x |> } }\n", "T_View.tdl")  # a role may be worked out from a view's params (see test_segmented_button)
 
 
 def test_a_composed_view_keeps_the_states_up_to_date():
@@ -116,8 +116,8 @@ def test_a_composed_view_keeps_the_states_up_to_date():
 
     bindings = Bindings()
     bindings.bind(VM)
-    doc = parse_view("name: v\nwidget: Rect\nstyle: {width: 40, height: 20, background: '#112233'}\n"
-                     "a11y: {role: button, expanded: '{{ open }}', value: '{{ pos }}', value_min: 0, value_max: 10}\n", "V_View.yaml")
+    doc = parse_view("---\nTDL: 0.2\nName: T\n---\nRect {\n  Name: v\n  Style { Width: 40, Height: 20, Background: \"#112233\" }\n"
+                     "  A11y { Role: button, Expanded: <| open |>, Value: <| pos |>, Value_Min: 0, Value_Max: 10 }\n}\n", "V_View.tdl")
     view = open_composed(doc, bindings, theme_seed=SEED)
     node, vm = view.node("root"), view.handle.viewmodel
     assert (node.get("expanded"), node.get("value"), node.get("value_min"), node.get("value_max")) == (False, 0.0, 0.0, 10.0)

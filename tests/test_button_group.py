@@ -5,7 +5,7 @@ import pytest
 from tess_ui import App, Signal, ViewModel, tokens
 from tess_ui.shipped import shipped_views
 
-ITEMS = "[{value: day, label: Day}, {value: week, label: Week}, {value: month, label: Month}]"
+ITEMS = "Items { Item { Value: day, Label: Day } Item { Value: week, Label: Week } Item { Value: month, Label: Month } }"
 
 
 class VM(ViewModel):
@@ -20,11 +20,18 @@ class VM(ViewModel):
 
 def opened(tmp_path, props="", items=ITEMS):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{flex_direction: vertical, align_content: top_left, width: 500, height: 400}}
-children:
-  - {{widget: ButtonGroup, name: g, items: {items}, {props}}}
+    group = ", ".join(part for part in ("Name: g", items, props) if part)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Align_Content: top_left, Width: 500, Height: 400 }}
+  Children {{
+    ButtonGroup {{ {group} }}
+  }}
+}}
 """)
     app = App(root=tmp_path)
     app.bind(VM)
@@ -53,8 +60,8 @@ def test_it_is_shipped():
     assert "ButtonGroup" in shipped_views()
 
 
-SINGLE = 'mode: single, selected: "{{ one }}"'
-MULTI = 'mode: multiple, selected: "{{ many }}"'
+SINGLE = "Mode: single, Selected: <| one |>"
+MULTI = "Mode: multiple, Selected: <| many |>"
 
 
 def test_a_group_of_actions_is_a_row_of_buttons_eight_pixels_apart(tmp_path):
@@ -68,11 +75,17 @@ def test_a_group_of_actions_is_a_row_of_buttons_eight_pixels_apart(tmp_path):
 
 def test_pressing_an_action_reports_which(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{width: 500, height: 200}}
-children:
-  - {{widget: ButtonGroup, name: g, items: {ITEMS}, chosen: "{{{{ last }}}}"}}
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Width: 500, Height: 200 }}
+  Children {{
+    ButtonGroup {{ Name: g, {ITEMS}, Chosen: <| last |> }}
+  }}
+}}
 """)
     app = App(root=tmp_path)
     app.bind(VM)
@@ -132,7 +145,7 @@ def test_the_arrows_only_move_the_focus_in_multiple_mode(tmp_path):
 
 
 def test_a_connected_group_is_two_pixels_apart_with_square_inner_corners(tmp_path):
-    view, _ = opened(tmp_path, "connected: true")
+    view, _ = opened(tmp_path, "Connected: true")
     day, week, month = (item(view, v) for v in ("day", "week", "month"))
     assert week.get("layout_x") == day.get("layout_x") + day.get("layout_width") + 2
     assert day.get("corner_radius") == (9999.0, 4.0, 4.0, 9999.0)
@@ -141,27 +154,27 @@ def test_a_connected_group_is_two_pixels_apart_with_square_inner_corners(tmp_pat
 
 
 def test_a_vertical_group_is_a_column(tmp_path):
-    view, _ = opened(tmp_path, "orientation: vertical, connected: true")
+    view, _ = opened(tmp_path, "Orientation: vertical, Connected: true")
     day, week = item(view, "day"), item(view, "week")
     assert week.get("layout_y") == day.get("layout_y") + day.get("layout_height") + 2 and week.get("layout_x") == day.get("layout_x")
     assert day.get("corner_radius") == (9999.0, 9999.0, 4.0, 4.0)
 
 
 def test_variant_and_size_pass_to_every_button(tmp_path):
-    view, _ = opened(tmp_path, "variant: tonal, size: m")
+    view, _ = opened(tmp_path, "Variant: tonal, Size: m")
     for v in ("day", "week", "month"):
         assert item(view, v).get("layout_height") == 56.0 and item(view, v).get("fill") == role(view, "secondary_container")
 
 
 def test_a_disabled_item_and_a_disabled_group_do_not_respond(tmp_path):
-    view, vm = opened(tmp_path, SINGLE, items="[{value: day, label: Day, disabled: true}, {value: week, label: Week}, {value: month, label: Month}]")
+    view, vm = opened(tmp_path, SINGLE, items="Items { Item { Value: day, Label: Day, Disabled: true } Item { Value: week, Label: Week } Item { Value: month, Label: Month } }")
     click(view, "day")
     assert vm.one.get() == "week"
-    view2, vm2 = opened(tmp_path / "b" if (tmp_path / "b").mkdir() is None else tmp_path, SINGLE + ", disabled: true")
+    view2, vm2 = opened(tmp_path / "b" if (tmp_path / "b").mkdir() is None else tmp_path, SINGLE + ", Disabled: true")
     click(view2, "month")
     assert vm2.one.get() == "week"
 
 
 def test_an_item_can_have_an_icon(tmp_path):
-    view, _ = opened(tmp_path, items="[{value: a, label: A, icon: home}, {value: b, label: B}]")
+    view, _ = opened(tmp_path, items="Items { Item { Value: a, Label: A, Icon: home } Item { Value: b, Label: B } }")
     assert view.node("root.g.item[a].icon").get("layout_width") == 18.0

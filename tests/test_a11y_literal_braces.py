@@ -20,10 +20,13 @@ class VM:
 
 
 def lowered(source, vm=None):
-    return lower(Composer({}, vm or VM()).compose(parse_view(source, "T_View.yaml")).root)
+    return lower(Composer({}, vm or VM()).compose(parse_view(source, "T_View.tdl")).root)
 
 
-VIEW = "widget: Text\ntext: x\nfont_family: Roboto\nfont_size: 14\na11y: {label: '{{ label }}', description: 'note: {{ label }}'}\n"
+VIEW = ("---\nTDL: 0.2\nName: T\n---\nText { Text: x, Font_Family: Roboto, Font_Size: 14,\n"
+        "  A11y { Label: <| label |>, Description: note: <| label |> } }\n")
+MIXED = ("---\nTDL: 0.2\nName: T\n---\nText { Text: x, Font_Family: Roboto, Font_Size: 14,\n"
+         "  A11y { Label: Hello <| name |> and <| label |> } }\n")
 STYLE = {"foreground": "#000000", "width": 100, "height": 20}
 
 
@@ -46,14 +49,14 @@ def test_a_label_and_a_description_that_hold_a_brace_pair_are_set_on_the_node(te
 
 def test_a_label_that_mixes_text_and_an_expression_is_worked_out_and_follows_the_view_model():
     vm = VM()
-    spec = lowered("widget: Text\ntext: x\nfont_family: Roboto\nfont_size: 14\na11y: {label: 'Hello {{ name }}, {{ label }}'}\n", vm)
-    assert spec["a11y"]["label"] == "Hello Ada, hi"
+    spec = lowered(MIXED, vm)
+    assert spec["a11y"]["label"] == "Hello Ada and hi"
     view = View(at(spec), theme_seed=SEED)
-    assert view.node("t").get("label") == "Hello Ada, hi"
+    assert view.node("t").get("label") == "Hello Ada and hi"
     vm.name.set("Bo")
-    again = lowered("widget: Text\ntext: x\nfont_family: Roboto\nfont_size: 14\na11y: {label: 'Hello {{ name }}, {{ label }}'}\n", vm)
+    again = lowered(MIXED, vm)
     view.reconcile(at(again))
-    assert view.node("t").get("label") == "Hello Bo, hi"
+    assert view.node("t").get("label") == "Hello Bo and hi"
 
 
 def test_a_patch_keeps_a_label_with_braces_and_changes_it():

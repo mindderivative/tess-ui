@@ -5,7 +5,8 @@ import pytest
 from tess_ui import App, Signal, ViewModel, tokens
 from tess_ui.shipped import shipped_views
 
-ITEMS = "[{value: a, title: One, text: First}, {value: b, title: Two, text: Second}, {value: c, title: Three, text: Third}]"
+ITEMS = ("Item { Value: a, Title: One, Text: First } Item { Value: b, Title: Two, Text: Second } "
+         "Item { Value: c, Title: Three, Text: Third }")
 
 
 class VM(ViewModel):
@@ -19,32 +20,47 @@ class VM(ViewModel):
 
 
 def single(tmp_path, props="", children=""):
+    """`props` is TDL property lines, `children` a TDL node block for the accordion's content."""
     (tmp_path / "Views").mkdir(exist_ok=True)
-    kids = f"\n    children:\n      - {children}" if children else ""
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{flex_direction: vertical, align_content: top_left, width: 400, height: 500}}
-children:
-  - widget: Accordion
-    name: ac
-    title: Details
-    expanded: "{{{{ on }}}}"
-    {props}{kids}
+    kids = f"\n      Children {{ {children} }}" if children else ""
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Align_Content: top_left, Width: 400, Height: 500 }}
+  Children {{
+    Accordion {{
+      Name: ac
+      Title: Details
+      Expanded: <| on |>
+      {props}{kids}
+    }}
+  }}
+}}
 """)
     return start(tmp_path)
 
 
 def group(tmp_path, props=""):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    lines = "\n    ".join(props.split(", ")) if props else ""
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{flex_direction: vertical, align_content: top_left, width: 400, height: 500}}
-children:
-  - widget: AccordionGroup
-    name: g
-    items: {ITEMS}
-    {lines or 'open: "{{ open }}"'}
+    lines = "\n      ".join(props.split(", ")) if props else ""
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Align_Content: top_left, Width: 400, Height: 500 }}
+  Children {{
+    AccordionGroup {{
+      Name: g
+      Items {{ {ITEMS} }}
+      {lines or 'Open: <| open |>'}
+    }}
+  }}
+}}
 """)
     return start(tmp_path)
 
@@ -93,7 +109,7 @@ def test_the_header_is_a_button_that_says_whether_it_is_expanded_and_what_it_con
 
 
 def test_pressing_the_header_opens_the_content_and_turns_the_chevron_over(tmp_path):
-    view, vm = single(tmp_path, children="{widget: Text, name: body, text: Hello, typography_role: body_medium, style: {foreground: on_surface}}")
+    view, vm = single(tmp_path, children="Text { Name: body, Text: Hello, Typography_Role: body_medium, Style { Foreground: on_surface } }")
     view.window.simulate("click", node=header(view))
     settle(view, 4)
     assert vm.on.get() is True and header(view).get("expanded") is True and "root.ac.content.inner" in view._built.specs
@@ -129,14 +145,14 @@ def test_enter_toggles_a_focused_header(tmp_path):
 
 
 def test_a_disabled_section_does_not_toggle(tmp_path):
-    view, vm = single(tmp_path, "disabled: true")
+    view, vm = single(tmp_path, "Disabled: true")
     view.window.simulate("click", node=header(view))
     settle(view, 4)
     assert vm.on.get() is False and header(view).get("disabled") is True
 
 
 def test_the_content_is_16_pixels_in_and_the_header_controls_it_and_it_is_hidden_from_a_screen_reader_while_closed(tmp_path):
-    view, vm = single(tmp_path, children="{widget: Container, name: block, style: {width: 100, height: 30}}")
+    view, vm = single(tmp_path, children="Container { Name: block, Style { Width: 100, Height: 30 } }")
     content = view.node("root.ac.content")
     assert content.get("a11y_hidden") is True
     vm.on.set(True)
@@ -174,7 +190,7 @@ def test_pressing_the_open_one_closes_it_in_single_mode(tmp_path):
 
 
 def test_multiple_mode_lets_several_be_open(tmp_path):
-    view, vm = group(tmp_path, 'mode: multiple, open: "{{ many }}"')
+    view, vm = group(tmp_path, "Mode: multiple, Open: <| many |>")
     assert [head(view, k).get("expanded") for k in "abc"] == [True, False, False]
     view.window.simulate("click", node=head(view, "c"))
     settle(view, 6)
@@ -198,7 +214,7 @@ def test_sections_are_divided_and_the_arrows_move_between_headers(tmp_path):
 
 
 def test_a_group_with_no_binding_still_works(tmp_path):
-    view, _ = group(tmp_path, "mode: single")
+    view, _ = group(tmp_path, "Mode: single")
     view.window.simulate("click", node=head(view, "a"))
     settle(view, 6)
     assert [head(view, k).get("expanded") for k in "abc"] == [True, False, False]
