@@ -288,13 +288,6 @@ theme.duration("medium2")              # 300 (ms)
 the widget uses its own MD3 default. MD3's easing and duration tokens are all there; `emphasized` is MD3's
 single-curve form, `(0.2, 0, 0, 1)`.
 
-### Style files
-
-A `*_Style.yaml` file holds one node's `style:` (its fields under a `style:` key, and an optional `id:`), and a node of a view in
-the older syntax can name it (`style: row_Style.yaml`) so several nodes share it. A TDL view refuses one, naming the
-line: write the fields in `Style`, or in a rule that several nodes match through a class or a widget name. `tesserae migrate-yaml` writes a
-style file's fields into each node that named it.
-
 ### Files and checking
 
 `load_theme` and `load_stylesheet` read a file into the dict the app takes; `App(custom_theme=)` and `App(stylesheet=)` do it for you,

@@ -15,7 +15,7 @@ that Tesserae's tests run. The page shows every file a step adds or changes, so 
 | | A flat folder | A project |
 | --- | --- | --- |
 | Made by | you, file by file | `tesserae new tasks`, then your own files |
-| Layout | every file side by side | `Views/`, `ViewModels/`, `Themes/`, `Styles/` (and `Components/`, for views in the older syntax) |
+| Layout | every file side by side | `Views/`, `ViewModels/`, `Themes/`, `Styles/` |
 | Open a screen | `app.open_view("Tasks")`, with `search=["."]` so views are found in the folder | `app.open_view("Main")` |
 | A ViewModel | an `import`, then `app.bind(TasksViewModel)` | `app.bind(app.project.viewmodel("Main"))`: no import |
 | A theme or stylesheet | `App(custom_theme=HERE / "Brand_Theme.tdl")` | `App(custom_theme="Brand")` |

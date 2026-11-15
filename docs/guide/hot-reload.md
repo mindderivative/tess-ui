@@ -6,7 +6,6 @@ opened:
 | File | When you save it |
 | --- | --- |
 | a theme: `App(custom_theme=)`, `App(default_theme=)` | every view is re-themed in place ([below](#theme-and-stylesheet-files)) |
-| a view the app opened with `app.load` (the older syntax), and the fragments and images it was built from | the screen is rebuilt in place, its ViewModel and bindings kept |
 | a view the app opened with `app.open_view` or `app.open_window`, any view it calls, and the pictures it draws | the view is composed again in place: its ViewModel, the nodes that keep their name or position, and their `State` stay ([below](#a-view-written-in-blocks)) |
 | the app's stylesheet of rules (`App(stylesheet=)`, `Widget:` rules) | every view opened with `open_view` is composed again under the new rules, its state kept; a sheet with a mistake leaves them as they were |
 
@@ -35,28 +34,14 @@ not defined, or a widget the engine rejects. Fix the file and save.
 Not reloaded: the Python files (a ViewModel's code is not reloaded), and a `Window { }`
 view's window options (its size, title and flags are read when it opens).
 
-## In an app (the older syntax)
-
-```python
-app = App()
-app.load("Home_View.yaml", HomeViewModel)    # a view in the older syntax
-app.show("Home")
-app.run(hot_reload=True)
-```
-
-Every screen built from a file by `App.load()` is watched while the app runs, and so is one built with `app.build_view(...)` and
-given to `App.register()` (the view keeps the file it came from). Save a
-change and it appears in the window straight away, the screen's
-ViewModel and bindings kept. A screen with no file isn't watched, and the log says so when hot reload starts.
-
 An edit reaches a window left alone: the watcher runs on its own thread,
 and other Python threads run while a window sits idle. See the
 [Python API](../api/python.md) for `App.run`.
 
-Behind the scenes each screen gets a `ViewWatcher` on a background
+Behind the scenes each view gets a `ComposedWatcher` on a background
 thread. It listens for file-change events (using
-[`watchfiles`](https://watchfiles.helpmanual.io/)), rebuilds the view
-there -- so file reading and component expansion never slow the UI --
+[`watchfiles`](https://watchfiles.helpmanual.io/)), reads the files
+there -- so file reading never slows the UI --
 and hands only the final update to the event loop through
 `App.thread_handle()` ([Python API](../api/python.md)).
 
@@ -68,79 +53,9 @@ rejects -- Tesserae logs one `ERROR` line naming the file and the error
 and the watcher keep running: fix the file, save, and it reloads. Each
 reload that works is logged at `INFO`. See [Logging](logging.md).
 
-## Using `ViewWatcher` directly
-
-For a view in the older syntax that you load yourself:
-
-```python
-from tess_ui.spec import ViewWatcher, load_view
-
-view = load_view("Home_View.yaml")
-watcher = ViewWatcher(view, "Home_View.yaml")
-```
-
-Then either:
-
-- **Inside a running app** -- start it with the app's thread handle,
-  and stop it when you're done:
-
-  ```python
-  watcher.start(app.thread_handle())
-  ...
-  watcher.stop()
-  ```
-
-- **In a loop you control yourself** -- call `poll()` regularly. It
-  checks each file's modification time and size, reloads if anything
-  changed, and returns `True` when it did. A failed reload raises (once
-  per edit) and leaves the view as it was.
-
-  ```python
-  while running:
-      if watcher.poll():
-          print("reloaded")
-  ```
-
-`watcher.files` lists every file being watched. It's recomputed on every
-reload, so a newly added include, fragment or image is picked up.
-
-## Components added at run time
-
-In the older syntax, a component built with `tess_ui.instantiate` (a `Repeater`'s rows, say)
-comes from its own `*_View.yaml`, and that file is watched too.
-Editing it reloads every live instance in place. Each keeps its nodes,
-its own ViewModel and its bound values, and a list of rows keeps its
-order. One watcher per file serves all its instances, so ten rows cost
-one rebuild, not ten. Files a component `include:`s, and `component:`
-fragments it uses, are watched with it.
-
-A component added while the app runs is watched as well, including the
-first one of a new file. It's found in any view on the app's window,
-even one the app doesn't otherwise know, since `instantiate`
-registers it with the app. A row removed before the edit is left alone. A
-broken edit leaves every instance as it was and is logged once for the
-file, as an `ERROR` (`hot reload of /path/to/TodoItem_View.yaml failed: ...`). What works is logged at `INFO`:
-
-```text
-hot reload: watching component TodoItem_View.yaml (3 instance(s))
-reloaded /path/to/TodoItem_View.yaml (3 instance(s))
-```
-
 ## The window view
 
-A `kind: Window` view loaded with `app.load("Window")` is watched like any view, and so is each view it embeds (`view:`). An edit is
-applied in place. (A `Window { }` view is recomposed like any view opened with `app.open_view` or `app.open_window`: [above](#a-view-written-in-blocks). Its window options are read when it opens.)
-
-| Edit | What happens |
-| --- | --- |
-| the window's `title`, `min_width`, `min_height` or `borderless` | the OS window is set again |
-| the `title_bar:` | the bar is rebuilt where it is, and still the [title bar](custom-title-bars.md) |
-| a `view:` with a `route:` added or removed | the screen is registered or dropped; the current screen stays showing |
-| a `DockPanel` added, removed, renamed or moved to another zone | docked there; a panel the file didn't move stays where the user dragged it |
-| a zone's size | set, and a zone the file didn't change keeps the size the user dragged it to |
-| an embedded view's file | that view is rebuilt in place, with its ViewModel; editing the host keeps an embedded view whose `view:` and `with:` didn't change, with its state |
-
-A change that can't be applied is logged as an error and the app keeps running.
+A `Window { }` view is recomposed like any view opened with `app.open_view`: [above](#a-view-written-in-blocks). Its window options (title, size, flags) are read when it opens.
 
 ## Theme and stylesheet files
 
@@ -156,11 +71,7 @@ Stylesheet files are watched:
 
 - **The default stylesheet** from `App(stylesheet=)`: saving it
   re-styles every screen that uses the default, through
-  `app.set_stylesheet_spec(...)`. Screens loaded with their own
-  stylesheet are left alone.
-- **A screen's own stylesheet** from `app.load(..., stylesheet=)`:
-  saving it re-styles only the screens loaded with that file.
-
+  `app.set_stylesheet_spec(...)`.
 - **A stylesheet of `Widget:` rules** (`App(stylesheet=)`, used by views opened with `app.open_view`): every such view is composed again under the new
   rules, its state kept. A mistake in the sheet is logged as an `ERROR` naming the file, and the views keep their old rules.
 A stylesheet `tess_re` rejects is reported naming the file, and every

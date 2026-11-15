@@ -123,8 +123,8 @@ is destroyed, and children follow the new spec's order. Bindings and handlers ar
 after each update, without doubling listeners. A node that keeps its `Name` or key keeps its `State`.
 
 `App.run(hot_reload=True)` uses the same machinery. It watches the theme files and the app's stylesheet file given to the app, a
-`ComposedWatcher` per view opened with `open_view` or `open_window` (the file and every view, stylesheet and theme it was built from), and a
-`ViewWatcher` per screen built from a file by `app.load` in the older syntax (`watchfiles`, on a background thread). On a change it reruns the pipeline off the main thread
+`ComposedWatcher` per view opened with `open_view` or `open_window` (the file and every view, stylesheet and theme it was built from)
+(`watchfiles`, on a background thread). On a change it reruns the pipeline off the main thread
 and hands the result to the event loop through `tess_re`'s thread-safe loop handle, which reconciles the live
 view. A failed reload is logged and the app keeps running. See [Hot reload](guide/hot-reload.md) for what is
 watched.

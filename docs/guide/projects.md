@@ -16,12 +16,11 @@ notes/
   app.py
   Views/              Main_View.tdl, Window_View.tdl (the window), Name_View.tdl: every screen and every view you call
   ViewModels/         Main_ViewModel.py
-  Components/         Name_Component.yaml: fragments in the older syntax, which you won't write new
   Themes/             Name_Theme.tdl
   Styles/             Name_Stylesheet.tdl
 ```
 
-The files `tesserae new` writes are TDL, the current view language; [`tesserae migrate-tdl`](cli.md#write-views-and-stylesheets-as-tdl) moves a project written in YAML, and the
+The files `tesserae new` writes are TDL, the current view language; a project written in YAML is moved as [Migrating from YAML](../migration.md#migrating-from-yaml) says, and the
 [project tutorial](../tutorial-project.md) shows the app written in TDL.
 
 The [project tutorial](../tutorial-project.md) builds an app in one, step by step, beside the
@@ -44,9 +43,7 @@ install Tesserae). [The `tesserae` command](cli.md) has the rest.
 
 A **path** works wherever a name does: `app.open_view(HERE / "Views" / "Main_View.tdl")`. A string with a `/` or a `.` is a
 path too, read from the folder you run in, so build it from `HERE` (the script's folder) and it works from anywhere. A name has
-no `/` and no `.`. The older syntax finds more by name: `app.load("Main")` pairs a view
-with its ViewModel, `component: Stat` finds `Components/Stat_Component.yaml`, and `Repeater(view, items, "Row", into=node)` and
-`instantiate(view, "Row", into=node)` find `Views/Row_View.tdl` and its ViewModel.
+no `/` and no `.`.
 
 The project's root is `App(root=...)`, which defaults to the folder of the script that runs (`app.py`).
 `tesserae new` passes `root=HERE` so it doesn't depend on where you start it from.

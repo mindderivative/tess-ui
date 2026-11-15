@@ -50,55 +50,6 @@ In a `--window` project a screen has no ViewModel of its own, so only `Views/Nam
 by hand: the screen's block under `screens`' `Children` in `Views/Window_View.tdl` (`Name { Name: ..., Route: "..." ... }`) and its `Item` under the rail's `Items`.
 Names the screen reads (and a Back handler, `go_back`, which the template has) go in `ViewModels/Window_ViewModel.py`.
 
-## Move a project to the current syntax
-
-```bash
-tesserae migrate-yaml            # reports what would change; writes nothing
-tesserae migrate-yaml --write    # writes it, if every file checked out
-```
-
-`tesserae migrate-yaml [PATH]` (the project's folder, here by default) reads every `*_View.yaml`, `*_Component.yaml` and
-`*_Stylesheet.yaml`, translates each, checks the result with the loader an app uses, and writes only if all of them load. `--force`
-with `--write` writes the ones that did. Keep the project in version control: the old files are rewritten and a fragment is
-renamed (a `*_Style.yaml` file is read in and left in place). The report lists what each ViewModel needs, including the `app.bind` and `app.open_view`
-lines for `app.py`, because Python is not rewritten. A call of a shipped fragment that became one view with a property (`ButtonFilled` is `widget: Button` with
-`variant: filled`) fails the check with `no widget named 'ButtonFilled'`, and is written by hand from the table in Migrating. The exit code is 1 if any file failed,
-A view, stylesheet or theme whose `tesserae:` first line names an older series is also moved to the current one: that line only, nothing else in the file changes, and a file already current, newer or without the line is left alone. and 2 for a wrong argument (`--force` without `--write` is one). [Migrating](../migration.md#to-050) has the table of every change and of the shipped names.
-
-## Write views and stylesheets as TDL
-
-```bash
-tesserae migrate-tdl                      # lists what it would convert; writes nothing
-tesserae migrate-tdl --write              # writes Views/Name_View.tdl beside each Name_View.yaml
-tesserae migrate-tdl Views/Main_View.yaml --write --remove-source   # one file, and deletes its YAML afterwards
-```
-
-`tesserae migrate-tdl [PATH]` writes each `*_View.yaml` under `PATH` (a file or the project's folder, here by default) as a `*_View.tdl` file beside it, and each `*_Stylesheet.yaml` as a `*_Stylesheet.tdl` (a root `Styles { }` of `Rule { Widget: Button, Variant: filled, Style { Height: 40 } }` blocks, in order; a style field that holds a map is a block of its own: `Padding { Left: 12 }`; a theme is written below). A view:
-keys in `Title_Case` (`typography_role` is `Typography_Role`), a node a block headed by its widget (`Button { ... }`), `if:` and `for:` as `If` and `For`
-blocks around the node, a handler as `Set` and `Call` steps (`open = not open; on_toggle()` is a `Set { Target: open, Value: <| not open |> }` and a
-`Call { Action: "on_toggle" }`), `{{ expression }}` as `<| expression |>`, and a metadata block with the view's `Name` and the `Tesserae` series.
-Comments are kept (the ones at the top, the ones above an entry and the ones at the end of a line), and so are blank lines between entries and the order of
-the keys. Each entry is on a line of its own; a YAML `{...}` or `[...]` that sits on one line stays on one line when it fits in 150 columns, a list that
-does not is wrapped there, and a mapping that does not is opened one entry to a line. The report lists the files, the number of steps written, and
-what needs a look.
-
-Every result is read back through the TDL loader and compared with the YAML view before it is written, so a view the command cannot write exactly is
-reported with its file, line and what to write instead, and left alone; the other files are still written. It refuses a key that is not lower
-`snake_case`, a handler that is not assignments to a name and calls (`if`, `for`, `a[0] = 1`, `go(*args)`), a value of another type than text, number,
-yes/no or nothing (a YAML date: quote it), an anchor or alias, and text that holds a `{{ }}` and a `,`, a brace or ` #` (write the whole value as one slot).
-An augmented assignment (`x += 1`) is written as `Set { Target: x, Value: <| x + 1 |> }`: the name gets a new value, it is not changed in place.
-
-A `for:` with a pair target (`for: i, item in enumerate(items)`) is written as it is, `For i, item In <| enumerate(items) |> Key <| ... |>` (a TDL `For` takes several variables
-from language 0.2). The files are written in TDL 0.2: slots are `<| expr |>`. The command needs `tesserae-dl` 0.2 (`pip install tesserae-ui[tdl]`).
-
-Running it again changes nothing. It never replaces a file that differs without `--write`; the YAML is kept unless `--remove-source` is given with `--write`, and
-then it is deleted only for the files that were written (or already current). Components (`*_Component.yaml`) are skipped with a note. The
-exit code is 1 if any file failed and 2 for a wrong argument. The command needs the `tess_dl` package (`tesserae-dl`, 0.2), which needs Python 3.14.
-
-A theme (`*_Theme.yaml`, and Tesserae's own `default_theme.yaml`) is written as `*_Theme.tdl` (`default_theme.tdl`) the same way: a root `Theme { }` with `Seed`, `Dark`,
-`Colors { }`, `Typography { }` and `Components { }`; a colour is quoted (`Seed: "#0B6B58"`); a component key with a dot is a block inside its component
-(`card.elevated` is `Card { Elevated { Elevation: 1 } }`).
-
 ## Build an executable
 
 ```bash

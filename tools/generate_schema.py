@@ -313,9 +313,7 @@ def _theme() -> dict[str, Any]:
         "properties": {"kind": {"enum": sorted(build._KINDS), "description": "Every node of this kind."},
                        "classes": {"type": "array", "items": {"type": "string"}, "description": "Nodes with all of these classes."},
                        "id": {"type": "string", "description": "The node with this id."},
-                       "style": {"anyOf": [{"$ref": "#/definitions/style"},
-                                           {"type": "string", "pattern": r"_Style\.yaml$", "description": "A `*_Style.yaml` file next to this one."}],
-                                 "description": "How the matching nodes look: a mapping, or the name of a `*_Style.yaml` file."}},
+                       "style": {"$ref": "#/definitions/style", "description": "How the matching nodes look."}},
         "additionalProperties": False}
     typography = {
         "type": "object", "description": "Changes to Material 3's type styles, by role.",

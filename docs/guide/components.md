@@ -185,20 +185,3 @@ A call with a `route:` inside the [window view](windows-and-docks.md#routed-view
 the screen's name is the view it calls, it is shown while its route is current, and the others are hidden with their state kept.
 `navigate.Settings`, `navigate.back` and `navigate_to('Note', {'id': 3})` are the handlers that move between them.
 [Windows, Docks & Embedded Views](windows-and-docks.md#routed-views) has the rest.
-
-## Views in the older syntax
-
-A view written with `kind:` and `id:` (the syntax before widget blocks) is loaded by the compatibility loader, and has its own API for being
-placed under a node from Python:
-
-```python
-from tess_ui import instantiate
-
-component, viewmodel = instantiate(view, "Card", into=container)   # Views/Card_View.tdl and CardViewModel, found by name
-component.remove()
-```
-
-`instantiate(parent, path, viewmodel_cls, into, *args, **kwargs)` and [`Repeater`](repeater.md), which keeps one such instance for each
-item of a list Signal, take a view in the **older syntax** only: handed a file written as widget blocks, `instantiate` refuses it
-(`every widget needs an id`). The ViewModel of such a view is the older `ViewModel(view)`. A project moves over with
-`tesserae migrate-yaml` ([Migrating](../migration.md)), after which `for:` and a call replace `Repeater` and `instantiate`.

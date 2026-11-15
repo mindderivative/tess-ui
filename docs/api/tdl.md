@@ -457,4 +457,4 @@ Theme {
 | `Styles[].Kind` | one of 33 names | Every node of this kind. |
 | `Styles[].Classes` | a list | Nodes with all of these classes. |
 | `Styles[].Id` | text | The node with this id. |
-| `Styles[].Style` | a `Style` block or text | How the matching nodes look: a mapping, or the name of a `*_Style.yaml` file. |
+| `Styles[].Style` | a `Style` block | How the matching nodes look. |

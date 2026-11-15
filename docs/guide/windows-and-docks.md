@@ -60,7 +60,7 @@ app.run()
   say so ([Window Options](window-options.md)). `Remember: true` (or a name) keeps the window's size, its place where the platform lets
   an app say (not Wayland) and whether it is maximized between runs.
 - `app.open_view("Window")` is what an app opens as its frame. A Window is the app's one window: another `Window` inside a
-  view is an error. A window view is opened with `open_view`; `app.load` and `App(window_view=)` are for views in the older syntax.
+  view is an error. A window view is opened with `open_view`.
 - The ids of everything in it are paths from the root: a `Dock` named `dock` that is a child of the window is `root.dock`.
 
 The window's view is served by a ViewModel as any named view is. The screens in it have no ViewModel of their own: they read the names

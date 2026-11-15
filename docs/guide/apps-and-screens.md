@@ -57,9 +57,8 @@ Switching screens from inside a handler works even *reentrantly*, from the very 
 handler can also navigate without Python: `Handlers { On_Click: navigate.Settings }`, or `navigate_to('Note', {'id': 3})` for a
 screen held in a name, below.
 
-`App.register(name, view, viewmodel)` is the lower-level path, for a view you built yourself (`app.build_view(...)`) and a
-ViewModel you constructed. `App.load` opens a view written in the older syntax with its ViewModel (`ViewModel(view)`), by the
-[older naming rule](naming-convention.md#views-in-the-older-syntax).
+`App.register(name, view, viewmodel)` is the lower-level path, for a `View` you built yourself from a spec and a
+ViewModel you constructed.
 
 ## Navigation and history
 
@@ -289,7 +288,7 @@ none raises `RuntimeError`.
 | Option | What it does |
 | --- | --- |
 | `max_frames` | Stops after that many frames; for headless and CI runs. |
-| `hot_reload=True` | Reloads the app's theme and stylesheet files, the views opened with `app.open_view` or `app.open_window` (their ViewModel and state stay), and the screens that `app.load` made from a file in the older syntax, when they change on disk. See [Hot Reload](hot-reload.md). |
+| `hot_reload=True` | Reloads the app's theme and stylesheet files, the views opened with `app.open_view` or `app.open_window` (their ViewModel and state stay) when they change on disk. See [Hot Reload](hot-reload.md). |
 | `keepalive` | `False` (the default) does not tick. `True` wakes the loop every 0.02 s; a number is the interval in seconds. Each tick sleeps on the loop thread, so input can wait up to a tick, and an idle window costs about half a percent of one core. It is for code that wants the loop woken regularly; hot reload and threads don't need it. |
 
 ### From another thread

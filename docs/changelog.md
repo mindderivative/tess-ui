@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.6.1
+
+### Removed
+
+- **YAML is no longer read.** A view, a stylesheet and a theme are TDL (`*_View.tdl`, `*_Stylesheet.tdl`, `*_Theme.tdl`) and nothing else. Every loader (`open_view`, `load_stylesheet`, `load_theme`, `App(stylesheet=)`, `App(custom_theme=)`, hot reload) refuses a `.yaml` or `.yml` name with one message: Tesserae no longer reads YAML, write the file as TDL (`tesserae migrate-tdl` in `tesserae-ui<0.6.1`), see [Migrating from YAML](migration.md#migrating-from-yaml). A name that is not found says so too when a `Name_View.yaml` is in the project. The shipped `.yaml` twins of Tesserae's views, stylesheets and default theme are gone, and so is `TESS_UI_SHIPPED`.
+- **The converter.** `tesserae migrate-yaml` and `tesserae migrate-tdl` (and the `tess_ui.migrate*` modules) are removed; they live on in `tesserae-ui<0.6.1`, which is what [Migrating from YAML](migration.md#migrating-from-yaml) uses.
+- **The Python API that opened a YAML view file:** `App.load`, `App.build_view`, `App(window_view=)`, `View(path)`, `tess_ui.instantiate`, `tess_ui.Component`, `tess_ui.Repeater`, `tess_ui.overlays.ViewDialog`, `tess_ui.spec.load_view` and `ViewWatcher`. Open a view with `app.open_view`, repeat a node with `For`, and show a view in a dialog with a modal `Overlay` in a view ([the table in Migrating](migration.md#migrating-from-yaml)). A per-screen `stylesheet=` on `load` is gone with it; `App(stylesheet=)` is the app's stylesheet.
+- **The `*_Component.yaml` and `*_Style.yaml` file kinds.** A project no longer has a `Components/` folder of fragments, `component:` and `include:` do not read a project's files, and a rule's `style:` cannot name a `*_Style.yaml` file. The fragments Tesserae ships (the ones the Python widget factories build from) stay.
+
+### Changed
+
+- **Python 3.14 is the minimum, and `tesserae-dl` is a dependency** (it was an optional extra): TDL is read by `tess_dl`, which needs 3.14.
+
 ## 0.6.0.1
 
 ### Fixed

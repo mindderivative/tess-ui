@@ -476,8 +476,6 @@ Container {
 For a list built from data, put a node with a `For` inside a `ScrollView`
 (the rows are all built). For thousands of equal rows, use a `VirtualList`,
 which builds only the rows in view: [Long lists](view-language.md#long-lists).
-From Python, the container a [`Repeater`](repeater.md) fills goes inside a
-`ScrollView` too.
 
 ## Hiding a node
 
