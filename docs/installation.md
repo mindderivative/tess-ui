@@ -24,7 +24,7 @@ the two hold the same `tesserae` package, so they must not be installed together
 
 ## Requirements
 
-- **Python 3.12 or newer.** Tesserae is tested on 3.12 and 3.14. On macOS, the `python3` that comes with Xcode's
+- **Python 3.14 or newer.** Tesserae's files are TDL, read with `tess_dl`, which needs 3.14. On macOS, the `python3` that comes with Xcode's
   command-line tools is older: install Python from python.org or Homebrew.
 - **Linux x86-64, macOS on Apple silicon, or Windows x64.** On these every
   dependency, the engine included, installs as a prebuilt wheel. Elsewhere

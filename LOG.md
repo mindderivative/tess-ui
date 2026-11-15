@@ -3498,3 +3498,7 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 - **Mutations.** Library preferring YAML again fails `test_the_library_loads_the_shipped_tdl_by_default`; a twin no longer skipped fails 3 tests.
 - **NOT verified.** The full suite and CI (the parent's), Windows/macOS, the 3.12 jobs without `tess_dl` (the fallback to shipped YAML is tested by a monkeypatch only), examples and apps still YAML (6b).
 
+
+## 2026-11-14 Python 3.14 is the floor; `tesserae-dl` is a dependency
+
+- Piece 6a made tess-ui import `tess_dl` at runtime (the shipped views load from TDL), but it was only an optional extra and CI ran on Python 3.12, which `tess_dl` does not support: the 6a merge (e8359b2) went red on every platform job (clean-install, built executable, tests that run a TDL project, the docs tests). Fix: `requires-python = ">=3.14"`, `tesserae-dl>=0.2.0,<0.3` is a dependency, CI, docs and release jobs run on 3.14 only. The maintainer had decided on 3.14 as the floor for the TDL switch (piece 10); it comes forward because the loaders now need it.
