@@ -48,6 +48,7 @@ def settle(view, n=6):
 
 def opened(tmp_path, options="", *, dark=False, size=(900, 800), show=True):
     """A window with a view that holds a `FileDialog` named `fd`: `options` are its properties (`start`, `mode`, ...), `open` and `value` are the ViewModel's."""
+    options = options.replace("\\", "/")  # a Windows path in a TDL string: a backslash would start an escape, and the browser reads either separator
     (tmp_path / "Views").mkdir(parents=True, exist_ok=True)
     (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
 TDL: 0.2

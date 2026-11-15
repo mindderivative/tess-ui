@@ -29,6 +29,8 @@ class Fake:
     """A file system in a dict, for what a disk will not do on request: errors, vanishing folders, a huge listing."""
 
     def __init__(self, folders):
+        if os.name == "nt":
+            pytest.skip("this file system is keyed by POSIX paths ('/a'); the browser's own path logic is checked on a real disk by the tmp_path tests")
         self.folders = {k: list(v) for k, v in folders.items()}
         self.denied = set()
         self.made = []
@@ -314,7 +316,7 @@ def test_the_local_file_system_explains_a_failure_in_words(tmp_path):
         fs.list_dir(str(tmp_path / "f"))
     with pytest.raises(FileSystemError, match="name is taken"):
         fs.make_dir(str(tmp_path))
-    if os.geteuid() != 0:
+    if os.name != "nt" and os.geteuid() != 0:  # POSIX permissions: chmod(0) does not lock a folder on Windows
         locked = tmp_path / "locked"
         locked.mkdir()
         locked.chmod(0)
