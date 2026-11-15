@@ -5,6 +5,7 @@ clicks Main's button, follows a route
 and renders a few frames, as the examples run on CI.
 """
 
+import importlib.util
 import json
 import subprocess
 import sys
@@ -59,6 +60,8 @@ RUNNER = textwrap.dedent('''
 
 
 def _run(project, *args):
+    if importlib.util.find_spec("tess_dl") is None:
+        pytest.skip("a new project's views are TDL, which needs tess_dl (Python 3.14; not installed in the 3.12 CI jobs)")
     result = subprocess.run([sys.executable, "-c", RUNNER, str(project), *args], capture_output=True, text=True,
                             timeout=120)
     assert result.returncode == 0, result.stderr[-2000:]
@@ -247,6 +250,8 @@ def test_a_new_project_is_in_the_current_view_language_and_checks_clean(tmp_path
         text = path.read_text()
         assert not re.search(r"^\s*-?\s*(kind|component|include|view|id):", text, re.M), path.name
         assert "app.load(" not in text and "load_shell" not in text
+    if importlib.util.find_spec("tess_dl") is None:
+        pytest.skip("a new project's views are TDL, which needs tess_dl (Python 3.14; not installed in the 3.12 CI jobs)")
     out = subprocess.run([sys.executable, "-c", textwrap.dedent("""
         import runpy, sys
         from pathlib import Path
