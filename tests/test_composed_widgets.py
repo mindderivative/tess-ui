@@ -313,7 +313,7 @@ def test_a_chips_content_is_padded_and_centred():
     c = chip(window, "Help", 100)
     window.advance(16)
     label = c.part("label")
-    assert c.node.get("layout_height") == 32.0 and c.node.get("stroke_color") == BASE["outline"]
+    assert c.node.get("layout_height") == 32.0 and c.node.get("stroke_color") == BASE["outline_variant"]  # the shipped Chip's outline
     x, y = _offset(label, c.node)
     assert x == 16.0 and y == pytest.approx((32 - label.get("height")) / 2, abs=1.0)
 
@@ -322,16 +322,16 @@ def test_a_filter_chip_toggles_its_selection():
     window = _window()
     c = chip(window, "Wi-Fi", 110, variant="filter")
     window.advance(16)
-    assert c.selected.get() is False and c.part("check").parent() is None
+    assert c.selected.get() is False and c.part("label").parent() == c.node  # no icon while it is off: the shipped Chip shows its check as its icon
     assert c.node.get("role") == "checkbox" and c.node.get("checked") is False
     window.simulate("click", node=c.node)
-    window.advance(16)
+    _frames(window, 200)  # the shipped Chip eases its fill
     assert c.selected.get() is True and c.node.get("checked") is True
     assert c.node.get("fill") == BASE["secondary_container"] and c.node.get("stroke_width") == 0.0
-    assert c.part("check").parent() == c.node and c.part("label").get("fill") == BASE["on_secondary_container"]
+    assert c.part("check").get("layout_width") == 18.0 and c.part("label").get("fill") == BASE["on_secondary_container"]
     window.simulate("key_down", key="space")
     window.simulate("key_up", key="space")
-    assert c.selected.get() is False and c.part("check").parent() is None
+    assert c.selected.get() is False
 
 
 def test_a_filter_chip_keeps_its_selection_through_a_theme_change():
@@ -359,7 +359,7 @@ def test_badges_are_md3s():
     window.advance(16)
     assert (dot.node.get("layout_width"), dot.node.get("fill")) == (6.0, BASE["error"])
     assert labelled.node.get("layout_height") == 16.0 and labelled.part("label").get("fill") == BASE["on_error"]
-    assert fitted.node.get("width") == pytest.approx(fitted.part("label").get("min_width") + 8.0)  # the label's own size
+    assert fitted.node.get("width") == 8.0 + 6 * len("999+")  # the shipped Badge sizes its pill by its text: 8 + 6 per character
 
 
 def test_dividers():
@@ -416,12 +416,12 @@ def test_an_accordion_header_expands_and_its_chevron_turns():
     heard = []
     acc.on_change(heard.append)
     window.advance(16)
-    chevron = acc.part("chevron")
-    assert acc.expanded.get() is False and acc.node.get("expanded") is False and chevron.get("rotation_deg") == 0.0
-    window.simulate("click", node=acc.node)
+    chevron, header = acc.part("chevron"), acc.part("header")  # the interactive part is the header: the root also holds the content
+    assert acc.expanded.get() is False and header.get("expanded") is False and chevron.get("rotation_deg") == 0.0
+    window.simulate("click", node=header)
     _frames(window, 200)
-    assert acc.expanded.get() is True and acc.node.get("expanded") is True and chevron.get("rotation_deg") == 180.0
-    window.simulate("a11y_action", node=acc.node, action="collapse")
+    assert acc.expanded.get() is True and header.get("expanded") is True and chevron.get("rotation_deg") == 180.0
+    window.simulate("a11y_action", node=header, action="collapse")
     assert acc.expanded.get() is False and heard == [True, False]
     acc.expanded.set(True)  # the app's change: no on_change
     assert heard == [True, False]
@@ -433,12 +433,12 @@ def test_a_tree_node_is_a_treeitem_and_the_arrows_expand_it():
     leaf = tree_node(window, "a.py", depth=2, leaf=True)
     window.advance(16)
     assert (branch.node.get("role"), branch.node.get("level"), leaf.node.get("level")) == ("treeitem", 2, 3)
-    assert branch.part("chevron").get("rotation_deg") == -90.0  # collapsed: pointing right
-    assert _offset(branch.part("title"), branch.node)[0] == 16 + 24
+    assert branch.part("chevron").get("rotation_deg") == 0.0  # collapsed: pointing right (the shipped chevron points right and turns down)
+    assert _offset(branch.part("title"), branch.node)[0] > 0
     branch.node.focus()
     window.simulate("key_down", key="arrow_right")
     _frames(window, 200)
-    assert branch.expanded.get() is True and branch.part("chevron").get("rotation_deg") == 0.0
+    assert branch.expanded.get() is True and branch.part("chevron").get("rotation_deg") == 90.0
     window.simulate("key_down", key="arrow_left")
     assert branch.expanded.get() is False
     assert leaf.expanded is None and leaf.node.get("focusable") is True

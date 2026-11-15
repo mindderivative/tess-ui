@@ -8,6 +8,21 @@ Tesserae: "0.6"
 Styles {
   Rule {
     Widget: Badge
+    Style {
+      Background: <| 'error' if flat else 'transparent' |>
+      Width: <| (6 if value == '' else (16 if len(str(value)) < 2 else 8 + 6 * len(str(value)))) if flat else 'auto' |>
+      Height: <| (6 if value == '' else 16) if flat else 'auto' |>
+      Corner_Radius: <| (3 if value == '' else 8) if flat else 0 |>
+      Align_Content: <| 'center' if flat else 'top_left' |>
+    }
+  }
+  Rule {
+    Widget: Badge
+    Part: flat_label
+    Style { Foreground: on_error }
+  }
+  Rule {
+    Widget: Badge
     Part: mark
     Style {
       Background: error

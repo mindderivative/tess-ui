@@ -23,6 +23,9 @@ from tess_ui.viewmodel import ViewHandle
 __all__ = ["Call", "FactoryView", "open_factory_view"]
 
 _NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
+#: The props whose value is a choice a view reads once (a variant, a size), written into the TDL as itself: a name the view reads in a place that cannot change
+#: while it is open (a `Role:`, an `Interaction:`) must not come from the params object, which may hold a Signal.
+_LITERAL_KEYS = frozenset({"variant", "size", "orientation", "mode", "shape", "width_kind", "period"})
 _HEADER = '---\nTDL: 0.2\nName: Factory\nTesserae: "0.6"\n---\n'
 _DOCS: dict[str, tuple[ViewDoc, list[Any]]] = {}
 _LIBRARY: list[ViewLibrary] = []
@@ -39,14 +42,15 @@ class Call:
     tint them `on_surface`; MD3 tints them in the colour of the content, which the factory knows)."""
 
     def __init__(self, widget: str, name: Optional[str] = None, props: Optional[Mapping[str, Any]] = None, style: Optional[Mapping[str, Any]] = None,
-                 children: Optional[list["Call"]] = None, *, interaction: Optional[str] = None) -> None:
+                 children: Optional[list["Call"]] = None, *, interaction: Optional[str] = None, handlers: Optional[Mapping[str, Any]] = None) -> None:
         self.widget = widget
         self.name = name
         self.props = {key: value for key, value in (props or {}).items() if value is not None}
         self.style = {key: value for key, value in (style or {}).items() if value is not None}
         self.children = list(children or [])
         self.interaction = interaction
-        for key in (widget, name or "x", interaction or "x", *self.props, *self.style):
+        self.handlers = dict(handlers or {})  # a view's handler-type params (`on_toggle`) and the Python functions they call
+        for key in (widget, name or "x", interaction or "x", *self.props, *self.style, *self.handlers):
             if not _NAME.match(key):
                 raise ValueError(f"a call's names are plain identifiers, got {key!r}")
 
@@ -59,8 +63,14 @@ class Call:
         if self.interaction is not None:
             lines.append(f"{pad}  Interaction: {self.interaction}")
         for key, value in self.props.items():
+            if isinstance(value, bool) or (isinstance(value, str) and key in _LITERAL_KEYS and _NAME.match(value)):
+                lines.append(f"{pad}  {_title(key)}: {str(value).lower() if isinstance(value, bool) else value}")  # a choice or a switch the view reads once, as a constant
+                continue
             params[attr := f"{path}__{key}"] = value
             lines.append(f"{pad}  {_title(key)}: <| {attr} |>")
+        for key, fn in self.handlers.items():  # the action's name is the params object's attribute that holds the function
+            params[attr := f"{path}__h_{key}"] = fn
+            lines.append(f"{pad}  {_title(key)}: {attr}")
         if self.style:
             lines.append(f"{pad}  Style {{")
             for key, value in self.style.items():
@@ -85,13 +95,21 @@ class _Params:
 
 class FactoryView(ComposedView):
     """A factory's view. `components` says which theme `components:` entries (as `cascade.component_key` takes them: `fab.small`) the roots of its nodes read,
-    by node id: the widget's own root, and the roots of the views it calls."""
+    by node id: the widget's own root, and the roots of the views it calls. `patch(id, ...)` puts keys on a lowered node (feedback a factory gives a part the
+    view does not: they are part of what the view is lowered to, so a sync does not take them off)."""
 
     def __init__(self, handle: ViewHandle, *, components: Optional[dict[str, str]] = None, **kwargs: Any) -> None:
-        self._components = dict(components or {})
-        self._tagged: dict[str, tuple[dict[str, Any], list[Any], dict[str, Any]]] = {}  # a node's id -> the lowered node, its children as tagged, the result
+        self._patches: dict[str, dict[str, Any]] = {node_id: {"component_of": key} for node_id, key in (components or {}).items()}
+        self._version = 0
+        self._tagged: dict[str, tuple[int, dict[str, Any], list[Any], dict[str, Any]]] = {}  # a node's id -> the version, the lowered node, its children as patched, the result
         self._after_sync: list[Callable[[], None]] = []
         super().__init__(handle, **kwargs)
+
+    def patch(self, node_id: str, **keys: Any) -> None:
+        """Gives the lowered node `node_id` these keys from now on, and brings the view up to date."""
+        self._patches.setdefault(node_id, {}).update(keys)
+        self._version += 1
+        self._sync()
 
     def after_sync(self, fn: Callable[[], None]) -> Callable[[], None]:
         """Calls `fn()` after each time the view has been brought up to date with its values (what a factory puts on the built nodes itself, such as the feedback's
@@ -106,26 +124,26 @@ class FactoryView(ComposedView):
 
     def _lowered(self) -> tuple[dict[str, Any], dict[str, tuple[bytes, int, int]]]:
         spec, frames = super()._lowered()
-        return (self._tag(spec) if self._components else spec), frames
+        return (self._patched(spec) if self._patches else spec), frames
 
     def _use_scheme(self, scheme: Any) -> None:
         """A widget is re-coloured for its theme at once (`Widget.set_theme`), whatever its style eases when it changes state."""
         with transition.at_once():
             super()._use_scheme(scheme)
 
-    def _tag(self, node: dict[str, Any]) -> dict[str, Any]:
-        """`node` with `component_of` on the nodes `components` names. A node that did not change, and nothing under it, is given back as it was
+    def _patched(self, node: dict[str, Any]) -> dict[str, Any]:
+        """`node` with the patches on the nodes they name. A node that did not change, and nothing under it, is given back as it was
         (the same dict, which `reconcile` goes by)."""
         children = node.get("children") or []
-        tagged = [self._tag(child) for child in children]
-        key = self._components.get(node["id"])
-        if key is None and all(a is b for a, b in zip(children, tagged)):
+        patched = [self._patched(child) for child in children]
+        keys = self._patches.get(node["id"])
+        if keys is None and all(a is b for a, b in zip(children, patched, strict=True)):
             return node
         kept = self._tagged.get(node["id"])
-        if kept is not None and kept[0] is node and len(kept[1]) == len(tagged) and all(a is b for a, b in zip(kept[1], tagged)):
-            return kept[2]
-        result = {**node, **({"children": tagged} if children else {}), **({"component_of": key} if key is not None else {})}
-        self._tagged[node["id"]] = (node, tagged, result)
+        if kept is not None and kept[0] == self._version and kept[1] is node and len(kept[2]) == len(patched) and all(a is b for a, b in zip(kept[2], patched, strict=True)):
+            return kept[3]
+        result = {**node, **({"children": patched} if children else {}), **(keys or {})}
+        self._tagged[node["id"]] = (self._version, node, patched, result)
         return result
 
 

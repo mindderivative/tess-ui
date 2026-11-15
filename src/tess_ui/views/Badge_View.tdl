@@ -13,8 +13,22 @@ Container {
     Limit { Type: int, Default: 999, Doc: "A number over this shows as the limit and a plus." }
     Show { Type: bool, Default: true, Doc: "Whether the badge shows." }
     Anchored { Type: bool, Default: false, Doc: "The children are the host, and the mark sits on its top right corner." }
+    Flat {
+      Type: bool
+      Default: false
+      Doc: "The root is the mark itself, with no wrapper: for a badge a Python widget places and styles. Not with `Anchored`; `Show` is not read."
+    }
   }
+  A11y { Hidden: <| flat |> }
   Children {
+    If <| flat and value != '' |> {
+      Text {
+        Name: flat_label
+        Text: <| (str(limit) + '+') if (isinstance(value, int) and value > limit) else str(value) |>
+        Typography_Role: label_small
+        Text_Align: center
+      }
+    }
     If <| anchored |> {
       Container {
         Name: host
@@ -23,7 +37,7 @@ Container {
         }
       }
     }
-    If <| show |> {
+    If <| show and not flat |> {
       Container {
         Name: mark
         A11y { Hidden: true }

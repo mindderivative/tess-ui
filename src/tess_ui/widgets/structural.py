@@ -11,17 +11,17 @@ import math
 from typing import TYPE_CHECKING, Any, Callable
 
 from tess_ui import a11y
-from tess_ui.reactive import Effect, Signal
+from tess_ui.reactive import Signal
 from tess_ui.widgets._composed import Widget
-from tess_ui.widgets.buttons import _borders, _hex, _variant
-from tess_ui import motion
+from tess_ui.widgets._views import Call
+from tess_ui.widgets.buttons import _border, _hex, _variant
 
 if TYPE_CHECKING:
     from tess_ui.theme import Theme
     from tess_re import Window
 
 
-_CARDS = {"elevated": "CardElevated", "filled": "CardFilled", "outlined": "CardOutlined"}
+_CARDS = {"elevated": "elevated", "filled": "filled", "outlined": "outlined"}
 
 
 def card(
@@ -40,10 +40,10 @@ def card(
     """MD3's card: elevated, filled or
     outlined. Content-free: add to `.node`. `on_click` makes it an
     actionable card, with MD3's feedback."""
-    widget = Widget(window, _variant("card", variant, _CARDS), {"width": width, "height": height}, theme=theme,
-                    x=x, y=y, edit=_borders([None], border_color, border_width), name="card")
+    call = Call("Card", props={"variant": _variant("card", variant, _CARDS), "bare": True, "actionable": on_click is not None or None},
+                style={"width": width, "height": height, **_border(border_color, border_width)})
+    widget = Widget(window, call=call, components={None: f"card.{variant}"}, theme=theme, x=x, y=y, name="card")
     if on_click is not None:
-        widget.interactive(None, "on_surface")
         widget.on_click(on_click)
     return widget
 
@@ -93,36 +93,12 @@ def list_item(
     headline, 56 px tall, or 72 with `supporting_text` (`body_medium`,
     `on_surface_variant`) under it; 24 px `on_surface_variant` icons either
     side. Parts: `headline`, `supporting`, `leading`, `trailing`."""
-    border = _borders([None], border_color, border_width)
-
-    def edit(spec: dict[str, Any]) -> None:
-        name = spec["id"]
-        headline_spec = spec["children"][0]
-        text_part = headline_spec
-        if supporting_text is not None:
-            spec["style"]["height"] = 72
-            text_part = {"id": f"{name}.text", "kind": "Container",
-                         "style": {"flex_direction": "vertical", "flex": "expand_horizontal"},
-                         "children": [headline_spec, {
-                             "id": f"{name}.supporting", "kind": "Text",
-                             "text": {"content": supporting_text, "typography_role": "body_medium"},
-                             "style": {"foreground": "on_surface_variant"}}]}
-        else:
-            headline_spec.setdefault("style", {})["flex"] = "expand_horizontal"
-        children = [text_part]
-        if leading_icon is not None:
-            children.insert(0, _icon_spec(f"{name}.leading", leading_icon))
-        if trailing_icon is not None:
-            children.append(_icon_spec(f"{name}.trailing", trailing_icon))
-        spec["children"] = children
-        spec["style"].update(gap=16, padding={"left": 16, "right": 24 if trailing_icon else 16, "top": 8, "bottom": 8})
-        if border is not None:
-            border(spec)
-
-    widget = Widget(window, "ListItem", {"headline": headline, "width": width}, theme=theme, x=x, y=y, edit=edit,
-                    name="list_item")
+    call = Call("ListItem", props={"headline": headline, "supporting": supporting_text, "leading_icon": leading_icon, "trailing_icon": trailing_icon},
+                style={"width": width, **_border(border_color, border_width)})
+    widget = Widget(window, call=call, components={None: "list_item"},
+                    parts={"headline": "text.headline", "supporting": "text.supporting", "leading": "leading_icon", "trailing": "trailing_icon"},
+                    theme=theme, x=x, y=y, name="list_item")
     if on_click is not None:
-        widget.interactive(None, "on_surface")
         widget.on_click(on_click)
     return widget
 
@@ -132,7 +108,7 @@ def _icon_spec(node_id: str, name: str, size: float = 24.0, foreground: str = "o
             "style": {"width": size, "height": size, "foreground": foreground}}
 
 
-_CHIPS = {"assist": "ChipAssist", "filter": "ChipFilter", "input": "ChipInput", "suggestion": "ChipSuggestion"}
+_CHIPS = {"assist": "assist", "filter": "filter", "input": "input", "suggestion": "suggestion"}
 
 
 def chip(
@@ -159,55 +135,21 @@ def chip(
     selected it's `secondary_container` with a check and no border. An
     input chip with `removable=True` has a trailing close button that calls
     `on_remove`. The chip itself is a button (a filter chip a checkbox)."""
-    fragment_name = _variant("chip", variant, _CHIPS)
-    border = _borders([None], border_color, border_width)
-
-    def edit(spec: dict[str, Any]) -> None:
-        name = spec["id"]
-        ink = spec["children"][0]["style"]["foreground"]
-        if icon is not None:
-            spec["children"].insert(0, _icon_spec(f"{name}.icon", icon, 18.0, "primary"))
-        if variant == "filter":
-            spec["children"].insert(0, _icon_spec(f"{name}.check", "check", 18.0, "on_secondary_container"))
-        if removable:
-            spec["children"].append({"id": f"{name}.remove", "kind": "Rect",
-                                     "style": {"width": 18, "height": 18, "background": "transparent",
-                                               "corner_radius": 9, "align_content": "center"},
-                                     "children": [_icon_spec(f"{name}.remove.icon", "close", 18.0, ink)]})
-        if icon is not None or variant == "filter":
-            spec["style"]["padding"] = {"left": 8, "right": 8 if removable else 16, "top": 0, "bottom": 0}
-        elif removable:
-            spec["style"]["padding"] = {"left": 16, "right": 8, "top": 0, "bottom": 0}
-        if border is not None:
-            border(spec)
-
-    widget = Widget(window, fragment_name, {"label": label, "width": width}, theme=theme, x=x, y=y,
-                    interactive={None: None}, edit=edit, name="chip")
-    widget.selected = Signal(bool(selected))
+    shipped = _variant("chip", variant, _CHIPS)
+    selected_signal = Signal(bool(selected))
+    # the state layer is the label's colour (the shipped sheet's): `on_surface_variant` on a filter or input chip, `on_surface` on the others
+    call = Call("Chip", props={"label": label, "variant": shipped, "icon": icon, "selected": selected_signal, "removable": removable or None},
+                interaction="on_surface_variant" if variant in ("filter", "input") else "on_surface",
+                style={"width": width, "align_content": "left", **_border(border_color, border_width)})  # a width of the caller's: the content starts at the left padding
+    widget = Widget(window, call=call, components={None: f"chip.{variant}"},
+                    parts={"check": "icon", "remove": "close", "remove.icon": "close.close_icon"}, theme=theme, x=x, y=y, name="chip")
+    widget.selected = selected_signal  # the view's own `selected`: a filter chip flips it when pressed
     if variant == "filter":
-        check = widget.part("check")
-
-        def paint() -> None:
-            on = widget.selected.get()
-            widget.node.set(fill=widget.color("secondary_container") if on else (0, 0, 0, 0),
-                            stroke_width=0.0 if on else float(border_width or 1.0),
-                            checked=on)
-            widget.part("label").set(fill=widget.color("on_secondary_container" if on else "on_surface_variant"))
-            if on and check.parent() is None:
-                widget.node.insert_child(0, check)
-            elif not on and check.parent() is not None:
-                check.remove()
-            widget.node.set(padding_left=8.0 if on or icon else 16.0)
-
-        effect = Effect(paint)
-        widget._undo.append(effect.dispose)
-        widget.after_theme(lambda: paint())
-        widget.on_click(lambda: widget.selected.set(not widget.selected.get()), role="checkbox")
+        widget.on_click(lambda: None, role="checkbox")  # focusable, and a checkbox to a screen reader; the view does the toggling
     if on_click is not None:
         widget.on_click(on_click, role="checkbox" if variant == "filter" else "button")
     if removable:
-        remove = widget.part("remove")
-        a11y.describe(remove, label=f"Remove {label}")
+        a11y.describe(widget.part("remove"), label=f"Remove {label}")
         widget.on_click(on_remove or (lambda: None), part="remove")
     return widget
 
@@ -226,14 +168,10 @@ def badge(
     """MD3's badge: a 6 px `error` dot when
     `label=None`, otherwise a 16 px pill with a `label_small` `on_error`
     label (`width` defaults to fit it)."""
-    border = _borders([None], border_color, border_width)
-    if label is None:
-        widget = Widget(window, "BadgeDot", {}, theme=theme, x=x, y=y, edit=border, name="badge")
-    else:
-        widget = Widget(window, "BadgeLabeled", {"label": label, "width": width if width is not None else 16.0},
-                        theme=theme, x=x, y=y, edit=border, name="badge")
-        if width is None:  # fit the label: 4 px either side, at least a circle
-            widget.node.set(width=max(16.0, widget.part("label").get("min_width") + 8.0))
+    call = Call("Badge", props={"value": "" if label is None else label, "flat": True},
+                style={"width": width, **_border(border_color, border_width)})
+    widget = Widget(window, call=call, components={None: "badge.dot" if label is None else "badge.labeled"}, parts={"label": "flat_label"},
+                    theme=theme, x=x, y=y, name="badge")
     return widget
 
 
@@ -255,12 +193,9 @@ def divider(
     thickness = float(border_width) if border_width is not None else 1.0
     size = (length, thickness) if orientation == "horizontal" else (thickness, length)
 
-    def edit(spec: dict[str, Any]) -> None:
-        if border_color is not None:
-            spec["style"]["background"] = _hex(border_color)
-
-    widget = Widget(window, "Divider", {"width": size[0], "height": size[1]}, theme=theme, x=x, y=y, edit=edit,
-                    name="divider")
+    call = Call("Divider", props={"orientation": orientation, "thickness": thickness},
+                style={"width": size[0], "height": size[1], "background": None if border_color is None else _hex(border_color)})
+    widget = Widget(window, call=call, components={None: "divider"}, theme=theme, x=x, y=y, name="divider")
     a11y.describe(widget.node, hidden=True)
     return widget
 
@@ -277,8 +212,9 @@ def link(
 ) -> Widget:
     """A link: `body_large` text in
     `primary`, `role="link"`, a Tab stop that Enter follows (`on_click`)."""
-    widget = Widget(window, "Link", {"text": content, "width": width, "height": 24}, theme=theme, x=x, y=y,
-                    name="link")
+    call = Call("Link", props={"text": content, "typography_role": "body_large", "wrap": "none", "overflow": "ellipsis"},
+                style={"width": width, "height": 24, "foreground": "primary"})
+    widget = Widget(window, call=call, components={None: "link"}, theme=theme, x=x, y=y, name="link")
     if on_click is not None:
         widget.on_click(on_click, role="link")
     return widget
@@ -299,66 +235,43 @@ def text(
     or any colour string. `.content` is a `Signal`; setting it re-measures
     the text in its resolved font, keeping `width` when one was given.
     It follows the app's theme like the other widgets."""
-    def edit(spec: dict[str, Any]) -> None:
-        if width is not None:
-            spec["style"]["width"] = float(width)
-
-    widget = Widget(window, "Text", {"text": content, "typography_role": typography_role, "color": color},
-                    theme=theme, x=x, y=y, edit=edit, name="text")
-    widget.content = Signal(content)
-
-    def fit() -> None:
-        now = widget.content.get()
-        node = widget.node
-        measured_width, measured_height = window.measure_text(
-            now, font_family=node.get("font_family"), font_size=node.get("font_size"),
-            font_weight=node.get("font_weight"), line_height=node.get("line_height"))
-        node.set(text=now, height=float(math.ceil(measured_height)),
-                 **({} if width is not None else {"width": float(math.ceil(measured_width))}))
-
-    effect = Effect(fit)
-    widget._undo.append(effect.dispose)
-    widget.after_theme(fit)  # a re-colour restyles from the fragment, so its content goes back on
+    content_signal = Signal(content)
+    call = Call("Text", props={"text": content_signal, "typography_role": typography_role, "wrap": "word", "overflow": "clip"},
+                style={"foreground": color, "width": None if width is None else float(width)})
+    widget = Widget(window, call=call, components={None: "text"}, theme=theme, x=x, y=y, name="text")
+    widget.content = content_signal  # the view's own `text`: setting it re-measures the text in its resolved font
     return widget
 
 
 class _Expandable:
-    """The expanded state of an accordion header or tree node: a `Signal`
-    toggled by a click, Enter or Space; the chevron turns with it; the
-    arrow keys (a tree node's) and assistive technology's expand/collapse
-    set it."""
+    """The expanded state of an accordion header or tree node: `widget.expanded`, the `Signal` the view shows (its chevron turns with it), set by a click,
+    Enter or Space, the arrow keys (a tree node's) and assistive technology's expand/collapse. `on_change(fn)` hears what the user does, not what the
+    program sets. `toggles` says whether the view flips it on a press itself (an accordion's does; a tree node's does not)."""
 
-    def __init__(self, widget: Widget, expanded: bool, chevron: Any, open_deg: float, closed_deg: float,
-                 arrows: bool) -> None:
-        widget.expanded = Signal(bool(expanded))
-        changes: list[Callable[[bool], Any]] = []
-        widget.on_change = lambda fn: (changes.append(fn), lambda: changes.remove(fn) if fn in changes else None)[1]
+    def __init__(self, widget: Widget, expanded: Signal, part: str | None, *, toggles: bool, arrows: bool) -> None:
+        widget.expanded = expanded
+        self.expanded = expanded
+        self.changes: list[Callable[[bool], Any]] = []
+        widget.on_change = lambda fn: (self.changes.append(fn), lambda: self.changes.remove(fn) if fn in self.changes else None)[1]
+        node = widget.part(part)
 
         def user_set(value: bool) -> None:
-            if widget.expanded.get() != value:
-                widget.expanded.set(value)
-                for fn in list(changes):
-                    fn(value)
+            if expanded.get() != value:
+                expanded.set(value)
+                self.heard()
 
-        painted = [False]
-
-        def paint() -> None:
-            on = widget.expanded.get()
-            widget.node.set(expanded=on)
-            if chevron is not None:
-                chevron.animate("rotation_deg", open_deg if on else closed_deg, motion.duration(widget.window, 150) if painted[0] else 0)
-            painted[0] = True
-
-        effect = Effect(paint)
-        widget._undo.append(effect.dispose)
-        widget.on_click(lambda: user_set(not widget.expanded.get()), role=widget.node.get("role") or "button")
-        widget._undo.append(a11y.on_action(widget.node, {"expand": lambda e: user_set(True),
-                                                         "collapse": lambda e: user_set(False)},
+        self.user_set = user_set
+        if not toggles:
+            widget.on_click(lambda: user_set(not expanded.get()), part=part, role=node.get("role") or "button")
+        widget._undo.append(a11y.on_action(node, {"expand": lambda e: user_set(True), "collapse": lambda e: user_set(False)},
                                            listen=widget.view._listen))
         if arrows:
             keys = {"arrow_right": True, "arrow_left": False}
-            widget._undo.append(widget.view._listen(
-                widget.node, "key_down", lambda e: user_set(keys[e.key]) if e.key in keys else None))
+            widget._undo.append(widget.view._listen(node, "key_down", lambda e: user_set(keys[e.key]) if e.key in keys else None))
+
+    def heard(self) -> None:
+        for fn in list(self.changes):
+            fn(self.expanded.get())
 
 
 def accordion_header(
@@ -377,10 +290,13 @@ def accordion_header(
     chevron that turns over when `.expanded` (a `Signal`) is on. A click,
     Enter or Space toggles it; `.on_change(fn)` hears the user's toggles.
     Show and hide the content yourself, from `.expanded`."""
-    widget = Widget(window, "AccordionHeader", {"title": title, "width": width}, theme=theme, x=x, y=y,
-                    interactive={None: "on_surface"}, edit=_borders([None], border_color, border_width),
-                    name="accordion_header")
-    _Expandable(widget, expanded, widget.part("chevron"), 180.0, 0.0, arrows=False)
+    state = Signal(bool(expanded))
+    holder: list[_Expandable] = []
+    call = Call("Accordion", props={"title": title, "expanded": state}, handlers={"on_toggle": lambda: holder[0].heard()},
+                style={"width": width, **_border(border_color, border_width)})
+    widget = Widget(window, call=call, components={None: "accordion_header"}, parts={"title": "header.title", "chevron": "header.chevron"},
+                    theme=theme, x=x, y=y, name="accordion_header")
+    holder.append(_Expandable(widget, state, "header", toggles=True, arrows=False))
     return widget
 
 
@@ -398,20 +314,17 @@ def tree_node(
     *,
     theme: "Theme | None" = None,
 ) -> Widget:
-    """A tree row, indented 16 px plus 24
-    per `depth`, `role="treeitem"` at `level` `depth + 1`. A branch has a
+    """A tree row, indented by its `depth`, `role="treeitem"` at `level` `depth + 1`. A branch has a
     chevron (pointing right, down when `.expanded`), toggled by a click,
     Enter or Space, and set by the right and left arrows. Build the tree's
     structure yourself, from `.expanded`."""
-    padding = 16 + 24 * int(depth)
-    widget = Widget(window, "TreeNodeLeaf" if leaf else "TreeNodeBranch",
-                    {"title": title, "width": width, "left_padding": padding}, theme=theme, x=x, y=y,
-                    interactive={None: "on_surface"}, edit=_borders([None], border_color, border_width),
-                    name="tree_node")
-    a11y.describe(widget.node, role="treeitem", level=int(depth) + 1)
+    state = None if leaf else Signal(bool(expanded))
+    call = Call("TreeNode", props={"label": title, "level": int(depth), "branch": None if leaf else True, "expanded": state},
+                style={"width": width, **_border(border_color, border_width)})
+    widget = Widget(window, call=call, components={None: "tree_node"}, parts={"title": "label"}, theme=theme, x=x, y=y, name="tree_node")
     if leaf:
         widget.expanded = None
         widget.node.set(focusable=True)
     else:
-        _Expandable(widget, expanded, widget.part("chevron"), 0.0, -90.0, arrows=True)
+        _Expandable(widget, state, None, toggles=False, arrows=True)
     return widget

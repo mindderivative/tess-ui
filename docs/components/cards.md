@@ -37,6 +37,7 @@ The Material 3 card: a surface that holds content about one subject. `Variant` i
 | `Media_Height` | `float` | `160` | How tall the picture is. |
 | `Actionable` | `bool` | `false` | The whole card is one pressable surface. |
 | `Selected` | `bool` | `false` | Whether the card is chosen (the caller decides when). |
+| `Bare` | `bool` | `false` | Only the surface: no picture and no body, and nothing is clipped, so a Python widget's own nodes can be added straight into the card. |
 | `Disabled` | `bool` | `false` | Dimmed, and an actionable card does not respond. |
 
 Children go in the default slot, the `actions` slot.

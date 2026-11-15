@@ -14,6 +14,8 @@ from typing import Any, Callable, Optional
 
 from tess_ui import a11y, tokens
 from tess_ui.composed import ComposedView
+from tess_ui.spec.build import _INTERACTIVE_KINDS
+from tess_ui.widgets._views import FactoryView
 from tess_ui.follow import initial_theme, unfollow
 from tess_ui.listeners import handled
 from tess_ui.spec.expand import expand_components_to_spec
@@ -128,9 +130,11 @@ class Widget:
         """Gives a part MD3's feedback (in its content's colour, or `role`'s)."""
         if self.view.interaction(self._id(part)) is not None:
             return
-        if isinstance(self.view, ComposedView):  # the shipped view says which of its parts answer a press; it cannot be changed from outside
-            self._spec_of(self.view.spec, part)
-            raise ValueError(f"{self.name}: {part or 'the root'} has no feedback in its view")
+        if isinstance(self.view, FactoryView):  # the part gets it as part of what the view is lowered to
+            node_spec = self._spec_of(self.view.spec, part)
+            if node_spec["kind"] in _INTERACTIVE_KINDS:  # a Link or a Text has the engine's own press, with no state layer
+                self.view.patch(self._id(part), interaction={"color": role or content_role(node_spec) or "on_surface"})
+            return
         node_spec = self._spec_of(self.view.spec, part)
         if node_spec.get("interaction") is None:
             node_spec["interaction"] = {"color": role or content_role(node_spec) or "on_surface"}
