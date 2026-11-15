@@ -18,6 +18,7 @@ from tess_ui import App, tokens
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 LIGHT, DARK = tokens.color_scheme(SEED, False)["primary"], tokens.color_scheme(SEED, True)["primary"]
+# legacy syntax: deleted with spec/expand.py at the cutover (`app.load(path)` reads YAML only, see test_composed_windows)
 VIEW = ('id: root\nkind: Container\nchildren:\n'
         '  - {id: box, kind: Rect, style: {width: 10, height: 10, background: primary}}\n'
         '  - {id: label, kind: Text, text: {content: "", font_family: Roboto, font_size: 14}, style: {foreground: on_surface, width: 50, height: 20}, bindings: {text: "{{ title.get() }}"}}\n')

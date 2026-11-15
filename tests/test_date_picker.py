@@ -30,16 +30,22 @@ def _today_is_some_other_day(monkeypatch):
 
 def opened(tmp_path, props="", date="2026-10-09", show=True):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    lines = "\n    ".join(props.split(", ")) if props else ""
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{width: 600, height: 700}}
-children:
-  - widget: DatePicker
-    name: dp
-    open: "{{{{ open }}}}"
-    date: "{{{{ d }}}}"
-    {lines}
+    lines = "".join(f"\n      {line}" for line in props.split(", ")) if props else ""
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Width: 600, Height: 700 }}
+  Children {{
+    DatePicker {{
+      Name: dp
+      Open: <| open |>
+      Date: <| d |>{lines}
+    }}
+  }}
+}}
 """)
     VM.start = date
     app = App(root=tmp_path, width=600, height=700)
@@ -100,7 +106,7 @@ def test_the_grid_is_six_weeks_of_seven_days_starting_on_a_sunday_by_default(tmp
 
 
 def test_weeks_can_start_on_a_monday(tmp_path):
-    view, _ = opened(tmp_path, "week_starts: monday")
+    view, _ = opened(tmp_path, "Week_Starts: monday")
     days = [k for k in view._built.specs if k.startswith("root.dp.panel.grid.day[") and k.count(".") == 4]
     assert days[0].endswith("[2026-09-28]")
     assert [p(view, f"weekdays.weekday[{k}].initial").get("text") for k in range(7)] == list("MTWTFSS")
@@ -140,7 +146,7 @@ def test_pressing_a_day_chooses_it_in_the_header_but_not_in_the_date_until_ok(tm
 
 
 def test_ok_calls_on_ok(tmp_path):
-    view, vm = opened(tmp_path, "on_ok: confirmed")
+    view, vm = opened(tmp_path, "On_Ok: confirmed")
     view.window.simulate("click", node=p(view, "footer.ok"))
     settle(view, 6)
     assert vm.log == ["ok"]
@@ -180,7 +186,7 @@ def test_choosing_a_day_of_the_next_month_moves_to_that_month(tmp_path):
 
 
 def test_days_outside_the_limits_are_disabled_and_do_not_respond(tmp_path):
-    view, _ = opened(tmp_path, "earliest: '2026-10-05', latest: '2026-10-20'")
+    view, _ = opened(tmp_path, "Earliest: \"2026-10-05\", Latest: \"2026-10-20\"")
     assert day(view, "2026-10-04").get("disabled") is True and day(view, "2026-10-21").get("disabled") is True and day(view, "2026-10-10").get("disabled") is False
     view.window.simulate("click", node=day(view, "2026-10-04"))
     settle(view, 6)

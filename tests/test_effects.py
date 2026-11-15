@@ -5,7 +5,6 @@ import io
 
 import pytest
 import tess_re
-import yaml
 from PIL import Image
 
 from tess_ui import App, View
@@ -16,7 +15,7 @@ SEED = (0x67, 0x50, 0xA4, 0xFF)
 
 
 def _view(style, kind="Rect", **node):
-    spec = yaml.safe_load("id: root\nkind: Container\nstyle: {width: 200, height: 100}\nchildren: []")
+    spec = {"id": "root", "kind": "Container", "style": {"width": 200, "height": 100}, "children": []}
     child = {"id": "x", "kind": kind, "style": {"width": 100, "height": 50, **style}, **node}
     if kind == "Rect":
         child["style"].setdefault("background", "primary")

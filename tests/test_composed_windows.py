@@ -7,36 +7,50 @@ from tess_ui import App, ViewModel
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 
-WINDOW = """name: main
-widget: Window
-title: Notes
-min_width: 320
-min_height: 200
-borderless: true
-style: {width: 700, height: 500, flex_direction: vertical}
-children:
-  - {widget: TitleBar, name: bar, title: Notes, icon: home}
-  - widget: Dock
-    name: dock
-    children:
-      - widget: DockPanel
-        name: files
-        title: Files
-        style: {zone: left, width: 200}
-        children:
-          - {widget: Text, name: ft, text: Files, typography_role: body_large, style: {foreground: on_surface}}
-      - widget: DockPanel
-        name: outline
-        title: Outline
-        style: {zone: left}
-        children:
-          - {widget: Text, name: ot, text: Outline, typography_role: body_large, style: {foreground: on_surface}}
-      - widget: DockPanel
-        name: editor
-        title: Editor
-        style: {zone: center}
-        children:
-          - {widget: Text, name: et, text: Editor, typography_role: body_large, style: {foreground: on_surface}}
+WINDOW = """---
+TDL: 0.2
+Name: main
+---
+Window {
+  Name: main
+  Title: Notes
+  Min_Width: 320
+  Min_Height: 200
+  Borderless: true
+  Style { Width: 700, Height: 500, Flex_Direction: vertical }
+  Children {
+    TitleBar { Name: bar, Title: Notes, Icon: home }
+    Dock {
+      Name: dock
+      Children {
+        DockPanel {
+          Name: files
+          Title: Files
+          Style { Zone: left, Width: 200 }
+          Children {
+            Text { Name: ft, Text: Files, Typography_Role: body_large, Style { Foreground: on_surface } }
+          }
+        }
+        DockPanel {
+          Name: outline
+          Title: Outline
+          Style { Zone: left }
+          Children {
+            Text { Name: ot, Text: Outline, Typography_Role: body_large, Style { Foreground: on_surface } }
+          }
+        }
+        DockPanel {
+          Name: editor
+          Title: Editor
+          Style { Zone: center }
+          Children {
+            Text { Name: et, Text: Editor, Typography_Role: body_large, Style { Foreground: on_surface } }
+          }
+        }
+      }
+    }
+  }
+}
 """
 
 
@@ -46,7 +60,7 @@ class VM(ViewModel):
 
 def opened(tmp_path, text=WINDOW, native_controls=False):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(text)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(text)
     app = App(root=tmp_path, width=700, height=500, theme_seed=SEED, borderless=True)
     app._native_controls.set(native_controls)
     app.bind(VM)
@@ -64,7 +78,7 @@ def test_the_window_sets_the_os_window(tmp_path):
 
 def test_a_second_window_view_is_refused(tmp_path):
     app, _ = opened(tmp_path)
-    (tmp_path / "Views" / "Other_View.yaml").write_text(WINDOW.replace("name: main", "name: other"))
+    (tmp_path / "Views" / "Other_View.tdl").write_text(WINDOW.replace("Name: main", "Name: other"))
     with pytest.raises(ValueError, match="an app has one window"):
         app.open_view("Other")
 
@@ -136,10 +150,11 @@ def test_a_dock_keeps_where_its_panels_were_put_when_the_view_changes(tmp_path):
 
 
 def test_a_view_with_no_window_is_as_before(tmp_path):
-    app, view = opened(tmp_path, "name: main\nwidget: Container\nstyle: {width: 100, height: 100}\n")
+    app, view = opened(tmp_path, "---\nTDL: 0.2\nName: main\n---\nContainer { Name: main, Style { Width: 100, Height: 100 } }\n")
     assert app.window.get("title") != "Notes" and not view._docks
 
 
+# legacy syntax: deleted with spec/expand.py at the cutover (App.build_view / View(path) read YAML only today; there is no TDL path for them)
 def test_a_binding_that_needs_a_viewmodel_waits_for_one(tmp_path):
     import yaml
 
