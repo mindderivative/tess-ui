@@ -11,16 +11,23 @@ from tess_ui.spec.nodes import parse_view
 from tess_ui.viewmodel import Bindings
 
 SEED = (103, 80, 164, 255)
-VIEW = """name: demo
-widget: Container
-style: {flex_direction: vertical, width: 300, height: 300}
-children:
-  - widget: TextInput
-    name: f
-    text: "{{ text }}"
-    multiline: true
-    typography_role: body_large
-    style: {width: 200, height: 100, background: '#FFFFFF', foreground: '#000000'}
+VIEW = """---
+TDL: 0.2
+Name: demo
+---
+Container {
+  Name: demo
+  Style { Flex_Direction: vertical, Width: 300, Height: 300 }
+  Children {
+    TextInput {
+      Name: f
+      Text: <| text |>
+      Multiline: true
+      Typography_Role: body_large
+      Style { Width: 200, Height: 100, Background: "#FFFFFF", Foreground: "#000000" }
+    }
+  }
+}
 """
 
 
@@ -35,7 +42,7 @@ class DemoVM(ViewModel):
 def rig():
     bindings = Bindings()
     bindings.bind(DemoVM)
-    view = open_composed(parse_view(VIEW, "Demo_View.yaml"), bindings, None, theme_seed=SEED)
+    view = open_composed(parse_view(VIEW, "Demo_View.tdl"), bindings, None, theme_seed=SEED)
     view.window.advance(16)
     field = view.node("root.f")
     field.focus()

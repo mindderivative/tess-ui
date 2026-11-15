@@ -1,6 +1,6 @@
 """#184: the Material 3 text field -- the `TextInput` primitive, and `TextField`, a shipped view with a shipped look, opened in a real app window.
 
-Each test writes a small project with one view that uses `widget: TextField`, opens it through `App.open_view`, and drives it the way a user would
+Each test writes a small project with one view that uses `TextField`, opens it through `App.open_view`, and drives it the way a user would
 (`focus`, `input`, `key_down`, pointer moves), reading the nodes the field drew.
 """
 
@@ -28,11 +28,14 @@ class VM(ViewModel):
         self.log.append("key")
 
 
+TDL = "---\nTDL: 0.2\nName: Main\n---\n"
+
+
 def opened(tmp_path, field, extra="", vm=None, app_kwargs=None):
-    """An app with one view whose only child is the `field` (YAML for one node), plus any `extra` children."""
+    """An app with one view whose only child is the `field` (TDL for one node), plus any `extra` children."""
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {flex_direction: vertical, width: 400, height: 400, gap: 16, padding: 16}\nchildren:\n" + field + extra)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(
+        TDL + "Container {\n  Name: main\n  Style { Flex_Direction: vertical, Width: 400, Height: 400, Gap: 16, Padding: 16 }\n  Children {\n" + field + extra + "  }\n}\n")
     app = App(root=tmp_path, **(app_kwargs or {}))
     app.bind(vm or VM)
     view = app.open_view("Main")
@@ -59,7 +62,7 @@ def test_the_field_is_a_shipped_view_with_a_shipped_look():
 
 
 def test_a_filled_field_has_its_parts_and_only_the_ones_asked_for(tmp_path):
-    _, view, _ = opened(tmp_path, "  - {widget: TextField, name: f, label: Name}\n")
+    _, view, _ = opened(tmp_path, 'TextField { Name: f, Label: Name }\n')
     ids = {i.id for i in view.handle.composition.walk()}
     assert {"root.f.box", "root.f.box.body.input", "root.f.box.label_box.label", "root.f.indicator"} <= ids
     assert not ids & {"root.f.box.leading_icon", "root.f.box.error_icon", "root.f.box.trailing_icon", "root.f.box.reveal_button", "root.f.footer.supporting",
@@ -67,8 +70,7 @@ def test_a_filled_field_has_its_parts_and_only_the_ones_asked_for(tmp_path):
 
 
 def test_everything_a_field_can_show_is_shown_when_asked_for(tmp_path):
-    _, view, _ = opened(tmp_path, "  - {widget: TextField, name: f, label: Amount, leading: search, trailing: close, prefix: '$', suffix: USD,"
-                                   " supporting: In dollars, counter: true, max_length: 12}\n")
+    _, view, _ = opened(tmp_path, 'TextField { Name: f, Label: Amount, Leading: search, Trailing: close, Prefix: "$", Suffix: USD, Supporting: "In dollars", Counter: true, Max_Length: 12 }\n')
     ids = {i.id for i in view.handle.composition.walk()}
     assert {"root.f.box.leading_icon", "root.f.box.trailing_icon", "root.f.box.body.prefix", "root.f.box.body.suffix", "root.f.footer.supporting",
             "root.f.footer.counter"} <= ids
@@ -77,7 +79,7 @@ def test_everything_a_field_can_show_is_shown_when_asked_for(tmp_path):
 
 
 def test_an_outlined_field_has_a_border_and_no_line_under_it(tmp_path):
-    _, view, _ = opened(tmp_path, "  - {widget: TextField, name: f, variant: outlined, label: Name}\n")
+    _, view, _ = opened(tmp_path, 'TextField { Name: f, Variant: outlined, Label: Name }\n')
     ids = {i.id for i in view.handle.composition.walk()}
     assert "root.f.indicator" not in ids
     box = view.node("root.f.box")
@@ -85,7 +87,7 @@ def test_an_outlined_field_has_a_border_and_no_line_under_it(tmp_path):
 
 
 def test_typing_writes_the_signal_and_the_signal_writes_the_input(tmp_path):
-    _, view, vm = opened(tmp_path, "  - {widget: TextField, name: f, label: Name, text: '{{ name }}'}\n")
+    _, view, vm = opened(tmp_path, 'TextField { Name: f, Label: Name, Text: <| name |> }\n')
     field = input_of(view)
     field.focus()
     view.window.advance(16)
@@ -96,13 +98,13 @@ def test_typing_writes_the_signal_and_the_signal_writes_the_input(tmp_path):
 
 
 def test_a_field_with_a_one_way_text_shows_it_and_reverts_the_users_edit(tmp_path):
-    _, view, vm = opened(tmp_path, "  - {widget: TextField, name: f, label: Name, text: \"{{ name + '!' }}\"}\n")
+    _, view, vm = opened(tmp_path, "TextField { Name: f, Label: Name, Text: <| name + '!' |> }\n")
     vm.name.set("a")
     assert input_of(view).get("text") == "a!"
 
 
 def test_max_length_stops_the_typing_and_the_counter_counts(tmp_path):
-    _, view, vm = opened(tmp_path, "  - {widget: TextField, name: f, text: '{{ name }}', max_length: 3, counter: true}\n")
+    _, view, vm = opened(tmp_path, 'TextField { Name: f, Text: <| name |>, Max_Length: 3, Counter: true }\n')
     input_of(view).focus()
     view.window.advance(16)
     view.window.simulate("input", text="abcdef")
@@ -111,8 +113,7 @@ def test_max_length_stops_the_typing_and_the_counter_counts(tmp_path):
 
 
 def test_read_only_keeps_the_text_and_disabled_dims_the_field(tmp_path):
-    _, view, vm = opened(tmp_path, "  - {widget: TextField, name: f, text: '{{ name }}', read_only: true}\n"
-                                   "  - {widget: TextField, name: g, text: '{{ email }}', disabled: true}\n")
+    _, view, vm = opened(tmp_path, 'TextField { Name: f, Text: <| name |>, Read_Only: true }\nTextField { Name: g, Text: <| email |>, Disabled: true }\n')
     vm.name.set("fixed")
     input_of(view).focus()
     view.window.advance(16)
@@ -123,7 +124,7 @@ def test_read_only_keeps_the_text_and_disabled_dims_the_field(tmp_path):
 
 
 def test_the_label_is_raised_by_focus_or_text_and_comes_back(tmp_path):
-    _, view, vm = opened(tmp_path, "  - {widget: TextField, name: f, label: Name, text: '{{ name }}', placeholder: Type here}\n")
+    _, view, vm = opened(tmp_path, 'TextField { Name: f, Label: Name, Text: <| name |>, Placeholder: "Type here" }\n')
     label_box, label = view.node("root.f.box.label_box"), view.node("root.f.box.label_box.label")
     field = input_of(view)
     lowered = (label_box.get("y"), label.get("font_size"), field.get("placeholder"))
@@ -149,7 +150,7 @@ def test_the_label_is_raised_by_focus_or_text_and_comes_back(tmp_path):
 
 
 def test_an_outlined_label_sits_on_the_border_with_a_fill_behind_it(tmp_path):
-    _, view, vm = opened(tmp_path, "  - {widget: TextField, name: f, variant: outlined, label: Name, text: '{{ name }}'}\n")
+    _, view, vm = opened(tmp_path, 'TextField { Name: f, Variant: outlined, Label: Name, Text: <| name |> }\n')
     label_box = view.node("root.f.box.label_box")
     assert label_box.get("y") == 18.0 and label_box.get("fill") in (None, (0, 0, 0, 0))
     vm.name.set("x")
@@ -159,9 +160,7 @@ def test_an_outlined_label_sits_on_the_border_with_a_fill_behind_it(tmp_path):
 
 
 def test_focus_hover_and_error_change_the_line_the_border_and_the_label(tmp_path):
-    _, view, vm = opened(tmp_path, "  - {widget: TextField, name: f, label: Name, text: '{{ name }}'}\n"
-                                   "  - {widget: TextField, name: o, variant: outlined, label: Name, text: '{{ email }}'}\n"
-                                   "  - {widget: TextField, name: e, label: Name, error: Wrong}\n")
+    _, view, vm = opened(tmp_path, 'TextField { Name: f, Label: Name, Text: <| name |> }\nTextField { Name: o, Variant: outlined, Label: Name, Text: <| email |> }\nTextField { Name: e, Label: Name, Error: Wrong }\n')
     line, label = view.node("root.f.indicator"), view.node("root.f.box.label_box.label")
     assert line.get("fill") == role(view, "on_surface_variant") and line.get("layout_height") == 1.0
     assert label.get("fill") == role(view, "on_surface_variant")
@@ -182,7 +181,7 @@ def test_focus_hover_and_error_change_the_line_the_border_and_the_label(tmp_path
 
 
 def test_an_error_shows_its_message_in_place_of_the_supporting_text_with_an_icon(tmp_path):
-    _, view, vm = opened(tmp_path, "  - {widget: TextField, name: f, label: Email, supporting: Your address, error: '{{ msg }}', trailing: close}\n")
+    _, view, vm = opened(tmp_path, 'TextField { Name: f, Label: Email, Supporting: "Your address", Error: <| msg |>, Trailing: close }\n')
     assert "root.f.box.error_icon" not in {i.id for i in view.handle.composition.walk()}
     assert view.node("root.f.footer.supporting").get("text") == "Your address" and "root.f.box.trailing_icon" in {i.id for i in view.handle.composition.walk()}
     vm.msg.set("Not an email")
@@ -196,7 +195,7 @@ def test_an_error_shows_its_message_in_place_of_the_supporting_text_with_an_icon
 
 
 def test_the_inputs_name_includes_the_error_for_assistive_technology(tmp_path):
-    _, view, vm = opened(tmp_path, "  - {widget: TextField, name: f, label: Email, error: '{{ msg }}'}\n")
+    _, view, vm = opened(tmp_path, 'TextField { Name: f, Label: Email, Error: <| msg |> }\n')
     field = input_of(view)
     assert field.get("role") == "textbox" and field.get("label") == "Email"
     vm.msg.set("Not an email")
@@ -204,7 +203,7 @@ def test_the_inputs_name_includes_the_error_for_assistive_technology(tmp_path):
 
 
 def test_a_password_field_hides_the_text_and_a_button_shows_it(tmp_path):
-    _, view, vm = opened(tmp_path, "  - {widget: TextField, name: f, label: Password, obscured: true, text: '{{ name }}'}\n")
+    _, view, vm = opened(tmp_path, 'TextField { Name: f, Label: Password, Obscured: true, Text: <| name |> }\n')
     field, button = input_of(view), view.node("root.f.box.reveal_button")
     assert field.get("obscured") is True and button.get("role") == "button" and button.get("label") == "Show password"
     view.window.advance(16)
@@ -216,7 +215,7 @@ def test_a_password_field_hides_the_text_and_a_button_shows_it(tmp_path):
 
 
 def test_multiline_makes_a_taller_input_that_takes_enter(tmp_path):
-    _, view, vm = opened(tmp_path, "  - {widget: TextField, name: f, label: Notes, multiline: true, text: '{{ name }}', handlers: {on_submit: submit}}\n")
+    _, view, vm = opened(tmp_path, 'TextField { Name: f, Label: Notes, Multiline: true, Text: <| name |>, Handlers { On_Submit: submit } }\n')
     field = input_of(view)
     assert field.get("multiline") is True and view._built.outer["root.f.box.body.input"].get("min_height") == 72.0
     field.focus()
@@ -226,7 +225,7 @@ def test_multiline_makes_a_taller_input_that_takes_enter(tmp_path):
 
 
 def test_enter_submits_a_single_line_field_and_keys_reach_on_key(tmp_path):
-    _, view, vm = opened(tmp_path, "  - {widget: TextField, name: f, label: Name, text: '{{ name }}', handlers: {on_submit: submit, on_key: keyed}}\n")
+    _, view, vm = opened(tmp_path, 'TextField { Name: f, Label: Name, Text: <| name |>, Handlers { On_Submit: submit, On_Key: keyed } }\n')
     input_of(view).focus()
     view.window.advance(16)
     view.window.simulate("key_down", key="Enter")
@@ -238,18 +237,18 @@ def test_enter_submits_a_single_line_field_and_keys_reach_on_key(tmp_path):
 
 def test_a_value_the_field_does_not_allow_is_an_error_with_a_suggestion(tmp_path):
     with pytest.raises(LoadError) as caught:
-        opened(tmp_path, "  - {widget: TextField, name: f, variant: filld}\n")
+        opened(tmp_path, 'TextField { Name: f, Variant: filld }\n')
     assert "TextField.variant" not in str(caught.value) or "filld" in str(caught.value)
     assert "is 'filld', which is not one of: filled, outlined" in str(caught.value) and "did you mean 'filled'" in str(caught.value)
     with pytest.raises(LoadError) as caught:
-        opened(tmp_path, "  - {widget: TextField, name: f, lable: Name}\n")
+        opened(tmp_path, 'TextField { Name: f, Lable: Name }\n')
     assert "TextField: no property 'lable'" in str(caught.value) and "did you mean 'label'" in str(caught.value)
 
 
 def test_the_app_can_restyle_the_field_and_a_call_can_resize_it(tmp_path):
     sheet = {"styles": [{"widget": "TextField", "part": "box", "variant": "filled", "style": {"background": "#112233"}},
                         {"widget": "TextField", "style": {"width": 300}}]}
-    _, view, _ = opened(tmp_path, "  - {widget: TextField, name: f, label: A}\n  - {widget: TextField, name: g, label: B, style: {width: 200}}\n",
+    _, view, _ = opened(tmp_path, 'TextField { Name: f, Label: A }\nTextField { Name: g, Label: B, Style { Width: 200 } }\n',
                         app_kwargs={"stylesheet_spec": sheet})
     assert view.node("root.f.box").get("fill") == (17, 34, 51, 255)  # the app's rule beats the shipped one
     assert view.node("root.f").get("layout_width") == 300.0 and view.node("root.g").get("layout_width") == 200.0  # inline beats every rule
@@ -257,15 +256,14 @@ def test_the_app_can_restyle_the_field_and_a_call_can_resize_it(tmp_path):
 
 def test_a_project_can_replace_the_shipped_field_with_a_view_of_the_same_name(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "TextField_View.yaml").write_text("params: [label]\nwidget: Text\ntext: 'mine: {{ label }}'\ntypography_role: body_large\n"
-                                                           "style: {foreground: '#000000'}\n")
-    _, view, _ = opened(tmp_path, "  - {widget: TextField, name: f, label: Name}\n")
+    (tmp_path / "Views" / "TextField_View.tdl").write_text(
+        "---\nTDL: 0.2\nName: TextField\n---\nText {\n  Params: [label]\n  Text: mine: <| label |>\n  Typography_Role: body_large\n  Style { Foreground: \"#000000\" }\n}\n")
+    _, view, _ = opened(tmp_path, 'TextField { Name: f, Label: Name }\n')
     assert view.node("root.f").get("text") == "mine: Name"
 
 
 def test_the_text_input_primitive_is_the_bare_input(tmp_path):
-    _, view, vm = opened(tmp_path, "  - {widget: TextInput, name: f, text: '{{ name }}', placeholder: Go, obscured: true, max_length: 2,"
-                                   " style: {width: 100, height: 30, background: '#FFFFFF', foreground: '#000000'}, typography_role: body_large}\n")
+    _, view, vm = opened(tmp_path, 'TextInput { Name: f, Text: <| name |>, Placeholder: Go, Obscured: true, Max_Length: 2, Style { Width: 100, Height: 30, Background: "#FFFFFF", Foreground: "#000000" }, Typography_Role: body_large }\n')
     field = view.node("root.f")
     assert field.get("placeholder") == "Go" and field.get("obscured") is True
     field.focus()
@@ -280,15 +278,16 @@ def test_the_text_input_primitive_is_the_bare_input(tmp_path):
 def test_the_shipped_view_validates_against_the_widget_schema_all_the_way_down():
     import json
     import jsonschema
-    import yaml
     from pathlib import Path
 
     from tess_ui import shipped
     from tess_ui.spec import widgets
+    from tess_ui.spec.tdl import load_marked_tdl
+    from tess_ui.spec.tdl_theme import plain
 
     schema = widgets.json_schema()
     validator = jsonschema.Draft7Validator(schema)
-    views = {name: path.with_suffix(".yaml") for name, path in shipped.shipped_views().items()}  # the schema describes the YAML form
+    views = shipped.shipped_views()
 
     def unwrapped(node):
         """The schema describes the built-in widgets; a shipped view that uses another shipped view (Tabs uses Badge) is checked as the Container it stands in."""
@@ -301,9 +300,9 @@ def test_the_shipped_view_validates_against_the_widget_schema_all_the_way_down()
         return node
 
     for path in views.values():
-        errors = list(validator.iter_errors(unwrapped(yaml.safe_load(path.read_text(encoding="utf-8")))))
+        errors = list(validator.iter_errors(unwrapped(plain(load_marked_tdl(path.read_text(encoding="utf-8"), path.name)))))
         assert not errors, f"{path.name}: {errors[0].message[:200]}"
-    broken = yaml.safe_load(views["TextField"].read_text(encoding="utf-8"))
+    broken = plain(load_marked_tdl(views["TextField"].read_text(encoding="utf-8"), "TextField_View.tdl"))
     broken["children"][1]["children"][1]["children"][1]["valu"] = 1  # a misspelt property deep inside
     assert list(validator.iter_errors(broken))
     json.dumps(schema)
@@ -336,7 +335,7 @@ def test_lowering_leaves_out_what_only_the_renderer_acts_on():
     from tess_ui.spec.lower import lower
     from tess_ui.spec.nodes import parse_view
 
-    node = lower(Composer({}, VM()).compose(parse_view("widget: TextInput\nmax_length: 3\nread_only: true\nplaceholder: x\n", "T_View.yaml")).root)
+    node = lower(Composer({}, VM()).compose(parse_view("---\nTDL: 0.2\nName: T\n---\nTextInput { Max_Length: 3, Read_Only: true, Placeholder: x }\n", "T_View.tdl")).root)
     assert node["kind"] == "TextField" and node["text"]["placeholder"] == "x" and "max_length" not in node and "read_only" not in node
 
 
@@ -349,20 +348,20 @@ def settle(view, n=20):
 
 
 def test_a_filled_field_has_a_four_pixel_top_corner_and_a_square_bottom(tmp_path):
-    _, view, _ = opened(tmp_path, "  - {widget: TextField, name: f, label: Name}\n")
+    _, view, _ = opened(tmp_path, 'TextField { Name: f, Label: Name }\n')
     assert view.node("root.f.box").get("corner_radius") == (4.0, 4.0, 0.0, 0.0)
     (tmp_path / "o").mkdir()
-    _, outlined, _ = opened(tmp_path / "o", "  - {widget: TextField, name: f, label: Name, variant: outlined}\n")
+    _, outlined, _ = opened(tmp_path / "o", 'TextField { Name: f, Label: Name, Variant: outlined }\n')
     assert outlined.node("root.f.box").get("corner_radius") == 4.0
 
 
 def test_the_input_is_described_by_the_help_line_and_the_footer_is_there_even_with_no_help(tmp_path):
-    _, view, _ = opened(tmp_path, "  - {widget: TextField, name: f, label: Name, supporting: Your name}\n")
+    _, view, _ = opened(tmp_path, 'TextField { Name: f, Label: Name, Supporting: "Your name" }\n')
     node = input_of(view)
     assert node.get("describedby") == [view._built.outer["root.f.footer"]]
     assert view.node("root.f.footer").get("layout_height") > 0
     (tmp_path / "n").mkdir()
-    _, bare, _ = opened(tmp_path / "n", "  - {widget: TextField, name: f, label: Name}\n")
+    _, bare, _ = opened(tmp_path / "n", 'TextField { Name: f, Label: Name }\n')
     assert bare.node("root.f.footer").get("layout_height") == 0.0  # no room taken when there is nothing to say
 
 
@@ -379,7 +378,7 @@ def typed(view, text):
 
 
 def test_suggestions_show_in_a_menu_under_the_field_that_contain_what_is_typed(tmp_path):
-    _, view, vm = opened(tmp_path, f"  - {{widget: TextField, name: f, label: Name, text: '{{{{ name }}}}', suggestions: {SUGGESTIONS}}}\n")
+    _, view, vm = opened(tmp_path, f"TextField {{ Name: f, Label: Name, Text: <| name |>, Suggestions: {SUGGESTIONS} }}\n")
     assert not view._shown_layers
     typed(view, "al")
     assert view._shown_layers
@@ -391,7 +390,7 @@ def test_suggestions_show_in_a_menu_under_the_field_that_contain_what_is_typed(t
 
 
 def test_pressing_a_suggestion_fills_the_field_in_and_closes_the_menu(tmp_path):
-    _, view, vm = opened(tmp_path, f"  - {{widget: TextField, name: f, label: Name, text: '{{{{ name }}}}', suggestions: {SUGGESTIONS}}}\n")
+    _, view, vm = opened(tmp_path, f"TextField {{ Name: f, Label: Name, Text: <| name |>, Suggestions: {SUGGESTIONS} }}\n")
     typed(view, "al")
     view.window.simulate("click", node=view.node("root.f.offers.surface.row[1].item"))
     settle(view, 8)
@@ -399,7 +398,7 @@ def test_pressing_a_suggestion_fills_the_field_in_and_closes_the_menu(tmp_path):
 
 
 def test_no_menu_when_nothing_matches_or_the_text_is_already_a_suggestion(tmp_path):
-    _, view, _ = opened(tmp_path, f"  - {{widget: TextField, name: f, label: Name, text: '{{{{ name }}}}', suggestions: {SUGGESTIONS}}}\n")
+    _, view, _ = opened(tmp_path, f"TextField {{ Name: f, Label: Name, Text: <| name |>, Suggestions: {SUGGESTIONS} }}\n")
     typed(view, "zz")
     assert not view._shown_layers
     typed(view, "Bob")
@@ -407,12 +406,12 @@ def test_no_menu_when_nothing_matches_or_the_text_is_already_a_suggestion(tmp_pa
 
 
 def test_a_field_without_suggestions_builds_no_menu(tmp_path):
-    _, view, _ = opened(tmp_path, "  - {widget: TextField, name: f, label: Name}\n")
+    _, view, _ = opened(tmp_path, 'TextField { Name: f, Label: Name }\n')
     assert "root.f.offers" not in view._built.specs
 
 
 def test_escape_closes_the_suggestions_and_typing_again_brings_them_back(tmp_path):
-    _, view, _ = opened(tmp_path, f"  - {{widget: TextField, name: f, label: Name, text: '{{{{ name }}}}', suggestions: {SUGGESTIONS}}}\n")
+    _, view, _ = opened(tmp_path, f"TextField {{ Name: f, Label: Name, Text: <| name |>, Suggestions: {SUGGESTIONS} }}\n")
     typed(view, "al")
     assert view._shown_layers
     view.window.simulate("key_down", key="escape")

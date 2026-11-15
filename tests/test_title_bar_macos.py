@@ -9,12 +9,10 @@ same app runs everywhere; here macOS is simulated.
 import sys
 
 import pytest
-import yaml
 
 from tess_ui import App, Signal, View, ViewModel
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
-BAR = {"id": "bar", "kind": "TitleBar", "title": "Notes", "style": {"width": 600}}
 
 
 class MacWindow:
@@ -31,15 +29,27 @@ class MacWindow:
         return True if prop == "native_controls" else self._window.get(prop)
 
 
+HOME = """---
+TDL: 0.2
+Name: Home
+---
+Container {
+  Name: home
+  Style { Width: 600, Height: 400 }
+  Children {
+    TitleBar { Name: bar, Title: Notes, Style { Width: 600 } }
+  }
+}
+"""
+
+
 def _app_with(tmp_path):
-    path = tmp_path / "Home_View.yaml"
-    path.write_text(yaml.safe_dump({"id": "root", "kind": "Container", "style": {"width": 600, "height": 400},
-                                    "children": [BAR]}), encoding="utf-8")
-    app = App(width=600, height=400, theme_seed=SEED, borderless=True)
-    view = app.build_view(path)
-    app.register("Home", view, None)
-    app.show("Home")
-    ViewModel(view)
+    (tmp_path / "Views").mkdir(exist_ok=True)
+    (tmp_path / "Views" / "Home_View.tdl").write_text(HOME, encoding="utf-8")
+    app = App(root=tmp_path, width=600, height=400, theme_seed=SEED, borderless=True)
+    app.bind(ViewModel, views=["home"])
+    view = app.open_view("Home")
+    app.show("home")
     app.window.advance(16)
     return app, view
 
@@ -49,27 +59,27 @@ def test_the_inset_and_native_controls_off_macos(tmp_path):
     app, view = _app_with(tmp_path)
     assert app.titlebar_inset.get() == (0.0, 0.0) and app.native_controls.get() is False
     assert not hasattr(app.titlebar_inset, "set") and not hasattr(app.native_controls, "set")  # read-only
-    assert view.node("bar.inset").get("layout_width") == 0.0
-    assert view.node("bar.buttons").get("visible") is True
+    assert view.node("root.bar.inset").get("layout_width") == 0.0
+    assert view.node("root.bar.buttons").get("visible") is True
 
 
 @pytest.mark.skipif(sys.platform != "darwin", reason="macOS's own answer, on a Mac (CI's macOS job)")
 def test_on_a_real_mac_the_traffic_lights_show_and_the_buttons_hide(tmp_path):
     app, view = _app_with(tmp_path)
     assert app.native_controls.get() is True  # tess_re's, for an undecorated window on macOS
-    assert view.node("bar.buttons").get("visible") is False
+    assert view.node("root.bar.buttons").get("visible") is False
 
 
 def test_on_macos_the_bar_makes_room_and_its_buttons_hide(tmp_path, monkeypatch):
     app, view = _app_with(tmp_path)
-    title_x = view.node("bar.title").get("layout_x")
+    title_x = view.node("root.bar.title").get("layout_x")
     monkeypatch.setattr(app, "_window", MacWindow(app._window))
     app.window.simulate("titlebar_inset", height=28, width=78)  # the traffic lights, as macOS reports them
     app.window.advance(16)
     assert app.titlebar_inset.get() == (28.0, 78.0) and app.native_controls.get() is True
-    assert view.node("bar.inset").get("layout_width") == 78.0
-    assert view.node("bar.title").get("layout_x") == title_x + 78  # moved past them
-    buttons = view.node("bar.buttons")
+    assert view.node("root.bar.inset").get("layout_width") == 78.0
+    assert view.node("root.bar.title").get("layout_x") == title_x + 78  # moved past them
+    buttons = view.node("root.bar.buttons")
     assert buttons.get("visible") is False and buttons.get("layout_width") == 0.0  # out of layout, and clicks
 
 
@@ -80,7 +90,7 @@ def test_leaving_fullscreen_and_back(tmp_path, monkeypatch):
     app.window.simulate("titlebar_inset", height=28, width=78)
     app.window.simulate("titlebar_inset", height=0, width=0)
     app.window.advance(16)
-    assert view.node("bar.inset").get("layout_width") == 0.0
+    assert view.node("root.bar.inset").get("layout_width") == 0.0
 
 
 def _box_bound_to(expression, vm_cls):
