@@ -34,7 +34,7 @@ serves every view that names it. See [Apps and screens](guide/apps-and-screens.m
 1. **Parse** (`spec/nodes.py`, with the TDL front end in `spec/tdl.py`). A `*_View.tdl` is read by `tess_dl` and handed on with its line and column kept; the `If` and `For` wrappers are
    removed there, so everything after parsing sees one node mapping. Every key of every
    node is checked against the node's widget, every property against its declaration, and every `<| |>`
-   expression and handler is compiled by `tess_ui.expr`. The first mistake is an error that names the
+   expression and handler is compiled by `tess_ui.tel` (TEL, `tess_el`). The first mistake is an error that names the
    file, line and column. A widget is a built-in (`spec/builtin_widgets.py`), or a view: one with `Params`
    is declared from them, and found by name in the project or among the views Tesserae ships
    (`tess_ui/views`, with a `*_Stylesheet.tdl` of rules beside each).
@@ -105,7 +105,7 @@ given a path.
 ## A signal change
 
 A binding such as `Text: <| count |>` is an expression in a restricted subset of Python
-(`tess_ui.expr`: arithmetic, comparisons, comprehensions, a short list of functions; never `eval`).
+(`tess_ui.tel`: arithmetic, comparisons, comprehensions, a short list of functions; never `eval`).
 While it is evaluated, `tess_ui.reactive` notes every `Signal` or `Computed` it reads. When one changes
 (`vm.count.set(5)`), `ComposedView` lowers its instances again and `View.reconcile` patches the live nodes:
 a node whose id is unchanged keeps its identity, focus and running animations, and only the fields that

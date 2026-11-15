@@ -17,10 +17,11 @@ a change to one works it out again and updates the property. An expression
 that reads nothing that can change (literals, params with fixed values,
 a loop variable over a fixed list) is worked out once.
 
-An expression is a **Python subset**, run by a sandboxed
-evaluator (`tess_ui.expr`): nothing in a view file can import, open a
-file, reach `__class__` or run code the application did not expose. The
-limits are below.
+An expression is a **Python subset** in TEL, the Tesserae Expression Language (`tess_el`),
+a sandboxed evaluator: nothing in a view file can import, open a
+file, reach `__class__` or run code the application did not expose. A mistake
+TEL can see in the text (a method that is not on the lists below, a `**` with a literal exponent over 64, a function that does not exist) is an error when the view
+loads, not when the expression runs. The limits are below.
 
 A binding can drive text, sizes, colours and other numbers, `checked`
 and `selected`, and `visible`: `false` takes a node out of the
@@ -46,7 +47,10 @@ expressions: `Text: <| app.state.user + "'s tasks" |>`.
 | methods of lists, tuples, dicts | lists and tuples: `index`, `count` only (they are read-only: `items.append(x)` and `items.sort()` are errors, so assign a new list); dicts: `get keys values items` |
 
 A **Signal or Computed reads as its value**: `count` and `count.get()` are
-the same, and both keep the binding in step when it changes.
+the same, and both keep the binding in step when it changes. This holds for a name (a ViewModel attribute, a state variable, a param) and for an attribute of an object
+the application owns (`app.state.user`). A Signal inside a list or a dict (`rows[0]`, `d.k`) is not read in the middle of an expression: `rows[0] + 1` is an error, so
+write `rows[0].get() + 1` (an expression that ends in one, `<| rows[0] |>`, reads it). On a Signal that holds a dict, `d.get()` is the dict's own `get` and needs a
+key: write `d`.
 
 A property the user edits (a text field's `text`, a `Checkbox`'s `checked`, a `Slider`'s `value`) is **two-way** when it is given
 one bare reference to a Signal or a local `State` name: `Checked: <| done |>`. The user's edit is written back to `done`. Any
@@ -54,7 +58,7 @@ other expression (`<| not done |>`, `<| app.state.user |>`) is one-way: the widg
 next changes, and a handler such as `on_change` does the writing. [Two-way properties](view-language.md#two-way-properties) has the whole rule: which
 names a handler may write, what a model param does with each thing a caller gives it, and what `State` keeps when a view is reloaded.
 
-Names and attributes starting with `_` do not exist for an expression.
+Names and attributes starting with `_` do not exist for an expression (a name that is only `_` too).
 A call is only a built-in function, a method of text, a list or a dict, or
 `name.get()` on a Signal. An object the application owns can be read
 (its public attributes), but it cannot be added, compared, formatted or
@@ -91,7 +95,7 @@ of their operands (`name or "Untitled"`), and `not` returns `True` or
 `False`.
 
 Every expression has limits, and a breach is an error that names it: 2000
-characters of source, 1000 nodes, nesting 40 deep, 200 000 evaluation
+characters of source (a text with `<| |>` parts counts as one, so a text over 2000 characters is an error even when each part is short), 1000 nodes, nesting 40 deep, 200 000 evaluation
 steps, `range` up to 100 000, a result of up to 1 000 000 items,
 `**` with an exponent up to 64, and text up to 1 MB. `%` formatting and
 `str.format` are not available; use an f-string.
@@ -99,7 +103,8 @@ steps, `range` up to 100 000, a result of up to 1 000 000 items,
 ## When a binding is wrong
 
 A binding that doesn't parse, or fails to evaluate, is an error when the view loads. It names the file, line and column, and
-gives a hint when there is one:
+gives a hint when there is one (an `ExprError` carries TEL's `code` too, such as `unknown-name`, `call-not-function`, `method-not-available`, `bad-call` or
+`limit-range`, for tools and tests):
 
 ```
 Counter_View.tdl:5:43: 'cont' is not defined (did you mean 'count')
@@ -109,12 +114,13 @@ A function name that does not exist is found when the view loads, with the line,
 a `For` or a stylesheet rule the only functions are the built-in ones (`clamp`, `min`, `max`, `len`, `format_number`, ...), so
 `<| clmap(x, 0, 1) |>` is a load error naming `clmap` and offering the near names (`did you mean 'clamp'`). In a handler a call may also be
 a built-in action (`copy`, `focus`, `after`, `navigate_to`, ...), a method of the ViewModel or a handler parameter; a name that is none of
-these is a load error too (`bmup(2)` offers `bump`). `app.check()` lists every name and action the open views use that their ViewModels
+these is a load error too (`bmup(2)` offers `bump`). An action is a step of its own (`Call`) or the whole value of a `Set` (`ok = copy(text)`); inside a bigger
+expression (`ok = copy(text) and 1`) it is an error. Each step of a handler has its own evaluation budget. `app.check()` lists every name and action the open views use that their ViewModels
 do not have, without a window.
 
 ## Who evaluates it
 
-Tesserae does: `tess_ui.expr` is the evaluator, and `ComposedView` keeps the live nodes in step with what it reads.
+Tesserae does: `tess_ui.tel` puts TEL under the views, and `ComposedView` keeps the live nodes in step with what it reads.
 
 A binding that changes a value sets it; one whose value hasn't changed
 does nothing. Setting a value from a binding never counts as the user's
