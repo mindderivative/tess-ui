@@ -1,7 +1,0 @@
-tesserae: 0.6
-# The look of the standard navigation drawer: a `surface` column.
-styles:
-  - widget: NavigationDrawer
-    style:
-      background: "{{ 'surface@72%' if frosted else 'surface' }}"
-      backdrop_blur: "{{ 20 if frosted else 0 }}"

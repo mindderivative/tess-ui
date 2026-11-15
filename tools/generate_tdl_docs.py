@@ -361,7 +361,7 @@ def render() -> str:
             "Each takes its own properties, with a type, a default and the values it allows; the page of a component lists them.", ""]
     out += _widgets_section()
 
-    out += ["## The style", "", "A node's `Style` block is a mapping of these fields, or the name of a `*_Style.yaml` file. "
+    out += ["## The style", "", "A node's `Style` block is a mapping of these fields. "
             "The same fields go in a stylesheet's or theme's rules.", ""]
     out += _style_tables(view)
     out += ["## Colors", "", "Any field that takes a color takes " + tdl_format.prose(view.defs["color"]["description"][0].lower()

@@ -1,23 +1,9 @@
-"""Component macro-expansion: `component: Name` / `with: {...}` in a
-`*_View.yaml` expands to the referenced `*_Component.yaml` fragment's own
-`WidgetSpec`-shaped subtree, before `tess_re` ever sees the file. Modeled
-directly on pyCopper's own real, proven `source:`/`with:`/`params:`
-design (`pycopper/spec/include.py`), adapted to `tess_re`'s real schema
-(`id`/`kind`/`style`/`text`/`children`, confirmed against
-`engine-spec/src/spec.rs` -- no `anchor:`-style cross-reference field
-exists, so only `id:` needs namespacing, unlike pyCopper's own `name:`+
+"""Component macro-expansion: `component: Name` / `with: {...}` in a spec expands to the referenced `*_Component.yaml` fragment's own
+`WidgetSpec`-shaped subtree. The fragments are the ones Tesserae ships in `spec/components/` (the Python widget factories, `widgets.button()` and the
+overlays, build from them); an app's own views, stylesheets and themes are TDL and do not come through here. Modeled directly on pyCopper's own real,
+proven `source:`/`with:`/`params:` design (`pycopper/spec/include.py`), adapted to `tess_re`'s real schema (`id`/`kind`/`style`/`text`/`children`, confirmed
+against `engine-spec/src/spec.rs` -- no `anchor:`-style cross-reference field exists, so only `id:` needs namespacing, unlike pyCopper's own `name:`+
 `anchor:` pair).
-
-M29: also resolves `include:` itself, a straight port of `tess_re`'s own
-`engine-spec/src/include.rs` (same sole-key rule, same relative-to-the-
-including-file resolution, same confinement, cycle and depth-8 rules).
-Tesserae now hands `tess_re` a finished dict via `spec=`, and `tess_re` only
-splices `include:` on its YAML-text path -- so this is where it has to
-happen, and it keeps file reading on Tesserae's side, per the user's
-own rule that `tess_re` gets specs and bytes, never files. An `include:`
-inside a `*_Component.yaml` fragment is rejected rather than resolved:
-fragments are parameterized reuse, and an include there has no
-sensible base directory.
 
 M28: `repeat:` lets one `component:` entry expand to N sibling
 instances from a literal, static list of per-item overrides -- real,
@@ -29,10 +15,8 @@ all), meaning "a list" is *already* expressible today as a plain
 capability isn't a primitive, it's repeating a fragment call without
 hand-duplicating N near-identical `component:` blocks. Deliberately
 NOT reactive -- `repeat:`'s own items are known at macro-expansion
-time, before `tess_re` ever sees the file (matching this whole module's
-own "before `tess_re` ever sees the file" framing), so an app wanting
-runtime-changing content (items added/removed, live reordering) still
-uses the existing imperative `tess_ui.Repeater`, not this. Checked
+time, before `tess_re` ever sees the spec, so an app wanting
+runtime-changing content (items added/removed, live reordering) uses a `For` in its view, not this. Checked
 `pyCopper` directly (M26/M28's own scoping) -- no repeat/loop construct
 exists there at all, confirming this is genuinely new design territory,
 not a port.
@@ -71,17 +55,11 @@ _PARAMS_KEY = "params"
 _ID_KEY = "id"
 _CHILDREN_KEY = "children"
 _REPEAT_KEY = "repeat"
-_INCLUDE_KEY = "include"
 _WHEN_KEY = "when"
 _IF_KEYS = {"if", "then", "else"}
 
-#: Matches `tess_re`'s own `MAX_INCLUDE_DEPTH` (`engine-spec/src/include.rs`),
-#: so a view that loaded under `tess_re`'s own `include:` still loads here.
-MAX_INCLUDE_DEPTH = 8
-
 #: A guard against pathological/adversarial nesting, not a real depth
-#: any legitimate component tree needs. `tess_re`'s own `include:` uses 8
-#: for a simpler, unparameterized splice; this allows real component-
+#: any legitimate component tree needs: it allows real component-
 #: composing-component nesting (e.g. a `Card` fragment using `component:
 #: Button` inside it) some real headroom without being unbounded.
 MAX_DEPTH = 16
@@ -208,14 +186,23 @@ def _namespace_ids(node: Any, prefix: str) -> Any:
     return out
 
 
-def _find_component_file(name: str, component_dirs: list[Path]) -> tuple[Path, int]:
+#: Tesserae's own fragments and their stylesheets.
+COMPONENTS = Path(__file__).parent / "components"
+STYLESHEET_SUFFIX = "_Stylesheet.yaml"
+
+
+#: The folders fragments are searched in, in order: Tesserae's own, unless a caller of `expand_components_to_spec` gave its own list.
+_DIRS: contextvars.ContextVar[list[Path]] = contextvars.ContextVar("tesserae_component_dirs", default=[COMPONENTS])
+
+
+def _find_component_file(name: str) -> tuple[Path, int]:
     """The fragment's file, and the index of the folder it was found in."""
-    for index, directory in enumerate(component_dirs):
+    dirs = _DIRS.get()
+    for index, directory in enumerate(dirs):
         candidate = directory / f"{name}_Component.yaml"
         if candidate.is_file():
             return candidate, index
-    searched = ", ".join(str(d) for d in component_dirs)
-    raise ComponentError(f"unknown component {name!r} -- searched {searched}")
+    raise ComponentError(f"unknown component {name!r} -- searched {', '.join(str(d) for d in dirs)}")
 
 
 def _parts_of(node: Any) -> set[str]:
@@ -229,21 +216,17 @@ def _parts_of(node: Any) -> set[str]:
     return found
 
 
-def _component_sheet(name: str, component_dirs: list[Path], found_in: int, deps: set[Path]) -> dict[str, dict[str, Any]]:
+def _component_sheet(name: str, found_in: int) -> dict[str, dict[str, Any]]:
     """A component's stylesheet: `<name>_Stylesheet.yaml` rules, `{part id: style}`.
 
-    The look of a component lives in its stylesheet, the fragment holding only
-    its structure. The sheet is read from the fragment's own folder and from
-    each folder searched before it, so an app's own `ButtonFilled_Stylesheet.yaml`
-    next to its views restyles the built-in one, field by field. A folder
-    after the fragment's (the built-ins, under an app's own fragment) is not
-    read: the app's fragment shadows the whole component."""
+    The look of a component lives in its stylesheet, the fragment holding only its structure. The sheet is read from the fragment's own folder and from
+    each folder searched before it, field by field over the later one's. A folder after the fragment's is not read: the fragment shadows the whole
+    component."""
     rules: dict[str, dict[str, Any]] = {}
-    for directory in reversed(component_dirs[: found_in + 1]):
+    for directory in reversed(_DIRS.get()[: found_in + 1]):
         path = directory / f"{name}{STYLESHEET_SUFFIX}"
         if not path.is_file():
             continue
-        deps.add(path.resolve())
         try:
             raw = yaml.safe_load(path.read_text(encoding="utf-8"))
         except yaml.YAMLError as exc:
@@ -283,137 +266,8 @@ def _load_fragment(path: Path) -> dict[str, Any]:
         raise ComponentError(f"cannot read {path}: {exc}") from exc
     if not isinstance(raw, dict):
         raise ComponentError(f"{path}: a component fragment must be a mapping, got {type(raw).__name__}")
-    if _contains_include(raw) or _contains_style_file(raw):
-        raise ComponentError(
-            f"{path}: `include:` (or a `style:` file) is not supported inside a component fragment -- "
-            "use a nested `component:` instead"
-        )
     return raw
 
-
-#: The file conventions (M75): one node's style, a stylesheet (a `styles:`
-#: list), a theme. Each loader refuses the others' suffixes.
-STYLE_SUFFIX, STYLESHEET_SUFFIX, THEME_SUFFIX = "_Style.yaml", "_Stylesheet.yaml", "_Theme.yaml"
-_KIND_OF = {STYLE_SUFFIX: "one node's style", STYLESHEET_SUFFIX: "a stylesheet", THEME_SUFFIX: "a theme"}
-
-
-def kind_of_file(name: str) -> str | None:
-    """What a file's suffix says it is, or `None` for no convention (`*_Stylesheet.tdl` and `*_Theme.tdl` say the same as their YAML forms)."""
-    return next((kind for suffix, kind in _KIND_OF.items() if name.endswith((suffix, suffix.removesuffix(".yaml") + ".tdl")) and (suffix != STYLE_SUFFIX or name.endswith(suffix))), None)
-
-
-def _style_file(owner: str, path: Any) -> str:
-    """A `style:` given as text: the `*_Style.yaml` file it names."""
-    if not isinstance(path, str) or not path.endswith(STYLE_SUFFIX):
-        kind = kind_of_file(path) if isinstance(path, str) else None
-        what = f" ({path!r} is {kind})" if kind else ""
-        raise ComponentError(f"{owner}: `style:` is a mapping of style fields or a `*{STYLE_SUFFIX}` file, "
-                             f"got {path!r}{what}")
-    return path
-
-
-#: The project whose files are being expanded, for a `style:` file that isn't next to the file naming it.
-_PROJECT: contextvars.ContextVar[Any] = contextvars.ContextVar("tesserae_project", default=None)
-
-
-def _style_from_file(owner: str, path: Any, base_dir: Path | None, visited: list[Path], deps: set[Path]) -> Any:
-    name = _style_file(owner, path)
-    project = _PROJECT.get()
-    if project is not None and (base_dir is None or not (base_dir / name).exists()):
-        found = [d / name for d in project.style_dirs() if (d / name).is_file()]
-        if len(found) > 1:
-            raise ComponentError(f"{owner}: {name} is in two places, {found[0]} and {found[1]}: keep one")
-        if found:
-            base_dir = found[0].parent
-    style = _expand_includes({_INCLUDE_KEY: name}, base_dir, visited, deps)
-    if not isinstance(style, dict):
-        raise ComponentError(f"{owner}: {path}: a style file holds a mapping of style fields, "
-                             f"got {type(style).__name__}")
-    if "style" in style and set(style) <= {"id", "style"}:  # `style:` over the fields, and an optional `id:`
-        if "id" in style and not isinstance(style["id"], str):
-            raise ComponentError(f"{owner}: {path}: id must be a string, got {style['id']!r}")
-        style = style["style"]
-        if not isinstance(style, dict):
-            raise ComponentError(f"{owner}: {path}: `style:` holds a mapping of style fields, "
-                                 f"got {type(style).__name__}")
-    return style
-
-
-def _contains_style_file(node: Any) -> bool:
-    if isinstance(node, list):
-        return any(_contains_style_file(v) for v in node)
-    if isinstance(node, dict):
-        return isinstance(node.get("style"), str) or any(_contains_style_file(v) for v in node.values())
-    return False
-
-
-def _contains_include(node: Any) -> bool:
-    if isinstance(node, list):
-        return any(_contains_include(v) for v in node)
-    if isinstance(node, dict):
-        return _INCLUDE_KEY in node or any(_contains_include(v) for v in node.values())
-    return False
-
-
-def _resolve_include_path(base_dir: Path, include_path: str) -> Path:
-    """`tess_re`'s own `resolve_confined`: relative only, and the resolved
-    file must stay inside `base_dir` -- no `../` escapes, no symlink
-    escapes (both sides are fully resolved before the check)."""
-    if Path(include_path).is_absolute():
-        raise ComponentError(f"`include: {include_path}` must be a relative path")
-    try:
-        canon_base = base_dir.resolve(strict=True)
-        canon_joined = (base_dir / include_path).resolve(strict=True)
-    except OSError as exc:
-        raise ComponentError(f"`include: {include_path}`: cannot read {base_dir / include_path}: {exc}") from exc
-    if not canon_joined.is_relative_to(canon_base):
-        raise ComponentError(f"`include: {include_path}` escapes its base directory {canon_base}")
-    return canon_joined
-
-
-def _expand_includes(node: Any, base_dir: Path | None, visited: list[Path], deps: set[Path]) -> Any:
-    """Replaces every `{include: path}` mapping with that file's parsed
-    YAML, recursively -- a port of `tess_re`'s own `expand_includes`. Each
-    included file's own includes resolve against *its* directory."""
-    if len(visited) >= MAX_INCLUDE_DEPTH:
-        raise ComponentError(f"`include:` nested more than {MAX_INCLUDE_DEPTH} deep")
-    if isinstance(node, list):
-        return [_expand_includes(v, base_dir, visited, deps) for v in node]
-    if not isinstance(node, dict):
-        return node
-    if _INCLUDE_KEY not in node:
-        owner = f'widget "{node.get("id")}"' if "id" in node else "a style rule"
-        return {k: _style_from_file(owner, v, base_dir, visited, deps) if k == "style" and isinstance(v, str)
-                else _expand_includes(v, base_dir, visited, deps) for k, v in node.items()}  # M75: a style file
-
-    include_path = node[_INCLUDE_KEY]
-    if not isinstance(include_path, str):
-        raise ComponentError(f"`include:` must be a string path, got {include_path!r}")
-    if len(node) != 1:
-        extra = sorted(str(k) for k in node if k != _INCLUDE_KEY)
-        raise ComponentError(f"`include: {include_path}` must be the node's only key; also got {extra}")
-    if base_dir is None:
-        raise ComponentError(
-            f"`include: {include_path}` has no base directory to resolve against -- "
-            "pass base_dir= (load_view and instantiate do this automatically)"
-        )
-
-    resolved = _resolve_include_path(base_dir, include_path)
-    deps.add(resolved)
-    if resolved in visited:
-        raise ComponentError(f"`include:` cycle through {resolved}")
-    try:
-        included = yaml.safe_load(resolved.read_text(encoding="utf-8"))
-    except yaml.YAMLError as exc:
-        raise ComponentError(f"{resolved}: invalid YAML: {exc}") from exc
-    except OSError as exc:
-        raise ComponentError(f"cannot read {resolved}: {exc}") from exc
-
-    visited.append(resolved)
-    try:
-        return _expand_includes(included, resolved.parent, visited, deps)
-    finally:
-        visited.pop()
 
 
 def _normalize_scalars(node: Any) -> Any:
@@ -434,9 +288,7 @@ def _normalize_scalars(node: Any) -> Any:
 
 def _expand_component(
     node: dict[str, Any],
-    component_dirs: list[Path],
     chain: tuple[str, ...],
-    deps: set[Path],
 ) -> list[dict[str, Any]]:
     """Replace one `{component: Name, with: {...}}` node with the
     fragment(s) it names, fully expanded and namespaced -- one element
@@ -457,10 +309,9 @@ def _expand_component(
             "(used to namespace the fragment's own internal ids)"
         )
 
-    path, found_in = _find_component_file(name, component_dirs)
-    deps.add(path.resolve())
+    path, found_in = _find_component_file(name)
     fragment_template = _load_fragment(path)
-    sheet = _component_sheet(name, component_dirs, found_in, deps)
+    sheet = _component_sheet(name, found_in)
     unknown_parts = set(sheet) - _parts_of(fragment_template)
     if unknown_parts:
         raise ComponentError(f"{_chain_text((*chain, name))}: {name}{STYLESHEET_SUFFIX} styles "
@@ -535,7 +386,7 @@ def _expand_component(
         # Resolve any `component:` usage inside the fragment itself
         # before namespacing -- a nested fragment's own ids get
         # namespaced by the OUTER call site's id too, once, not twice.
-        fragment = _walk(fragment, component_dirs, (*chain, name), deps)
+        fragment = _walk(fragment, (*chain, name))
 
         local_id = fragment.get(_ID_KEY)
         fragment = _namespace_ids(fragment, local_call_id)
@@ -586,24 +437,24 @@ def _apply_call_keys(root: dict[str, Any], keys: dict[str, Any]) -> None:
             root[key] = value
 
 
-def _expand_list_item(item: Any, component_dirs: list[Path], chain: tuple[str, ...], deps: set[Path]) -> list[Any]:
+def _expand_list_item(item: Any, chain: tuple[str, ...]) -> list[Any]:
     """One `children:` entry expands to 0+ real nodes -- 1 for an
     ordinary node (component or not), N for a real `repeat:`."""
     if isinstance(item, dict) and _COMPONENT_KEY in item:
-        return _expand_component(dict(item), component_dirs, chain, deps)
-    return [_walk(item, component_dirs, chain, deps)]
+        return _expand_component(dict(item), chain)
+    return [_walk(item, chain)]
 
 
-def _walk(node: Any, component_dirs: list[Path], chain: tuple[str, ...], deps: set[Path]) -> Any:
+def _walk(node: Any, chain: tuple[str, ...]) -> Any:
     if isinstance(node, list):
         out: list[Any] = []
         for item in node:
-            out.extend(_expand_list_item(item, component_dirs, chain, deps))
+            out.extend(_expand_list_item(item, chain))
         return out
     if not isinstance(node, dict):
         return node
     if _COMPONENT_KEY in node:
-        results = _expand_component(dict(node), component_dirs, chain, deps)
+        results = _expand_component(dict(node), chain)
         if len(results) != 1:
             raise ComponentError(
                 f"{_chain_text(chain)}: `repeat:` produced {len(results)} nodes, but this "
@@ -612,72 +463,22 @@ def _walk(node: Any, component_dirs: list[Path], chain: tuple[str, ...], deps: s
             )
         return results[0]
     return {
-        k: (_walk(v, component_dirs, chain, deps) if k == _CHILDREN_KEY else v) for k, v in node.items()
+        k: (_walk(v, chain) if k == _CHILDREN_KEY else v) for k, v in node.items()
     }
 
 
-def expand_components_to_spec(
-    yaml_text: str,
-    *,
-    component_dirs: list[Path] | None = None,
-    base_dir: Path | None = None,
-    project: Any = None,
-) -> Any:
-    """Resolves every `include:` and expands every `component:` entry in
-    `yaml_text`, returning the finished `WidgetSpec`-shaped dict with no
-    `include:`/`component:`/`with:`/`params:`/`repeat:` keys remaining --
-    ready for `tess_ui.View(spec)`, with no YAML-text round-trip.
+def expand_components_to_spec(yaml_text: str, *, component_dirs: list[Path] | None = None) -> Any:
+    """Expands every `component:` entry in `yaml_text` (a node with the fragment it names), returning the finished `WidgetSpec`-shaped dict with no
+    `component:`/`with:`/`params:`/`repeat:` keys remaining -- ready for `tess_ui.View(spec)`, with no YAML-text round-trip.
 
-    `base_dir` is the directory `include:` paths resolve against --
-    normally the `*_View.yaml`'s own directory. `None` means there is
-    none, and any `include:` is a clear `ComponentError`, the same
-    contract `tess_re`'s own `include:` has.
-
-    `component_dirs` defaults to the folder `base_dir` names (the view's
-    own: an app's own fragments and component stylesheets live next to its
-    views), then Tesserae's built-in `spec/components/`. A caller may pass
-    its own list instead (searched in order).
-    """
-    spec, _ = expand_with_dependencies(yaml_text, component_dirs=component_dirs, base_dir=base_dir, project=project)
-    return spec
-
-
-def expand_with_dependencies(
-    yaml_text: str,
-    *,
-    component_dirs: list[Path] | None = None,
-    base_dir: Path | None = None,
-    project: Any = None,
-) -> tuple[Any, set[Path]]:
-    """`expand_components_to_spec`, plus the resolved path of every file
-    the expansion read -- each `include:`d file and each
-    `*_Component.yaml` fragment used (M29 Phase 3: what `ViewWatcher`
-    watches). Not the view file itself, which the caller already has."""
-    builtin = Path(__file__).parent / "components"
-    if component_dirs is not None:
-        dirs = component_dirs
-    else:  # a fragment (or a component stylesheet) next to the view, in the project's folders, then Tesserae's own
-        dirs = [base_dir] if base_dir is not None and base_dir.resolve() != builtin.resolve() else []
-        dirs += [d for d in (project.component_dirs() if project is not None else []) if d not in dirs]
-        dirs.append(builtin)
-    deps: set[Path] = set()
-    token = _PROJECT.set(project)
+    The fragments are Tesserae's own (`spec/components/`); `component_dirs` is a list of folders to search instead, in order."""
+    token = _DIRS.set(component_dirs if component_dirs is not None else [COMPONENTS])
     try:
-        data = _expand_includes(yaml.safe_load(yaml_text), base_dir, [], deps)
-        return _normalize_scalars(_walk(data, dirs, (), deps)), deps
+        return _normalize_scalars(_walk(yaml.safe_load(yaml_text), ()))
     finally:
-        _PROJECT.reset(token)
+        _DIRS.reset(token)
 
 
-def expand_components(
-    yaml_text: str,
-    *,
-    component_dirs: list[Path] | None = None,
-    base_dir: Path | None = None,
-) -> str:
-    """`expand_components_to_spec`, dumped back to YAML text -- for
-    inspecting an expansion, or for `tess_re`'s own text-based `source=`
-    path. Nothing on Tesserae's own `tess_re` handoff path uses this any
-    more (`load_view`/`instantiate` pass the dict via `spec=`)."""
-    spec = expand_components_to_spec(yaml_text, component_dirs=component_dirs, base_dir=base_dir)
-    return yaml.safe_dump(spec, sort_keys=False)
+def expand_components(yaml_text: str, *, component_dirs: list[Path] | None = None) -> str:
+    """`expand_components_to_spec`, dumped back to YAML text -- for inspecting an expansion."""
+    return yaml.safe_dump(expand_components_to_spec(yaml_text, component_dirs=component_dirs), sort_keys=False)

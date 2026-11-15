@@ -1,9 +1,7 @@
 """Views Tesserae ships, and how a project's views and the shipped ones are found together (spec section 4, step 4).
 
 `tess_ui/views/` holds the components Tesserae provides in the view language: `<Name>_View.tdl` and, beside it, `<Name>_Stylesheet.tdl` with
-the look as rules (each also as `.yaml`, the same file in the other language). The library loads the `.tdl` ones, so the shipped set is read by the TDL front
-ends, unless `TESS_UI_SHIPPED=yaml` asks for the YAML ones or `tess_dl` is not installed (`tess_ui.spec.flavour`). A project's own view of the same name wins,
-so a component can be replaced by writing a file with its name.
+the look as rules. A project's own view of the same name wins, so a component can be replaced by writing a file with its name.
 
 `ViewLibrary` is the one lookup an app uses: it knows the project's views and the shipped ones, parses a view when first called and keeps it,
 and hands the composer both the declaration of a view's params (for checking a call) and its parsed document.
@@ -14,10 +12,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 
-
 from tess_ui.project import sibling_file, view_stem
 from tess_ui.spec import marker
-from tess_ui.spec.flavour import shipped_ext
 from tess_ui.spec.nodes import ViewDoc, parse_view, read_marked
 from tess_ui.spec.rules import RuleSheet, load_rule_sheet
 from tess_ui.spec.widgets import WidgetDecl, decl_from_params
@@ -25,32 +21,29 @@ from tess_ui.spec.widgets import WidgetDecl, decl_from_params
 __all__ = ["SHIPPED", "ViewLibrary", "shipped_rules", "shipped_sheet", "shipped_views"]
 
 SHIPPED = Path(__file__).parent / "views"
-_RULES: dict[str, list[RuleSheet]] = {}
-_SHEETS: dict[tuple[str, str], Optional[RuleSheet]] = {}
+_RULES: list[RuleSheet] = []
+_SHEETS: dict[str, Optional[RuleSheet]] = {}
 
 
 def shipped_views() -> dict[str, Path]:
-    """The shipped views by name, in the flavour the library loads (`.tdl`, or `.yaml` when asked: see the module docstring)."""
-    ext = shipped_ext()
-    return {p.name.removesuffix(f"_View{ext}"): p for p in sorted(SHIPPED.glob(f"*_View{ext}"))} if SHIPPED.is_dir() else {}
+    """The shipped views by name."""
+    return {p.name.removesuffix("_View.tdl"): p for p in sorted(SHIPPED.glob("*_View.tdl"))} if SHIPPED.is_dir() else {}
 
 
 def shipped_sheet(name: str) -> Optional[RuleSheet]:
-    """The shipped stylesheet of the widget or view `name` (`<name>_Stylesheet.tdl`, or `.yaml`), read the first time it is asked for, or `None` when it has none.
+    """The shipped stylesheet of the widget or view `name` (`<name>_Stylesheet.tdl`), read the first time it is asked for, or `None` when it has none.
     An app reads only the ones for the widgets it uses."""
-    ext = shipped_ext()
-    if (ext, name) not in _SHEETS:
-        path = SHIPPED / f"{name}_Stylesheet{ext}"
-        _SHEETS[ext, name] = load_rule_sheet(path) if path.is_file() else None
-    return _SHEETS[ext, name]
+    if name not in _SHEETS:
+        path = SHIPPED / f"{name}_Stylesheet.tdl"
+        _SHEETS[name] = load_rule_sheet(path) if path.is_file() else None
+    return _SHEETS[name]
 
 
 def shipped_rules() -> list[RuleSheet]:
     """Every shipped stylesheet (not what an app uses: that is `shipped_sheet` for the widgets it has; this is for a tool that wants them all)."""
-    ext = shipped_ext()
-    if ext not in _RULES:
-        _RULES[ext] = [load_rule_sheet(p) for p in sorted(SHIPPED.glob(f"*_Stylesheet{ext}"))] if SHIPPED.is_dir() else []
-    return _RULES[ext]
+    if not _RULES and SHIPPED.is_dir():
+        _RULES.extend(load_rule_sheet(p) for p in sorted(SHIPPED.glob("*_Stylesheet.tdl")))
+    return _RULES
 
 
 class ViewLibrary:
@@ -58,7 +51,7 @@ class ViewLibrary:
 
     def __init__(self, project: Optional[dict[str, Path]] = None, sheets: Optional[dict[str, Path]] = None) -> None:
         self.paths: dict[str, Path] = {**shipped_views(), **(project or {})}
-        #: the project's own views, and its stylesheets by name (`Styles/Name_Stylesheet.yaml`): a view's stylesheet may also sit beside its view
+        #: the project's own views, and its stylesheets by name (`Styles/Name_Stylesheet.tdl`): a view's stylesheet may also sit beside its view
         self.project_views: dict[str, Path] = dict(project or {})
         self.project_sheets: dict[str, Path] = dict(sheets or {})
         #: shipped views the project has replaced with its own: their shipped looks are not used either
@@ -85,18 +78,12 @@ class ViewLibrary:
         return self._decls[path]
 
     def _declared(self, name: str, path: Path) -> WidgetDecl:
-        text = path.read_text(encoding="utf-8")
-        if path.suffix == ".tdl":  # the TDL front end reads the whole file; the views it calls are declared as `parse_view` declares them
-            data = read_marked(text, str(path), resolver=self.decl)
-        else:
-            import yaml
-
-            data = yaml.safe_load(text) or {}
+        data = read_marked(path.read_text(encoding="utf-8"), str(path), resolver=self.decl)  # the views it calls are declared as `parse_view` declares them
         params = data.get("params")
         return decl_from_params(name, params) if params is not None else WidgetDecl(name, view=True, container=True)
 
     def parts_of(self, name: str) -> Optional[set[str]]:
-        """The parts of the view `name` that a stylesheet rule can address (`part:`): the names of the nodes in its YAML. `None` when there is no such view."""
+        """The parts of the view `name` that a stylesheet rule can address (`part:`): the names of the nodes in it. `None` when there is no such view."""
         doc = self.doc(name)
         return None if doc is None else {node.name for node in doc.root.walk() if node.name}
 
@@ -133,7 +120,7 @@ class ViewLibrary:
         return names
 
     def project_sheet(self, name: str) -> Optional[Path]:
-        """The project's stylesheet for the widget or view `name`: `<name>_Stylesheet.tdl` (or `.yaml`) beside the project's `<name>_View` file, else the one of that
+        """The project's stylesheet for the widget or view `name`: `<name>_Stylesheet.tdl` beside the project's `<name>_View` file, else the one of that
         name in the project's stylesheet folders; `None` when there is none."""
         beside = self.project_views.get(name)
         found = sibling_file(beside, "stylesheet", name) if beside is not None else None

@@ -1,9 +1,6 @@
-"""Piece 6a of the TDL switch: a name finds `.tdl` or `.yaml`, every loader picks its front end by the file suffix, the library loads the shipped `.tdl`
-(`TESS_UI_SHIPPED=yaml` forces the YAML), only the TDL 0.2 language is accepted, and a changed `.tdl` is hot-reloaded as a YAML one is."""
+"""A name finds a TDL file, the loaders read only TDL (a YAML file is refused with where to go from there), only the TDL 0.2 language is accepted, and a
+changed `.tdl` is hot-reloaded."""
 
-import ast
-import dataclasses
-import re
 from pathlib import Path
 
 import pytest
@@ -15,20 +12,14 @@ from loguru import logger  # noqa: E402
 from tess_ui import App  # noqa: E402
 from tess_ui import project as project_module  # noqa: E402
 from tess_ui import shipped  # noqa: E402
-from tess_ui.expr import Expr  # noqa: E402
-from tess_ui.migrate_tdl import _handler_form  # noqa: E402
-from tess_ui.migrate_tdl_sheets import convert_sheet  # noqa: E402
-from tess_ui.migrate_tdl_theme import convert_theme  # noqa: E402
 from tess_ui.project import (  # noqa: E402
-    Project, ProjectError, is_view_file, kind_of_tdl, looks_like_kind, sibling_file, tdl_wrong_kind, view_stem,
+    Project, ProjectError, is_view_file, kind_of_tdl, looks_like_kind, sibling_file, tdl_wrong_kind, view_stem, yaml_refused,
 )
-from tess_ui.spec import flavour, marker  # noqa: E402
 from tess_ui.spec.build import shipped_default_theme  # noqa: E402
-from tess_ui.spec.nodes import Handler, LoadError, Node, parse_view  # noqa: E402
+from tess_ui.spec.nodes import LoadError, parse_view  # noqa: E402
 from tess_ui.spec.rules import load_rule_sheet  # noqa: E402
 from tess_ui.spec.themes import load_stylesheet, load_theme  # noqa: E402
 from tess_ui.spec.watch import ComposedWatcher  # noqa: E402
-from tests.tdl_helper import yaml_to_tdl  # noqa: E402
 from tests.test_hot_reload_composed import V1, V2, VM, text_of, write  # noqa: E402
 
 HEAD = '---\nTDL: 0.2\nName: {name}\nTesserae: "0.6"\n---\n'
@@ -66,30 +57,22 @@ def test_a_name_finds_the_tdl_file_of_a_view_a_theme_and_a_stylesheet(tmp_path):
     assert project.find("stylesheet", "Brand") == tmp_path / "Styles" / "Brand_Stylesheet.tdl"
 
 
-def test_a_name_finds_a_yaml_file_still_and_a_tdl_one_in_another_folder_beside_it_is_a_name_in_two_places(tmp_path):
-    put(tmp_path, "Views/Old_View.yaml")
-    assert Project(tmp_path).find("view", "Old") == tmp_path / "Views" / "Old_View.yaml"
+def test_a_name_in_two_places_is_an_error_naming_both(tmp_path):
+    put(tmp_path, "Views/Old_View.tdl")
     put(tmp_path, "more/Old_View.tdl")
-    with pytest.raises(ProjectError, match=r"Old_View.yaml is in two places, Views.Old_View.yaml and more.Old_View.tdl"):
+    with pytest.raises(ProjectError, match=r"Old_View.tdl is in two places, Views.Old_View.tdl and more.Old_View.tdl"):
         Project(tmp_path, search=["more"]).find("view", "Old")
 
 
-def test_in_one_folder_the_tdl_wins_and_a_note_says_once_that_the_yaml_twin_is_ignored(tmp_path, notes):
-    put(tmp_path, "Views/Main_View.yaml")
-    put(tmp_path, "Views/Main_View.tdl")
-    project = Project(tmp_path)
-    assert project.find("view", "Main").name == "Main_View.tdl"
-    assert project.index("view") == {"Main": tmp_path / "Views" / "Main_View.tdl"}
-    twin = [n for n in notes if "Main_View.yaml" in n and "ignored" in n]
-    assert len(twin) == 1 and "Main_View.tdl" in twin[0]
-
-
-@pytest.mark.parametrize("kind, folder, tdl, yaml", [("theme", "Themes", "Brand_Theme.tdl", "Brand_Theme.yaml"),
-                                                        ("stylesheet", "Styles", "Brand_Stylesheet.tdl", "Brand_Stylesheet.yaml")])
-def test_the_tdl_wins_for_themes_and_stylesheets_too(tmp_path, kind, folder, tdl, yaml):
-    put(tmp_path, f"{folder}/{yaml}")
-    put(tmp_path, f"{folder}/{tdl}")
-    assert Project(tmp_path).find(kind, "Brand").name == tdl
+@pytest.mark.parametrize("kind, folder, name", [("view", "Views", "Old_View.yaml"), ("theme", "Themes", "Old_Theme.yaml"),
+                                                  ("stylesheet", "Styles", "Old_Stylesheet.yaml")])
+def test_a_yaml_file_is_not_found_and_the_message_says_where_to_go(tmp_path, kind, folder, name):
+    put(tmp_path, f"{folder}/{name}")
+    with pytest.raises(ProjectError) as raised:
+        Project(tmp_path).find(kind, "Old")
+    text = str(raised.value)
+    assert f"found {folder}/{name}: {name}: Tesserae no longer reads YAML files" in text
+    assert "tesserae-ui<0.6.1" in text and "docs/migration.md" in text
 
 
 def test_a_recursive_project_finds_a_tdl_view_anywhere(tmp_path):
@@ -97,27 +80,42 @@ def test_a_recursive_project_finds_a_tdl_view_anywhere(tmp_path):
     assert Project(tmp_path, recursive=True).find("view", "Main") == tmp_path / "deep" / "er" / "Main_View.tdl"
 
 
-def test_a_tdl_file_in_the_wrong_folder_is_found_and_named_as_a_yaml_one_is(tmp_path):
+def test_a_tdl_file_in_the_wrong_folder_is_found_and_named(tmp_path):
     put(tmp_path, "Themes/Extra_View.tdl")
     with pytest.raises(ProjectError) as raised:
         Project(tmp_path).find("view", "Extra")
     text = str(raised.value)
-    assert text.startswith("no view called 'Extra' (Extra_View.yaml) in ")  # the message that was there, first and unchanged
+    assert text.startswith("no view called 'Extra' (Extra_View.tdl) in ")  # the message that was there, first and unchanged
     assert "found Themes/Extra_View.tdl: views are read from Views/ (or add Themes to App(search=[...]))" in text
     put(tmp_path, "Views/Brand_Theme.tdl")
     with pytest.raises(ProjectError, match=r"found Views/Brand_Theme.tdl, a theme, not a view"):
         Project(tmp_path).find("view", "Brand")
 
 
-def test_names_and_suffix_helpers_know_both_forms(tmp_path):
-    assert view_stem("a/Main_View.tdl") == "Main" and view_stem(Path("Main_View.yaml")) == "Main" and view_stem("Other.txt") == "Other.txt"
-    assert is_view_file("Main_View.tdl") and is_view_file("Main_View.yaml") and not is_view_file("Main_Theme.tdl")
-    assert project_module.suffixes("view") == ("_View.tdl", "_View.yaml") and project_module.suffixes("component") == ("_Component.yaml",)
-    put(tmp_path, "Main_View.yaml")
-    assert sibling_file(tmp_path / "Main_View.yaml", "view", "Main") == tmp_path / "Main_View.yaml"
+def test_names_and_suffix_helpers(tmp_path):
+    assert view_stem("a/Main_View.tdl") == "Main" and view_stem(Path("Main_View.yaml")) == "Main_View.yaml" and view_stem("Other.txt") == "Other.txt"
+    assert is_view_file("Main_View.tdl") and not is_view_file("Main_View.yaml") and not is_view_file("Main_Theme.tdl")
+    assert yaml_refused("a/Main_View.yaml").startswith("Main_View.yaml: Tesserae no longer reads YAML files") and yaml_refused("Main_View.yml") is not None
+    assert yaml_refused("Main_View.tdl") is None
     put(tmp_path, "Main_View.tdl")
-    assert sibling_file(tmp_path / "Main_View.yaml", "view", "Main") == tmp_path / "Main_View.tdl"
-    assert sibling_file(tmp_path / "Main_View.yaml", "view", "Nope") is None
+    assert sibling_file(tmp_path / "Main_View.tdl", "view", "Main") == tmp_path / "Main_View.tdl"
+    assert sibling_file(tmp_path / "Main_View.tdl", "view", "Nope") is None
+
+
+def test_every_loader_refuses_a_yaml_path_with_the_one_message(tmp_path):
+    view = put(tmp_path, "Main_View.yaml", "widget: Text\n")
+    sheet = put(tmp_path, "Brand_Stylesheet.yaml", "styles: []\n")
+    theme = put(tmp_path, "Brand_Theme.yaml", "seed: '#0B6B58'\n")
+    with pytest.raises(LoadError, match="Tesserae no longer reads YAML files"):
+        parse_view(view.read_text(), str(view))
+    with pytest.raises(LoadError, match="Tesserae no longer reads YAML files"):
+        load_rule_sheet(sheet)
+    for loader, path in ((load_stylesheet, sheet), (load_theme, theme)):
+        with pytest.raises(ValueError, match="Tesserae no longer reads YAML files.*tesserae-ui<0.6.1"):
+            loader(path)
+    app = App(root=tmp_path)
+    with pytest.raises(LoadError, match="Tesserae no longer reads YAML files"):
+        app.open_view(view)
 
 
 def test_a_tdl_view_beside_its_tdl_stylesheet_finds_it(tmp_path):
@@ -137,10 +135,9 @@ def test_the_root_word_of_a_tdl_file_is_its_kind(body, kind):
     assert kind_of_tdl("") is None and kind_of_tdl("# only a comment\n") is None
 
 
-def test_the_hint_names_the_file_to_give_in_the_files_own_language():
+def test_the_hint_names_the_file_to_give():
     assert looks_like_kind("theme", "stylesheet", "Brand_Stylesheet.tdl") == "this looks like a theme: name it Brand_Theme.tdl"
-    assert looks_like_kind("theme", "stylesheet", "Brand_Stylesheet.yaml") == "this looks like a theme: name it Brand_Theme.yaml"
-    assert looks_like_kind("view", "theme", "") == "this looks like a view: name it <Name>_View.yaml"
+    assert looks_like_kind("view", "theme", "") == "this looks like a view: name it <Name>_View.tdl"
     assert looks_like_kind("view", "view", "A_View.tdl") is None and looks_like_kind(None, "view") is None
     text = HEAD.format(name="A") + "Theme { }\n"
     hint, line, column = tdl_wrong_kind(text, "view", "A_View.tdl")
@@ -173,18 +170,6 @@ def test_a_loader_refuses_a_file_whose_name_says_it_is_another_kind(tmp_path):
 # -- the loaders read by suffix --------------------------------------------------------------------------------------------
 
 
-def test_every_loader_reads_a_tdl_file_to_what_its_yaml_twin_gives(tmp_path):
-    yaml_sheet = "tesserae: 0.6\nstyles:\n  - {widget: Text, style: {gap: 4, foreground: '{{ \"primary\" }}'}}\n"
-    yaml_theme = "tesserae: 0.6\nseed: '#0B6B58'\ncolors: {tertiary: '#C2410C'}\n"
-    sheet_tdl = convert_sheet(yaml_sheet, "Brand", "Brand_Stylesheet.yaml").text
-    theme_tdl = convert_theme(yaml_theme, "Brand", "Brand_Theme.yaml").text
-    files = {name: put(tmp_path, name, text) for name, text in {"Brand_Stylesheet.yaml": yaml_sheet, "Brand_Stylesheet.tdl": sheet_tdl,
-                                                                  "Brand_Theme.yaml": yaml_theme, "Brand_Theme.tdl": theme_tdl}.items()}
-    assert load_stylesheet(files["Brand_Stylesheet.tdl"]) == load_stylesheet(files["Brand_Stylesheet.yaml"])
-    assert load_theme(files["Brand_Theme.tdl"]) == load_theme(files["Brand_Theme.yaml"])
-    assert canon(load_rule_sheet(files["Brand_Stylesheet.tdl"]).rules) == canon(load_rule_sheet(files["Brand_Stylesheet.yaml"]).rules)
-
-
 def test_the_app_takes_a_tdl_stylesheet_and_theme(tmp_path):
     put(tmp_path, "Styles/Brand_Stylesheet.tdl", SHEET)
     theme = put(tmp_path, "Themes/Brand_Theme.tdl", THEME)
@@ -199,19 +184,6 @@ def test_an_app_opens_a_tdl_view_by_name_and_names_it_by_its_file(tmp_path):
     opened = app.open_view("Main")
     assert opened.source == (tmp_path / "Views" / "Main_View.tdl").resolve()
     assert "main" in app._opened and opened.node("root.t").get("text") == "hi"
-
-
-def test_a_tdl_file_without_the_series_is_noted_once_and_one_for_a_newer_series_says_to_upgrade(tmp_path, notes):
-    bare = put(tmp_path, "Brand_Theme.tdl", "---\nTDL: 0.2\nName: Brand\n---\nTheme { Seed: \"#0B6B58\" }\n")
-    load_theme(bare)
-    load_theme(bare)
-    assert len([n for n in notes if "Brand_Theme.tdl" in n and "Tesserae" in n and "metadata" in n]) == 1
-    load_theme(put(tmp_path, "Other_Theme.tdl", THEME))
-    assert not [n for n in notes if "Other_Theme.tdl" in n]  # it has the series: nothing to say
-    with pytest.raises(LoadError, match="upgrade"):
-        parse_view(VIEW.replace('"0.6"', '"9.9"'), "Main_View.tdl")
-    with pytest.raises(LoadError, match="migrate-yaml"):
-        parse_view(VIEW.replace('"0.6"', '"0.1"'), "Main_View.tdl")
 
 
 # -- only the new format -----------------------------------------------------------------------------------------------------
@@ -258,38 +230,6 @@ def test_a_file_that_does_not_start_with_a_metadata_block_is_refused(tmp_path):
 # -- the shipped files -------------------------------------------------------------------------------------------------------
 
 
-def test_the_library_loads_the_shipped_tdl_by_default():
-    assert flavour.shipped_flavour() == "tdl"
-    views = shipped.shipped_views()
-    assert len(views) == 61 and all(p.suffix == ".tdl" for p in views.values())
-    assert shipped.shipped_sheet("Button").file.endswith("Button_Stylesheet.tdl")
-    assert all(s.file.endswith(".tdl") for s in shipped.shipped_rules()) and len(shipped.shipped_rules()) == 49
-    library = shipped.ViewLibrary()
-    assert library.doc("Button").file.endswith("Button_View.tdl")
-    assert library.paths["Button"].suffix == ".tdl"
-
-
-def test_the_environment_variable_forces_the_yaml_files(monkeypatch):
-    monkeypatch.setenv("TESS_UI_SHIPPED", "yaml")
-    assert flavour.shipped_flavour() == "yaml" and flavour.shipped_ext() == ".yaml"
-    assert all(p.suffix == ".yaml" for p in shipped.shipped_views().values()) and len(shipped.shipped_views()) == 61
-    assert shipped.shipped_sheet("Button").file.endswith("Button_Stylesheet.yaml")
-    assert shipped.ViewLibrary().doc("Button").file.endswith("Button_View.yaml")
-    monkeypatch.setenv("TESS_UI_SHIPPED", "tdl")
-    assert flavour.shipped_flavour() == "tdl"
-    monkeypatch.setenv("TESS_UI_SHIPPED", "toml")
-    with pytest.raises(ValueError, match="TESS_UI_SHIPPED is `tdl` or `yaml`"):
-        flavour.shipped_flavour()
-
-
-def test_without_tess_dl_the_shipped_yaml_is_what_loads(monkeypatch):
-    monkeypatch.setattr(flavour, "tdl_available", lambda: False)
-    assert flavour.shipped_flavour() == "yaml"
-    assert all(p.suffix == ".yaml" for p in shipped.shipped_views().values())
-    with pytest.raises(ValueError, match="needs the tess-dl package"):
-        flavour.require_tdl("A_View.tdl")
-
-
 def test_the_default_theme_is_the_same_dict_from_either_file(monkeypatch):
     from_tdl = shipped_default_theme()
     monkeypatch.setenv("TESS_UI_SHIPPED", "yaml")
@@ -302,23 +242,6 @@ def test_the_default_theme_is_the_same_dict_from_either_file(monkeypatch):
 _SKIPPED_FIELDS = {"at", "prop_at", "origin", "limits", "decl", "interaction", "text", "file"}
 
 
-def canon(item):
-    """A value as plain data to compare: an expression by its tree, a handler by its program, positions and files left out."""
-    if isinstance(item, Expr):
-        return ("expr", ast.dump(item.tree))
-    if isinstance(item, Handler):
-        return ("handler", item.action, _handler_form(item.source) if item.statements is not None else None)
-    if dataclasses.is_dataclass(item) and not isinstance(item, type):
-        return (type(item).__name__, {f.name: canon(getattr(item, f.name)) for f in dataclasses.fields(item) if f.name not in _SKIPPED_FIELDS})
-    if isinstance(item, dict):
-        return {k: canon(v) for k, v in item.items()}
-    if isinstance(item, (list, tuple, set, frozenset)):
-        return [canon(v) for v in item]
-    if isinstance(item, ast.AST):
-        return ast.dump(item)
-    return item
-
-
 def library_in(monkeypatch, flavour_name):
     monkeypatch.setenv("TESS_UI_SHIPPED", flavour_name)
     return shipped.ViewLibrary()
@@ -327,74 +250,7 @@ def library_in(monkeypatch, flavour_name):
 NAMES = sorted(shipped.shipped_views())
 
 
-@pytest.mark.parametrize("name", NAMES)
-def test_every_shipped_view_parses_to_the_same_tree_from_tdl_and_from_yaml(monkeypatch, name):
-    from_tdl = library_in(monkeypatch, "tdl").doc(name)
-    from_yaml = library_in(monkeypatch, "yaml").doc(name)
-    assert from_tdl.file.endswith(".tdl") and from_yaml.file.endswith(".yaml")
-    assert canon(from_tdl.root) == canon(from_yaml.root), name
-    assert canon(from_tdl.params) == canon(from_yaml.params) and from_tdl.name == from_yaml.name
-    assert [n.id for n in from_tdl.root.walk()] == [n.id for n in from_yaml.root.walk()]
-    assert all(isinstance(n, Node) for n in from_tdl.root.walk())
-
-
-def composed(library, name):
-    """The lowered spec of a host that calls the shipped view `name` with no arguments, or the error it gives."""
-    from tess_ui.spec.compose import Composer
-    from tess_ui.spec.lower import lower
-
-    doc = parse_view(f"widget: Container\nchildren:\n  - {{widget: {name}, name: x}}\n", "Host_View.yaml", resolver=library.decl)
-    try:
-        comp = Composer(library.doc, VM(), rules=library.sheets_of(library.used(doc))[0]).compose(doc)
-        return canon(lower(comp.root)), comp.ids()
-    except Exception as exc:  # the same view must fail the same way in both
-        return type(exc).__name__, re.sub(r"^.*?_View(?:\.tdl|\.yaml)?:\d+:\d+: ", "", str(exc).split("\n")[0])  # the position is the file's own
-
-
-@pytest.mark.parametrize("name", NAMES)
-def test_every_shipped_view_composes_to_the_same_instance_tree_from_tdl_and_from_yaml(monkeypatch, name):
-    assert composed(library_in(monkeypatch, "tdl"), name) == composed(library_in(monkeypatch, "yaml"), name), name
-
-
 SAMPLE = ["Accordion", "Button", "Card", "Chip", "Dialog", "Menu", "Snackbar", "TextField", "TopAppBar", "TreeNode"]
-
-
-@pytest.mark.parametrize("name", SAMPLE)
-def test_a_sample_of_shipped_stylesheets_gives_the_same_rules_from_tdl_and_from_yaml(monkeypatch, name):
-    monkeypatch.setenv("TESS_UI_SHIPPED", "tdl")
-    from_tdl = shipped.shipped_sheet(name)
-    monkeypatch.setenv("TESS_UI_SHIPPED", "yaml")
-    from_yaml = shipped.shipped_sheet(name)
-    assert from_tdl is not None and from_tdl.file.endswith(".tdl") and from_yaml.file.endswith(".yaml")
-    assert len(from_tdl.rules) == len(from_yaml.rules)
-    assert canon(from_tdl.rules) == canon(from_yaml.rules), name
-
-
-def test_every_shipped_stylesheet_gives_the_same_rules_from_tdl_and_from_yaml(monkeypatch):
-    monkeypatch.setenv("TESS_UI_SHIPPED", "tdl")
-    from_tdl = shipped.shipped_rules()
-    monkeypatch.setenv("TESS_UI_SHIPPED", "yaml")
-    from_yaml = shipped.shipped_rules()
-    assert [canon(s.rules) for s in from_tdl] == [canon(s.rules) for s in from_yaml] and len(from_tdl) == 49
-
-
-def test_the_default_theme_gives_the_same_dict_from_tdl_and_from_yaml():
-    root = Path(__file__).parent.parent / "src" / "tess_ui" / "spec"  # not named *_Theme: it is read as the shipped default is
-    from tess_ui.spec.tdl_theme import load_theme_tdl
-    import yaml
-
-    tdl_file = root / "default_theme.tdl"
-    assert load_theme_tdl(tdl_file.read_text(encoding="utf-8"), str(tdl_file)) == marker.strip(yaml.safe_load((root / "default_theme.yaml").read_text(encoding="utf-8")))
-
-
-def test_a_named_theme_gives_the_same_dict_from_tdl_and_from_yaml(tmp_path):
-    """The examples' themes have no YAML twin now, so the twin is made here: a YAML theme and the converter's TDL of it, loaded by the suffix."""
-    from tess_ui.migrate_tdl_theme import convert_theme
-
-    text = 'tesserae: 0.6\nseed: "#0B6B58"\ntypography:\n  headline_medium: {font_weight: 600}\n'
-    (tmp_path / "Brand_Theme.yaml").write_text(text, encoding="utf-8")
-    (tmp_path / "Brand_Theme.tdl").write_text(convert_theme(text, "Brand", "Brand_Theme.yaml").text, encoding="utf-8")
-    assert load_theme(tmp_path / "Brand_Theme.tdl") == load_theme(tmp_path / "Brand_Theme.yaml")
 
 
 # -- hot reload ---------------------------------------------------------------------------------------------------------------

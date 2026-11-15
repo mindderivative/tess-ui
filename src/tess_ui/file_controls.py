@@ -1,4 +1,4 @@
-"""`FileBrowser`, the control behind the file dialog: a `widget: FileBrowser` in `FileDialog_View.yaml` that draws nothing and is the dialog's mind.
+"""`FileBrowser`, the control behind the file dialog: a `widget: FileBrowser` in `FileDialog_View.tdl` that draws nothing and is the dialog's mind.
 
 A view cannot keep a folder, its history, a selection and a listing in step by itself (a called view has no ViewModel, and an expression cannot read a disk), so
 this control holds one `tess_ui.file_browser.FileBrowser` and talks to the view the way the colour picker's parts do: through properties bound to names the view owns.

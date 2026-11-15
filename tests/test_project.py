@@ -1,6 +1,6 @@
 """0.4.1 (#87): a project's files are found by name.
 
-`Views/`, `ViewModels/`, `Components/`, `Themes/` and `Styles/` under the root are the standard places;
+`Views/`, `ViewModels/`, `Themes/` and `Styles/` under the root are the standard places;
 `search=` adds folders and `recursive=True` looks through the whole project. A name in two places is an error.
 """
 
@@ -12,7 +12,6 @@ from tess_ui import App
 from tess_ui.project import Project, ProjectError, is_name
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
-VIEW = "id: root\nkind: Container\nchildren: []\n"
 
 
 @pytest.fixture(autouse=True)
@@ -38,8 +37,7 @@ def test_a_name_is_not_a_path():
 
 @pytest.mark.parametrize("kind, folder, suffix", [
     ("view", "Views", "_View.tdl"), ("viewmodel", "ViewModels", "_ViewModel.py"),
-    ("component", "Components", "_Component.yaml"), ("theme", "Themes", "_Theme.tdl"),
-    ("stylesheet", "Styles", "_Stylesheet.tdl"), ("style", "Styles", "_Style.yaml"),
+    ("theme", "Themes", "_Theme.tdl"), ("stylesheet", "Styles", "_Stylesheet.tdl"),
 ])
 def test_each_kind_is_found_in_its_standard_folder(tmp_path, kind, folder, suffix):
     file = _write(tmp_path, f"{folder}/Thing{suffix}")
@@ -50,7 +48,7 @@ def test_each_kind_is_found_in_its_standard_folder(tmp_path, kind, folder, suffi
 
 def test_a_file_in_the_wrong_folder_is_not_found(tmp_path):
     _write(tmp_path, "Themes/Main_View.tdl")
-    with pytest.raises(ProjectError, match=r"no view called 'Main' \(Main_View.yaml\) in .*search=\["):
+    with pytest.raises(ProjectError, match=r"no view called 'Main' \(Main_View.tdl\) in .*search=\["):
         Project(tmp_path).find("view", "Main")
 
 
@@ -62,7 +60,7 @@ def test_a_file_in_the_wrong_folder_is_named_with_where_it_is_and_what_to_do(tmp
     with pytest.raises(ProjectError) as raised:
         Project(tmp_path).find("view", "Extra")
     text = str(raised.value)
-    assert text.startswith("no view called 'Extra' (Extra_View.yaml) in ")  # the old message, first and unchanged
+    assert text.startswith("no view called 'Extra' (Extra_View.tdl) in ")  # the old message, first and unchanged
     assert "found Themes/Extra_View.tdl: views are read from Views/ (or add Themes to App(search=[...]))" in text
 
 
@@ -156,13 +154,6 @@ def test_a_path_is_used_as_it_is_and_a_name_is_found(tmp_path):
     assert project.resolve("theme", "Brand") == file
     assert project.resolve("theme", str(file)) == file
     assert project.resolve("theme", file) == file
-
-
-def test_the_components_folders_are_the_ones_with_components(tmp_path):
-    _write(tmp_path, "Components/A_Component.yaml")
-    _write(tmp_path, "widgets/B_Component.yaml")
-    (tmp_path / "Empty").mkdir()
-    assert Project(tmp_path, search=["widgets", "Empty"]).component_dirs() == [tmp_path / "Components", tmp_path / "widgets"]
 
 
 def test_a_viewmodel_is_imported_by_its_name_and_its_folder_is_on_the_path(tmp_path):
@@ -269,15 +260,7 @@ def test_hot_reload_watches_the_projects_views_and_stylesheets(tmp_path):
     assert {p.name for p in watched} >= {"Main_View.tdl", "Stat_View.tdl", "Stat_Stylesheet.tdl"}
 
 
-# -- old pipeline only (`App.load`, `kind:` views, `Repeater`): deleted with `View(path)` at the YAML cutover -------------------
-
-
-def test_a_viewmodel_beside_the_view_is_used_before_the_projects(tmp_path):
-    _write(tmp_path, "Beside_View.yaml", VIEW)
-    _write(tmp_path, "Beside_ViewModel.py", "from tess_ui import ViewModel\n\nclass BesideViewModel(ViewModel):\n    pass\n")
-    app = App(width=300, height=200, root=tmp_path / "elsewhere")
-    _, viewmodel = app.load(tmp_path / "Beside_View.yaml")
-    assert type(viewmodel).__name__ == "BesideViewModel"
+# -- fragments -----------------------------------------------------------------------------
 
 
 def test_a_view_built_outside_an_app_does_not_search_a_project():
@@ -287,67 +270,3 @@ def test_a_view_built_outside_an_app_does_not_search_a_project():
 
     with pytest.raises(ComponentError, match="unknown component 'NoSuch'"):
         expand_components_to_spec(__import__("yaml").safe_dump(spec))
-
-
-# -- Repeater and instantiate use the same names (#89) --------------------------------------
-
-def _list_files(root):
-    _write(root, "Views/List_View.yaml", "id: root\nkind: Container\nchildren:\n  - {id: rows, kind: Container}\n")
-    _write(root, "ViewModels/List_ViewModel.py", "from tess_ui import ViewModel\n\nclass ListViewModel(ViewModel):\n    pass\n")
-    _write(root, "Views/Row_View.yaml", "id: root\nkind: Text\ntext: {content: row, typography_role: body_large}\nstyle: {foreground: on_surface}\n")
-    _write(root, "ViewModels/Row_ViewModel.py",
-           "from tess_ui import ViewModel\n\nclass RowViewModel(ViewModel):\n    def __init__(self, view, item):\n"
-           "        self.item = item\n        super().__init__(view)\n")
-
-
-def test_a_repeater_takes_a_view_name_and_finds_its_viewmodel(tmp_path):
-    from tess_ui import Repeater, Signal
-
-    _list_files(tmp_path)
-    app = App(width=300, height=200, root=tmp_path)
-    view, _ = app.load("List")
-    items = Signal([1, 2])
-    rows = Repeater(view, items, "Row", into=view.node("rows"))  # no path, no class
-    assert [vm.item for _, _, vm in rows] == [1, 2]
-    items.set([1, 2, 3])
-    assert len(rows) == 3
-    assert {c.path.name for _, c, _ in rows} == {"Row_View.yaml"}
-
-
-def test_a_repeater_still_takes_a_path_and_a_class(tmp_path):
-    from tess_ui import Repeater, Signal
-
-    _list_files(tmp_path)
-    app = App(width=300, height=200, root=tmp_path)
-    view, _ = app.load("List")
-    cls = app.project.viewmodel("Row")
-    rows = Repeater(view, Signal([7]), tmp_path / "Views" / "Row_View.yaml", cls, view.node("rows"))
-    assert [vm.item for _, _, vm in rows] == [7]
-
-
-def test_instantiate_takes_a_name_and_finds_its_viewmodel(tmp_path):
-    from tess_ui import instantiate
-
-    _list_files(tmp_path)
-    app = App(width=300, height=200, root=tmp_path)
-    view, _ = app.load("List")
-    component, viewmodel = instantiate(view, "Row", into=view.node("rows"), item=5)
-    assert type(viewmodel).__name__ == "RowViewModel" and viewmodel.item == 5 and component.path.name == "Row_View.yaml"
-
-
-def test_a_name_with_no_app_is_an_error_that_says_there_is_no_project():
-    from tess_ui import Repeater, Signal, View
-
-    view = View({"id": "root", "kind": "Container", "children": [{"id": "rows", "kind": "Container"}]}, theme_seed=SEED)
-    with pytest.raises(ProjectError, match="'Row' is a name, but there is no project to look in"):
-        Repeater(view, Signal([]), "Row", into=view.node("rows"))
-
-
-def test_into_is_required():
-    from tess_ui import Repeater, Signal, View, instantiate
-
-    view = View({"id": "root", "kind": "Container"}, theme_seed=SEED)
-    with pytest.raises(TypeError, match="needs `into`"):
-        Repeater(view, Signal([]), "x_View.yaml")
-    with pytest.raises(TypeError, match="needs `into`"):
-        instantiate(view, "x_View.yaml")

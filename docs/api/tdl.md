@@ -184,7 +184,7 @@ A node's widget is a built-in one, one the app registered, or a view found by na
 
 ## The style
 
-A node's `Style` block is a mapping of these fields, or the name of a `*_Style.yaml` file. The same fields go in a stylesheet's or theme's rules.
+A node's `Style` block is a mapping of these fields. The same fields go in a stylesheet's or theme's rules.
 
 ### Size and spacing
 

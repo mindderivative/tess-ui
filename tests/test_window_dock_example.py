@@ -12,7 +12,7 @@ from tess_ui import App
 ROOT = Path(__file__).resolve().parent.parent
 EXAMPLE = ROOT / "examples" / "window_dock"
 #: The modules the window, dock, embedded and routed views are made of: none may use the shell file or the app shell.
-NEW_MODULES = ["window_view.py", "dockhost.py", "spec/window.py", "spec/dock.py", "spec/embed.py", "spec/title_bar.py"]
+NEW_MODULES = ["window_view.py", "dockhost.py", "spec/window.py", "spec/dock.py", "spec/title_bar.py"]
 
 
 def test_the_example_runs_and_its_own_checks_pass(monkeypatch):

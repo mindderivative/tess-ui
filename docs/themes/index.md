@@ -327,9 +327,8 @@ form or the other. An unknown key in a theme file is found when the file is read
 - `App.dark` *(property)*: Whether the app is showing its dark scheme right now.
 - `App.dark_mode` *(property)*: `"system"` (following the OS), or the app's fixed `True`/`False`.
 - `App.set_dark(dark: bool | str) -> None`: `True`/`False` fixes the app dark or light, re-theming every screen in place; `"system"` goes back to following the OS from its next switch.
-- `App.set_theme_specs(default_theme_spec: Any, custom_theme_spec: Any) -> None`: Re-themes the running app in place: every view `build_view()`/`load()` made.
-- `App.set_stylesheet_spec(stylesheet_spec: dict[str, Any] | None) -> None`: Replaces the app's default stylesheet in place: every view `build_view()`/`load()` made with the default -- not one given its own `stylesheet=` -- is re-styled, and views built later use it too.
-- `App.build_view(view_path: str | Path, *, stylesheet: str | Path | None = None, stylesheet_spec: dict[str, Any] | None = None) -> Any`: Builds a view with this app's theme and stylesheet, without registering it -- for a screen given to `register()`, e.g. one whose `ViewModel` needs the `app` itself.
+- `App.set_theme_specs(default_theme_spec: Any, custom_theme_spec: Any) -> None`: Re-themes the running app in place: every view the app made.
+- `App.set_stylesheet_spec(stylesheet_spec: dict[str, Any] | None) -> None`: Replaces the app's default stylesheet in place: every view the app made is re-styled, and views built later use it too.
 
 ### On a view
 
@@ -364,7 +363,7 @@ A resolved theme. Build one with `Theme.resolve(...)`.
 
 ### Loading files
 
-- `load_theme(path: str | Path) -> dict[str, Any]`: Reads a theme file (`*_Theme.tdl`) into the dict `tess_re`'s `default_theme_spec=`/`custom_theme_spec=` take, for `load_view` or for switching themes later:
+- `load_theme(path: str | Path) -> dict[str, Any]`: Reads a theme file (`*_Theme.tdl`) into the dict `tess_re`'s `default_theme_spec=`/`custom_theme_spec=` take, for `View(...)` or for switching themes later:
 - `load_stylesheet(path: str | Path) -> dict[str, Any]`: Reads a stylesheet file (`*_Stylesheet.tdl`) into the dict `tess_re`'s `stylesheet_spec=` takes.
 
 ### Tokens

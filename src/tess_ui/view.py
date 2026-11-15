@@ -43,7 +43,6 @@ from __future__ import annotations
 import copy
 import inspect
 import types
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
 import tess_re
@@ -55,9 +54,7 @@ from tess_ui.interaction import Interaction
 from tess_ui.listeners import Listeners, handled
 from tess_ui.scrolling import Scroller
 from tess_ui.spec.images import check_frame
-from tess_ui.project import ProjectError
 from tess_ui.spec.dock import expand_docks
-from tess_ui.spec.embed import embeds_of, expand_embeds
 from tess_ui.spec.title_bar import expand_title_bars
 from tess_ui.spec.window import expand_windows
 from tess_ui.spec.build import (
@@ -71,7 +68,7 @@ from tess_ui.spec.cascade import check_stylesheet, check_theme
 if TYPE_CHECKING:
     from tess_ui.theme import Theme
 
-__all__ = ["Component", "View"]
+__all__ = ["View"]
 
 #: The size of the window a `View` builds itself into when not given one.
 DEFAULT_SIZE = (800, 600)
@@ -121,8 +118,7 @@ def _props_equal(a: dict[str, Any], b: dict[str, Any]) -> bool:
 
 
 class View:
-    """A built view. `spec` is an expanded view spec (from
-    `tess_ui.spec.build_view_spec` or `expand_components_to_spec`);
+    """A built view. `spec` is an expanded view spec (a mapping of nodes, as `expand_components_to_spec` makes one);
     `frames` maps an Image's id to its decoded `(rgba, width, height)`.
     The theme and stylesheet arguments are `tess_re`'s `View`'s: the seed and
     dark flag, and the three `*_spec` dicts.
@@ -147,10 +143,8 @@ class View:
         default_theme_spec: Optional[dict[str, Any]] = None,
         custom_theme_spec: Optional[dict[str, Any]] = None,
         stylesheet_spec: Optional[dict[str, Any]] = None,
-        project: Any = None,
         contrast: float = 0.0,
     ) -> None:
-        self.path: Optional[Path] = getattr(self, "_given_path", None)  # a component is told its file (0.4.4)
         app = None
         if window is not None and all(arg is None for arg in (theme_seed, dark, default_theme_spec, custom_theme_spec)):
             app = app_of(window)  # no theme given: the app's, followed (M50)
@@ -159,16 +153,7 @@ class View:
                 theme_seed, dark, contrast = given.get("theme_seed"), given["dark"], given.get("contrast", 0.0)
                 default_theme_spec, custom_theme_spec = given.get("default_theme_spec"), given.get("custom_theme_spec")
         dark = bool(dark)
-        if isinstance(source, (str, Path)):
-            from tess_ui.spec.load import build_view_spec
-
-            self.path = Path(source)
-            if project is None and window is not None and (found := app_of(window)) is not None:
-                project = found.project  # the app's files, found by name
-            spec, file_frames, _ = build_view_spec(self.path, project=project)
-            frames = {**{node_id: (rgba, w, h) for node_id, rgba, w, h in file_frames}, **(frames or {})}
-        else:
-            spec = source
+        spec = source
         for arg, value, check in (("default_theme_spec", default_theme_spec, check_theme),
                                   ("custom_theme_spec", custom_theme_spec, check_theme),
                                   ("stylesheet_spec", stylesheet_spec, check_stylesheet)):
@@ -180,9 +165,6 @@ class View:
                            custom_theme_spec=custom_theme_spec)
         self._stylesheet_spec = stylesheet_spec
         self._frames = dict(frames or {})
-        self._components: list["Component"] = []
-        #: the views `view:` nodes embed, by the node's id: `(component, viewmodel or None, the request it was made for)`
-        self._embedded: dict[str, tuple["Component", Any, dict[str, Any]]] = {}
         self._docks: dict[str, Any] = {}  # a `kind: Dock` node's id -> its `DockHost` (0.4.4)
         self._scheme = tokens.resolve_scheme(theme_seed, dark, default_theme_spec, custom_theme_spec, contrast)
         self._layers = prepare_layers(default_theme_spec, custom_theme_spec, stylesheet_spec)
@@ -193,16 +175,14 @@ class View:
             window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, align_items="flex_start")
             # no `Window.set_theme` (removed in tre 0.3.5): since M40 nothing a view builds reads the window's theme
         self.window = window
-        spec = _expanded(spec)  # `Window`, `Dock`, `TitleBar` into their nodes; `view:` into containers
+        spec = _expanded(spec)  # `Window`, `Dock`, `TitleBar` into their nodes
         self._spec = spec
         self._built = Built(root=None)
         self._events = Listeners()
         try:
             self._built.root = build_with(window, spec, scheme=self._scheme, layers=self._layers,
                                           frames=self._frames, into=self._built, listen=self._events.listen)
-        except ValueError as exc:
-            if self.path is not None:
-                raise ValueError(f"{self.path}: {exc}") from exc
+        except ValueError:
             raise
         if self._owns_window:
             window.root.add_child(self._built.root)
@@ -214,7 +194,7 @@ class View:
         self._disabled_on: set[str] = set()
         self._sync_interactions()
         self._sync_docks()
-        self._sync_embeds()
+        self._sync_frame()
         self._wire_actions()
         self._extras_set: dict[str, set[str]] = {}  # the accessibility states tess_re may lack that each node was given, to take back one that is dropped
         self._apply_a11y_extras()
@@ -306,9 +286,8 @@ class View:
         self._spec = spec
         self._sync_interactions()
         self._rewire()
-        self._prune_components()
         self._sync_docks()
-        self._sync_embeds()
+        self._sync_frame()
         self._window_changed()
 
     def _validate(self, old: dict[str, Any], new: dict[str, Any]) -> None:
@@ -386,57 +365,16 @@ class View:
                 if dock.get("closed"):
                     self._docks[node_id].sync_closed(dock["closed"])
 
-    def embedded(self, node_id: str) -> "Component":
-        """The view the `view:` node `node_id` embeds. Its ViewModel is `.viewmodel`, `None` for a view with none."""
-        try:
-            return self._embedded[node_id][0]
-        except KeyError:
-            raise ValueError(f"no view: node with id {node_id!r} in this view") from None
-
     @property
     def viewmodel(self) -> Any:
         """The ViewModel attached to this view, or `None`."""
         return self._viewmodel
 
-    def _sync_embeds(self) -> None:
-        """Makes the views the `view:` nodes ask for: builds one into each placeholder that has none, and takes away one
-        whose node is gone, whose request changed, or whose nodes a reload destroyed."""
-        from tess_ui.component import embed
-
-        wanted = embeds_of(self._spec)
-        for node_id, (component, _, request) in list(self._embedded.items()):
-            if node_id not in wanted or wanted[node_id] != request or not component._follow_alive():
-                del self._embedded[node_id]
-                component.remove()
-        for node_id, request in wanted.items():
-            if node_id in self._embedded:
-                continue
-            try:
-                component, viewmodel = embed(self, request["view"], self._built.nodes[node_id], request["with"],
-                                              base=self.path.parent if self.path is not None else None)
-            except (ValueError, ProjectError, OSError) as exc:
-                if isinstance(exc, FileNotFoundError):
-                    raise
-                raise ValueError(f'widget "{node_id}": {exc}') from exc
-            if "route" in request:  # a screen: shown only while its route is current
-                if self._spec.get("window") is None:
-                    component.remove()
-                    raise ValueError(f'widget "{node_id}": a `route:` is for a view in the window view (`kind: Window`)')
-                self._built.nodes[node_id].set(visible=False)  # until its route is current
-            self._embedded[node_id] = (component, viewmodel, copy.deepcopy(request))
+    def _sync_frame(self) -> None:
+        """Makes the app's screens the routed views of this view when it is the window view of its app."""
         frame = getattr(app_of(self.window), "_frame", None)
         if frame is not None and frame.view is self:
             frame.sync()
-
-    def _prune_components(self) -> None:
-        """Forgets the components whose nodes a reload destroyed (their
-        `into` node, say): unwired, so their bindings stop."""
-        for component in list(self._components):
-            if not component._follow_alive():
-                component._forget_dead()
-                self._components.remove(component)
-            else:
-                component._prune_components()
 
     def set_theme(
         self,
@@ -455,35 +393,16 @@ class View:
         self._theme = dict(theme_seed=theme_seed, dark=dark, contrast=contrast, default_theme_spec=default_theme_spec,
                            custom_theme_spec=custom_theme_spec)
         self._rewire()
-        for component in list(self._components):
-            component._host_restyled(self)
 
     def set_stylesheet(self, stylesheet_spec: Optional[dict[str, Any]] = None) -> None:
         """Replaces the stylesheet and re-styles every node in place;
-        `None` clears it. Embedded components follow."""
+        `None` clears it."""
         layers = prepare_layers(self._theme["default_theme_spec"], self._theme["custom_theme_spec"], stylesheet_spec)
         self._repatch(self._scheme, layers)
         self._layers, self._stylesheet_spec = layers, stylesheet_spec
         self._rewire()
-        for component in list(self._components):
-            component._host_restyled(self)
 
-    # -- components and windows -----------------------------------------------------
-
-    def instantiate(self, path: Any, into: Any, spec: Optional[dict[str, Any]] = None,
-                    frames: Optional[dict[str, tuple[bytes, int, int]]] = None) -> "Component":
-        """Builds a component -- a view of its own, with its own ViewModel
-        -- under `into`, a node of this view, in this view's window. It gets
-        this view's theme and stylesheet, and follows them when they change.
-        `spec` is the expanded spec; without it, `path` is read (the same
-        call shape as `tess_re`'s `View.instantiate`)."""
-        component = Component(self, spec if spec is not None else path, frames=frames,
-                              path=Path(path) if spec is not None and path else None)
-        if spec is not None and path:
-            component.path = Path(path)  # the file it came from, for hot reload (M51)
-        into.add_child(component.root)
-        self._components.append(component)
-        return component
+    # -- windows -----------------------------------------------------
 
     def move_to(self, window: Any) -> None:
         """Rebuilds this view in `window`, keeping its spec, theme and
@@ -505,10 +424,7 @@ class View:
         self._owns_window = False
         del old_window
         self._sync_interactions()
-        for node_id, (component, _, _) in list(self._embedded.items()):  # their nodes went with the old tree
-            del self._embedded[node_id]
-            component.remove()
-        self._sync_embeds()
+        self._sync_frame()
         if self._viewmodel is not None:
             self._wire(self._spec)
         else:
@@ -519,8 +435,6 @@ class View:
         for a composed widget given a `tess_ui.Theme`."""
         self._repatch(scheme, self._layers)
         self._scheme = scheme
-        for component in list(self._components):  # an embedded view takes the colours too (0.4.4)
-            component._host_restyled(self)
 
     def _repatch(self, scheme: Any, layers: Any) -> None:
         for node_id, node_spec in self._built.specs.items():
@@ -1126,61 +1040,6 @@ class View:
         self._add_listener(node, "change", lambda event_obj: signal.set(node.get(prop)))
 
 
-class Component(View):
-    """An embedded view with its own ViewModel, built by
-    `View.instantiate`/`Component.instantiate` (or `tess_ui.instantiate`)
-    in its host's window, with its host's theme and stylesheet. It follows
-    them when the host is re-themed or re-styled. `remove()` unwires it
-    and frees its nodes."""
-
-    def __init__(self, host: View, source: Any, frames: Optional[dict[str, tuple[bytes, int, int]]] = None,
-                 path: Optional[Path] = None) -> None:
-        self._host = host
-        self._given_path = path  # before the build, so a `view:` inside it finds files beside this one
-        super().__init__(
-            source, window=host.window, frames=frames, stylesheet_spec=host._stylesheet_spec, **host._theme,
-        )
-        self._scheme, self._layers = host._scheme, host._layers
-
-    def _host_restyled(self, host: View) -> None:
-        self._theme = dict(host._theme)
-        self._stylesheet_spec = host._stylesheet_spec
-        self._repatch(host._scheme, host._layers)
-        self._scheme, self._layers = host._scheme, host._layers
-        self._rewire()
-        for component in list(self._components):
-            component._host_restyled(self)
-
-    def _forget_dead(self) -> None:
-        """Unwires a component whose nodes are already gone, and the
-        components inside it; its `Signal`s stop reaching it. (`tess_re`'s
-        `off` on a destroyed node is harmless, so unwiring is safe.)"""
-        for component in list(self._components):
-            component._forget_dead()
-        self._components = []
-        self._unwire()
-        self._viewmodel = None
-
-    def remove(self) -> None:
-        """Unwires this component (its `Signal`s stop reaching it) and frees
-        its nodes, and any components inside it. A component a host's
-        reload already destroyed is simply forgotten."""
-        if not self._follow_alive():
-            self._forget_dead()
-            if self in self._host._components:
-                self._host._components.remove(self)
-            return
-        for component in list(self._components):
-            component.remove()
-        self._unwire()
-        self._drop_interactions()
-        self._dispose_controls()
-        self._viewmodel = None
-        if self in self._host._components:
-            self._host._components.remove(self)
-        self._built.root.destroy()
-
-
 def _alive(node: Any) -> bool:
     """Whether a node still exists (a destroyed one's handle raises on any read)."""
     try:
@@ -1221,7 +1080,7 @@ def _expandable(node: Any, memo: dict[int, tuple[Any, bool]]) -> bool:
     hit = memo.get(id(node))
     if hit is not None and hit[0] is node:
         return hit[1]
-    found = node.get("kind") in _EXPANDED_KINDS or "view" in node or "dock" in node or any(_expandable(child, memo) for child in node.get("children") or [])
+    found = node.get("kind") in _EXPANDED_KINDS or "dock" in node or any(_expandable(child, memo) for child in node.get("children") or [])
     memo[id(node)] = (node, found)
     return found
 
@@ -1242,15 +1101,15 @@ def _expanded_shared(spec: Any, memo: dict[int, tuple[Any, bool]]) -> Any:
             copy_of["children"] = [path(child) if isinstance(child, dict) else child for child in node["children"]]
         return copy_of
 
-    return expand_embeds(expand_title_bars(expand_docks(expand_windows(path(spec), copy_spec=False), copy_spec=False), copy_spec=False), copy_spec=False)
+    return expand_title_bars(expand_docks(expand_windows(path(spec), copy_spec=False), copy_spec=False), copy_spec=False)
 
 
 def _expanded(spec: Any) -> Any:
-    """`spec` with its `Window`, `Dock`, `TitleBar` and `view:` nodes expanded: a copy, made once (each expander would otherwise copy the whole spec again, and a window of a few hundred nodes is copied four times on every sync)."""
+    """`spec` with its `Window`, `Dock` and `TitleBar` nodes expanded: a copy, made once (each expander would otherwise copy the whole spec again, and a window of a few hundred nodes is copied three times on every sync)."""
     if not isinstance(spec, dict):
         return spec
     spec = _copy_spec(spec, {})
-    return expand_embeds(expand_title_bars(expand_docks(expand_windows(spec, copy_spec=False), copy_spec=False), copy_spec=False), copy_spec=False)
+    return expand_title_bars(expand_docks(expand_windows(spec, copy_spec=False), copy_spec=False), copy_spec=False)
 
 
 def _walk(spec: dict[str, Any]):

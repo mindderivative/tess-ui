@@ -8,8 +8,6 @@ from pathlib import Path
 
 import pytest
 
-from tess_ui import cli
-
 pytest.importorskip("tess_dl")  # the examples' views are TDL files (Python 3.14)
 
 EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
@@ -28,13 +26,10 @@ def test_a_deep_link_opens_the_multi_screen_example_on_settings():
 
 
 @pytest.mark.parametrize("name", ["counter", "multi_screen", "todo_list", "custom_title_bar", "window_dock"])
-def test_the_example_is_in_the_current_language(name, capsys):
+def test_the_example_is_in_the_current_language(name):
     folder = EXAMPLES / name
     assert not list(folder.glob("*.yaml")), "a YAML file is left in the example"
     for path in folder.glob("*_View.tdl"):
         assert re.search(r"^TDL: 0\.2$", path.read_text(encoding="utf-8"), re.M), f"{path.name} has no TDL 0.2 header"
     for path in folder.glob("*.py"):
         assert "app.load(" not in path.read_text(encoding="utf-8"), path.name
-    assert cli.main(["migrate-yaml", str(folder)]) == 0
-    out = capsys.readouterr().out
-    assert "migrated" not in out and "nothing written" in out  # the tool has nothing to translate: every file is current

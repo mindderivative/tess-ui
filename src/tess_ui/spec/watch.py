@@ -1,52 +1,28 @@
-"""M29 Phase 3: Tesserae-owned hot reload, replacing `tess_re`'s own
-`poll_reload` (which watched a file `tess_re` itself read -- `tess_re` now reads
-none).
+"""Tesserae-owned hot reload for the views, themes and stylesheets of a running app.
 
-A view depends on more than its own file: every `include:`d file, every
-`*_Component.yaml` fragment it expanded, and every image it decodes. A
-change to any of them re-runs the whole Tesserae pipeline
-(`build_view_spec`, the same one `load_view` runs) and hands `tess_re` the
-result via `view.reconcile(spec=...)`, which keeps unchanged widgets'
-`NodeId`s, focus and in-flight animations. Images are pushed again
-afterwards. The set of watched files is recomputed on every reload, so
-a newly added `include:`, fragment or image is watched from then on.
+A view depends on more than its own file: every view it calls, every stylesheet of the views in use and every image it decodes. A change to any of
+them re-reads the whole set and recomposes the view (`ComposedWatcher`), which keeps the nodes that keep their id, focus and in-flight animations. The set of
+watched files is recomputed on every reload, so a view the file now calls is watched from then on.
 
 Two ways to drive it:
 
-- **`start(handle)`** -- the user's own choice for reloading inside
-  `App.run()`: a background thread watches for file-change events with
-  `watchfiles`, rebuilds the spec there (all file I/O and expansion stay
-  off the UI thread), and hands only the view's `reconcile` to the
-  event loop through `tess_re`'s thread-safe `LoopHandle.call_soon` (tess_re M87,
-  tess_re issue #6). `App.run(hot_reload=True)` does this for every screen.
-- **`poll()`** -- no thread: checks each file's modification time and
-  size. For a loop the app controls itself.
+- **`start(handle)`** -- a background thread watches for file-change events with `watchfiles`, reads the files there (all file I/O stays off the UI
+  thread), and hands only the view's recompose to the event loop through `tess_re`'s thread-safe `LoopHandle.call_soon`.
+  `App.run(hot_reload=True)` does this for every view.
+- **`poll()`** -- no thread: checks each file's modification time and size. For a loop the app controls itself.
 
-`tess_re`'s `View` is single-threaded: only the `LoopHandle` crosses
-threads, and the watcher thread never touches the view.
+`tess_re`'s `View` is single-threaded: only the `LoopHandle` crosses threads, and the watcher thread never touches the view.
 
-Reloads are logged with loguru (`tess_ui.log`): each applied reload at
-INFO. A reload that fails in the background (a YAML error, a bad
-component, a spec `tess_re` rejects) is logged at ERROR, naming the file,
-with its traceback at DEBUG, and the view stays as it was. `poll()`
-raises instead, since the app's own loop called it.
+Reloads are logged with loguru (`tess_ui.log`): each applied reload at INFO. A reload that fails in the background (a syntax error, a bad view, a
+spec `tess_re` rejects) is logged at ERROR, naming the file, with its traceback at DEBUG, and the view stays as it was. `poll()` raises instead,
+since the app's own loop called it.
 
-M31: `FileWatcher` is the same background-thread pattern for a fixed set
-of files with no dependencies of their own -- `App.run(hot_reload=True)`
+M31: `FileWatcher` is the same background-thread pattern for a fixed set of files with no dependencies of their own -- `App.run(hot_reload=True)`
 uses it for theme and stylesheet files.
-
-M51: `ComponentWatcher` is a `ViewWatcher` for a component file
-(`tess_ui.instantiate`'s `*_View.yaml`), shared by every live instance
-of it -- a `Repeater`'s rows, say. It rebuilds the spec once per edit
-and reconciles each instance from its own copy, in place, with its own
-ViewModel. A bad edit fails the trial build of the first instance,
-before any has changed, so every instance stays as it was and the error
-is logged once.
 """
 
 from __future__ import annotations
 
-import copy
 import threading
 import time
 from pathlib import Path
@@ -56,9 +32,8 @@ import watchfiles
 from loguru import logger
 
 from tess_ui.spec.images import Frame
-from tess_ui.spec.load import build_view_spec
 
-__all__ = ["ComponentWatcher", "ComposedWatcher", "FileWatcher", "ViewWatcher"]
+__all__ = ["ComposedWatcher", "FileWatcher"]
 
 #: `(st_mtime_ns, st_size)`, or `None` for a file that doesn't exist.
 _Stamp = Optional[Tuple[int, int]]
@@ -103,7 +78,7 @@ def _moved(stamps: dict[Path, _Stamp]) -> bool:
 
 def _log_failure(what: str, exc: BaseException) -> None:
     """One ERROR line naming `what` and the error, with the traceback at
-    DEBUG -- a YAML typo shouldn't print a stack trace by default."""
+    DEBUG -- a typo shouldn't print a stack trace by default."""
     logger.error("hot reload of {} failed: {}", what, exc)
     logger.opt(exception=exc).debug("hot reload of {} failed, traceback:", what)
 
@@ -121,29 +96,16 @@ def _guarded(what: str, fn: Callable[[], None]) -> Callable[[], None]:
     return run
 
 
-class ViewWatcher:
-    """Watches every file `view` was built from and reloads it on change.
+class _ViewWatcher:
+    """Watches every file `view` was built from and reloads it on change. A subclass says how to read them (`_rebuild`) and how to apply the result (`_apply`).
 
-    Create it right after `load_view(path, ...)`, with the same `path`
-    and `component_dirs`. Inside `App.run()`, start it with the app's
-    thread handle (or just use `App.run(hot_reload=True)`):
-
-    ```python
-    watcher = ViewWatcher(view, "Home_View.yaml")
-    watcher.start(tre_app.thread_handle())
-    ...
-    watcher.stop()
-    ```
-
-    Or, in a loop the app controls itself, call `poll()` regularly.
+    Inside `App.run()`, start it with the app's thread handle (or just use `App.run(hot_reload=True)`); in a loop the app controls itself, call `poll()`
+    regularly.
     """
 
-    def __init__(self, view: Any, path: str | Path, *, component_dirs: list[Path] | None = None,
-                 project: Any = None) -> None:
+    def __init__(self, view: Any, path: str | Path) -> None:
         self._view = view
         self._path = Path(path)
-        self._component_dirs = component_dirs
-        self._project = project
         _, _, deps = self._rebuild()
         self._stamps: dict[Path, _Stamp] = {p: _stamp(p) for p in deps}
         self._stop = threading.Event()
@@ -160,17 +122,12 @@ class ViewWatcher:
         return self._thread is not None and self._thread.is_alive()
 
     def _rebuild(self) -> tuple[Any, list[Frame], set[Path]]:
-        """All the file work -- safe on any thread."""
-        return build_view_spec(self._path, component_dirs=self._component_dirs, project=self._project)
+        """All the file work -- safe on any thread: `(what to apply, images, every file it was built from)`."""
+        raise NotImplementedError
 
     def _apply(self, spec: Any, frames: list[Frame]) -> None:
-        """The `tess_re` part -- only on the thread that owns the view: the
-        view reconciles itself with the new spec and images."""
-        try:
-            self._view.reconcile(spec, frames={node_id: (rgba, w, h) for node_id, rgba, w, h in frames})
-        except ValueError as exc:
-            raise ValueError(f"{self._path}: {exc}") from exc
-        logger.info("reloaded {}", self._path)
+        """The `tess_re` part -- only on the thread that owns the view."""
+        raise NotImplementedError
 
     # -- no thread -------------------------------------------------
 
@@ -178,13 +135,13 @@ class ViewWatcher:
         """Reloads the view if any watched file changed since the last
         poll. Returns `True` if it reloaded, `False` if nothing changed.
 
-        A reload that fails (a YAML error, a bad component, a spec `tess_re`
+        A reload that fails (a syntax error, a bad view, a spec `tess_re`
         rejects) raises, naming the file, and leaves the view as it was.
         It raises once per change -- polling again without a further
         edit returns `False` rather than raising the same error again.
         """
         if self.running:
-            raise RuntimeError("ViewWatcher.poll() while start()'s watcher thread is running")
+            raise RuntimeError("poll() while start()'s watcher thread is running")
         current = {p: _stamp(p) for p in self._stamps}
         if current == self._stamps:
             return False
@@ -207,7 +164,7 @@ class ViewWatcher:
         view stays as it was; the loop and the watcher carry on.
         """
         if self._thread is not None:
-            raise RuntimeError("ViewWatcher.start() called twice without stop()")
+            raise RuntimeError("start() called twice without stop()")
         self._stop.clear()
         self._thread = threading.Thread(
             target=self._watch, args=(handle,), name=f"tesserae-watch:{self._path.name}", daemon=True
@@ -264,31 +221,7 @@ class ViewWatcher:
             logger.opt(exception=exc).error("the hot-reload watcher for {} stopped", self._path)
 
 
-class ComponentWatcher(ViewWatcher):
-    """Watches a component file and everything it was built from, and
-    reloads every live instance of it on change. `instances()`
-    returns them at reload time, so rows added or removed since are
-    counted as they are then.
-    """
-
-    def __init__(self, path: str | Path, instances: Callable[[], list[Any]], *,
-                 component_dirs: list[Path] | None = None, project: Any = None) -> None:
-        self._instances = instances
-        super().__init__(None, path, component_dirs=component_dirs, project=project)
-
-    def _apply(self, spec: Any, frames: list[Frame]) -> None:
-        images = {node_id: (rgba, w, h) for node_id, rgba, w, h in frames}
-        live = self._instances()
-        for component in live:
-            try:
-                # each its own copy: a view keeps the spec it was given
-                component.reconcile(copy.deepcopy(spec), frames=dict(images))
-            except ValueError as exc:
-                raise ValueError(f"{self._path}: {exc}") from exc
-        logger.info("reloaded {} ({} instance(s))", self._path, len(live))
-
-
-class ComposedWatcher(ViewWatcher):
+class ComposedWatcher(_ViewWatcher):
     """Watches a view opened with `app.open_view` -- the file, every view it calls, and its pictures -- and recomposes it on change. The ViewModel,
     the nodes that keep their id and the `state:` of those nodes stay. `parse(path)` gives the parsed
     doc and the `ViewLibrary` that read the files, and `rules(library)` the rules to compose under (both from `App`).
@@ -325,7 +258,7 @@ class ComposedWatcher(ViewWatcher):
 
 class FileWatcher:
     """Watches a fixed set of files on a background thread, the way
-    `ViewWatcher.start` does. On a change, `rebuild()` runs on the
+    `ComposedWatcher.start` does. On a change, `rebuild()` runs on the
     watcher thread -- the file work -- and `apply(result)` is queued on
     `handle` with `call_soon`, so it runs on the event-loop thread. If
     either raises, the error is logged at ERROR, naming the file, and

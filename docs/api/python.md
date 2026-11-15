@@ -6,9 +6,7 @@ Every public class, function and constant, with its signature and what it does. 
 
 - [App](#app): The entry point: screens, one window, the loop.
 - [Reactivity](#reactivity): Signals, computed values, effects and the ViewModel base class.
-- [Views and components](#views-and-components): A loaded `*_View.tdl`, and an embedded instance of one.
-- [Embedding](#embedding): A component with a ViewModel of its own, inside a view.
-- [Repeater](#repeater): A list signal kept in step with a list of components.
+- [Views](#views): A built view: a spec of nodes, reconciled and wired.
 - [Projects](#projects): A project's files, found by name.
 - [Themes](#themes): A resolved MD3 theme, read from code.
 - [Tokens](#tokens): MD3's colour, type, shape and motion tokens.
@@ -58,7 +56,6 @@ class App(
     search: Any = (),
     recursive: bool = False,
     borderless: bool = False,
-    window_view: str | Path | None = None,
     resize_border: int | None = None,
     min_width: int = 0,
     min_height: int = 0,
@@ -87,7 +84,6 @@ class App(
 - `bind(target: Any = None, *, factory: Any = None, views: Any = None) -> None`: Serves named views with a ViewModel: `bind(DataViewModel)` makes the one instance when its first view opens, `bind(instance)` uses yours, `bind(factory=DataViewModel)` makes one per view instance.
 - `blur_behind` *(property)*: Whether the compositor blurs what is behind a see-through window (Wayland with KDE, macOS; ignored elsewhere).
 - `borderless` *(property)*: Whether the OS window has no title bar and borders of its own: the app draws its own, with a `TitleBar` (on macOS the title bar stays, transparent, with the traffic lights).
-- `build_view(view_path: str | Path, *, stylesheet: str | Path | None = None, stylesheet_spec: dict[str, Any] | None = None) -> Any`: Builds a view with this app's theme and stylesheet, without registering it -- for a screen given to `register()`, e.g. one whose `ViewModel` needs the `app` itself.
 - `check() -> list[str]`: Problems between the views opened with `open_view` and their ViewModels (names, actions and `expects:`), and ViewModels that serve a view none of them has.
 - `click_through` *(property)*: Whether the whole window ignores the pointer, so clicks reach what is behind it.
 - `close() -> None`: Closes the window as the user's close would: `close_requested` fires first, so an app's "save changes?" check still runs and can cancel it.
@@ -103,7 +99,6 @@ class App(
 - `guard(screen: str, check: Callable[[dict[str, Any]], Any]) -> None`: `check(params)` runs before the app goes to `screen` (by `navigate`, `navigate_to`, `back` or `forward`; `show` is a jump and skips it): `True` lets it in, `False` keeps the app where it is, and a route (a string) sends it there instead.
 - `high_contrast` *(property)*: Whether the app uses MD3's highest-contrast colours: the user asked the OS for more contrast (or the app says so).
 - `high_contrast_mode` *(property)*: `"system"` (following the OS), or the app's fixed `True` or `False`.
-- `load(view_path: str | Path, viewmodel_cls: type | None = None, name: str | None = None, *, stylesheet: str | Path | None = None, stylesheet_spec: dict[str, Any] | None = None) -> tuple[Any, Any]`: Loads a `*_View.yaml` + `*_ViewModel.py` pair and registers it.
 - `location` *(property)*: The screen showing, as a route string (for saving where the user was): from the first route of its screen that reads its params back exactly, or `None` if none does.
 - `maximize() -> None`: Maximizes the window (before `run()`, it opens maximized).
 - `min_height` *(property)*: The shortest the user can resize the window to (0 for no limit).
@@ -133,8 +128,8 @@ class App(
 - `set_high_contrast(value: bool | str) -> None`: `True` or `False` fixes the app's contrast, re-theming every screen in place; `"system"` follows the OS.
 - `set_icon(icon: str | Path | None) -> None`: The window's icon, from an image file (a PNG, best square), or `None` for none.
 - `set_reduced_motion(value: bool | str) -> None`: `True` or `False` fixes the app's motion; `"system"` goes back to following the OS.
-- `set_stylesheet_spec(stylesheet_spec: dict[str, Any] | None) -> None`: Replaces the app's default stylesheet in place: every view `build_view()`/`load()` made with the default -- not one given its own `stylesheet=` -- is re-styled, and views built later use it too.
-- `set_theme_specs(default_theme_spec: Any, custom_theme_spec: Any) -> None`: Re-themes the running app in place: every view `build_view()`/`load()` made.
+- `set_stylesheet_spec(stylesheet_spec: dict[str, Any] | None) -> None`: Replaces the app's default stylesheet in place: every view the app made is re-styled, and views built later use it too.
+- `set_theme_specs(default_theme_spec: Any, custom_theme_spec: Any) -> None`: Re-themes the running app in place: every view the app made.
 - `show(name: str) -> Window`: Shows the view registered under `name` in the app's window: its root is attached, and the screen shown before it is detached (kept alive, with its state and bindings).
 - `start_trace(path: str | Path) -> None`: Writes every frame drawn from now on to `path`, for ui.perfetto.dev or chrome://tracing, until `stop_trace()`.
 - `stats_handle() -> Any`: An object any thread can read the frame stats from: `handle.read()` is `frame_stats()` without the profile.
@@ -147,7 +142,6 @@ class App(
 - `transition` *(property)*: How `navigate`, `back` and `forward` change screens: `none` (the default, a swap), `fade_through`, `shared_axis_x`, `shared_axis_y`, `shared_axis_z` or `container_transform` (see `tess_ui.screen_transition`).
 - `transparent` *(property)*: Whether the window was made see-through (`App(transparent=True)`); `transparent_active` says whether it took.
 - `transparent_active` *(property)*: Whether the window really is see-through (the platform may not allow it); `None` until it opens.
-- `watch_component(path: str | Path) -> None`: While `run(hot_reload=True)` runs, watches a component file and reloads every live instance of it on change; `tess_ui.instantiate` calls it, so a component first added while the app runs is watched too.
 - `window` *(property)*: The app's one window (it exists from the start).
 - `window_border` *(property)*: Whether a borderless window gets its 1 px border (on by default): around the window, in the theme's `outline_variant`, a node of class `window_border` a theme or stylesheet can restyle.
 - `window_of(name: str) -> Any`: The `AppWindow` named `name`.
@@ -221,26 +215,9 @@ untrack(fn: Callable[[], Any]) -> Any
 
 Runs `fn()` and returns its result, without its reads being recorded by the enclosing `Computed`, `Effect` or binding.
 
-## Views and components
+## Views
 
-`tess_ui.view`: A loaded `*_View.tdl`, and an embedded instance of one.
-
-### `Component`
-
-```python
-class Component(
-    host: View,
-    source: Any,
-    frames: Optional[dict[str, tuple[bytes, int, int]]] = None,
-    path: Optional[Path] = None
-) -> None  # extends View
-```
-
-An embedded view with its own ViewModel, built by `View.instantiate`/`Component.instantiate` (or `tess_ui.instantiate`) in its host's window, with its host's theme and stylesheet. It follows them when the host is re-themed or re-styled.
-
-Also has everything `View` has.
-
-- `remove() -> None`: Unwires this component (its `Signal`s stop reaching it) and frees its nodes, and any components inside it.
+`tess_ui.view`: A built view: a spec of nodes, reconciled and wired.
 
 ### `View`
 
@@ -255,18 +232,15 @@ class View(
     default_theme_spec: Optional[dict[str, Any]] = None,
     custom_theme_spec: Optional[dict[str, Any]] = None,
     stylesheet_spec: Optional[dict[str, Any]] = None,
-    project: Any = None,
     contrast: float = 0.0
 ) -> None
 ```
 
-A built view. `spec` is an expanded view spec (from `tess_ui.spec.build_view_spec` or `expand_components_to_spec`); `frames` maps an Image's id to its decoded `(rgba, width, height)`.
+A built view. `spec` is an expanded view spec (a mapping of nodes, as `expand_components_to_spec` makes one); `frames` maps an Image's id to its decoded `(rgba, width, height)`.
 
 - `click(node: Any) -> None`: A synthetic click on `node`, for tests: `window.simulate`.
 - `control(widget_id: str) -> Any`: The MD3 control (`tess_ui.controls`) behind `widget_id`, one of the eight control kinds; its `.node` is `node(widget_id)`.
 - `dock_host(node_id: str) -> Any`: The `DockHost` of the `kind: Dock` node `node_id`: its `dock`, `size`, `set_size`, `layout` and `restore`.
-- `embedded(node_id: str) -> 'Component'`: The view the `view:` node `node_id` embeds.
-- `instantiate(path: Any, into: Any, spec: Optional[dict[str, Any]] = None, frames: Optional[dict[str, tuple[bytes, int, int]]] = None) -> 'Component'`: Builds a component -- a view of its own, with its own ViewModel -- under `into`, a node of this view, in this view's window.
 - `interaction(widget_id: str) -> Optional[Interaction]`: The state layer and ripple on `widget_id`'s node, or `None` when it has none.
 - `move_to(window: Any) -> None`: Rebuilds this view in `window`, keeping its spec, theme and ViewModel: bindings and handlers are wired again on the new nodes.
 - `node(widget_id: str) -> Any`: The node `widget_id` names (a TextField's `text_input`; a Link's box, which holds its text).
@@ -277,47 +251,6 @@ A built view. `spec` is an expanded view spec (from `tess_ui.spec.build_view_spe
 - `spec` *(property)*: The expanded spec the view was built from: every `component:` and `include:` resolved.
 - `theme` *(property)*: This view's resolved theme (`tess_ui.Theme`).
 - `viewmodel` *(property)*: The ViewModel attached to this view, or `None`.
-
-## Embedding
-
-`tess_ui.component`: A component with a ViewModel of its own, inside a view.
-
-### `instantiate`
-
-```python
-instantiate(
-    parent: Any,
-    path: str | Path,
-    viewmodel_cls: type | None = None,
-    into: Any = None,
-    *args: Any,
-    **kwargs: Any
-) -> tuple[Any, Any]
-```
-
-Instantiates the component at `path` into `into` (a `Node`, e.g. from `parent.node(widget_id)`), constructs `viewmodel_cls(component, *args, **kwargs)`, and returns `(component, viewmodel)`.
-
-## Repeater
-
-`tess_ui.repeater`: A list signal kept in step with a list of components.
-
-### `Repeater`
-
-```python
-class Repeater(
-    parent: Any,
-    items_signal: Any,
-    path: str | Path,
-    viewmodel_cls: type | None = None,
-    into: Any = None,
-    key: Callable[[Any], Any] = <lambda>,
-    args: Callable[[Any], tuple[Any, ...]] = <lambda>
-) -> None
-```
-
-Keeps one component and ViewModel alive for each item of a list `Signal`, adding and removing them as the list changes.
-
-- `remove() -> None`: Real, structural teardown -- removes every currently-tracked instance and unsubscribes from `items_signal`, mirroring `Component.remove()`'s own "unsubscribe before tearing down" ordering.
 
 ## Projects
 
@@ -335,12 +268,10 @@ class Project(
 
 The files under `root`, found by name. See the module docstring.
 
-- `component_dirs() -> list[Path]`: The folders the components are in (each once), for `component:` to look in.
 - `find(kind: str, name: str) -> Path`: The file of `kind` called `name`; `ProjectError` if there is none, or two.
 - `folders(kind: str) -> list[Path]`: The folders that exist where `kind` is looked for, in order; with `recursive`, every folder under the root.
 - `index(kind: str) -> dict[str, Path]`: Every name of `kind` and its file.
 - `resolve(kind: str, ref: str | Path) -> Path`: `ref` as a file: a path is used as it is, a bare name is found.
-- `style_dirs() -> list[Path]`: The folders that have `*_Style.yaml` files, for a node's `style:` that names one.
 - `viewmodel(name: str) -> type`: The class `NameViewModel` in `Name_ViewModel.py`, imported.
 
 ### `ProjectError`
@@ -2007,28 +1938,6 @@ Also has everything `Overlay` has.
 
 - `attach(anchor: Any) -> Callable[[], None]`: Shows it for `anchor` on hover and keyboard focus.
 
-### `ViewDialog`
-
-```python
-class ViewDialog(
-    window: Any,
-    view: Any,
-    *,
-    arguments: Optional[dict[str, Any]] = None,
-    width: float = 480.0,
-    height: float = 320.0,
-    label: Optional[str] = None,
-    theme: Optional[Theme] = None
-) -> None  # extends Overlay
-```
-
-A dialog whose content is a view: `ViewDialog(window, "Settings_View.yaml")` shows that view, with its ViewModel if it has one (`with:` as keyword arguments to its constructor), on a `surface_container_high` panel with 28 px corners over a scrim, as `Dialog` does. A name is found in the app's project.
-
-Also has everything `Overlay` has.
-
-- `content` *(property)*: The embedded view.
-- `viewmodel` *(property)*: The embedded view's ViewModel, or `None`.
-
 ### `dismiss_surface`
 
 ```python
@@ -2723,38 +2632,13 @@ class ComponentError
 
 A `component:` reference that cannot be expanded, with the call chain that led to it.
 
-### `ViewWatcher`
-
-```python
-class ViewWatcher(
-    view: Any,
-    path: str | Path,
-    *,
-    component_dirs: list[Path] | None = None,
-    project: Any = None
-) -> None
-```
-
-Watches every file `view` was built from and reloads it on change.
-
-- `files` *(property)*: Every file currently being watched, resolved.
-- `poll() -> bool`: Reloads the view if any watched file changed since the last poll.
-- `running` *(property)*: Whether `start()`'s background thread is watching.
-- `start(handle: Any) -> None`: Starts watching on a background thread.
-- `stop(timeout: float = 5.0) -> None`: Stops the background thread and waits for it to finish.
-
 ### `expand_components`
 
 ```python
-expand_components(
-    yaml_text: str,
-    *,
-    component_dirs: list[Path] | None = None,
-    base_dir: Path | None = None
-) -> str
+expand_components(yaml_text: str, *, component_dirs: list[Path] | None = None) -> str
 ```
 
-`expand_components_to_spec`, dumped back to YAML text -- for inspecting an expansion, or for `tess_re`'s own text-based `source=` path. Nothing on Tesserae's own `tess_re` handoff path uses this any more (`load_view`/`instantiate` pass the dict via `spec=`).
+`expand_components_to_spec`, dumped back to YAML text -- for inspecting an expansion.
 
 ### `expand_components_to_spec`
 
@@ -2762,13 +2646,11 @@ expand_components(
 expand_components_to_spec(
     yaml_text: str,
     *,
-    component_dirs: list[Path] | None = None,
-    base_dir: Path | None = None,
-    project: Any = None
+    component_dirs: list[Path] | None = None
 ) -> Any
 ```
 
-Resolves every `include:` and expands every `component:` entry in `yaml_text`, returning the finished `WidgetSpec`-shaped dict with no `include:`/`component:`/`with:`/`params:`/`repeat:` keys remaining -- ready for `tess_ui.View(spec)`, with no YAML-text round-trip.
+Expands every `component:` entry in `yaml_text` (a node with the fragment it names), returning the finished `WidgetSpec`-shaped dict with no `component:`/`with:`/`params:`/`repeat:` keys remaining -- ready for `tess_ui.View(spec)`, with no YAML-text round-trip.
 
 ### `load_stylesheet`
 
@@ -2784,17 +2666,4 @@ Reads a stylesheet file (`*_Stylesheet.tdl`) into the dict `tess_re`'s `styleshe
 load_theme(path: str | Path) -> dict[str, Any]
 ```
 
-Reads a theme file (`*_Theme.tdl`) into the dict `tess_re`'s `default_theme_spec=`/`custom_theme_spec=` take, for `load_view` or for switching themes later:
-
-### `load_view`
-
-```python
-load_view(
-    path: str | Path,
-    *,
-    component_dirs: list[Path] | None = None,
-    **view_kwargs: Any
-) -> Any
-```
-
-Reads `path`, resolves its `include:`s and expands its `component:` usage, and builds a Tesserae `View` from the result .
+Reads a theme file (`*_Theme.tdl`) into the dict `tess_re`'s `default_theme_spec=`/`custom_theme_spec=` take, for `View(...)` or for switching themes later:

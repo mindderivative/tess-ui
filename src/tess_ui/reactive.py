@@ -129,8 +129,7 @@ def untrack(fn: Callable[[], Any]) -> Any:
 
 class _Notifiable:
     """The subscriber list and notification shared by `Signal` and
-    `Computed`. `_subscribe`/`_unsubscribe` are called by bindings, by
-    `Repeater`, and by `Computed`/`Effect` tracking their dependencies; not
+    `Computed`. `_subscribe`/`_unsubscribe` are called by bindings, and by `Computed`/`Effect` tracking their dependencies; not
     public API."""
 
     def __init__(self) -> None:

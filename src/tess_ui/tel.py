@@ -3,7 +3,7 @@
 Nothing imports this module yet (piece 11a of `design/tdl-switch-plan.md`). It offers what the callers of `tess_ui.expr` use, with the same names and
 shapes, so that a later piece can move them one by one: change the import, nothing else.
 
-    expr = compile_expr("count + 1 if ready else 0", origin=Origin("Main_View.yaml", 12, 8))
+    expr = compile_expr("count + 1 if ready else 0", origin=Origin("Main_View.tdl", 12, 8))
     expr.evaluate(scope)                        # `scope` is any tess-ui scope: `lookup(name)`, optionally `names()` and `is_reactive(name)`
 
 What the adapter adds to TEL, and nothing else:

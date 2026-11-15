@@ -1,7 +1,7 @@
 """`FontBrowser`, the model and the control behind the font list: the installed font families (see `tess_ui.font_families`), searchable, with a cursor.
 
-`FontBrowser` has no window: it keeps the families, the search and the cursor, and answers keys. `FontBrowserControl` is `widget: FontBrowser` in `FontListPanel_View.yaml` and
-`FontList_View.yaml`, a control that draws nothing (see `tess_ui.mind`). It asks `tess_ui.font_families` once, when the view first builds it, and tells the view:
+`FontBrowser` has no window: it keeps the families, the search and the cursor, and answers keys. `FontBrowserControl` is `widget: FontBrowser` in `FontListPanel_View.tdl` and
+`FontList_View.tdl`, a control that draws nothing (see `tess_ui.mind`). It asks `tess_ui.font_families` once, when the view first builds it, and tells the view:
 `mode` (`""` until the control has asked, then `list`, or `text` when the families cannot be listed, so the view shows a text field instead, and `message` says why), `entries` (the rows: `{family, loadable}`, where
 `loadable` says whether the engine can draw text in that family, which `tess_ui.fonts.available_families` knows, so the view can show each name in its own face only then),
 `cursor_name`, `count` and `current` (the row of `value`, for the closed popup's button).

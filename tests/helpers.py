@@ -32,9 +32,8 @@ def elevation(node) -> float:
 
 
 def view_from(expanded_text: str, **kwargs):
-    """A Tesserae `View` built from a view's text: TDL (it starts with the `---` metadata block), or YAML while the last tests still use it.
-
-    The YAML branch goes with the YAML loaders (design/tdl-switch-plan.md)."""
+    """A Tesserae `View` built from the text `expand_components` dumps (an expanded fragment spec: the internal form the Python widget factories build from), or from a
+    view's TDL text (it starts with the `---` metadata block)."""
     from tess_ui import View
 
     if expanded_text.lstrip().startswith("---"):

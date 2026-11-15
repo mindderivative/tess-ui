@@ -4,8 +4,6 @@
     tesserae add screen <Name> [--dir DIR]
     tesserae build [app.py] [--name N] [--icon F] [--console] [--include G] [--exclude G] [--check]
     tesserae schema [--project [DIR]]
-    tesserae migrate-yaml [PATH] [--write] [--force]
-    tesserae migrate-tdl [PATH] [--write] [--remove-source]
 
 `new` makes `<name>/` with `app.py` and a `Main` View/ViewModel pair
 following the naming convention, runnable at once; `--window` makes the app
@@ -15,7 +13,6 @@ Neither overwrites a file. The templates are in `tess_ui/templates/`.
 `build` makes the app one executable: see `tess_ui.build`.
 `schema` says where the JSON schemas of the data a `.tdl` file loads to are, for editor tools. `--project` writes a schema of the views too that the project
 DIR (here by default) has of its own, in `DIR/.tesserae/`, and lists that one.
-`migrate-tdl` writes the `*_View.yaml` and `*_Stylesheet.yaml` files of a file or folder as `*_View.tdl` and `*_Stylesheet.tdl`, keeping comments and key order (see `tess_ui.migrate_tdl`).
 """
 
 from __future__ import annotations
@@ -186,14 +183,6 @@ def _parser() -> argparse.ArgumentParser:
     screen_cmd = what.add_parser("screen", help="add a screen: a View/ViewModel pair")
     screen_cmd.add_argument("name", help="the screen's CamelCase name, e.g. Settings")
     screen_cmd.add_argument("--dir", type=Path, default=Path("."), help="the app's folder (default: here)")
-    migrate_cmd = commands.add_parser("migrate-yaml", help="move a project's view files to the current syntax")
-    migrate_cmd.add_argument("path", nargs="?", type=Path, default=Path("."), help="the project's folder (default: here)")
-    migrate_cmd.add_argument("--write", action="store_true", help="write the files (without it, only report what would change)")
-    migrate_cmd.add_argument("--force", action="store_true", help="with --write: write what translated even if some files did not")
-    tdl_cmd = commands.add_parser("migrate-tdl", help="write a project's view and stylesheet files as TDL (`*_View.tdl`, `*_Stylesheet.tdl`)")
-    tdl_cmd.add_argument("path", nargs="?", type=Path, default=Path("."), help="a *_View.yaml or *_Stylesheet.yaml file or the project's folder (default: here)")
-    tdl_cmd.add_argument("--write", action="store_true", help="write the files (without it, only report what would change)")
-    tdl_cmd.add_argument("--remove-source", action="store_true", help="with --write: delete each YAML file once its TDL file is written")
     schema_cmd = commands.add_parser("schema", help="where the JSON schemas for editor tools are")
     schema_cmd.add_argument("--project", nargs="?", const=Path("."), type=Path, metavar="DIR",
                             help="also know the views DIR (here by default) has of its own: writes DIR/.tesserae/tess-ui-widget-schema.json")
@@ -285,36 +274,6 @@ def _schema(args: argparse.Namespace) -> int:
     return 0
 
 
-def _migrate(args: argparse.Namespace) -> int:
-    from tess_ui.migrate import migrate_project
-
-    if not args.path.is_dir():
-        raise CliError(f"{args.path} is not a folder")
-    if args.force and not args.write:
-        raise CliError("--force goes with --write")
-    report = migrate_project(args.path, write=args.write, force=args.force)
-    print(report.render(args.path.resolve()))
-    return 1 if report.failed else 0
-
-
-def _migrate_tdl(args: argparse.Namespace) -> int:
-    try:
-        from tess_ui.migrate_tdl import migrate_tdl
-    except ImportError as exc:  # `tess_dl` needs Python 3.14 and is not installed with older ones
-        raise CliError(f"migrate-tdl needs the `tess_dl` package, which needs Python 3.14 ({exc})") from None
-
-    if not args.path.exists():
-        raise CliError(f"{args.path} does not exist")
-    if args.remove_source and not args.write:
-        raise CliError("--remove-source goes with --write")
-    try:
-        report = migrate_tdl(args.path, write=args.write, remove_source=args.remove_source)
-    except ValueError as exc:
-        raise CliError(str(exc)) from None
-    print(report.render(args.path.resolve() if args.path.is_dir() else args.path.resolve().parent))
-    return 1 if report.failed else 0
-
-
 def _build(args: argparse.Namespace) -> int:
     from tess_ui import build
 
@@ -356,10 +315,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             return _build(args)
         if args.command == "schema":
             return _schema(args)
-        if args.command == "migrate-yaml":
-            return _migrate(args)
-        if args.command == "migrate-tdl":
-            return _migrate_tdl(args)
         if args.command == "new":
             folder = new(args.name, args.dir, window=args.window, custom_title_bar=args.custom_title_bar,
                          venv=not args.no_venv)

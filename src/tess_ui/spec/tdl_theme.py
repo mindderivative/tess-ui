@@ -1,4 +1,4 @@
-"""The TDL front end for themes: a theme written in TDL, read into the mapping `spec/themes.py` makes of a `*_Theme.yaml` file.
+"""The TDL front end for themes: a theme written in TDL, read into the mapping `spec/themes.py` hands `check_theme` and `Theme`.
 
 Piece 5 of `design/tdl-switch-plan.md`; the shape is in `design/tdl-views.md` ("What piece 5 decided"). A theme file is
 
@@ -17,8 +17,7 @@ Theme {
 ```
 
 and reads as `{seed: "#0B6B58", colors: {tertiary: ...}, typography: {...}, components: {"card.elevated": {...}}}`: the dict
-`yaml.safe_load` gives (the first-line marker taken out), which is what `check_theme` and `Theme` take. A YAML theme has no position maps, so the dict is
-a plain one; `load_marked_theme_tdl` returns the same data as `PMap`s that know where each key and value is, for an error that points into the file.
+`check_theme` and `Theme` take, as a plain dict; `load_marked_theme_tdl` returns the same data as `PMap`s that know where each key and value is, for an error that points into the file.
 
 Two things are not a plain `Title_Case` map: a component's variant is written as a block inside the component (`Card { Elevated { ... } }` is the key
 `card.elevated`, because a `.` cannot be in a TDL key), and a theme's own `Styles` list (the older rule shape) is a list of `Item` blocks, as every list
@@ -27,22 +26,19 @@ of maps is in a view.
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 import tess_dl
 
-from tess_ui.fonts import check_font_families
-from tess_ui.spec.cascade import _THEME_FIELDS, check_theme
-from tess_ui.spec.nodes import LoadError, PMap, _near
+from tess_ui.spec.cascade import _THEME_FIELDS
+from tess_ui.spec.nodes import PMap, _near
 from tess_ui.spec.tdl import _BOM, _Front, _parse_document
-from tess_ui.spec.themes import theme_font_families
 
-__all__ = ["ROOT", "THEME_KEYS", "load_marked_theme_tdl", "load_theme_tdl", "load_theme_tdl_file", "plain"]
+__all__ = ["ROOT", "THEME_KEYS", "load_marked_theme_tdl", "load_theme_tdl", "plain"]
 
 #: The head of the root block of a theme file.
 ROOT = "Theme"
-#: The keys a theme has (the same the YAML loader's `check_theme` accepts), in the order the docs show them.
+#: The keys a theme has (the ones `check_theme` accepts), in the order the docs show them.
 THEME_KEYS = _THEME_FIELDS
 
 
@@ -51,8 +47,8 @@ class _ThemeFront(_Front):
         """`Components { Card { Corner_Radius: 12, Elevated { Elevation: 1 } } }` is `{card: {corner_radius: 12}, "card.elevated": {elevation: 1}}`.
 
         A block holds the fields of the component (properties) and its variants (blocks, each read the same way); a component of fields only is the key
-        itself, one of variants only is just its variants. A property directly in `Components` is the key as written (`Card: 8`), so the theme loader says
-        what is wrong with it as it does for YAML."""
+        itself, one of variants only is just its variants. A property directly in `Components` is the key as written (`Card: 8`),, so the theme loader says
+        what is wrong with it."""
         out = self.new_map(self.pos(block))
         for entry in block.entries:
             if isinstance(entry, tess_dl.Comment):
@@ -126,7 +122,7 @@ def load_marked_theme_tdl(text: str, file: str = "<theme>") -> PMap:
 
 
 def plain(data: Any) -> Any:
-    """`data` with every `PMap` a `dict` and every `PSeq` a `list`: what `yaml.safe_load` makes."""
+    """`data` with every `PMap` a `dict` and every `PSeq` a `list`: plain values."""
     if isinstance(data, dict):
         return {k: plain(v) for k, v in data.items()}
     if isinstance(data, list):
@@ -135,31 +131,5 @@ def plain(data: Any) -> Any:
 
 
 def load_theme_tdl(text: str, file: str = "<theme>") -> dict[str, Any]:
-    """The mapping a `*_Theme.yaml` of the same theme loads to (before `check_theme`): see the module docstring."""
+    """The plain mapping a TDL theme loads to (before `check_theme`): see the module docstring."""
     return plain(load_marked_theme_tdl(text, file))  # type: ignore[no-any-return]
-
-
-def load_theme_tdl_file(path: str | Path) -> dict[str, Any]:
-    """`load_theme` for a TDL theme file: reads it, expands a rule's `style:` file name as the YAML loader does, checks the theme and its fonts.
-
-    Everything `load_theme` raises is raised the same way (`ValueError` naming the file); a `LoadError` (a `ValueError`) is the file's own mistakes."""
-    path = Path(path)
-    try:
-        text = path.read_text(encoding="utf-8")
-    except UnicodeDecodeError as exc:
-        raise LoadError(f"the file is not UTF-8: {exc.reason}", file=path.name) from None
-    theme = load_theme_tdl(text, path.name)
-    rules = theme.get("styles")
-    if isinstance(rules, list) and any(isinstance(r, dict) and isinstance(r.get("style"), str) for r in rules):
-        from tess_ui.spec.expand import ComponentError, _expand_includes
-
-        try:
-            theme = {**theme, "styles": _expand_includes(rules, path.parent, [path.resolve()], set())}
-        except ComponentError as exc:
-            raise ValueError(f"{path}: {exc}") from None
-    try:
-        check_theme(theme, str(path))
-    except ValueError as exc:
-        raise ValueError(f"{path}: {exc}") from None
-    check_font_families(theme_font_families(theme), str(path))
-    return theme

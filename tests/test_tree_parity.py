@@ -10,7 +10,7 @@ The corpus:
   (the Image fragment with a real PNG; `items:` per fragment): 67 at M43,
   76 of 77 since (`Tabs`' `width: "100%"` divider is beyond 0.3.4);
 - every view written inline in the test suite that `tess_re` itself accepts;
-- the example views, built from their files (includes and images);
+- the example views, built from their files (includes and images), as they were recorded;
 - every `yaml` block in the docs and README that is a whole view.
 
 **Not comparable, because `tess_re` can't read them back:** a Link's text and
@@ -36,7 +36,7 @@ from PIL import Image
 import reference
 import treediff
 from tess_ui.spec.expand import expand_components_to_spec
-from tess_ui.spec.load import build_view_spec
+from tess_ui.spec.images import extract_images
 
 ROOT = Path(__file__).resolve().parent.parent
 COMPONENTS = ROOT / "src/tess_ui/spec/components"
@@ -132,8 +132,6 @@ def _corpus():
         spec = _accepted(key, text)
         if spec is not None:
             corpus[key] = ("spec", spec)
-    for view in sorted((ROOT / "examples").glob("*/*_View.yaml")):
-        corpus.setdefault(f"example:{view.parent.name}/{view.name}", ("file", view))
     return corpus
 
 
@@ -169,14 +167,9 @@ def _case(key, tmp_path):
         frames = {k: (base64.b64decode(b64), w, h) for k, (b64, w, h) in source["frames"].items()} or None
     elif how == "spec":
         spec = source
-    else:
-        if how == "image":
-            Image.new("RGBA", (3, 2), (200, 30, 60, 255)).save(tmp_path / "pixel.png")
-            view_file = tmp_path / "Pixel_View.yaml"
-            view_file.write_text(source)
-        else:
-            view_file = source
-        spec, raw, _ = build_view_spec(view_file)
+    else:  # "image": the Image fragment with a real PNG
+        Image.new("RGBA", (3, 2), (200, 30, 60, 255)).save(tmp_path / "pixel.png")
+        spec, raw = extract_images(expand_components_to_spec(source), tmp_path)
         frames = {node_id: (rgba, w, h) for node_id, rgba, w, h in raw}
     if how != "recorded":
         spec = _without_cascade(spec)

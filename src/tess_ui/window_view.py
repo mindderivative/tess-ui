@@ -1,57 +1,37 @@
-"""A `kind: Window` view loaded by an app (0.4.4): its ViewModel, and the frame it is.
+"""A `Window` view opened by an app: the frame it is.
 
-`app.load("Window")` loads a `Window_View.yaml` whose root is `kind: Window`. It is the app's frame: mounted in the OS window
-once, for as long as the app runs, with the screens (`view:` nodes with a `route:`) shown inside it. A window view needs no
-ViewModel of its own (its title bar's buttons reach the app through one, so an empty `WindowViewModel` is made when
-`Window_ViewModel.py` isn't there). There is one per app.
+`app.open_view("Window")` opens a `Window_View.tdl` whose root is a `Window` widget. It is the app's frame: mounted in the OS window once, for as long as
+the app runs, with the screens (the views it calls with a `Route`) shown inside it. There is one per app.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
-from tess_ui.project import view_stem
-from tess_ui.reactive import ViewModel
-
-__all__ = ["Frame", "WindowViewModel"]
-
-
-class WindowViewModel(ViewModel):
-    """What a window view with no `*_ViewModel.py` of its own gets: nothing but `self.app` and `self.state`, which are what a
-    title bar's bindings (`app.maximized`, `app.active`, ...) read."""
+__all__ = ["Frame"]
 
 
 class Frame:
-    """The window view an app is showing: its name, its view, and the screens in it. A screen is a `view:` node with a
-    `route:`: the view in it is registered under its name (`Settings_View.yaml` is `Settings`) and the route, and shown in
-    that node while it is the app's current screen; the others are hidden (out of the layout), with their state."""
+    """The window view an app is showing: its name, its view, and the screens in it. A screen is a routed call of a view: the view is registered under its
+    name (`Settings_View.tdl` is `Settings`) and the route, and shown in that node while it is the app's current screen; the others are hidden (out of the
+    layout), with their state."""
 
     def __init__(self, app: Any, name: str, view: Any) -> None:
         self.app = app
         self.name = name
         self.view = view
-        self.screens: dict[str, str | None] = {}  # a screen's name -> the id of the `view:` node it shows in (None: a lazy screen not built yet)
+        self.screens: dict[str, str | None] = {}  # a screen's name -> the id of the node it shows in (None: a lazy screen not built yet)
         self.parents: dict[str, str | None] = {}  # a nested screen's name -> the screen it is inside
-        self.records: dict[str, Any] = {}  # (the current language) a screen's name -> its `RouteRecord`
+        self.records: dict[str, Any] = {}  # a screen's name -> its `RouteRecord`
 
     def _routed(self) -> dict[str, tuple[str, Any, Any, str]]:
         found: dict[str, tuple[str, Any, Any, str]] = {}
-        if hasattr(self.view, "handle"):  # a view in the 0.5.0 language: a routed call is a screen named for the view it calls
-            self.records = {}
-            for record in self.view.handle.composition.routes:
-                if record.view in found:
-                    raise ValueError(f'the screen {record.view!r} is already a routed view: a view is routed once')
-                self.records[record.view] = record
-                found[record.view] = (record.instance.id if record.instance is not None else None, self.view.screen_of(record), None, record.path)  # type: ignore[assignment]
-            return found
-        for node_id, (component, viewmodel, request) in self.view._embedded.items():
-            if "route" in request:
-                path = getattr(component, "path", None)
-                screen = view_stem(path) if path is not None else node_id
-                if screen in found:
-                    raise ValueError(f'widget "{node_id}": the screen {screen!r} is already the routed view '
-                                     f'"{found[screen][0]}": a view is routed once')
-                found[screen] = (node_id, component, viewmodel, request["route"])
+        self.records = {}
+        for record in self.view.handle.composition.routes:
+            if record.view in found:
+                raise ValueError(f'the screen {record.view!r} is already a routed view: a view is routed once')
+            self.records[record.view] = record
+            found[record.view] = (record.instance.id if record.instance is not None else None, self.view.screen_of(record), None, record.path)  # type: ignore[assignment]
         return found
 
     def sync(self) -> None:
@@ -102,7 +82,7 @@ class Frame:
 
     def show_screen(self, name: str, previous: str | None) -> None:
         if name not in self.screens:
-            raise ValueError(f"the window view {self.name!r} has no place for the screen {name!r}: a screen is a `view:` "
-                             "with a `route:` in the window view")
+            raise ValueError(f"the window view {self.name!r} has no place for the screen {name!r}: a screen is a routed view "
+                             "in the window view")
         self.activate(name)
         self._show_only(name)
