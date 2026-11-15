@@ -1,0 +1,12 @@
+---
+TDL: 0.2
+Name: Main
+Tesserae: "0.6"
+---
+# The look of the configuration window (Main_View.yaml): every Text reads in on_surface unless its call says otherwise, the editor sits on a surface of its own, and an Icon takes the colour of the text
+# beside it. Colours are theme roles, so the window follows the desktop's light and dark setting like any Tesserae UI application.
+Styles {
+  Rule { Widget: Text, Style { Foreground: on_surface } }
+  Rule { Widget: TextInput, Style { Foreground: on_surface, Background: surface, Corner_Radius: 8, Padding: 8 } }
+  Rule { Widget: Icon, Style { Foreground: on_surface } }
+}

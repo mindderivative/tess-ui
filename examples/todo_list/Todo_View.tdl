@@ -1,0 +1,35 @@
+---
+TDL: 0.2
+Name: Todo
+Tesserae: "0.6"
+---
+# The to-do list: an Add button and one `TodoItem` row for each item of `items`, kept by `key:` so a row keeps its own state as the list changes.
+Container {
+  Name: Todo
+  Style { Flex_Direction: vertical, Width: 300, Height: 300, Gap: 8, Padding: 16, Background: surface }
+  Children {
+    Button {
+      Name: add_button
+      Label: "Add item"
+      Variant: tonal
+      Style { Width: 268 }
+      Handlers {
+        On_Click: add_item
+      }
+    }
+    Container {
+      Name: item_list
+      Style { Flex_Direction: vertical, Gap: 8, Width: 268, Height: 240 }
+      Children {
+        For item In <| items |> Key <| item.id |> {
+          TodoItem {
+            Name: row
+            Item: <| item |>
+            On_Toggle: "toggle(item.id)"
+            On_Remove: "remove(item.id)"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,46 @@
+---
+TDL: 0.2
+Name: Tasks
+Tesserae: "0.6"
+---
+Container {
+  Name: Tasks
+  Classes: [page]
+  Children {
+    Text {
+      Name: title
+      Classes: [heading]
+      Text: Tasks
+      Typography_Role: headline_medium
+    }
+    Text {
+      Name: summary
+      Classes: [muted]
+      Text: <| summary |>
+      Typography_Role: body_large
+    }
+    Button {
+      Name: add
+      Label: "Add a task"
+      Variant: filled
+      Style { Width: 140 }
+      Handlers {
+        On_Click: add_task
+      }
+    }
+    Container {
+      Name: list
+      Classes: [rows]
+      Children {
+        For task In <| tasks |> Key <| task.id |> {
+          TaskItem {
+            Name: row
+            Task: <| task |>
+            On_Toggle: "toggle(task.id)"
+            On_Remove: "remove(task.id)"
+          }
+        }
+      }
+    }
+  }
+}

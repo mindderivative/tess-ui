@@ -1,0 +1,56 @@
+---
+TDL: 0.2
+Name: Main
+Tesserae: "0.6"
+---
+# A screen of the window: it has no `name:` and no ViewModel of its own. It reads the names of the one that serves Window_View.yaml.
+Container {
+  Classes: [page]
+  Children {
+    Text {
+      Name: title
+      Classes: [heading]
+      Text: <| app.state.user |>'s tasks
+      Typography_Role: headline_medium
+    }
+    Container {
+      Name: stats
+      Classes: [row]
+      Children {
+        Stat {
+          Name: open
+          Label: Open
+          Value: <| open_text |>
+        }
+        Stat {
+          Name: finished
+          Label: Done
+          Value: <| done_text |>
+        }
+      }
+    }
+    Button {
+      Name: add
+      Label: "Add a task"
+      Variant: filled
+      Style { Width: 140 }
+      Handlers {
+        On_Click: add_task
+      }
+    }
+    Container {
+      Name: list
+      Classes: [rows]
+      Children {
+        For task In <| tasks |> Key <| task.id |> {
+          TaskItem {
+            Name: row
+            Task: <| task |>
+            On_Toggle: "toggle(task.id)"
+            On_Remove: "remove(task.id)"
+          }
+        }
+      }
+    }
+  }
+}

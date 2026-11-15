@@ -1,0 +1,23 @@
+---
+TDL: 0.2
+Name: Outline
+Tesserae: "0.6"
+---
+# The Outline panel: a view named like a screen, shown by the Dock in Window_View.yaml.
+Container {
+  Style { Flex_Direction: vertical, Gap: 8, Padding: 16 }
+  Children {
+    Text {
+      Name: line0
+      Text: Home
+      Typography_Role: body_medium
+      Style { Foreground: on_surface }
+    }
+    Text {
+      Name: line1
+      Text: Notes
+      Typography_Role: body_medium
+      Style { Foreground: on_surface }
+    }
+  }
+}

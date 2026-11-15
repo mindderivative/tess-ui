@@ -1,0 +1,17 @@
+---
+TDL: 0.2
+Name: Console
+Tesserae: "0.6"
+---
+# The Console panel: a view called in Window_View.yaml's dock. It has no ViewModel of its own: it reads the names of Window_ViewModel.py.
+Container {
+  Style { Flex_Direction: vertical, Gap: 8, Padding: 16 }
+  Children {
+    Text {
+      Name: last
+      Text: <| last |>
+      Typography_Role: body_medium
+      Style { Foreground: on_surface }
+    }
+  }
+}

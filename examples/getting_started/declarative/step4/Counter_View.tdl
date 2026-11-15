@@ -1,0 +1,35 @@
+---
+TDL: 0.2
+Name: Counter
+Tesserae: "0.6"
+---
+Container {
+  Name: Counter  # the name the ViewModel serves
+  Style { Flex_Direction: vertical, Width: 360, Height: 160, Gap: 12, Padding: 16, Background: "#1C1B1F" }
+  Children {
+    Text {
+      Name: label
+      Text: Count: <| count |>
+      Font_Family: Roboto
+      Font_Size: 20
+      Style { Width: 160, Height: 28, Foreground: "#FFFFFF" }
+    }
+    Rect {
+      Name: button
+      Handlers {
+        On_Click: increment
+      }
+      Style { Width: 96, Height: 40, Background: "#6750A4", Corner_Radius: 20, Align_Content: left }
+      Children {
+        Text {
+          Name: button_label
+          Text: Count
+          Font_Family: Roboto
+          Font_Size: 16
+          Text_Align: center
+          Style { Width: 96, Height: 20, Foreground: "#FFFFFF" }
+        }
+      }
+    }
+  }
+}

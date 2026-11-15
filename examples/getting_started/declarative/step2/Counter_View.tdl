@@ -1,0 +1,17 @@
+---
+TDL: 0.2
+Name: Counter
+Tesserae: "0.6"
+---
+Container {
+  Style { Flex_Direction: vertical, Width: 360, Height: 160, Gap: 12, Padding: 16, Background: "#1C1B1F" }
+  Children {
+    Text {
+      Name: label
+      Text: "Count: 0"
+      Font_Family: Roboto
+      Font_Size: 20
+      Style { Width: 160, Height: 28, Foreground: "#FFFFFF" }
+    }
+  }
+}

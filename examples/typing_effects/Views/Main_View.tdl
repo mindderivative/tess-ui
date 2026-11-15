@@ -1,0 +1,63 @@
+---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+# Five text fields, each with a different typing effect, to type in and watch. See app.py.
+Container {
+  Name: main
+  Style { Width: 520, Height: 540, Flex_Direction: vertical, Gap: 20, Padding: 24, Background: surface }
+  Children {
+    Text {
+      Name: title
+      Text: "Typing effects"
+      Typography_Role: headline_small
+      Style { Foreground: on_surface }
+    }
+    Text {
+      Name: hint
+      Text: "Type, paste and move the caret with the arrow keys in each field."
+      Typography_Role: body_medium
+      Style { Foreground: on_surface_variant }
+    }
+    TextField {
+      Name: flash
+      Label: "typing_effect: flash"
+      Text: <| a |>
+      Typing_Effect: flash
+    }
+    TextField {
+      Name: fade
+      Label: "typing_effect: fade_in"
+      Text: <| b |>
+      Typing_Effect: fade_in
+    }
+    TextField {
+      Name: glide
+      Label: "caret_effect: glide"
+      Text: <| c |>
+      Caret_Effect: glide
+    }
+    TextField {
+      Name: both
+      Variant: outlined
+      Label: "flash and glide, outlined"
+      Text: <| d |>
+      Typing_Effect: flash
+      Caret_Effect: glide
+    }
+    TextField {
+      Name: custom
+      Variant: outlined
+      Label: "set per field: tertiary flash, slow glide"
+      Text: <| e |>
+      Typing_Effect: flash
+      Flash_Color: tertiary
+      Flash_Opacity: 0.5
+      Typing_Duration: 700
+      Caret_Effect: glide
+      Glide_Duration: 300
+      Caret_Blink: 800
+    }
+  }
+}

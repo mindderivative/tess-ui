@@ -1,0 +1,1246 @@
+---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+# The configuration application's window: a toolbar, three areas side by side (Files, Structure, Text) and a status line. The ViewModel (viewmodel.py) holds every value
+# and action; this file only says where they show. Tab moves through the toolbar, the Files tree, the Structure tree and the text; each tree takes the arrow keys.
+Container {
+  Name: main
+  Style { Flex_Direction: vertical, Width: 100%, Height: 100%, Background: surface }
+  A11y { Role: group, Label: "Tesserae Shell configuration" }
+  Handlers {
+    On_Key { Call { Action: "key_pressed", Args: [<| event.key |>, <| event.ctrl |>, <| event.shift |>, <| event.alt |>] } }
+  }
+  Children {
+    Container {
+      Name: toolbar
+      A11y {
+        Role: group
+        Label: Actions
+        Description: "Save, undo, redo, format, check and reload the shell; Apply as I edit writes each change at once."
+      }
+      Style { Flex_Direction: horizontal, Align_Content: left, Gap: 8, Padding: 8, Width: 100% }
+      Children {
+        Button {
+          Name: save_button
+          Label: Save
+          Variant: filled
+          A11y { Label: Save, Description: "Write the open file to disk and run check (Ctrl+S)" }
+          Disabled: <| not dirty |>
+          Handlers {
+            On_Click: save
+          }
+        }
+        Button {
+          Name: undo_button
+          Label: Undo
+          Variant: tonal
+          A11y { Label: Undo, Description: "Undo the last edit of the open file (Ctrl+Z)" }
+          Disabled: <| not can_undo |>
+          Handlers {
+            On_Click: undo
+          }
+        }
+        Button {
+          Name: redo_button
+          Label: Redo
+          Variant: tonal
+          A11y { Label: Redo, Description: "Redo the edit that was undone (Ctrl+Y)" }
+          Disabled: <| not can_redo |>
+          Handlers {
+            On_Click: redo
+          }
+        }
+        Button {
+          Name: format_button
+          Label: "Format file"
+          Variant: outlined
+          A11y { Label: "Format file", Description: "Lay the open file out with the formatter; never done unless you ask" }
+          Disabled: <| not has_tree |>
+          Handlers {
+            On_Click: format_file
+          }
+        }
+        Button {
+          Name: check_button
+          Label: Check
+          Variant: outlined
+          A11y { Label: Check, Description: "Run the shell's check on the folder (F5)" }
+          Disabled: <| checking |>
+          Handlers {
+            On_Click: check_run
+          }
+        }
+        Button {
+          Name: reload_button
+          Label: "Reload shell"
+          Variant: outlined
+          A11y { Label: "Reload shell", Description: "Ask the running shell to reload its files (Ctrl+Shift+R)" }
+          Disabled: <| not shell_running |>
+          Handlers {
+            On_Click: shell_reload
+          }
+        }
+        Switch {
+          Name: apply_switch
+          Label: "Apply as I edit"
+          Selected: <| apply_on_edit |>
+          A11y {
+            Label: "Apply as I edit"
+            Description: "Write each change to the file at once and reload the running shell; off, nothing is written until Save (Ctrl+Shift+A)"
+          }
+          Handlers {
+            On_Change { Call { Action: "apply_changed", Args: [<| apply_on_edit |>] } }
+          }
+        }
+        Text {
+          Name: title
+          Text: <| title |>
+          Typography_Role: title_small
+          Max_Lines: 1
+          Overflow: ellipsis
+          Style { Flex: expand_horizontal, Min_Width: 0 }
+        }
+      }
+    }
+    Container {
+      Name: panes
+      Style {
+        Flex_Direction: horizontal
+        Gap: 8
+        Padding { Left: 8, Right: 8, Top: 0, Bottom: 0 }
+        Width: 100%
+        Flex: expand_vertical
+        Min_Height: 0
+      }
+      Children {
+        Container {
+          Name: files_pane
+          A11y {
+            Role: group
+            Label: Files
+            Description: "The files of the configuration folder by type. Enter opens a file; New, Duplicate, Rename and Delete act on the chosen file."
+          }
+          Style { Flex_Direction: vertical, Width: 200, Gap: 4, Background: surface_container_low, Corner_Radius: 12, Padding: 8 }
+          Children {
+            Text {
+              Name: files_heading
+              Text: Files
+              Typography_Role: title_small
+            }
+            Text {
+              Name: folder_text
+              Text: <| folder |>
+              Typography_Role: body_small
+              Max_Lines: 1
+              Overflow: ellipsis
+              Style { Foreground: on_surface_variant }
+            }
+            Container {
+              Name: files_actions
+              A11y {
+                Role: group
+                Label: "File actions"
+                Description: "New file from a type, duplicate, rename and delete (to the trash folder) the chosen file."
+              }
+              Style { Flex_Direction: horizontal, Align_Content: left, Gap: 0, Width: 100% }
+              Children {
+                IconButton {
+                  Name: file_new_button
+                  Icon: plus
+                  Size: xs
+                  Label: "New file from a type (Ctrl+N)"
+                  A11y { Label: "New file from a type", Description: "New file from a type (Ctrl+N)" }
+                  Handlers {
+                    On_Click: file_new
+                  }
+                }
+                IconButton {
+                  Name: file_duplicate_button
+                  Icon: content_copy
+                  Size: xs
+                  Label: "Duplicate the file (Ctrl+Alt+D)"
+                  A11y { Label: "Duplicate the file", Description: "Duplicate the file (Ctrl+Alt+D)" }
+                  Disabled: <| not can_file_duplicate |>
+                  Handlers {
+                    On_Click: file_duplicate
+                  }
+                }
+                IconButton {
+                  Name: file_rename_button
+                  Icon: pencil
+                  Size: xs
+                  Label: "Rename the file (F2)"
+                  A11y { Label: "Rename the file", Description: "Rename the file (F2)" }
+                  Disabled: <| not can_file_rename |>
+                  Handlers {
+                    On_Click: file_rename
+                  }
+                }
+                IconButton {
+                  Name: file_delete_button
+                  Icon: delete
+                  Size: xs
+                  Label: "Delete the file: it goes to the trash folder (Delete in the Files area)"
+                  A11y {
+                    Label: "Delete the file: it goes to the trash folder"
+                    Description: "Delete the file: it goes to the trash folder (Delete in the Files area)"
+                  }
+                  Disabled: <| not can_file_delete |>
+                  Handlers {
+                    On_Click: file_delete
+                  }
+                }
+              }
+            }
+            ScrollView {
+              Name: files_scroll
+              Style { Flex: expand_vertical, Width: 100%, Min_Height: 0 }
+              Children {
+                Tree {
+                  Name: files_tree
+                  Nodes: <| file_nodes |>
+                  Expanded: <| file_expanded |>
+                  Selected: <| file_selected |>
+                  Compact: true
+                }
+              }
+            }
+          }
+        }
+        Container {
+          Name: structure_pane
+          A11y {
+            Role: group
+            Label: Structure
+            Description: "The blocks of the open file as a tree. Arrow keys move, Enter selects; Alt+Up and Alt+Down move a block."
+          }
+          Style { Flex_Direction: vertical, Width: 270, Gap: 4, Background: surface_container_low, Corner_Radius: 12, Padding: 8 }
+          Children {
+            Text {
+              Name: structure_heading
+              Text: Structure
+              Typography_Role: title_small
+            }
+            Text {
+              Name: selection_text
+              Text: <| selected_label |>
+              Typography_Role: body_small
+              Max_Lines: 1
+              Overflow: ellipsis
+              Style { Foreground: on_surface_variant }
+            }
+            Container {
+              Name: structure_actions
+              A11y {
+                Role: group
+                Label: "Structure actions"
+                Description: "Add a child, remove, move, duplicate the selected block, or open the menu of these."
+              }
+              Style { Flex_Direction: horizontal, Align_Content: left, Gap: 0, Width: 100% }
+              Children {
+                IconButton {
+                  Name: add_button
+                  Icon: add
+                  Size: xs
+                  Label: "Add a child block (Ctrl+Shift+N)"
+                  A11y { Label: "Add a child block", Description: "Add a child block (Ctrl+Shift+N)" }
+                  Disabled: <| not can_add |>
+                  Handlers {
+                    On_Click: structure_add
+                  }
+                }
+                IconButton {
+                  Name: remove_button
+                  Icon: delete
+                  Size: xs
+                  Label: "Remove the block (Delete)"
+                  A11y { Label: "Remove the block", Description: "Remove the block (Delete)" }
+                  Disabled: <| not can_remove |>
+                  Handlers {
+                    On_Click: structure_remove
+                  }
+                }
+                IconButton {
+                  Name: up_button
+                  Icon: arrow_up
+                  Size: xs
+                  Label: "Move the block up (Alt+Up)"
+                  A11y { Label: "Move the block up", Description: "Move the block up (Alt+Up)" }
+                  Disabled: <| not can_move_up |>
+                  Handlers {
+                    On_Click: structure_move_up
+                  }
+                }
+                IconButton {
+                  Name: down_button
+                  Icon: arrow_down
+                  Size: xs
+                  Label: "Move the block down (Alt+Down)"
+                  A11y { Label: "Move the block down", Description: "Move the block down (Alt+Down)" }
+                  Disabled: <| not can_move_down |>
+                  Handlers {
+                    On_Click: structure_move_down
+                  }
+                }
+                IconButton {
+                  Name: move_button
+                  Icon: folder
+                  Size: xs
+                  Label: "Move the block into another block (Ctrl+Shift+M)"
+                  A11y { Label: "Move the block into another block", Description: "Move the block into another block (Ctrl+Shift+M)" }
+                  Disabled: <| not can_move_to |>
+                  Handlers {
+                    On_Click: structure_move_to
+                  }
+                }
+                IconButton {
+                  Name: duplicate_button
+                  Icon: content_copy
+                  Size: xs
+                  Label: "Duplicate the block (Ctrl+Shift+D)"
+                  A11y { Label: "Duplicate the block", Description: "Duplicate the block (Ctrl+Shift+D)" }
+                  Disabled: <| not can_duplicate |>
+                  Handlers {
+                    On_Click: structure_duplicate
+                  }
+                }
+                IconButton {
+                  Name: menu_button
+                  Icon: dots_vertical
+                  Size: xs
+                  Label: "Structure menu (Menu key)"
+                  A11y { Label: "Structure menu", Description: "Structure menu (Menu key)" }
+                  Disabled: <| not has_tree |>
+                  Handlers {
+                    On_Click: structure_menu
+                  }
+                }
+              }
+            }
+            If <| has_file and not has_tree |> {
+              Text {
+                Name: structure_off
+                Text: "The structure is off: this file has syntax errors. It follows when the text parses."
+                Typography_Role: body_medium
+                Style { Width: 100% }
+              }
+            }
+            If <| has_tree |> {
+              ScrollView {
+                Name: structure_scroll
+                Style { Flex: expand_vertical, Width: 100%, Min_Height: 0 }
+                Children {
+                  Tree {
+                    Name: structure_tree
+                    Nodes: <| structure_nodes |>
+                    Expanded: <| structure_expanded |>
+                    Selected: <| structure_selected |>
+                    Compact: true
+                  }
+                }
+              }
+            }
+          }
+        }
+        Container {
+          Name: form_pane
+          A11y {
+            Role: group
+            Label: Form
+            Description: "The keys of the selected block in groups. Enter on a group header opens or closes it; Enter in a field writes it."
+          }
+          Style { Flex_Direction: vertical, Width: 440, Gap: 4, Background: surface_container_low, Corner_Radius: 12, Padding: 8 }
+          Children {
+            Text {
+              Name: form_heading
+              Text: Form
+              Typography_Role: title_small
+            }
+            Text {
+              Name: form_title
+              Text: <| form_title |>
+              Typography_Role: body_small
+              Max_Lines: 1
+              Overflow: ellipsis
+              Style { Foreground: on_surface_variant }
+            }
+            For note In <| form_notes |> Key <| note |> {
+              Text {
+                Name: form_note
+                Text: <| note |>
+                Typography_Role: body_small
+                Style { Width: 100%, Foreground: on_surface_variant }
+              }
+            }
+            ScrollView {
+              Name: form_scroll
+              Style { Flex: expand_vertical, Width: 100%, Min_Height: 0 }
+              Children {
+                Container {
+                  Name: form_list
+                  Style { Flex_Direction: vertical, Width: 100%, Gap: 2 }
+                  Children {
+                    For item In <| form_items |> Key <| item['key'] |> {
+                      Container {
+                        Name: form_item
+                        State { Active: false }
+                        Style { Flex_Direction: vertical, Width: 100%, Gap: 2 }
+                        Children {
+                          If <| item['type'] == 'group' |> {
+                            Container {
+                              Name: group_header
+                              Interaction: true
+                              A11y {
+                                Role: button
+                                Label: <| item['label'] |>
+                                Expanded: <| item['open'] |>
+                                Description: <| item['present'] |> of <| item['count'] |> keys set
+                              }
+                              Handlers {
+                                On_Click { Call { Action: "form_group", Args: [<| item['label'] |>] } }
+                              }
+                              Style {
+                                Flex_Direction: horizontal
+                                Align_Content: left
+                                Gap: 4
+                                Width: 100%
+                                Padding { Left: 0, Right: 0, Top: 4, Bottom: 4 }
+                              }
+                              Children {
+                                Icon {
+                                  Name: chevron
+                                  Icon: <| 'chevron_down' if item['open'] else 'chevron_right' |>
+                                  Style { Width: 20, Height: 20, Foreground: primary }
+                                }
+                                Text {
+                                  Name: group_label
+                                  Text: <| item['label'] |>
+                                  Typography_Role: label_large
+                                  Style { Foreground: primary }
+                                }
+                                Text {
+                                  Name: group_count
+                                  Text: <| item['present'] |> of <| item['count'] |> set
+                                  Typography_Role: label_small
+                                  Style { Foreground: on_surface_variant }
+                                }
+                              }
+                            }
+                          }
+                          If <| item['type'] == 'row' |> {
+                            Container {
+                              Name: row
+                              Tooltip: <| item['doc'] |>
+                              Style { Flex_Direction: horizontal, Align_Content: left, Gap: 8, Width: 100% }
+                              Children {
+                                Container {
+                                  Name: label_box
+                                  Style { Flex_Direction: vertical, Width: 120, Gap: 0 }
+                                  Children {
+                                    Text {
+                                      Name: label
+                                      Text: <| item['label'] |>
+                                      Typography_Role: body_medium
+                                      Max_Lines: 2
+                                      Style { Width: 100% }
+                                    }
+                                    If <| item['missing'] |> {
+                                      Text {
+                                        Name: required
+                                        Text: required
+                                        Typography_Role: label_small
+                                        Style { Foreground: error }
+                                      }
+                                    }
+                                    For marker In <| item['markers'] |> Key <| marker |> {
+                                      Text {
+                                        Name: marker_text
+                                        Text: <| marker |>
+                                        Typography_Role: label_small
+                                        Style { Foreground: on_surface_variant }
+                                      }
+                                    }
+                                  }
+                                }
+                                Container {
+                                  Name: cells
+                                  Style { Flex_Direction: vertical, Flex: expand_horizontal, Min_Width: 0, Gap: 2 }
+                                  Children {
+                                    For cell In <| item['cells'] |> Key <| cell['id'] |> {
+                                      Container {
+                                        Name: cell
+                                        State {
+                                          Draft: <| cell.get('field', '') |>
+                                          Unit: <| cell.get('unit', '') |>
+                                          On: <| cell.get('checked', False) |>
+                                          Colour: <| cell.get('colour', '#808080') |>
+                                          Linked: <| cell.get('linked', True) |>
+                                          D0: <| (cell.get('fields', []) + ['', '', '', ''])[0] |>
+                                          D1: <| (cell.get('fields', []) + ['', '', '', ''])[1] |>
+                                          D2: <| (cell.get('fields', []) + ['', '', '', ''])[2] |>
+                                          D3: <| (cell.get('fields', []) + ['', '', '', ''])[3] |>
+                                          Items: <| cell.get('items', []) |>
+                                          Token: <| cell['token_ref'] |>
+                                          Lastkey: ""
+                                        }
+                                        Style { Flex_Direction: horizontal, Align_Content: left, Gap: 4, Width: 100% }
+                                        Children {
+                                          If <| item['many'] |> {
+                                            Text {
+                                              Name: column
+                                              Text: <| cell['column'] |>
+                                              Typography_Role: label_small
+                                              Style { Width: 56, Foreground: on_surface_variant }
+                                            }
+                                          }
+                                          If <| cell['ui'] == 'switch' |> {
+                                            Switch {
+                                              Name: switch
+                                              Selected: <| on |>
+                                              A11y { Label: <| item['label'] |>, Description: <| item['doc'] |> }
+                                              Handlers {
+                                                On_Change { Call { Action: "form_commit", Args: [<| cell['id'] |>, <| {'checked': on} |>] } }
+                                                On_Focus_Enter { Set { Target: active, Value: <| True |> } }
+                                                On_Focus_Exit { Set { Target: active, Value: <| False |> } }
+                                              }
+                                            }
+                                          }
+                                          If <| cell['ui'] == 'choice' |> {
+                                            Button {
+                                              Name: choose
+                                              Label: <| cell['shown'] |>
+                                              Variant: <| 'tonal' if cell['present'] else 'outlined' |>
+                                              Size: xs
+                                              A11y { Label: <| item['label'] |>, Description: <| item['doc'] |> }
+                                              Handlers {
+                                                On_Click { Call { Action: "form_choices", Args: [<| cell['id'] |>] } }
+                                                On_Focus_Enter { Set { Target: active, Value: <| True |> } }
+                                                On_Focus_Exit { Set { Target: active, Value: <| False |> } }
+                                              }
+                                            }
+                                          }
+                                          If <| cell['ui'] in ('field', 'length') |> {
+                                            Container {
+                                              Name: field_box
+                                              Style { Flex_Direction: horizontal, Align_Content: left, Gap: 4, Flex: expand_horizontal, Min_Width: 0 }
+                                              Children {
+                                                If <| cell['ui'] == 'field' or cell['number_enabled'] |> {
+                                                  TextInput {
+                                                    Name: field
+                                                    Text: <| draft |>
+                                                    Placeholder: <| cell['placeholder'] |>
+                                                    Read_Only: <| cell['readonly'] |>
+                                                    Typography_Role: body_medium
+                                                    A11y { Label: <| item['label'] |>, Description: <| item['doc'] |> }
+                                                    Style {
+                                                      Flex: expand_horizontal
+                                                      Min_Width: 48
+                                                      Height: 32
+                                                      Padding { Left: 8, Right: 8, Top: 4, Bottom: 4 }
+                                                    }
+                                                    Handlers {
+                                                      On_Submit {
+                                                        Call { Action: "form_commit", Args: [<| cell['id'] |>, <| {'text': draft, 'unit': unit} |>] }
+                                                      }
+                                                      On_Focus_Exit {
+                                                        Call { Action: "form_commit", Args: [<| cell['id'] |>, <| {'text': draft, 'unit': unit} |>] }
+                                                        Set { Target: active, Value: <| False |> }
+                                                      }
+                                                      On_Focus_Enter { Set { Target: active, Value: <| True |> } }
+                                                      On_Key {
+                                                        Set { Target: lastkey, Value: <| event.key |> }
+                                                        Call {
+                                                          Action: "after"
+                                                          Args: [<| 0 |>, <| "form_key(cell['id'], lastkey, draft)" |>, <| 'step' |>]
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                                If <| cell['suffix'] != '' |> {
+                                                  Text {
+                                                    Name: suffix
+                                                    Text: <| cell['suffix'] |>
+                                                    Typography_Role: body_small
+                                                    Style { Foreground: on_surface_variant }
+                                                  }
+                                                }
+                                                If <| cell['ui'] == 'length' |> {
+                                                  Button {
+                                                    Name: unit_button
+                                                    Label: <| unit |>
+                                                    Variant: outlined
+                                                    Size: xs
+                                                    A11y { Label: <| item['label'] |> unit, Description: <| item['doc'] |> }
+                                                    Handlers {
+                                                      On_Click { Call { Action: "form_units", Args: [<| cell['id'] |>, <| draft |>] } }
+                                                      On_Focus_Enter { Set { Target: active, Value: <| True |> } }
+                                                      On_Focus_Exit { Set { Target: active, Value: <| False |> } }
+                                                    }
+                                                  }
+                                                }
+                                                If <| cell['browse'] |> {
+                                                  Button {
+                                                    Name: browse
+                                                    Label: Browse
+                                                    Variant: outlined
+                                                    Size: xs
+                                                    Handlers {
+                                                      On_Click { Call { Action: "form_browse", Args: [<| cell['id'] |>] } }
+                                                      On_Focus_Enter { Set { Target: active, Value: <| True |> } }
+                                                      On_Focus_Exit { Set { Target: active, Value: <| False |> } }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                          If <| cell['ui'] == 'sides' |> {
+                                            Container {
+                                              Name: sides_box
+                                              Style { Flex_Direction: horizontal, Align_Content: left, Gap: 4, Flex: expand_horizontal, Min_Width: 0 }
+                                              Children {
+                                                TextInput {
+                                                  Name: side_0
+                                                  Text: <| d0 |>
+                                                  Placeholder: <| cell['placeholder'] |>
+                                                  Typography_Role: body_medium
+                                                  A11y { Label: <| item['label'] |> <| cell['labels'][0] |>, Description: <| item['doc'] |> }
+                                                  Style {
+                                                    Flex: expand_horizontal
+                                                    Min_Width: 36
+                                                    Height: 32
+                                                    Padding { Left: 8, Right: 8, Top: 4, Bottom: 4 }
+                                                  }
+                                                  Handlers {
+                                                    On_Submit {
+                                                      Call {
+                                                        Action: "form_commit"
+                                                        Args: [<| cell['id'] |>, <| {'fields': [d0, d1, d2, d3], 'linked': linked} |>]
+                                                      }
+                                                    }
+                                                    On_Focus_Exit {
+                                                      Call {
+                                                        Action: "form_commit"
+                                                        Args: [<| cell['id'] |>, <| {'fields': [d0, d1, d2, d3], 'linked': linked} |>]
+                                                      }
+                                                      Set { Target: active, Value: <| False |> }
+                                                    }
+                                                    On_Focus_Enter { Set { Target: active, Value: <| True |> } }
+                                                  }
+                                                }
+                                                If <| not linked |> {
+                                                  TextInput {
+                                                    Name: side_1
+                                                    Text: <| d1 |>
+                                                    Placeholder: <| cell['placeholder'] |>
+                                                    Typography_Role: body_medium
+                                                    A11y { Label: <| item['label'] |> <| cell['labels'][1] |>, Description: <| item['doc'] |> }
+                                                    Style {
+                                                      Flex: expand_horizontal
+                                                      Min_Width: 36
+                                                      Height: 32
+                                                      Padding { Left: 8, Right: 8, Top: 4, Bottom: 4 }
+                                                    }
+                                                    Handlers {
+                                                      On_Submit {
+                                                        Call {
+                                                          Action: "form_commit"
+                                                          Args: [<| cell['id'] |>, <| {'fields': [d0, d1, d2, d3], 'linked': linked} |>]
+                                                        }
+                                                      }
+                                                      On_Focus_Exit {
+                                                        Call {
+                                                          Action: "form_commit"
+                                                          Args: [<| cell['id'] |>, <| {'fields': [d0, d1, d2, d3], 'linked': linked} |>]
+                                                        }
+                                                        Set { Target: active, Value: <| False |> }
+                                                      }
+                                                      On_Focus_Enter { Set { Target: active, Value: <| True |> } }
+                                                    }
+                                                  }
+                                                }
+                                                If <| not linked |> {
+                                                  TextInput {
+                                                    Name: side_2
+                                                    Text: <| d2 |>
+                                                    Placeholder: <| cell['placeholder'] |>
+                                                    Typography_Role: body_medium
+                                                    A11y { Label: <| item['label'] |> <| cell['labels'][2] |>, Description: <| item['doc'] |> }
+                                                    Style {
+                                                      Flex: expand_horizontal
+                                                      Min_Width: 36
+                                                      Height: 32
+                                                      Padding { Left: 8, Right: 8, Top: 4, Bottom: 4 }
+                                                    }
+                                                    Handlers {
+                                                      On_Submit {
+                                                        Call {
+                                                          Action: "form_commit"
+                                                          Args: [<| cell['id'] |>, <| {'fields': [d0, d1, d2, d3], 'linked': linked} |>]
+                                                        }
+                                                      }
+                                                      On_Focus_Exit {
+                                                        Call {
+                                                          Action: "form_commit"
+                                                          Args: [<| cell['id'] |>, <| {'fields': [d0, d1, d2, d3], 'linked': linked} |>]
+                                                        }
+                                                        Set { Target: active, Value: <| False |> }
+                                                      }
+                                                      On_Focus_Enter { Set { Target: active, Value: <| True |> } }
+                                                    }
+                                                  }
+                                                }
+                                                If <| not linked |> {
+                                                  TextInput {
+                                                    Name: side_3
+                                                    Text: <| d3 |>
+                                                    Placeholder: <| cell['placeholder'] |>
+                                                    Typography_Role: body_medium
+                                                    A11y { Label: <| item['label'] |> <| cell['labels'][3] |>, Description: <| item['doc'] |> }
+                                                    Style {
+                                                      Flex: expand_horizontal
+                                                      Min_Width: 36
+                                                      Height: 32
+                                                      Padding { Left: 8, Right: 8, Top: 4, Bottom: 4 }
+                                                    }
+                                                    Handlers {
+                                                      On_Submit {
+                                                        Call {
+                                                          Action: "form_commit"
+                                                          Args: [<| cell['id'] |>, <| {'fields': [d0, d1, d2, d3], 'linked': linked} |>]
+                                                        }
+                                                      }
+                                                      On_Focus_Exit {
+                                                        Call {
+                                                          Action: "form_commit"
+                                                          Args: [<| cell['id'] |>, <| {'fields': [d0, d1, d2, d3], 'linked': linked} |>]
+                                                        }
+                                                        Set { Target: active, Value: <| False |> }
+                                                      }
+                                                      On_Focus_Enter { Set { Target: active, Value: <| True |> } }
+                                                    }
+                                                  }
+                                                }
+                                                If <| cell['can_link'] |> {
+                                                  Button {
+                                                    Name: link_button
+                                                    Label: <| 'Linked' if linked else 'Separate' |>
+                                                    Variant: text
+                                                    Size: xs
+                                                    A11y {
+                                                      Label: <| item['label'] + ': one value for all sides, or one for each' |>
+                                                      Description: <| item['doc'] |>
+                                                    }
+                                                    Handlers {
+                                                      On_Click {
+                                                        Set { Target: d1, Value: <| d0 |> }
+                                                        Set { Target: d2, Value: <| d0 |> }
+                                                        Set { Target: d3, Value: <| d0 |> }
+                                                        Set { Target: linked, Value: <| not linked |> }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                          If <| cell['ui'] == 'block' |> {
+                                            Button {
+                                              Name: block_button
+                                              Label: <| cell['label'] |>
+                                              Variant: <| 'tonal' if cell['exists'] else 'outlined' |>
+                                              Size: xs
+                                              A11y { Label: <| cell['label'] |>, Description: <| item['doc'] |> }
+                                              Handlers {
+                                                On_Click { Call { Action: "form_block", Args: [<| cell['id'] |>] } }
+                                                On_Focus_Enter { Set { Target: active, Value: <| True |> } }
+                                                On_Focus_Exit { Set { Target: active, Value: <| False |> } }
+                                              }
+                                            }
+                                          }
+                                          If <| cell['ui'] == 'colour' |> {
+                                            ColourPicker {
+                                              Name: colour_picker
+                                              Popup: true
+                                              Value: <| colour |>
+                                              Label: <| item['label'] |>
+                                              Handlers {
+                                                On_Change {
+                                                  Call { Action: "after", Args: [<| 300 |>, <| "form_colour(cell['id'], colour)" |>, <| 'colour' |>] }
+                                                }
+                                              }
+                                            }
+                                          }
+                                          If <| cell['ui'] == 'colour' |> {
+                                            Text {
+                                              Name: colour_text
+                                              Text: <| cell['text'] if cell['present'] else cell['placeholder'] |>
+                                              Typography_Role: body_small
+                                              Style { Flex: expand_horizontal, Min_Width: 0, Foreground: on_surface_variant }
+                                            }
+                                          }
+                                          If <| cell['ui'] == 'icon' |> {
+                                            IconPicker {
+                                              Name: icon_picker
+                                              Popup: true
+                                              Value: <| draft |>
+                                              Icons_Folder: <| cell['icons_folder'] |>
+                                              Label: <| item['label'] |>
+                                              Placeholder: <| cell['placeholder'] if cell['placeholder'] != '' else 'Choose an icon' |>
+                                              On_Change: "form_commit(cell['id'], {'text': draft})"
+                                            }
+                                          }
+                                          If <| cell['ui'] == 'font' |> {
+                                            FontList {
+                                              Name: font_list
+                                              Popup: true
+                                              Value: <| draft |>
+                                              Label: <| item['label'] |>
+                                              On_Change: "form_commit(cell['id'], {'text': draft})"
+                                            }
+                                          }
+                                          If <| cell['ui'] == 'chord' |> {
+                                            KeyChordField {
+                                              Name: chord_field
+                                              Value: <| draft |>
+                                              Label: <| item['label'] |>
+                                              On_Change: "form_commit(cell['id'], {'text': draft})"
+                                            }
+                                          }
+                                          If <| cell['ui'] == 'list' |> {
+                                            ListEditor {
+                                              Name: list_editor
+                                              Value: <| items |>
+                                              Item_Kind: <| cell['item_kind'] |>
+                                              Choices: <| cell['choices'] |>
+                                              Least: <| cell['least'] |>
+                                              Most: <| cell['most'] |>
+                                              Step: <| cell['step'] |>
+                                              Min_Items: <| cell['min_items'] |>
+                                              Max_Items: <| cell['max_items'] |>
+                                              Label: <| item['label'] |>
+                                              On_Change: "form_commit(cell['id'], {'items': items})"
+                                            }
+                                          }
+                                          If <| cell['tokens'] |> {
+                                            TokenButton {
+                                              Name: token_button
+                                              Value: <| token |>
+                                              Groups: <| cell['token_groups'] |>
+                                              Preferred: <| cell['token_preferred'] |>
+                                              Label: Theme token for <| item['label'] |>
+                                              Placeholder: "$ token"
+                                              Width: 360
+                                              On_Pick: "form_token(cell['id'], token)"
+                                            }
+                                          }
+                                          If <| cell['slot'] |> {
+                                            Button {
+                                              Name: expression_button
+                                              Label: "{ }"
+                                              Variant: <| 'tonal' if cell['expression'] else 'text' |>
+                                              Size: xs
+                                              A11y {
+                                                Label: Expression for <| item['label'] |>
+                                                Description: "Swap the widget for a field that holds an expression, written between double braces"
+                                                Pressed: <| cell['expression'] |>
+                                              }
+                                              Handlers {
+                                                On_Click { Call { Action: "form_expression", Args: [<| cell['id'] |>] } }
+                                                On_Focus_Enter { Set { Target: active, Value: <| True |> } }
+                                                On_Focus_Exit { Set { Target: active, Value: <| False |> } }
+                                              }
+                                            }
+                                          }
+                                          IconButton {
+                                            Name: reset_button
+                                            Icon: undo
+                                            Size: xs
+                                            Label: Reset <| item['label'] |> to its default
+                                            Disabled: <| not cell['present'] |>
+                                            Handlers {
+                                              On_Click { Call { Action: "form_reset", Args: [<| cell['id'] |>] } }
+                                              On_Focus_Enter { Set { Target: active, Value: <| True |> } }
+                                              On_Focus_Exit { Set { Target: active, Value: <| False |> } }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                          If <| item['type'] == 'row' and item['error'] != '' |> {
+                            Text {
+                              Name: row_error
+                              Text: <| item['error'] |>
+                              Typography_Role: body_small
+                              A11y { Live: polite }
+                              Style { Width: 100%, Foreground: error }
+                            }
+                          }
+                          If <| item['type'] == 'row' and active and item['doc'] != '' |> {
+                            Text {
+                              Name: doc_line
+                              Text: <| item['doc'] |>
+                              Typography_Role: body_small
+                              Style { Width: 100%, Foreground: on_surface_variant }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        Container {
+          Name: text_pane
+          A11y { Role: group, Label: Text, Description: "The open file as TDL text. Edit it by hand; the structure follows when it parses." }
+          Style {
+            Flex_Direction: vertical
+            Gap: 4
+            Background: surface_container_low
+            Corner_Radius: 12
+            Padding: 8
+            Flex: expand_horizontal
+            Min_Width: 0
+          }
+          Children {
+            Text {
+              Name: text_heading
+              Text: Text
+              Typography_Role: title_small
+            }
+            TextInput {
+              Name: editor
+              Text: <| text |>
+              Multiline: true
+              Read_Only: <| read_only or not has_file |>
+              Typography_Role: body_medium
+              Handlers {
+                On_Change: text_edited
+              }
+              A11y { Label: "TDL text of the open file" }
+              Style { Flex: expand_vertical, Width: 100%, Min_Height: 120 }
+            }
+            If <| len(error_rows) > 0 |> {
+              Container {
+                Name: errors
+                A11y { Role: group, Label: "Syntax errors" }
+                Style { Flex_Direction: vertical, Gap: 2, Width: 100%, Background: error_container, Corner_Radius: 8, Padding: 8 }
+                Children {
+                  Text {
+                    Name: errors_heading
+                    Text: <| len(error_rows) |> syntax error(s): the structure is off until the text parses
+                    Typography_Role: label_large
+                    Style { Foreground: on_error_container }
+                  }
+                  For row In <| error_rows |> Key <| row['text'] |> {
+                    Container {
+                      Name: error_row
+                      Style { Flex_Direction: horizontal, Align_Content: left, Gap: 8, Width: 100% }
+                      Children {
+                        Icon {
+                          Name: error_icon
+                          Icon: error
+                          Style { Width: 18, Height: 18, Foreground: on_error_container }
+                        }
+                        Text {
+                          Name: error_text
+                          Text: <| row['text'] |>
+                          Typography_Role: body_small
+                          Style { Foreground: on_error_container, Flex: expand_horizontal, Min_Width: 0 }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    If <| has_disk_change |> {
+      Container {
+        Name: disk_banner
+        A11y { Role: group, Label: "File changed on disk" }
+        Style { Flex_Direction: horizontal, Align_Content: left, Gap: 8, Padding: 8, Width: 100%, Background: tertiary_container, Corner_Radius: 8 }
+        Children {
+          Icon {
+            Name: disk_icon
+            Icon: alert
+            Style { Width: 18, Height: 18, Foreground: on_tertiary_container }
+          }
+          Text {
+            Name: disk_text
+            Text: <| disk_message |>
+            Typography_Role: body_small
+            A11y { Live: assertive }
+            Style { Flex: expand_horizontal, Min_Width: 0, Foreground: on_tertiary_container }
+          }
+          Button {
+            Name: disk_reload_button
+            Label: Reload
+            Variant: filled
+            Size: xs
+            Handlers {
+              On_Click: disk_reload
+            }
+          }
+          Button {
+            Name: disk_keep_button
+            Label: "Keep mine"
+            Variant: outlined
+            Size: xs
+            Handlers {
+              On_Click: disk_keep
+            }
+          }
+        }
+      }
+    }
+    Container {
+      Name: problems_pane
+      A11y { Role: group, Label: Problems, Description: "What check found in the files on disk. Enter on a finding selects its block and key." }
+      Style { Flex_Direction: vertical, Gap: 2, Padding { Left: 8, Right: 8, Top: 4, Bottom: 4 }, Width: 100% }
+      Children {
+        Text {
+          Name: problems_heading
+          Text: <| problems_title |>
+          Typography_Role: title_small
+          A11y { Live: polite }
+        }
+        If <| has_problems |> {
+          ScrollView {
+            Name: problems_scroll
+            Style { Width: 100%, Height: 96 }
+            Children {
+              Container {
+                Name: problems_list
+                A11y { Role: list, Label: "Findings of check" }
+                Style { Flex_Direction: vertical, Width: 100%, Gap: 0 }
+                Children {
+                  For problem In <| problems |> Key <| problem['id'] |> {
+                    Container {
+                      Name: problem_row
+                      Interaction: true
+                      A11y { Role: listitem, Label: <| problem['severity'] |>: <| problem['where'] |> <| problem['message'] |> }
+                      Handlers {
+                        On_Click { Call { Action: "problem_pick", Args: [<| problem['index'] |>] } }
+                      }
+                      Style { Flex_Direction: horizontal, Align_Content: left, Gap: 8, Width: 100%, Padding { Left: 4, Right: 4, Top: 2, Bottom: 2 } }
+                      Children {
+                        Icon {
+                          Name: problem_icon
+                          Icon: <| problem['icon'] |>
+                          Style { Width: 18, Height: 18, Foreground: <| 'error' if problem['icon'] == 'error' else 'on_surface_variant' |> }
+                        }
+                        Text {
+                          Name: problem_severity
+                          Text: <| problem['severity'] |>
+                          Typography_Role: label_large
+                          Style { Width: 64 }
+                        }
+                        Text {
+                          Name: problem_where
+                          Text: <| problem['where'] |>
+                          Typography_Role: label_medium
+                          Style { Width: 240, Foreground: on_surface_variant }
+                        }
+                        Text {
+                          Name: problem_message
+                          Text: <| problem['message'] |><| ' (' + problem['hint'] + ')' if problem['hint'] else '' |>
+                          Typography_Role: body_small
+                          Style { Flex: expand_horizontal, Min_Width: 0 }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    Container {
+      Name: status_bar
+      A11y { Role: group, Label: Status, Description: "What the last action did, and whether a shell is running." }
+      Style { Flex_Direction: horizontal, Align_Content: left, Gap: 8, Padding: 8, Width: 100% }
+      Children {
+        If <| status_is_error |> {
+          Icon {
+            Name: status_icon
+            Icon: error
+            Style { Width: 18, Height: 18, Foreground: error }
+          }
+        }
+        Text {
+          Name: status_text
+          Text: <| status |>
+          Typography_Role: body_small
+          A11y { Live: polite }
+          Style { Flex: expand_horizontal, Min_Width: 0, Foreground: <| 'error' if status_is_error else 'on_surface_variant' |> }
+        }
+        Text {
+          Name: shell_text
+          Text: <| shell_state |>
+          Typography_Role: body_small
+          Max_Lines: 1
+          Overflow: ellipsis
+          Style { Foreground: on_surface_variant }
+        }
+      }
+    }
+    If <| menu_open |> {
+      Menu {
+        Name: structure_menu
+        Open: <| menu_open |>
+        Anchor: structure_actions
+        Items: <| menu_items |>
+        Chosen: <| menu_chosen |>
+        Focus_First: true
+        Width: 260
+        On_Pick: "structure_command(menu_chosen)"
+      }
+    }
+    If <| picker_open |> {
+      Dialog {
+        Name: picker
+        Open: <| picker_open |>
+        Headline: <| picker_title |>
+        Width: 440
+        Max_Height: 400
+        Actions {
+          Item { Label: Cancel, Value: cancel }
+        }
+        Children {
+          Container {
+            Name: picker_list
+            A11y { Role: list, Label: <| picker_title |> }
+            Style { Flex_Direction: vertical, Width: 100% }
+            Children {
+              For option In <| picker_items |> Key <| option['value'] |> {
+                Container {
+                  Name: option
+                  Interaction: true
+                  A11y { Role: listitem, Label: <| option['label'] |>, Selected: <| option['value'] == picker_current |> }
+                  Handlers {
+                    On_Click { Call { Action: "pick_option", Args: [<| option['value'] |>] } }
+                  }
+                  Style {
+                    Flex_Direction: horizontal
+                    Align_Content: left
+                    Gap: 8
+                    Padding: 8
+                    Width: 100%
+                    Corner_Radius: 8
+                    Background: <| 'secondary_container' if option['value'] == picker_current else 'transparent' |>
+                  }
+                  Children {
+                    If <| option['colour'] != '' |> {
+                      Rect {
+                        Name: swatch
+                        Style { Width: 20, Height: 20, Corner_Radius: 4, Background: <| option['colour'] |>, Border_Width: 1, Border_Color: outline }
+                      }
+                    }
+                    Text {
+                      Name: option_label
+                      Text: <| option['label'] |>
+                      Typography_Role: body_medium
+                      Style { Width: 150 }
+                    }
+                    Text {
+                      Name: option_hint
+                      Text: <| option['hint'] |>
+                      Typography_Role: body_small
+                      Max_Lines: 2
+                      Style { Flex: expand_horizontal, Min_Width: 0, Foreground: on_surface_variant }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    If <| prompt_open |> {
+      Dialog {
+        Name: prompt
+        Open: <| prompt_open |>
+        Headline: <| prompt_title |>
+        Width: 440
+        Actions {
+          Item { Label: Cancel, Value: cancel }
+        }
+        Children {
+          For row In <| prompt_rows |> Key <| row['id'] |> {
+            Container {
+              Name: prompt_body
+              State { Typed: <| row['text'] |> }
+              A11y { Role: group, Label: <| prompt_title |> }
+              Style { Flex_Direction: vertical, Width: 100%, Gap: 8 }
+              Children {
+                TextInput {
+                  Name: prompt_field
+                  Text: <| typed |>
+                  Typography_Role: body_medium
+                  A11y { Label: <| prompt_title |>, Description: "Letters, digits and underscores, starting with a letter" }
+                  Style { Width: 100%, Height: 36, Padding { Left: 8, Right: 8, Top: 4, Bottom: 4 } }
+                  Handlers {
+                    On_Submit { Call { Action: "prompt_accept", Args: [<| typed |>] } }
+                  }
+                }
+                If <| prompt_error != '' |> {
+                  Text {
+                    Name: prompt_error_text
+                    Text: <| prompt_error |>
+                    Typography_Role: body_small
+                    A11y { Live: assertive }
+                    Style { Width: 100%, Foreground: error }
+                  }
+                }
+                Button {
+                  Name: prompt_ok
+                  Label: OK
+                  Variant: filled
+                  Handlers {
+                    On_Click { Call { Action: "prompt_accept", Args: [<| typed |>] } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    If <| file_open |> {
+      FileDialog {
+        Name: files_dialog
+        Open: <| file_open |>
+        Mode: <| file_mode |>
+        Start: <| file_start |>
+        Root: <| file_root |>
+        Filters: <| file_filters |>
+        Filename: <| file_filename |>
+        Multiple: <| file_multiple |>
+        Headline: <| file_headline |>
+        Accept_Label: <| file_accept_label |>
+        Show_Hidden: <| file_show_hidden |>
+        Value: <| file_value |>
+        On_Accept: file_accepted
+        On_Cancel: file_cancelled
+      }
+    }
+  }
+}

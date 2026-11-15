@@ -1,0 +1,24 @@
+---
+TDL: 0.2
+Name: Stat
+Tesserae: "0.6"
+---
+# A number with a label under it, called as `widget: Stat`. Its look is its rules in Tasks_Stylesheet.yaml.
+Container {
+  Params {
+    Label { Type: str, Required: true }
+    Value { Type: str, Required: true }
+  }
+  Children {
+    Text {
+      Name: value
+      Text: <| value |>
+      Typography_Role: title_large
+    }
+    Text {
+      Name: label
+      Text: <| label |>
+      Typography_Role: label_medium
+    }
+  }
+}

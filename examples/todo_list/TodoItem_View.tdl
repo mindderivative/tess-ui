@@ -1,0 +1,34 @@
+---
+TDL: 0.2
+Name: TodoItem
+Tesserae: "0.6"
+---
+# One row. A view with `params:` is a component: Todo_View.yaml calls it as `widget: TodoItem`. It has no ViewModel of its own: the list's
+# ViewModel (Todo_ViewModel.py) holds the items, and the row calls back with the handlers it is given.
+Container {
+  Params {
+    Item { Type: dict, Required: true }
+    On_Toggle { Type: handler }
+    On_Remove { Type: handler }
+  }
+  Style { Flex_Direction: horizontal, Align_Content: left, Gap: 8, Width: 100% }
+  Children {
+    Checkbox {
+      Name: check
+      Checked: <| item.done |>
+      Label: <| item.text |>
+      Style { Flex: expand_horizontal }
+      Handlers {
+        On_Change: on_toggle
+      }
+    }
+    IconButton {
+      Name: remove_button
+      Icon: close
+      Label: "Remove item"
+      Handlers {
+        On_Click: on_remove
+      }
+    }
+  }
+}

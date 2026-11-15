@@ -1,0 +1,31 @@
+---
+TDL: 0.2
+Name: TaskItem
+Tesserae: "0.6"
+---
+Container {
+  Params {
+    Task { Type: dict, Required: true }
+    On_Toggle { Type: handler }
+    On_Remove { Type: handler }
+  }
+  Children {
+    Checkbox {
+      Name: done
+      Checked: <| task.done |>
+      Label: <| task.text |>
+      Style { Flex: expand_horizontal }
+      Handlers {
+        On_Change: on_toggle
+      }
+    }
+    IconButton {
+      Name: remove
+      Icon: close
+      Label: Remove
+      Handlers {
+        On_Click: on_remove
+      }
+    }
+  }
+}

@@ -1,0 +1,33 @@
+---
+TDL: 0.2
+Name: Settings
+Tesserae: "0.6"
+---
+# The Settings screen. `Settings_ViewModel.py` goes back; `app.state.came_from` is the app's shared state.
+Container {
+  Name: Settings
+  Style { Flex_Direction: vertical, Width: 240, Height: 150, Gap: 8, Padding: 16, Background: surface }
+  Children {
+    Text {
+      Name: label
+      Text: Settings
+      Typography_Role: headline_small
+      Style { Foreground: on_surface }
+    }
+    Text {
+      Name: came_from
+      Text: <| app.state.came_from |>
+      Typography_Role: body_medium
+      Style { Foreground: on_surface_variant }
+    }
+    Button {
+      Name: button
+      Label: "Back to home"
+      Variant: tonal
+      Style { Width: 160 }
+      Handlers {
+        On_Click: go_to_home
+      }
+    }
+  }
+}

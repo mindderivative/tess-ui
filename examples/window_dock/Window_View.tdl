@@ -1,0 +1,135 @@
+---
+TDL: 0.2
+Name: Window
+Tesserae: "0.6"
+---
+# The whole window: its title bar, a rail, a dock of panels around the screens, and a status bar.
+# Edit it while the app runs with hot_reload=True: the title, sizes and panels change in place, and a panel the user
+# moved stays where they put it.
+Window {
+  Name: Window
+  Title: "Tesserae Studio"
+  Borderless: true
+  Min_Width: 640
+  Min_Height: 400
+  Style { Width: 1100, Height: 700, Background: surface, Flex_Direction: vertical }
+  Title_Bar {
+    Title: "Tesserae Studio"
+    Icon: home
+    Buttons: [minimize, maximize, close]
+  }
+  Children {
+    Container {
+      Name: body
+      Style { Flex: fill, Flex_Direction: horizontal }
+      Children {
+        NavigationRailScreens {
+          Name: nav
+          Items {
+            Item { Label: Home, Icon: home, Screen: Home }
+            Item { Label: Notes, Icon: search, Screen: Notes }
+          }
+        }
+        Dock {
+          Name: dock
+          Style { Flex: fill }
+          Children {
+            DockPanel {
+              Name: files
+              Title: Files
+              Style { Zone: left, Width: 220 }
+              Children {
+                Files {
+                  Name: files_view
+                }
+              }
+            }
+            DockPanel {
+              Name: outline
+              Title: Outline
+              Style { Zone: left }
+              Children {
+                Outline {
+                  Name: outline_view
+                }
+              }
+            }
+            DockPanel {
+              Name: properties
+              Title: Properties
+              Style { Zone: right, Width: 260 }
+              Children {
+                Properties {
+                  Name: properties_view
+                }
+              }
+            }
+            DockPanel {
+              Name: console
+              Title: Console
+              Style { Zone: bottom, Height: 160 }
+              Children {
+                Console {
+                  Name: console_view
+                }
+              }
+            }
+            DockPanel {
+              Name: screens
+              Title: Screens
+              Style { Zone: center }
+              Children {
+                Home {
+                  Name: home
+                  Route: ""
+                  Style { Flex: fill }
+                }
+                Notes {
+                  Name: notes
+                  Route: notes
+                  Style { Flex: fill }
+                }
+              }
+            }
+            DockPanel {
+              Name: compare
+              Title: Compare
+              Style { Zone: center }
+              Children {
+                DockPanel {
+                  Name: before
+                  Title: Before
+                  Children {
+                    Text {
+                      Name: before_text
+                      Text: "Drop a panel here"
+                      Typography_Role: body_large
+                      Style { Foreground: on_surface, Padding: 16 }
+                    }
+                  }
+                }
+                DockPanel {
+                  Name: after
+                  Title: After
+                  Children {
+                    Text {
+                      Name: after_text
+                      Text: "or on an edge to split this half"
+                      Typography_Role: body_large
+                      Style { Foreground: on_surface, Padding: 16 }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    StatusBar {
+      Name: status
+      Text: Ready
+      Width: 100%
+    }
+  }
+}

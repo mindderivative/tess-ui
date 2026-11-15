@@ -1,0 +1,46 @@
+---
+TDL: 0.2
+Name: Settings
+Tesserae: "0.6"
+---
+Container {
+  Name: Settings
+  Classes: [page]
+  Children {
+    Text {
+      Name: title
+      Classes: [heading]
+      Text: Settings
+      Typography_Role: headline_medium
+    }
+    TextField {
+      Name: name
+      Label: "Your name"
+      Text: <| name |>
+      Style { Width: 240 }
+    }
+    Container {
+      Name: buttons
+      Classes: [row]
+      Children {
+        Button {
+          Name: theme
+          Label: "Light or dark"
+          Variant: outlined
+          Handlers {
+            On_Click: toggle_dark
+          }
+        }
+        Button {
+          Name: back
+          Label: Back
+          Variant: text
+          Disabled: <| not app.can_go_back |>
+          Handlers {
+            On_Click: go_back
+          }
+        }
+      }
+    }
+  }
+}

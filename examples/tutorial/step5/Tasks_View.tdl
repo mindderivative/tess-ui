@@ -1,0 +1,69 @@
+---
+TDL: 0.2
+Name: Tasks
+Tesserae: "0.6"
+---
+Container {
+  Name: Tasks
+  Classes: [page]
+  Children {
+    Text {
+      Name: title
+      Classes: [heading]
+      Text: <| app.state.user |>'s tasks
+      Typography_Role: headline_medium
+    }
+    Container {
+      Name: stats
+      Classes: [row]
+      Children {
+        Stat {
+          Name: open
+          Label: Open
+          Value: <| open_text |>
+        }
+        Stat {
+          Name: finished
+          Label: Done
+          Value: <| done_text |>
+        }
+      }
+    }
+    Container {
+      Name: buttons
+      Classes: [row]
+      Children {
+        Button {
+          Name: add
+          Label: "Add a task"
+          Variant: filled
+          Handlers {
+            On_Click: add_task
+          }
+        }
+        Button {
+          Name: settings
+          Label: Settings
+          Variant: text
+          Handlers {
+            On_Click: open_settings
+          }
+        }
+      }
+    }
+    Container {
+      Name: list
+      Classes: [rows]
+      Children {
+        For task In <| tasks |> Key <| task.id |> {
+          TaskItem {
+            Name: row
+            Task: <| task |>
+            On_Toggle: "toggle(task.id)"
+            On_Remove: "remove(task.id)"
+          }
+        }
+      }
+    }
+  }
+}

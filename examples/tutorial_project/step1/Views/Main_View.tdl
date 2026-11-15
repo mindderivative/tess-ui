@@ -1,0 +1,31 @@
+---
+TDL: 0.2
+Name: Main
+Tesserae: "0.6"
+---
+Container {
+  Name: Main
+  Style { Flex_Direction: vertical, Width: 100%, Height: 100%, Gap: 12, Padding: 24, Background: surface }
+  Children {
+    Text {
+      Name: title
+      Text: Tasks
+      Typography_Role: headline_medium
+      Style { Foreground: on_surface }
+    }
+    Text {
+      Name: summary
+      Text: <| summary |>
+      Typography_Role: body_large
+      Style { Foreground: on_surface_variant }
+    }
+    Button {
+      Name: add
+      Label: "Add a task"
+      Variant: filled
+      Handlers {
+        On_Click: add_task
+      }
+    }
+  }
+}

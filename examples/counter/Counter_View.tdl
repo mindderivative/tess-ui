@@ -1,0 +1,28 @@
+---
+TDL: 0.2
+Name: Counter
+Tesserae: "0.6"
+---
+# The counter: a label and a button. `Counter_ViewModel.py` holds what they show and do.
+Container {
+  Name: Counter
+  Style { Flex_Direction: vertical, Width: 240, Height: 120, Gap: 12, Padding: 16, Background: surface }
+  Children {
+    Text {
+      Name: label
+      Text: <| label |>
+      Typography_Role: headline_small
+      Style { Foreground: on_surface }
+      A11y { Live: polite }  # a screen reader announces the new count
+    }
+    Button {
+      Name: button
+      Label: Increment
+      Style { Width: 120 }
+      Handlers {
+        On_Click: increment
+      }
+      A11y { Label: <| button_label |> }  # its accessible name follows the count
+    }
+  }
+}

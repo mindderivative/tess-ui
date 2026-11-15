@@ -1,0 +1,23 @@
+---
+TDL: 0.2
+Name: Home
+Tesserae: "0.6"
+---
+# The Home screen: a static view, a routed call in Window_View.yaml.
+Container {
+  Style { Flex_Direction: vertical, Gap: 12, Padding: 24 }
+  Children {
+    Text {
+      Name: title
+      Text: Welcome
+      Typography_Role: headline_small
+      Style { Foreground: on_surface }
+    }
+    Text {
+      Name: body
+      Text: "Drag a tab to another zone, or a handle to resize one."
+      Typography_Role: body_medium
+      Style { Foreground: on_surface_variant }
+    }
+  }
+}

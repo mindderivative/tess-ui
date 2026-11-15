@@ -1,0 +1,20 @@
+---
+TDL: 0.2
+Name: Tasks
+Tesserae: "0.6"
+---
+Styles {
+  Rule {
+    Widget: Container
+    Classes: [page]
+    Style { Flex_Direction: vertical, Width: 100%, Height: 100%, Gap: 12, Padding: 24, Background: surface }
+  }
+  Rule { Widget: Text, Classes: [heading], Style { Foreground: on_surface } }
+  Rule { Widget: Text, Classes: [muted], Style { Foreground: on_surface_variant } }
+  # a rule for a view of your own: every TaskItem is a row
+  Rule { Widget: TaskItem, Style { Flex_Direction: horizontal, Align_Content: left, Gap: 8, Width: 100% } }
+  Rule { Widget: Container, Classes: [rows], Style { Flex_Direction: vertical, Gap: 4, Width: 100% } }
+  # the add button, a tertiary one: a rule for Button goes over the one Tesserae ships
+  Rule { Widget: Button, Variant: filled, Style { Background: tertiary } }
+  Rule { Widget: Button, Variant: filled, Part: label, Style { Foreground: on_tertiary } }
+}

@@ -1,0 +1,51 @@
+---
+TDL: 0.2
+Name: Window
+Tesserae: "0.6"
+---
+# The frame around the screens. With no OS title bar, the window's own title bar is the one at the top.
+Window {
+  Name: Window
+  Title: Tasks
+  Borderless: true  # no OS title bar: the title bar below is the window's
+  Min_Width: 480
+  Min_Height: 360
+  Style { Width: 640, Height: 480, Background: surface, Flex_Direction: vertical }
+  Title_Bar { Title: Tasks, Style { Background: primary_container }, Buttons: [minimize, maximize, close] }
+  Children {
+    Container {
+      Name: body
+      Style { Flex: fill, Flex_Direction: horizontal }
+      Children {
+        NavigationRailScreens {
+          Name: nav
+          Items {
+            Item { Label: Tasks, Icon: home, Screen: Main }
+            Item { Label: Settings, Icon: settings, Screen: Settings }
+          }
+        }
+        Container {
+          Name: screens
+          Style { Flex: fill }
+          Children {
+            Main {
+              Name: main
+              Route: ""
+              Style { Flex: fill }
+            }
+            Settings {
+              Name: settings
+              Route: settings
+              Style { Flex: fill }
+            }
+          }
+        }
+      }
+    }
+    StatusBar {
+      Name: status
+      Text: Ready
+      Style { Width: 100% }
+    }
+  }
+}

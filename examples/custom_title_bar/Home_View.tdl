@@ -1,0 +1,88 @@
+---
+TDL: 0.2
+Name: Home
+Tesserae: "0.6"
+---
+# A window's title bar, two ways.
+Container {
+  Name: Home
+  Style { Width: 100%, Height: 100%, Flex_Direction: vertical, Background: surface }
+  Children {
+    TitleBar {
+      Name: bar
+      Title: Notes
+      Icon: home
+      Style { Width: 100% }
+      Children {
+        TextInput {
+          Name: search
+          Text: <| query |>
+          Typography_Role: body_medium
+          Style {
+            Width: 220
+            Height: 28
+            Foreground: on_surface
+            Background: surface_container_high
+            Corner_Radius: 14
+            Padding { Left: 12, Right: 12, Top: 0, Bottom: 0 }
+          }
+          A11y { Label: Search }
+        }
+      }
+    }
+    Container {
+      Name: body
+      Style { Flex: expand_vertical, Flex_Direction: vertical, Gap: 12, Padding: 24 }
+      Children {
+        Text {
+          Name: heading
+          Text: "A title bar the app draws"
+          Typography_Role: title_large
+          Style { Foreground: on_surface }
+        }
+        Text {
+          Name: about
+          Text: "Drag a bar to move the window; double-click to maximize."
+          Typography_Role: body_medium
+          Style { Foreground: on_surface_variant, Width: 520 }
+        }
+        Container {
+          Name: own_bar
+          Window_Region: drag
+          Style {
+            Width: 520
+            Height: 36
+            Align_Content: left
+            Gap: 8
+            Background: surface_container
+            Corner_Radius: 8
+            Padding { Left: 12, Right: 4, Top: 0, Bottom: 0 }
+          }
+          Children {
+            Text {
+              Name: own_label
+              Text: "A bar of my own: drag me"
+              Typography_Role: label_large
+              Style { Foreground: on_surface, Flex: expand_horizontal }
+            }
+            Rect {
+              Name: own_close
+              Handlers {
+                On_Click: window.close
+              }
+              A11y { Label: Close }
+              Style { Width: 28, Height: 28, Corner_Radius: 14, Background: transparent, Align_Content: center }
+              Children {
+                Icon {
+                  Name: own_close_icon
+                  Icon: close
+                  Style { Width: 16, Height: 16, Foreground: on_surface }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
