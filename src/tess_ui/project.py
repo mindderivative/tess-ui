@@ -43,8 +43,8 @@ KINDS: dict[str, tuple[str, tuple[str, ...]]] = {
 TDL_SUFFIXES: dict[str, str] = {"view": "_View.tdl", "theme": "_Theme.tdl", "stylesheet": "_Stylesheet.tdl"}
 #: The word a TDL file's root block has, by the kind it makes the file: a stylesheet is `Styles { }`, a theme `Theme { }`, anything else is a view's widget.
 _TDL_ROOTS = {"Styles": "stylesheet", "Theme": "theme"}
-_TDL_META = re.compile(r"\A\ufeff?(?:[ \t\r\n]|#[^\n]*)*---[ \t]*\r?\n.*?^---[ \t]*(?:\r?\n|\Z)", re.S | re.M)
-_TDL_WORD = re.compile(r"(?:[ \t\r\n]|#[^\n]*)*([A-Za-z_][A-Za-z0-9_]*)")
+_TDL_META = re.compile(r"\A\ufeff?(?:[ \t\r\n]|#[^\n]*(?=\n|\Z))*---[ \t]*\r?\n.*?^---[ \t]*(?:\r?\n|\Z)", re.S | re.M)
+_TDL_WORD = re.compile(r"(?:[ \t\r\n]|#[^\n]*(?=\n|\Z))*([A-Za-z_][A-Za-z0-9_]*)")
 _NOTED_TWINS: set[Path] = set()
 #: The root keys only a theme has. A theme may hold `styles:` too, so one of these decides before `styles:` does.
 _THEME_KEYS = frozenset({"seed", "dark", "colors", "typography", "components"})

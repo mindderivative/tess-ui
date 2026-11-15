@@ -14,11 +14,11 @@ python app.py
 notes/
   .venv/              a virtual environment with Tesserae in it
   app.py
-  Views/              Main_View.yaml, Window_View.yaml (the window), Name_View.yaml: every screen and every view you call
+  Views/              Main_View.tdl, Window_View.tdl (the window), Name_View.tdl: every screen and every view you call
   ViewModels/         Main_ViewModel.py
   Components/         Name_Component.yaml: fragments in the older syntax, which you won't write new
-  Themes/             Name_Theme.yaml
-  Styles/             Name_Stylesheet.yaml
+  Themes/             Name_Theme.tdl
+  Styles/             Name_Stylesheet.tdl
 ```
 
 The files `tesserae new` writes are in the current view language; [`tesserae migrate-yaml`](cli.md#move-a-project-to-the-current-syntax) moves a project written in the older syntax, and the
@@ -34,10 +34,10 @@ install Tesserae). [The `tesserae` command](cli.md) has the rest.
 
 | You write | Tesserae opens |
 | --- | --- |
-| `app.open_view("Main")` | `Views/Main_View.yaml` |
+| `app.open_view("Main")` | `Views/Main_View.tdl` (or `Main_View.yaml`: a name finds either, and the `.tdl` wins when both are in one folder) |
 | `app.bind(app.project.viewmodel("Main"))` | `ViewModels/Main_ViewModel.py`, the class `MainViewModel`, imported for you |
-| `app.open_view("Window")` | `Views/Window_View.yaml`, the window (a `widget: Window` view) |
-| `widget: Side` in a view | the view `Side`: `Views/Side_View.yaml`, or one of the views Tesserae ships; a name of yours wins |
+| `app.open_view("Window")` | `Views/Window_View.tdl`, the window (a `widget: Window` view) |
+| `widget: Side` in a view | the view `Side`: `Views/Side_View.tdl`, or one of the views Tesserae ships; a name of yours wins |
 | `App(custom_theme="Brand")` | `Themes/Brand_Theme.yaml` |
 | `App(stylesheet="Page")` | `Styles/Page_Stylesheet.yaml` |
 | a view `Stat` that a view calls | `Stat_Stylesheet.yaml` beside `Stat_View.yaml`, or in `Styles/`: its look, read only while the app uses `Stat` |

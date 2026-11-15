@@ -1,23 +1,31 @@
 # Naming Convention
 
-A screen is a `<Name>_View.yaml` and a `<Name>_ViewModel.py`. The names are how Tesserae joins them, and how it
+A screen is a `<Name>_View.tdl` and a `<Name>_ViewModel.py`. The names are how Tesserae joins them, and how it
 finds them in a [project](projects.md):
 
 | File | What it is | Its name is |
 |---|---|---|
-| `Counter_View.yaml` | a view | `Counter`: what `app.open_view("Counter")` and `widget: Counter` say |
+| `Counter_View.tdl` | a view | `Counter`: what `app.open_view("Counter")` and `widget: Counter` say |
 | `Counter_ViewModel.py` | its ViewModel, the class `CounterViewModel` | `Counter`: what `app.project.viewmodel("Counter")` finds |
-| `Brand_Theme.yaml` | a theme | `Brand`: `App(custom_theme="Brand")` |
-| `Tasks_Stylesheet.yaml` | a stylesheet of rules | `Tasks`: `App(stylesheet="Tasks")` |
+| `Brand_Theme.tdl` | a theme | `Brand`: `App(custom_theme="Brand")` |
+| `Tasks_Stylesheet.tdl` | a stylesheet of rules | `Tasks`: `App(stylesheet="Tasks")` |
 
-The part before the suffix is the **name**, and it is CamelCase. Which ViewModel serves which view is not decided by the file
+The part before the suffix is the **name**, and it is CamelCase. A view, a theme and a stylesheet may be written in TDL (`.tdl`) or in YAML (`.yaml`), and
+a name finds either: `Counter` is `Counter_View.tdl` or `Counter_View.yaml`. When one folder holds both, the `.tdl` is the file, and a note in the log says once that the YAML twin
+is ignored. A file is read by its suffix, so a `.tdl` file is always TDL (language 0.2, slots written `<| |>`): a file in an older TDL language, or one that writes a slot as `{{ }}`, is refused with the line.
+Which ViewModel serves which view is not decided by the file
 names but by a second name, the view's **bind key**:
 
-```yaml
-tesserae: 0.6
-# Counter_View.yaml
-name: Counter            # the bind key
-widget: Container
+```text
+---
+TDL: 0.2
+Name: Counter
+Tesserae: "0.6"
+---
+# Counter_View.tdl
+Container {
+  Name: Counter          # the bind key
+}
 ```
 
 ```python

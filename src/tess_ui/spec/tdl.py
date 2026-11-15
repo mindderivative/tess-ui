@@ -134,11 +134,13 @@ class _Front:
     # values
 
     def value(self, v: tess_dl.Value) -> tuple[Any, Position]:
-        """A value and where it is: a quoted string's text starts after its quote, a slot's `{{` is where its delimiter is."""
+        """A value and where it is: a quoted string's text starts after its quote, a slot's `{{` is where its delimiter is.
+        Only the TDL 0.2 slot (`<| |>`) is a slot: a `{{ }}` in text is the 0.1 form and is refused, never read as a template."""
         at = self.pos(v)
         if isinstance(v, tess_dl.Word):
             return _WORDS.get(v.text, v.text), at
         if isinstance(v, tess_dl.String):
+            self.refuse_old_slot(v.value, (at[0], at[1] + 1))
             return v.value, (at[0], at[1] + 1)
         if isinstance(v, tess_dl.Number):
             return v.value, at
@@ -147,6 +149,9 @@ class _Front:
         if isinstance(v, tess_dl.Slot):
             return "{{" + v.text + "}}", at
         if isinstance(v, tess_dl.Template):
+            for part in v.parts:
+                if isinstance(part, str):
+                    self.refuse_old_slot(part, at)
             return "".join(p if isinstance(p, str) else "{{" + p.text + "}}" for p in v.parts), at
         if isinstance(v, tess_dl.List):
             seq = PSeq()
@@ -157,6 +162,11 @@ class _Front:
                 seq.item_at.append(item_at)
             return seq, at
         raise self.fail(at, f"'{v.name}(...)' is not a value a view takes", "write the value as text or a number")  # a Call
+
+    def refuse_old_slot(self, text: str, at: Position) -> None:
+        """`{{ }}` in text is how TDL 0.1 wrote a slot, and the front end's own spelling of one below: refused here, so a file never gets a live template that way."""
+        if "{{" in text:
+            raise self.fail(at, "A slot is written <| expression |>; {{ }} was the TDL 0.1 form", "write <| expression |>")
 
     def expr(self, slot: tess_dl.Slot) -> tuple[str, Position]:
         """The expression text of a condition, a loop or a step (trimmed) and where its first character is."""

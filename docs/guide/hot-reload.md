@@ -23,7 +23,7 @@ app.show("Counter")
 app.run(hot_reload=True)
 ```
 
-Save `Counter_View.yaml`, a view it calls (and the views those call), or a picture it draws, and the window shows the change at once. The view is
+Save `Counter_View.tdl` (or `.yaml`), a view it calls (and the views those call), or a picture it draws, and the window shows the change at once. The view is
 composed again from the new files and drawn over the old: the ViewModel and its Signals are the same ones, so the counter keeps its count; a node
 that keeps its place (its `name`, or its position, with the `key` of a row under `for:`) keeps its `state:`; a handler is wired again. A view
 the file starts to call is watched from then on. The views Tesserae ships are not watched. A view opened while the app runs is watched too, and
