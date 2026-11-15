@@ -443,6 +443,7 @@ jobs:
 
   # One job to look at (or to require): it fails when any job that ran failed or was cancelled, and passes when the others were skipped by design.
   ci-result:
+    name: CI result  # the name the repository ruleset requires
     if: always()
     needs: [plan, docs, test, shell-config, clean-install, build-executable]
     runs-on: ubuntu-latest
