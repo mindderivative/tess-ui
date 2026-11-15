@@ -1047,7 +1047,7 @@ stylesheets of the built-in components.
   `<Name>_Stylesheet.yaml` next to your views goes over the built-in one, field by field.
 - **Your own fragments are found next to the view.** A `*_Component.yaml` (and its stylesheet) in a view's
   folder is used by `component:` with no `component_dirs=`.
-- **Documentation:** a generated [Python API](api/python.md) and [YAML reference](api/yaml.md); a page for
+- **Documentation:** a generated [Python API](api/python.md) and [YAML reference](api/tdl.md) (the page is now the TDL reference); a page for
   each of 43 MD3 [components](components/index.md) and 76 [stylesheets](stylesheets/index.md); a
   [Themes](themes/index.md) page; a [Tutorial](tutorial.md); [Migrating](migration.md); and a guide to the
   [`tesserae` command](guide/cli.md). Tests keep the generated pages current and run every example on them.
