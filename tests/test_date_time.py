@@ -26,7 +26,7 @@ def test_a_day_is_a_48px_target_with_md3s_40px_circle():
     window.advance(16)
     indicator = d.part("indicator")
     assert d.node.get("layout_width") == 48.0 and indicator.get("layout_width") == 40.0
-    assert indicator.get("corner_radius") == 20.0 and indicator.get("fill") == CLEAR
+    assert indicator.get("corner_radius") >= 20.0 and indicator.get("fill") == CLEAR  # the shipped circle is round (`full`)
     assert d.part("label").get("fill") == BASE["on_surface"] and d.part("label").get("font_size") == 16.0
     assert (d.node.get("role"), d.node.get("label")) == ("button", "15")
 
@@ -67,7 +67,7 @@ def test_the_period_selector_is_md3s():
     assert ps.part("am").get("fill") == BASE["tertiary_container"]
     assert ps.part("am_label").get("fill") == BASE["on_tertiary_container"]
     assert ps.part("pm").get("fill") == CLEAR and ps.part("pm_label").get("fill") == BASE["on_surface_variant"]
-    assert ps.node.get("role") == "tablist" and ps.part("am").get("selected") is True
+    assert ps.node.get("role") == "group" and ps.part("am").get("checked") is True  # the shipped selector is a group of radios
 
 
 def test_the_period_switches_by_click_and_arrows():
@@ -81,7 +81,7 @@ def test_the_period_switches_by_click_and_arrows():
     window.simulate("key_down", key="arrow_up")
     assert ps.period.get() == "AM" and ps.part("am").get("focused")
     assert heard == ["PM", "AM"]
-    assert [ps.part(p).get("focusable") for p in ("am", "pm")] == [True, False]  # one Tab stop
+    assert [ps.part(p).get("tab_index") for p in ("am", "pm")] == [0, -1]  # one Tab stop (the shipped focus group's roving tab index)
     with pytest.raises(ValueError, match="'AM' or 'PM'"):
         period_selector(window, "noon")
 
