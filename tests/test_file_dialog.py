@@ -203,7 +203,7 @@ def test_it_lists_the_folder_folders_first_and_shows_the_path_and_the_trail(tmp_
     assert ctl(view).folder.get() == str(base)
     assert view._built.nodes[f"{PANEL}.toolbar.path_field.box.body.input"].get("text") == str(base)
     trail = [k[len(f"{PANEL}.crumbs.crumb["):-len("].crumb_button")] for k in view._built.nodes if k.endswith("].crumb_button")]
-    assert trail[0] == os.sep and trail[-1] == str(base) and len(trail) == len(ctl(view).crumbs.get())
+    assert trail[0] == os.path.splitdrive(str(base))[0] + os.sep and trail[-1] == str(base) and len(trail) == len(ctl(view).crumbs.get())
     assert not ctl(view).valid.get()  # nothing is picked: OK is off
     assert node(view, "actions.accept").get("disabled")
 
@@ -609,6 +609,8 @@ def test_an_error_is_announced_as_an_alert(tmp_path):
 
 class Fake:
     def __init__(self, folders):
+        if os.name == "nt":
+            pytest.skip("this file system is keyed by POSIX paths ('/home'); the dialog's own path logic is checked on a real disk by the tmp_path tests")
         self.folders = folders
         self.denied = set()
 

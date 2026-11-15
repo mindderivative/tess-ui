@@ -237,7 +237,8 @@ def test_the_crumbs_run_from_the_top_to_the_folder_and_from_the_root_when_there_
     inner = base / "Alpha" / "deeper"
     plain = FileBrowser(start=str(inner))
     trail = plain.crumbs
-    assert trail[0] == {"name": os.path.splitroot(str(inner))[0] + os.sep, "path": os.sep} or trail[0]["path"] == os.path.splitroot(str(inner))[1]
+    anchor = os.path.splitdrive(str(inner))[0] + os.sep  # "/" on POSIX, "C:\" on Windows
+    assert trail[0] == {"name": anchor, "path": anchor}
     assert [c["name"] for c in trail][-3:] == [base.name, "Alpha", "deeper"] and trail[-1]["path"] == str(inner)
     confined = FileBrowser(start=str(inner), root=str(base))
     assert [c["name"] for c in confined.crumbs] == [base.name, "Alpha", "deeper"]
