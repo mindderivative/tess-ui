@@ -24,11 +24,12 @@ class VM(ViewModel):
         self.ends.append((self.lo.get(), self.hi.get()))
 
 
-def opened(tmp_path, extra="", style="width: 220", body=None):
+def opened(tmp_path, extra="", style="Width: 220", body=None):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    node = body or ('  - {widget: RangeSlider, name: s, min: 0, max: 100, low: "{{ lo }}", high: "{{ hi }}", style: {%s}%s}\n' % (style, extra))
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {flex_direction: vertical, align_content: top_left, width: 300, height: 300}\nchildren:\n" + node)
+    node = body or ('    RangeSlider { Name: s, Min: 0, Max: 100, Low: <| lo |>, High: <| hi |>, Style { %s }%s }\n' % (style, extra))
+    (tmp_path / "Views" / "Main_View.tdl").write_text(
+        "---\nTDL: 0.2\nName: main\n---\nContainer {\n  Name: main\n"
+        "  Style { Flex_Direction: vertical, Align_Content: top_left, Width: 300, Height: 300 }\n  Children {\n" + node + "  }\n}\n")
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")
@@ -79,7 +80,7 @@ def test_two_handles_sit_at_their_share_of_the_range_and_the_track_between_them_
 
 
 def test_the_group_is_not_a_tab_stop_and_each_handle_is_a_slider_with_its_own_reach(tmp_path):
-    view, _ = opened(tmp_path, ", label: Price")
+    view, _ = opened(tmp_path, ", Label: Price")
     c = control(view)
     assert c.node.get("role") == "group" and not c.node.get("focusable")
     low, high = c.thumbs[0].node, c.thumbs[1].node
@@ -120,7 +121,7 @@ def test_input_is_heard_through_the_drag_and_change_at_its_end_with_both_values(
 
 
 def test_the_keys_move_the_handle_that_has_the_focus_only(tmp_path):
-    view, vm = opened(tmp_path, ", step: 10")
+    view, vm = opened(tmp_path, ", Step: 10")
     low, high = (t.node for t in control(view).thumbs)
     view.window.simulate("focus", low)
     view.window.simulate("key_down", low, key="arrow_right")
@@ -139,7 +140,7 @@ def test_the_keys_move_the_handle_that_has_the_focus_only(tmp_path):
 
 
 def test_a_screen_reader_can_increment_decrement_and_set_each_handle(tmp_path):
-    view, vm = opened(tmp_path, ", step: 5")
+    view, vm = opened(tmp_path, ", Step: 5")
     low, high = (t.node for t in control(view).thumbs)
     view.window.simulate("a11y_action", low, action="increment")
     view.window.simulate("a11y_action", high, action="decrement")
@@ -166,7 +167,7 @@ def test_a_view_model_that_gives_a_low_above_the_high_is_read_in_order(tmp_path)
 
 
 def test_ticks_between_the_handles_are_the_on_colour(tmp_path):
-    view, _ = opened(tmp_path, ", step: 25, ticks: true")
+    view, _ = opened(tmp_path, ", Step: 25, Ticks: true")
     c = control(view)
     assert len(c.tick_marks) == 5
     colours = [m.get("fill") == role(view, "on_primary") for m in c.tick_marks]
@@ -175,7 +176,7 @@ def test_ticks_between_the_handles_are_the_on_colour(tmp_path):
 
 
 def test_the_value_bubble_of_a_handle_shows_while_it_is_dragged_or_has_the_keyboard(tmp_path):
-    view, vm = opened(tmp_path, ", value_indicator: true")
+    view, vm = opened(tmp_path, ", Value_Indicator: true")
     c = control(view)
     low, high = c.thumbs
     assert not low.bubble.get("visible") and not high.bubble.get("visible")
@@ -188,7 +189,7 @@ def test_the_value_bubble_of_a_handle_shows_while_it_is_dragged_or_has_the_keybo
 
 
 def test_a_disabled_range_slider_has_no_tab_stops_and_does_not_move(tmp_path):
-    view, vm = opened(tmp_path, ", disabled: true")
+    view, vm = opened(tmp_path, ", Disabled: true")
     c = control(view)
     assert not c.thumbs[0].node.get("focusable") and not c.thumbs[1].node.get("focusable")
     press(view, at(view, 0.3))
@@ -197,13 +198,13 @@ def test_a_disabled_range_slider_has_no_tab_stops_and_does_not_move(tmp_path):
 
 
 def test_the_handlers_hear_input_and_change(tmp_path):
-    view, vm = opened(tmp_path, ", handlers: {on_input: moving, on_change: committed}")
+    view, vm = opened(tmp_path, ", Handlers { On_Input: moving, On_Change: committed }")
     drag(view, at(view, 0.7), at(view, 0.8), at(view, 0.9))
     assert len(vm.live) >= 2 and vm.ends == [(20.0, pytest.approx(90.0, abs=0.5))]
 
 
 def test_an_expressive_range_slider_is_three_pieces_with_a_gap_at_each_handle(tmp_path):
-    view, _ = opened(tmp_path, ", size: m")
+    view, _ = opened(tmp_path, ", Size: m")
     c = control(view)
     centres = [c._edge + 0.2 * c._span, c._edge + 0.7 * c._span]
     assert c.inactive.get("layout_width") == pytest.approx(centres[0] - 2.0 - c.GAP, abs=0.5)
@@ -215,7 +216,7 @@ def test_an_expressive_range_slider_is_three_pieces_with_a_gap_at_each_handle(tm
 
 
 def test_a_vertical_range_slider_has_the_low_handle_below(tmp_path):
-    view, vm = opened(tmp_path, ", vertical: true", style="height: 200")
+    view, vm = opened(tmp_path, ", Vertical: true", style="Height: 200")
     c = control(view)
     assert c.thumbs[0].handle.get("translate_y") == pytest.approx(-0.2 * c._span) and c.thumbs[1].handle.get("translate_y") == pytest.approx(-0.7 * c._span)
     assert c.active.get("layout_y") + c.active.get("layout_height") == pytest.approx(200 - c._edge - 0.2 * c._span)
@@ -227,8 +228,9 @@ def test_a_vertical_range_slider_has_the_low_handle_below(tmp_path):
 
 
 def test_a_flex_expanded_range_slider_takes_its_laid_out_length(tmp_path):
-    view, vm = opened(tmp_path, body='  - widget: Container\n    name: row\n    style: {flex_direction: horizontal, width: 300, height: 48}\n    children:\n'
-                      '      - {widget: RangeSlider, name: s, min: 0, max: 100, low: "{{ lo }}", high: "{{ hi }}", style: {width: 120, flex: expand_horizontal}}\n')
+    view, vm = opened(tmp_path, body='    Container {\n      Name: row\n      Style { Flex_Direction: horizontal, Width: 300, Height: 48 }\n      Children {\n'
+                      '        RangeSlider { Name: s, Min: 0, Max: 100, Low: <| lo |>, High: <| hi |>, Style { Width: 120, Flex: expand_horizontal } }\n'
+                      '      }\n    }\n')
     c = view._built.controls["root.row.s"]
     laid = view.node("root.row.s").get("layout_width")
     view.window.simulate("resize", width=300, height=300)

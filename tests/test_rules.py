@@ -1,20 +1,28 @@
 """#209 phase 6: stylesheet rules -- the shape and its errors, specificity, layers, inline over rules, variants, parts and states."""
 
 import pytest
-import yaml
 
 from tess_ui import App, Signal, ViewModel
 from tess_ui.composed import open_composed
 from tess_ui.spec import widgets as W
 from tess_ui.spec.compose import Composer
-from tess_ui.spec.nodes import LoadError, load_marked, parse_view
+from tess_ui.spec.nodes import LoadError, parse_view, read_marked
 from tess_ui.spec.rules import Rule, RuleSheet, STATES, is_rule_sheet, load_rule_sheet, ordered
+from tess_ui.spec.tdl_stylesheet import load_marked_tdl_stylesheet
 from tess_ui.spec.widgets import Property, WidgetDecl, decl_from_params
 from tess_ui.viewmodel import Bindings
 
 
+HEAD = "---\nTDL: 0.2\nName: S\n---\n"
+
+
 def sheet(text):
-    return RuleSheet.of(load_marked(text, "S_Stylesheet.yaml"), "S_Stylesheet.yaml", text)
+    return RuleSheet.of(load_marked_tdl_stylesheet(text, "S_Stylesheet.tdl"), "S_Stylesheet.tdl", text)
+
+
+def one(*lines):
+    """A stylesheet text with one rule, a line to each of `lines` (the first is on line 7)."""
+    return HEAD + "Styles {\n  Rule {\n" + "".join(f"    {line}\n" for line in lines) + "  }\n}\n"
 
 
 def bad(text, message):
@@ -33,9 +41,9 @@ class VM:
 def compose(main, rules, views=None, vm=None):
     """Composes `main` with the rule sheets (lowest layer first); `views` maps a name to its source."""
     sources = views or {}
-    decls = {n: decl_from_params(n, yaml.safe_load(s).get("params")) for n, s in sources.items()}
-    docs = {n: parse_view(s, f"{n}_View.yaml", resolver=decls.get, view_name=n) for n, s in sources.items()}
-    doc = parse_view(main, "Main_View.yaml", resolver=decls.get)
+    decls = {n: decl_from_params(n, read_marked(s, f"{n}_View.tdl").get("params")) for n, s in sources.items()}
+    docs = {n: parse_view(s, f"{n}_View.tdl", resolver=decls.get, view_name=n) for n, s in sources.items()}
+    doc = parse_view(main, "Main_View.tdl", resolver=decls.get)
     return Composer(docs, vm or VM(), rules=[sheet(r) if isinstance(r, str) else r for r in rules]).compose(doc)
 
 
@@ -51,12 +59,24 @@ def accepting_foreground():
 
 
 def test_a_sheet_of_rules_is_checked_and_prepared():
-    s = sheet("styles:\n  - widget: Text\n    classes: [big]\n    state: hovered\n    style: {foreground: on_surface, opacity: 0.5}\n"
-              "  - style: {corner_radius: 4}\n")
+    s = sheet("""---
+TDL: 0.2
+Name: S
+---
+Styles {
+  Rule { Widget: Text, Classes: [big], State: hovered, Style { Foreground: on_surface, Opacity: 0.5 } }
+  Rule { Style { Corner_Radius: 4 } }
+}
+""")
     assert [r.widget for r in s.rules] == ["Text", None]
     assert s.rules[0].classes == {"big"} and s.rules[0].state == "hovered"
     assert [r.widget for r in s.candidates(["Text"])] == [None, "Text"] and [r.widget for r in s.candidates(["Rect"])] == [None]
-    assert RuleSheet.of(None).rules == [] and sheet("styles: []").rules == []
+    assert RuleSheet.of(None).rules == [] and sheet("""---
+TDL: 0.2
+Name: S
+---
+Styles { }
+""").rules == []
 
 
 def test_the_old_and_the_new_shape_are_told_apart():
@@ -65,56 +85,84 @@ def test_the_old_and_the_new_shape_are_told_apart():
 
 
 def test_a_rule_with_an_unknown_key_widget_or_state_says_what_is_allowed():
-    err = bad("styles:\n  - widgit: Text\n    style: {opacity: 1}", "a rule has no 'widgit'")
-    assert "did you mean 'widget'" in str(err) and (err.line, err.column) == (2, 4)
-    err = bad("styles:\n  - widget: Text\n    state: hover\n    style: {opacity: 1}", "'state:' is one of hovered, focused")
-    assert "did you mean 'hovered'" in str(err) and err.line == 3
-    bad("styles:\n  - widget: Text\n    style: {}", "a rule needs a 'style:' mapping")
-    bad("styles:\n  - widget: 5\n    style: {opacity: 1}", "'widget:' is a widget name")
-    bad("styles:\n  - 5", "a rule is a mapping")
-    bad("styles: 5", "'styles:' is a list of rules")
-    bad("- 1", "a stylesheet is a mapping")
-    bad("rules: []", "a stylesheet has only 'styles:'")
-    bad("styles:\n  - classes: a\n    style: {opacity: 1}", "'classes:' is a list of names")
-    bad("styles:\n  - widget: Text\n    name: 5\n    style: {opacity: 1}", "'name:' is a node's name")
+    err = bad(one("Widgit: Text", "Style { Opacity: 1 }"), "a rule has no 'widgit'")
+    assert "did you mean 'widget'" in str(err) and (err.line, err.column) == (7, 4)
+    err = bad(one("Widget: Text", "State: hover", "Style { Opacity: 1 }"), "'state:' is one of hovered, focused")
+    assert "did you mean 'hovered'" in str(err) and err.line == 8
+    bad(one("Widget: Text", "Style { }"), "a rule needs a 'style:' mapping")
+    bad(one("Widget: 5", "Style { Opacity: 1 }"), "'widget:' is a widget name")
+    bad(HEAD + "Styles {\n  Widget: Text\n}\n", "Styles holds Rule blocks, and 'Widget:' is a property")
+    bad(HEAD + "Styles: 5\n", "This text is not valid here")
+    bad(HEAD + "Rules { }\n", "a stylesheet is one Styles block of Rule blocks, not 'Rules'")
+    bad(one("Classes: a", "Style { Opacity: 1 }"), "'classes:' is a list of names")
+    bad(one("Widget: Text", "Name: 5", "Style { Opacity: 1 }"), "'name:' is a node's name")
 
 
 def test_selectors_must_be_properties_the_widget_declares_and_values_it_allows():
     W.register_widget(WidgetDecl("Btn2", {"variant": Property("enum", choices=("filled", "text"), default="filled")}, parts=("label",)))
     try:
-        sheet("styles:\n  - widget: Btn2\n    variant: text\n    part: label\n    style: {opacity: 1}")
-        err = bad("styles:\n  - widget: Btn2\n    variant: tonal\n    style: {opacity: 1}", "Btn2.variant is one of filled, text, not 'tonal'")
-        assert err.line == 3
-        bad("styles:\n  - widget: Btn2\n    size: large\n    style: {opacity: 1}", "Btn2 has no property 'size' to select on")
-        err = bad("styles:\n  - widget: Btn2\n    part: lable\n    style: {opacity: 1}", "Btn2 has no part 'lable'")
+        sheet("""---
+TDL: 0.2
+Name: S
+---
+Styles {
+  Rule { Widget: Btn2, Variant: text, Part: label, Style { Opacity: 1 } }
+}
+""")
+        err = bad(one("Widget: Btn2", "Variant: tonal", "Style { Opacity: 1 }"), "Btn2.variant is one of filled, text, not 'tonal'")
+        assert err.line == 8
+        bad(one("Widget: Btn2", "Size: large", "Style { Opacity: 1 }"), "Btn2 has no property 'size' to select on")
+        err = bad(one("Widget: Btn2", "Part: lable", "Style { Opacity: 1 }"), "Btn2 has no part 'lable'")
         assert "parts: label" in str(err)
     finally:
         W.unregister_widget("Btn2")
-    bad("styles:\n  - variant: tonal\n    style: {opacity: 1}", "'variant:' needs a 'widget:'")
-    bad("styles:\n  - part: label\n    style: {opacity: 1}", "'part:' needs a 'widget:'")
-    sheet("styles:\n  - widget: SomeView\n    variant: anything\n    part: whatever\n    style: {opacity: 1}")  # a view is checked when it is composed
+    bad(one("Variant: tonal", "Style { Opacity: 1 }"), "'variant:' needs a 'widget:'")
+    bad(one("Part: label", "Style { Opacity: 1 }"), "'part:' needs a 'widget:'")
+    sheet("""---
+TDL: 0.2
+Name: S
+---
+Styles {
+  Rule { Widget: SomeView, Variant: anything, Part: whatever, Style { Opacity: 1 } }
+}
+""")  # a view is checked when it is composed
 
 
 def test_foreground_is_an_extra_and_the_error_names_who_accepts_it():
-    sheet("styles:\n  - widget: Text\n    style: {foreground: primary}\n  - widget: SomeView\n    style: {foreground: primary}")
-    err = bad("styles:\n  - widget: Container\n    style: {foreground: primary}", "Container: style 'foreground' is not valid here")
-    assert f"widgets that accept it: {accepting_foreground()}" in str(err) and (err.line, err.column) == (3, 12)
-    err = bad("styles:\n  - widget: Container\n    style: {widht: 1}", "style 'widht' is not valid here")
+    sheet("""---
+TDL: 0.2
+Name: S
+---
+Styles {
+  Rule { Widget: Text, Style { Foreground: primary } }
+  Rule { Widget: SomeView, Style { Foreground: primary } }
+}
+""")
+    err = bad(one("Widget: Container", "Style { Foreground: primary }"), "Container: style 'foreground' is not valid here")
+    assert f"widgets that accept it: {accepting_foreground()}" in str(err) and (err.line, err.column) == (8, 12)
+    err = bad(one("Widget: Container", "Style { Widht: 1 }"), "style 'widht' is not valid here")
     assert "did you mean 'width'" in str(err)
 
 
 def test_an_expression_in_a_rule_is_checked_where_it_is_written():
-    sheet("styles:\n  - widget: Text\n    style: {width: '{{ height / 2 }}'}")
-    err = bad("styles:\n  - widget: Text\n    style: {width: '{{ height / }}'}", "syntax error")
-    assert err.line == 3
+    sheet("""---
+TDL: 0.2
+Name: S
+---
+Styles {
+  Rule { Widget: Text, Style { Width: <| height / 2 |> } }
+}
+""")
+    err = bad(one("Widget: Text", "Style { Width: <| height / |> }"), "syntax error")
+    assert err.line == 8
 
 
 def test_a_stylesheet_file_is_read_with_positions(tmp_path):
-    path = tmp_path / "App_Stylesheet.yaml"
-    path.write_text("styles:\n  - widget: Text\n    style: {opacity: 0.5}\n")
+    path = tmp_path / "App_Stylesheet.tdl"
+    path.write_text(one("Widget: Text", "Style { Opacity: 0.5 }"))
     assert load_rule_sheet(path).rules[0].widget == "Text"
-    path.write_text("styles:\n  - widget: Text\n    state: nope\n    style: {opacity: 0.5}\n")
-    with pytest.raises(LoadError, match=r"App_Stylesheet.yaml:3:12"):
+    path.write_text(one("Widget: Text", "State: nope", "Style { Opacity: 0.5 }"))
+    with pytest.raises(LoadError, match=r"App_Stylesheet.tdl:8:12"):
         load_rule_sheet(path)
 
 
@@ -149,42 +197,143 @@ def style(comp, id="root"):
 
 
 def test_a_widget_rule_styles_the_nodes_of_that_widget_and_inline_wins_only_for_its_own_fields():
-    comp = compose("widget: Container\nchildren:\n  - {widget: Rect, name: a, style: {width: 5}}\n  - {widget: Container, name: b}\n",
-                   ["styles:\n  - widget: Rect\n    style: {width: 99, height: 40, corner_radius: 4}\n"])
+    comp = compose("""---
+TDL: 0.2
+Name: main
+---
+Container {
+  Children {
+    Rect { Name: a, Style { Width: 5 } }
+    Container { Name: b }
+  }
+}
+""",
+                   ["""---
+TDL: 0.2
+Name: S
+---
+Styles {
+  Rule { Widget: Rect, Style { Width: 99, Height: 40, Corner_Radius: 4 } }
+}
+"""])
     assert style(comp, "root.a") == {"width": 5, "height": 40, "corner_radius": 4}  # inline width over the rule; the rest from the rule
     assert style(comp, "root.b") == {}
 
 
 def test_a_later_layer_beats_an_earlier_one_whatever_the_specificity_and_a_later_rule_wins_a_tie():
-    comp = compose("widget: Rect\nname: root\nclasses: [big]\n",
-                   ["styles:\n  - widget: Rect\n    classes: [big]\n    name: root\n    style: {width: 1, height: 1}\n",
-                    "styles:\n  - widget: Rect\n    style: {width: 2}\n  - widget: Rect\n    style: {width: 3}\n"])
+    comp = compose("""---
+TDL: 0.2
+Name: root
+---
+Rect { Name: root, Classes: [big] }
+""",
+                   ["""---
+TDL: 0.2
+Name: S
+---
+Styles {
+  Rule { Widget: Rect, Classes: [big], Name: root, Style { Width: 1, Height: 1 } }
+}
+""",
+                    """---
+TDL: 0.2
+Name: S
+---
+Styles {
+  Rule { Widget: Rect, Style { Width: 2 } }
+  Rule { Widget: Rect, Style { Width: 3 } }
+}
+"""])
     assert style(comp) == {"width": 3, "height": 1}  # the upper layer's later rule; height only the lower layer gave
 
 
 def test_inside_a_layer_the_most_specific_rule_wins_whatever_the_order():
-    comp = compose("widget: Rect\nname: me\nclasses: [big]\n",
-                   ["styles:\n  - name: me\n    style: {width: 1}\n  - widget: Rect\n    classes: [big]\n    style: {width: 2, height: 2}\n"
-                    "  - widget: Rect\n    style: {width: 3, height: 3, opacity: 0.5}\n  - classes: [big]\n    style: {opacity: 0.1, corner_radius: 7}\n"])
+    comp = compose("""---
+TDL: 0.2
+Name: me
+---
+Rect { Name: me, Classes: [big] }
+""",
+                   ["""---
+TDL: 0.2
+Name: S
+---
+Styles {
+  Rule { Name: me, Style { Width: 1 } }
+  Rule { Widget: Rect, Classes: [big], Style { Width: 2, Height: 2 } }
+  Rule { Widget: Rect, Style { Width: 3, Height: 3, Opacity: 0.5 } }
+  Rule { Classes: [big], Style { Opacity: 0.1, Corner_Radius: 7 } }
+}
+"""])
     assert style(comp) == {"width": 1, "height": 2, "opacity": 0.1, "corner_radius": 7}  # a class rule beats a widget rule alone
 
 
 def test_classes_must_all_be_on_the_node():
-    comp = compose("widget: Container\nchildren:\n  - {widget: Rect, name: a, classes: [x]}\n  - {widget: Rect, name: b, classes: [x, y]}\n",
-                   ["styles:\n  - widget: Rect\n    classes: [x, y]\n    style: {width: 9}\n"])
+    comp = compose("""---
+TDL: 0.2
+Name: main
+---
+Container {
+  Children {
+    Rect { Name: a, Classes: [x] }
+    Rect { Name: b, Classes: [x, y] }
+  }
+}
+""",
+                   ["""---
+TDL: 0.2
+Name: S
+---
+Styles {
+  Rule { Widget: Rect, Classes: [x, y], Style { Width: 9 } }
+}
+"""])
     assert style(comp, "root.a") == {} and style(comp, "root.b") == {"width": 9}
 
 
-BTN = ("params:\n  label: {type: str, default: ''}\n  variant: {type: str, default: filled}\n  height: {type: int, default: 40}\n"
-       "  selected: {type: bool, default: false}\nwidget: Rect\nstyle: {width: 100}\nchildren:\n  - {widget: Text, name: label, text: '{{ label }}'}\n"
-       "  - {widget: Icon, name: icon, icon: home}\n")
+BTN = ("""---
+TDL: 0.2
+Name: main
+---
+Rect {
+  Params {
+    Label { Type: str, Default: "" }
+    Variant { Type: str, Default: filled }
+    Height { Type: int, Default: 40 }
+    Selected { Type: bool, Default: false }
+  }
+  Style { Width: 100 }
+  Children {
+    Text { Name: label, Text: <| label |> }
+    Icon { Name: icon, Icon: home }
+  }
+}
+""")
 
 
 def test_a_variant_selects_on_the_params_of_a_view_call_and_follows_them():
     vm = VM()
-    comp = compose("widget: Container\nchildren:\n  - {widget: Btn, name: b, variant: '{{ mode }}'}\n  - {widget: Btn, name: c, variant: text}\n",
-                   ["styles:\n  - widget: Btn\n    style: {corner_radius: 4}\n  - widget: Btn\n    variant: filled\n    style: {background: primary}\n"
-                    "  - widget: Btn\n    variant: text\n    style: {background: transparent}\n"], {"Btn": BTN}, vm)
+    comp = compose("""---
+TDL: 0.2
+Name: main
+---
+Container {
+  Children {
+    Btn { Name: b, Variant: <| mode |> }
+    Btn { Name: c, Variant: text }
+  }
+}
+""",
+                   ["""---
+TDL: 0.2
+Name: S
+---
+Styles {
+  Rule { Widget: Btn, Style { Corner_Radius: 4 } }
+  Rule { Widget: Btn, Variant: filled, Style { Background: primary } }
+  Rule { Widget: Btn, Variant: text, Style { Background: transparent } }
+}
+"""], {"Btn": BTN}, vm)
     assert style(comp, "root.b") == {"width": 100, "corner_radius": 4, "background": "primary"}   # inline width, rules for the rest
     assert style(comp, "root.c")["background"] == "transparent"
     vm.mode.set("text")  # the variant is a Signal: the look changes with it
@@ -194,36 +343,134 @@ def test_a_variant_selects_on_the_params_of_a_view_call_and_follows_them():
 
 
 def test_a_part_rule_styles_the_named_node_inside_that_widget_only():
-    comp = compose("widget: Container\nchildren:\n  - {widget: Btn, name: b, label: Go}\n  - {widget: Text, name: label, text: x}\n",
-                   ["styles:\n  - widget: Btn\n    part: label\n    style: {foreground: on_primary}\n  - widget: Btn\n    part: icon\n    style: {foreground: red}\n"],
+    comp = compose("""---
+TDL: 0.2
+Name: main
+---
+Container {
+  Children {
+    Btn { Name: b, Label: Go }
+    Text { Name: label, Text: x }
+  }
+}
+""",
+                   ["""---
+TDL: 0.2
+Name: S
+---
+Styles {
+  Rule { Widget: Btn, Part: label, Style { Foreground: on_primary } }
+  Rule { Widget: Btn, Part: icon, Style { Foreground: red } }
+}
+"""],
                    {"Btn": BTN})
     assert style(comp, "root.b.label") == {"foreground": "on_primary"} and style(comp, "root.b.icon") == {"foreground": "red"}
     assert style(comp, "root.label") == {} and style(comp, "root.b") == {"width": 100}
 
 
 def test_slot_content_belongs_to_the_caller_not_to_the_widget_it_is_passed_to():
-    box = "widget: Container\nchildren:\n  - widget: Slot\n"
-    comp = compose("widget: Container\nchildren:\n  - widget: Box\n    name: b\n    children:\n      - {widget: Text, name: label, text: x}\n",
-                   ["styles:\n  - widget: Box\n    part: label\n    style: {opacity: 0.5}\n"], {"Box": box})
+    box = """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Children {
+    Slot { }
+  }
+}
+"""
+    comp = compose("""---
+TDL: 0.2
+Name: main
+---
+Container {
+  Children {
+    Box {
+      Name: b
+      Children {
+        Text { Name: label, Text: x }
+      }
+    }
+  }
+}
+""",
+                   ["""---
+TDL: 0.2
+Name: S
+---
+Styles {
+  Rule { Widget: Box, Part: label, Style { Opacity: 0.5 } }
+}
+"""], {"Box": box})
     assert style(comp, "root.b.label") == {}
 
 
 def test_a_rule_value_may_read_the_widgets_own_params():
-    comp = compose("widget: Container\nchildren:\n  - {widget: Btn, name: b, height: 30}\n",
-                   ["styles:\n  - widget: Btn\n    style: {corner_radius: '{{ height / 2 }}'}\n"], {"Btn": BTN})
+    comp = compose("""---
+TDL: 0.2
+Name: main
+---
+Container {
+  Children {
+    Btn { Name: b, Height: 30 }
+  }
+}
+""",
+                   ["""---
+TDL: 0.2
+Name: S
+---
+Styles {
+  Rule { Widget: Btn, Style { Corner_Radius: <| height / 2 |> } }
+}
+"""], {"Btn": BTN})
     assert style(comp, "root.b")["corner_radius"] == 15
 
 
 def test_a_call_site_style_beats_the_rules_and_a_rule_beats_nothing_inline():
-    comp = compose("widget: Container\nchildren:\n  - {widget: Btn, name: b, style: {width: 7, background: red}}\n",
-                   ["styles:\n  - widget: Btn\n    style: {width: 1, background: primary, corner_radius: 4}\n"], {"Btn": BTN})
+    comp = compose("""---
+TDL: 0.2
+Name: main
+---
+Container {
+  Children {
+    Btn { Name: b, Style { Width: 7, Background: red } }
+  }
+}
+""",
+                   ["""---
+TDL: 0.2
+Name: S
+---
+Styles {
+  Rule { Widget: Btn, Style { Width: 1, Background: primary, Corner_Radius: 4 } }
+}
+"""], {"Btn": BTN})
     assert style(comp, "root.b") == {"width": 7, "background": "red", "corner_radius": 4}
 
 
 def test_state_rules_follow_the_interaction_signals_and_the_widgets_own_properties():
-    comp = compose("widget: Container\nchildren:\n  - {widget: Btn, name: b, selected: '{{ on }}'}\n",
-                   ["styles:\n  - widget: Btn\n    style: {background: surface}\n  - widget: Btn\n    state: hovered\n    style: {background: hover}\n"
-                    "  - widget: Btn\n    state: selected\n    style: {opacity: 0.5}\n  - widget: Btn\n    state: pressed\n    style: {background: down}\n"],
+    comp = compose("""---
+TDL: 0.2
+Name: main
+---
+Container {
+  Children {
+    Btn { Name: b, Selected: <| on |> }
+  }
+}
+""",
+                   ["""---
+TDL: 0.2
+Name: S
+---
+Styles {
+  Rule { Widget: Btn, Style { Background: surface } }
+  Rule { Widget: Btn, State: hovered, Style { Background: hover } }
+  Rule { Widget: Btn, State: selected, Style { Opacity: 0.5 } }
+  Rule { Widget: Btn, State: pressed, Style { Background: down } }
+}
+"""],
                    {"Btn": BTN})
     inst = comp.find("root.b")
     assert style(comp, "root.b")["background"] == "surface" and "opacity" not in style(comp, "root.b")
@@ -234,19 +481,46 @@ def test_state_rules_follow_the_interaction_signals_and_the_widgets_own_properti
     inst.interaction_signal("pressed").set(False)
     inst.interaction_signal("hovered").set(False)
     comp.root.children  # noqa: B018
-    comp2 = compose("widget: Btn\nname: b\nselected: true\n", ["styles:\n  - widget: Btn\n    state: selected\n    style: {opacity: 0.5}\n"], {"Btn": BTN})
+    comp2 = compose("""---
+TDL: 0.2
+Name: b
+---
+Btn { Name: b, Selected: true }
+""", ["""---
+TDL: 0.2
+Name: S
+---
+Styles {
+  Rule { Widget: Btn, State: selected, Style { Opacity: 0.5 } }
+}
+"""], {"Btn": BTN})
     assert style(comp2)["opacity"] == 0.5
 
 
 def test_hovered_focused_and_pressed_are_names_an_expression_can_read_but_not_write():
-    comp = compose("widget: Rect\ninteraction: true\nstyle: {background: \"{{ 'hover' if hovered else 'rest' }}\"}\n", [])
+    comp = compose("""---
+TDL: 0.2
+Name: main
+---
+Rect { Interaction: true, Style { Background: <| 'hover' if hovered else 'rest' |> } }
+""", [])
     assert style(comp)["background"] == "rest"
     comp.root.interaction_signal("hovered").set(True)
     assert style(comp)["background"] == "hover"
     with pytest.raises(LoadError, match="'hovered' is not writable here"):  # found when the view loads (#277)
-        compose("widget: Rect\ninteraction: true\nhandlers: {on_click: 'hovered = True'}\n", [])
+        compose("""---
+TDL: 0.2
+Name: main
+---
+Rect { Interaction: true, Handlers { On_Click { Set { Target: hovered, Value: <| True |> } } } }
+""", [])
     with pytest.raises(LoadError, match="reserved name"):
-        compose("widget: Rect\nstate: {hovered: false}\n", [])
+        compose("""---
+TDL: 0.2
+Name: main
+---
+Rect { State { Hovered: false } }
+""", [])
 
 
 def test_every_state_a_rule_can_name_is_documented():
@@ -254,9 +528,38 @@ def test_every_state_a_rule_can_name_is_documented():
 
 
 def test_an_instance_with_no_matching_rule_makes_no_computed_and_rules_are_released_on_dispose():
-    comp = compose("widget: Container\nchildren:\n  - {widget: Rect, name: a}\n  - {widget: Text, name: t}\n", ["styles:\n  - widget: Rect\n    style: {width: 4}\n"])
+    comp = compose("""---
+TDL: 0.2
+Name: main
+---
+Container {
+  Children {
+    Rect { Name: a }
+    Text { Name: t }
+  }
+}
+""", ["""---
+TDL: 0.2
+Name: S
+---
+Styles {
+  Rule { Widget: Rect, Style { Width: 4 } }
+}
+"""])
     assert comp.find("root.a")._rules is not None and comp.find("root.t")._rules is None and comp.root._rules is None
-    comp2 = compose("widget: Rect\nclasses: [x]\n", ["styles:\n  - widget: Rect\n    style: {width: '{{ mode.upper() and 4 }}'}\n"])
+    comp2 = compose("""---
+TDL: 0.2
+Name: main
+---
+Rect { Classes: [x] }
+""", ["""---
+TDL: 0.2
+Name: S
+---
+Styles {
+  Rule { Widget: Rect, Style { Width: <| mode.upper() and 4 |> } }
+}
+"""])
     vm = comp2.root.identities[0].scope.root
     assert vm.mode._subscribers
     comp2.dispose()
@@ -267,8 +570,21 @@ def test_an_instance_with_no_matching_rule_makes_no_computed_and_rules_are_relea
 
 
 def test_a_hover_rule_changes_the_drawn_node_when_the_pointer_enters_and_leaves():
-    s = sheet("styles:\n  - widget: Rect\n    style: {background: '#112233'}\n  - widget: Rect\n    state: hovered\n    style: {background: '#AABBCC'}\n")
-    doc = parse_view("widget: Rect\nstyle: {width: 100, height: 60}\n", "Main_View.yaml")
+    s = sheet("""---
+TDL: 0.2
+Name: S
+---
+Styles {
+  Rule { Widget: Rect, Style { Background: "#112233" } }
+  Rule { Widget: Rect, State: hovered, Style { Background: "#AABBCC" } }
+}
+""")
+    doc = parse_view("""---
+TDL: 0.2
+Name: main
+---
+Rect { Style { Width: 100, Height: 60 } }
+""", "Main_View.tdl")
     bindings = Bindings()
     view = open_composed(doc, bindings, rules=[s], theme_seed=(103, 80, 164, 255))
     rest = view.node("root").get("fill")
@@ -282,29 +598,94 @@ def test_a_hover_rule_changes_the_drawn_node_when_the_pointer_enters_and_leaves(
 
 def test_the_app_uses_a_stylesheet_in_the_rule_shape_for_new_views(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text("widget: Rect\nstyle: {width: 50, height: 20}\n")
+    (tmp_path / "Views" / "Main_View.tdl").write_text("""---
+TDL: 0.2
+Name: main
+---
+Rect { Style { Width: 50, Height: 20 } }
+""")
     app = App(root=tmp_path, stylesheet_spec={"styles": [{"widget": "Rect", "style": {"background": "#112233"}}]})
     opened = app.open_view("Main")
     assert opened.node("root").get("fill") == (17, 34, 51, 255)
 
 
 def test_a_name_selector_matches_only_the_node_with_that_name():
-    comp = compose("widget: Container\nchildren:\n  - {widget: Rect, name: a}\n  - {widget: Rect, name: b}\n  - widget: Rect\n",
-                   ["styles:\n  - widget: Rect\n    name: a\n    style: {width: 9}\n"])
+    comp = compose("""---
+TDL: 0.2
+Name: main
+---
+Container {
+  Children {
+    Rect { Name: a }
+    Rect { Name: b }
+    Rect { }
+  }
+}
+""",
+                   ["""---
+TDL: 0.2
+Name: S
+---
+Styles {
+  Rule { Widget: Rect, Name: a, Style { Width: 9 } }
+}
+"""])
     assert style(comp, "root.a") == {"width": 9} and style(comp, "root.b") == {} and style(comp, "root.children[2]") == {}
 
 
 def test_the_root_of_a_view_is_the_widget_itself_not_a_part_of_it():
-    named = "params: []\nname: tag\nwidget: Rect\nchildren:\n  - {widget: Text, name: inner, text: x}\n"
-    comp = compose("widget: Container\nchildren:\n  - {widget: Named, name: n}\n",
-                   ["styles:\n  - widget: Named\n    part: tag\n    style: {width: 1}\n  - widget: Named\n    style: {height: 2}\n  - widget: Named\n    part: inner\n    style: {opacity: 0.5}\n"],
+    named = """---
+TDL: 0.2
+Name: tag
+---
+Rect {
+  Params: []
+  Name: tag
+  Children {
+    Text { Name: inner, Text: x }
+  }
+}
+"""
+    comp = compose("""---
+TDL: 0.2
+Name: main
+---
+Container {
+  Children {
+    Named { Name: n }
+  }
+}
+""",
+                   ["""---
+TDL: 0.2
+Name: S
+---
+Styles {
+  Rule { Widget: Named, Part: tag, Style { Width: 1 } }
+  Rule { Widget: Named, Style { Height: 2 } }
+  Rule { Widget: Named, Part: inner, Style { Opacity: 0.5 } }
+}
+"""],
                    {"Named": named})
     assert style(comp, "root.n") == {"height": 2} and style(comp, "root.n.inner") == {"opacity": 0.5}
 
 
 def test_a_pressed_rule_follows_the_pointer_down_and_up_on_screen():
-    s = sheet("styles:\n  - widget: Rect\n    style: {background: '#112233'}\n  - widget: Rect\n    state: pressed\n    style: {background: '#AABBCC'}\n")
-    view = open_composed(parse_view("widget: Rect\nstyle: {width: 100, height: 60}\n", "Main_View.yaml"), Bindings(), rules=[s], theme_seed=(103, 80, 164, 255))
+    s = sheet("""---
+TDL: 0.2
+Name: S
+---
+Styles {
+  Rule { Widget: Rect, Style { Background: "#112233" } }
+  Rule { Widget: Rect, State: pressed, Style { Background: "#AABBCC" } }
+}
+""")
+    view = open_composed(parse_view("""---
+TDL: 0.2
+Name: main
+---
+Rect { Style { Width: 100, Height: 60 } }
+""", "Main_View.tdl"), Bindings(), rules=[s], theme_seed=(103, 80, 164, 255))
     rest = view.node("root").get("fill")
     view.window.advance(16)
     view.window.simulate("pointer_move", x=20, y=20)

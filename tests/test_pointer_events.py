@@ -23,32 +23,48 @@ class VM(ViewModel):
         self.clicks.append("kid")
 
 
-STACK = """name: main
-widget: Container
-style: {width: 300, height: 200, position: relative}
-children:
-  - widget: Container
-    name: under
-    interaction: true
-    handlers: {on_click: on_under}
-    style: {position: absolute, x: 0, y: 0, width: 200, height: 100, background: surface_container}
-  - widget: Container
-    name: over
-    interaction: true
-    handlers: {on_click: on_over}
-    style: {position: absolute, x: 0, y: 0, width: 200, height: 100, pointer_events: "{{ through }}"}
-    children:
-      - widget: Container
-        name: kid
-        interaction: true
-        handlers: {on_click: on_kid}
-        style: {position: absolute, x: 10, y: 10, width: 50, height: 50, background: primary}
+STACK = """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Width: 300, Height: 200, Position: relative }
+  Children {
+    Container {
+      Name: under
+      Interaction: true
+      Handlers {
+        On_Click: on_under
+      }
+      Style { Position: absolute, X: 0, Y: 0, Width: 200, Height: 100, Background: surface_container }
+    }
+    Container {
+      Name: over
+      Interaction: true
+      Handlers {
+        On_Click: on_over
+      }
+      Style { Position: absolute, X: 0, Y: 0, Width: 200, Height: 100, Pointer_Events: <| through |> }
+      Children {
+        Container {
+          Name: kid
+          Interaction: true
+          Handlers {
+            On_Click: on_kid
+          }
+          Style { Position: absolute, X: 10, Y: 10, Width: 50, Height: 50, Background: primary }
+        }
+      }
+    }
+  }
+}
 """
 
 
 def opened(tmp_path, text=STACK):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(text)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(text)
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")
@@ -106,7 +122,7 @@ def test_a_patch_that_no_longer_gives_it_puts_the_property_back():
 
 @pytest.mark.parametrize("value", ["hidden", "True", "", "ignore"])
 def test_a_value_that_is_not_auto_or_none_is_refused_naming_the_node(tmp_path, value):
-    text = STACK.replace('pointer_events: "{{ through }}"', f"pointer_events: '{value}'")
+    text = STACK.replace("Pointer_Events: <| through |>", f'Pointer_Events: "{value}"')
     with pytest.raises(Exception, match="pointer_events must be one of auto, none"):
         opened(tmp_path, text)
 
@@ -119,8 +135,19 @@ def test_only_a_style_that_gives_it_touches_the_property(tmp_path):
 
 def test_a_control_and_a_link_take_pointer_events_too(tmp_path):
     """Controls place only some keys, and a Link has an outer box and its text: the key must reach the outer one."""
-    body = ("  - {widget: Slider, name: s, value: 3, min: 0, max: 10, style: {pointer_events: none}}\n"
-            "  - {widget: Link, name: l, text: Docs, href: 'https://example.com', style: {foreground: primary, pointer_events: none}}\n")
-    app, view, vm = opened(tmp_path, STACK.split("children:\n")[0] + "children:\n" + body)
+    body = """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Width: 300, Height: 200, Position: relative }
+  Children {
+    Slider { Name: s, Value: 3, Min: 0, Max: 10, Style { Pointer_Events: none } }
+    Link { Name: l, Text: Docs, Href: "https://example.com", Style { Foreground: primary, Pointer_Events: none } }
+  }
+}
+"""
+    app, view, vm = opened(tmp_path, body)
     assert view.node("root.s").get("hit_testable") is False
     assert view.node("root.l").get("hit_testable") is False

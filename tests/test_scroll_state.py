@@ -19,23 +19,31 @@ class VM(ViewModel):
         self.way = Signal("none")
 
 
-VIEW = """name: main
-widget: Container
-style: {flex_direction: vertical, width: 200, height: 200}
-children:
-  - widget: ScrollView
-    name: s
-    style: {width: 200, height: 100}
-    %s
-    children:
-      - {widget: Container, name: tall, style: {width: 200, height: 500}}
-  - {widget: Text, name: label, font_family: Roboto, font_size: 14, style: {foreground: "#000000"}, text: "{{ 'top' if top else ('end' if end else way) }}"}
+VIEW = """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Flex_Direction: vertical, Width: 200, Height: 200 }
+  Children {
+    ScrollView {
+      Name: s
+      Style { Width: 200, Height: 100 }
+      %s
+      Children {
+        Container { Name: tall, Style { Width: 200, Height: 500 } }
+      }
+    }
+    Text { Name: label, Font_Family: Roboto, Font_Size: 14, Style { Foreground: "#000000" }, Text: <| 'top' if top else ('end' if end else way) |> }
+  }
+}
 """
 
 
-def opened(tmp_path, props='scroll_offset: "{{ y }}"\n    at_top: "{{ top }}"\n    at_end: "{{ end }}"\n    scroll_direction: "{{ way }}"'):
+def opened(tmp_path, props='Scroll_Offset: <| y |>\n      At_Top: <| top |>\n      At_End: <| end |>\n      Scroll_Direction: <| way |>'):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(VIEW % props)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(VIEW % props)
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")
@@ -96,21 +104,21 @@ def test_an_offset_past_the_end_is_held_at_the_end_and_written_back_without_an_e
 
 
 def test_a_scroll_view_that_nothing_reads_keeps_its_own_position(tmp_path):
-    view, _ = opened(tmp_path, props="classes: []")
+    view, _ = opened(tmp_path, props="Classes: []")
     scroller(view).set(scroll_offset=90.0)
     settle(view)
     assert scroller(view).get("scroll_offset") == 90.0
 
 
 def test_a_literal_offset_is_where_it_starts(tmp_path):
-    view, _ = opened(tmp_path, props="scroll_offset: 75")
+    view, _ = opened(tmp_path, props="Scroll_Offset: 75")
     assert scroller(view).get("scroll_offset") == 75.0
 
 
-@pytest.mark.parametrize("offset", ["-5", "-0.5", "'far'", "true", ".nan"])
+@pytest.mark.parametrize("offset", ["-5", "-0.5", '"far"', "true"])
 def test_a_bad_offset_names_the_widget(tmp_path, offset):
     with pytest.raises((SpecBuildError, Exception), match="scroll_offset"):
-        opened(tmp_path, props=f"scroll_offset: {offset}")
+        opened(tmp_path, props=f"Scroll_Offset: {offset}")
 
 
 def test_the_direction_follows_the_event_and_holds_when_nothing_moved():

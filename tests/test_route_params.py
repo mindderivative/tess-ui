@@ -4,34 +4,108 @@ import pytest
 
 from tess_ui import App
 
-WINDOW = """name: shell
-widget: Window
-title: Notes
-style: {width: 600, height: 300}
-children:
-  - {widget: Rect, name: open3, style: {width: 40, height: 20, background: primary}, handlers: {on_click: "navigate_to('Note', {'id': 3})"}}
-  - {widget: Rect, name: open7, style: {width: 40, height: 20, background: secondary}, handlers: {on_click: "navigate_route('notes/' + str(7))"}}
-  - {widget: Rect, name: back, style: {width: 40, height: 20, background: tertiary}, handlers: {on_click: "navigate.back"}}
-  - {widget: Text, name: here, text: "{{ 'id=' + str(app.params.get('id', 'none')) }}", typography_role: body_medium, style: {foreground: on_surface}}
-  - {widget: Container, name: screens, children: [{widget: Home, name: home, route: ""}, {widget: Note, name: note, route: "notes/{id:int}"}]}
+WINDOW = """---
+TDL: 0.2
+Name: shell
+---
+Window {
+  Name: shell
+  Title: Notes
+  Style { Width: 600, Height: 300 }
+  Children {
+    Rect {
+      Name: open3
+      Style { Width: 40, Height: 20, Background: primary }
+      Handlers {
+        On_Click { Call { Action: "navigate_to", Args: [<| 'Note' |>, <| {'id': 3} |>] } }
+      }
+    }
+    Rect {
+      Name: open7
+      Style { Width: 40, Height: 20, Background: secondary }
+      Handlers {
+        On_Click { Call { Action: "navigate_route", Args: [<| 'notes/' + str(7) |>] } }
+      }
+    }
+    Rect {
+      Name: back
+      Style { Width: 40, Height: 20, Background: tertiary }
+      Handlers {
+        On_Click: navigate.back
+      }
+    }
+    Text {
+      Name: here
+      Text: <| 'id=' + str(app.params.get('id', 'none')) |>
+      Typography_Role: body_medium
+      Style { Foreground: on_surface }
+    }
+    Container {
+      Name: screens
+      Children {
+        Home {
+          Name: home
+          Route: ""
+        }
+        Note {
+          Name: note
+          Route: "notes/{id:int}"
+        }
+      }
+    }
+  }
+}
 """
-NOTE = """name: note
-widget: Container
-state: {n: 0}
-style: {width: 100, height: 50}
-children:
-  - {widget: Rect, name: bump, style: {width: 20, height: 20, background: primary}, handlers: {on_click: "n += 1"}}
-  - {widget: Text, name: t, text: "{{ 'n=' + str(n) }}", typography_role: body_medium, style: {foreground: on_surface}}
+NOTE = """---
+TDL: 0.2
+Name: note
+---
+Container {
+  Name: note
+  State { N: 0 }
+  Style { Width: 100, Height: 50 }
+  Children {
+    Rect {
+      Name: bump
+      Style { Width: 20, Height: 20, Background: primary }
+      Handlers {
+        On_Click { Set { Target: n, Value: <| n + 1 |> } }
+      }
+    }
+    Text {
+      Name: t
+      Text: <| 'n=' + str(n) |>
+      Typography_Role: body_medium
+      Style { Foreground: on_surface }
+    }
+  }
+}
 """
-SCREEN = "name: {n}\nwidget: Container\nstyle: {{width: 100, height: 50}}\nchildren:\n  - {{widget: Text, name: t, text: {n}, typography_role: body_medium, style: {{foreground: on_surface}}}}\n"
+SCREEN = """---
+TDL: 0.2
+Name: NNN
+---
+Container {
+  Name: NNN
+  Style { Width: 100, Height: 50 }
+  Children {
+    Text {
+      Name: t
+      Text: NNN
+      Typography_Role: body_medium
+      Style { Foreground: on_surface }
+    }
+  }
+}
+"""
 
 
 @pytest.fixture
 def shell(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Shell_View.yaml").write_text(WINDOW)
-    (tmp_path / "Views" / "Home_View.yaml").write_text(SCREEN.format(n="home"))
-    (tmp_path / "Views" / "Note_View.yaml").write_text(NOTE)
+    (tmp_path / "Views" / "Shell_View.tdl").write_text(WINDOW)
+    (tmp_path / "Views" / "Home_View.tdl").write_text(SCREEN.replace("NNN", "home"))
+    (tmp_path / "Views" / "Note_View.tdl").write_text(NOTE)
     app = App(root=tmp_path)
     view = app.open_view("Shell")
     app.window.advance(16)
@@ -116,9 +190,28 @@ def test_a_hidden_screen_keeps_its_state_and_the_view_resyncing_does_not_show_it
 
 def test_a_view_routed_twice_is_named(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Shell_View.yaml").write_text(
-        "name: shell\nwidget: Window\ntitle: T\nstyle: {width: 300, height: 200}\nchildren:\n  - {widget: Home, name: a, route: ''}\n  - {widget: Home, name: b, route: other}\n")
-    (tmp_path / "Views" / "Home_View.yaml").write_text(SCREEN.format(n="home"))
+    (tmp_path / "Views" / "Shell_View.tdl").write_text(
+        """---
+TDL: 0.2
+Name: shell
+---
+Window {
+  Name: shell
+  Title: T
+  Style { Width: 300, Height: 200 }
+  Children {
+    Home {
+      Name: a
+      Route: ""
+    }
+    Home {
+      Name: b
+      Route: other
+    }
+  }
+}
+""")
+    (tmp_path / "Views" / "Home_View.tdl").write_text(SCREEN.replace("NNN", "home"))
     with pytest.raises(ValueError, match="the screen 'Home' is already a routed view"):
         App(root=tmp_path).open_view("Shell")
 
@@ -136,13 +229,39 @@ def test_a_transition_plays_between_routed_screens(shell):
 
 def test_a_routed_call_that_appears_later_becomes_a_screen(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Shell_View.yaml").write_text(
-        "name: shell\nwidget: Window\ntitle: T\nstate: {more: false}\nstyle: {width: 300, height: 200}\nchildren:\n"
-        "  - {widget: Rect, name: add, style: {width: 20, height: 20, background: primary}, handlers: {on_click: 'more = True'}}\n"
-        "  - {widget: Home, name: home, route: ''}\n"
-        "  - {widget: Note, name: note, route: 'notes/{id:int}', if: more}\n")
-    (tmp_path / "Views" / "Home_View.yaml").write_text(SCREEN.format(n="home"))
-    (tmp_path / "Views" / "Note_View.yaml").write_text(NOTE)
+    (tmp_path / "Views" / "Shell_View.tdl").write_text(
+        """---
+TDL: 0.2
+Name: shell
+---
+Window {
+  Name: shell
+  Title: T
+  State { More: false }
+  Style { Width: 300, Height: 200 }
+  Children {
+    Rect {
+      Name: add
+      Style { Width: 20, Height: 20, Background: primary }
+      Handlers {
+        On_Click { Set { Target: more, Value: <| True |> } }
+      }
+    }
+    Home {
+      Name: home
+      Route: ""
+    }
+    If <| more |> {
+      Note {
+        Name: note
+        Route: "notes/{id:int}"
+      }
+    }
+  }
+}
+""")
+    (tmp_path / "Views" / "Home_View.tdl").write_text(SCREEN.replace("NNN", "home"))
+    (tmp_path / "Views" / "Note_View.tdl").write_text(NOTE)
     app = App(root=tmp_path)
     view = app.open_view("Shell")
     app.window.advance(16)

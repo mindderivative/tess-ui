@@ -11,18 +11,25 @@ import textwrap
 
 import pytest
 
-from tess_ui import App, Theme
+from tess_ui import App, Theme, ViewModel
 from tess_ui.app import _os_dark
 from tess_ui.widgets import button
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
-VIEW = 'id: box\nkind: Rect\nstyle: {width: 10, height: 10, background: surface}\n'
+VIEW = '---\nTDL: 0.2\nName: Home\n---\nRect {\n  Name: home\n  Style { Width: 10, Height: 10, Background: surface }\n}\n'
+
+
+class Home(ViewModel):
+    views = "home"
 
 
 def _app(tmp_path, **kwargs):
-    app = App(width=300, height=200, theme_seed=SEED, **kwargs)
-    (tmp_path / "Home_View.yaml").write_text(VIEW)
-    view = app.build_view(tmp_path / "Home_View.yaml")
+    (tmp_path / "Views").mkdir(exist_ok=True)
+    (tmp_path / "Views" / "Home_View.tdl").write_text(VIEW)
+    app = App(root=tmp_path, width=300, height=200, theme_seed=SEED, **kwargs)
+    app.bind(Home)
+    view = app.open_view("Home")
+    app.show("home")
     return app, view
 
 
@@ -95,13 +102,18 @@ RUN_SCRIPT = textwrap.dedent(
     import sys
 
     import tess_ui.app
-    from tess_ui import App
+    from tess_ui import App, ViewModel
 
     answers = iter([None])  # can't say at start (macOS, Windows), light once open
     tess_ui.app._os_dark = lambda window: next(answers, False)
-    app = App(width=200, height=80, title="os_appearance_live", theme_seed=(0x67, 0x50, 0xA4, 0xFF))
-    app.register("Home", app.build_view(sys.argv[1]), None)
-    app.show("Home")
+
+    class Home(ViewModel):
+        views = "home"
+
+    app = App(root=sys.argv[1], width=200, height=80, title="os_appearance_live", theme_seed=(0x67, 0x50, 0xA4, 0xFF))
+    app.bind(Home)
+    app.open_view("Home")
+    app.show("home")
     print("START", app.dark)
     frames = {"n": 0}
     handle = app.thread_handle()
@@ -122,11 +134,11 @@ def test_run_asks_the_os_again_on_the_first_frame(tmp_path):
     """The real `App.run()` queues the second ask: in a fresh process
     (as the other live tests run), an app that couldn't learn the
     appearance at start adopts it once the loop runs."""
-    view = tmp_path / "Home_View.yaml"
-    view.write_text(VIEW)
+    (tmp_path / "Views").mkdir()
+    (tmp_path / "Views" / "Home_View.tdl").write_text(VIEW)
     script = tmp_path / "run_app.py"
     script.write_text(RUN_SCRIPT)
-    result = subprocess.run([sys.executable, str(script), str(view)], capture_output=True, text=True, timeout=60)
+    result = subprocess.run([sys.executable, str(script), str(tmp_path)], capture_output=True, text=True, timeout=60)
     assert result.returncode == 0, result.stderr
     words = result.stdout.split()
     assert words[:2] == ["START", "True"], result.stdout

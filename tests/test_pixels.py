@@ -13,9 +13,9 @@ def pixel(view, x, y):
     return tuple(rgba[i:i + 4])
 
 
-def opened(tmp_path, yaml, **kw):
+def opened(tmp_path, tdl, **kw):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(yaml)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(tdl)
     app = App(root=tmp_path, width=300, height=200, theme_seed=SEED, dark=False, reduced_motion=False, **kw)
     view = app.open_view("Main")
     app.show("main")
@@ -24,11 +24,17 @@ def opened(tmp_path, yaml, **kw):
     return app, view
 
 
-BUTTON = """name: main
-widget: Container
-style: {width: 300, height: 200, align_content: center}
-children:
-  - {widget: Button, name: b, label: Press me, variant: outlined, size: xl}
+BUTTON = """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Width: 300, Height: 200, Align_Content: center }
+  Children {
+    Button { Name: b, Label: Press me, Variant: outlined, Size: xl }
+  }
+}
 """
 
 
@@ -73,12 +79,27 @@ def test_a_node_ripple_does_the_same_so_the_two_agree_on_which_pixels_change(tmp
     assert results["shader"] > 6 and results["nodes"] > 6
 
 
-FROST = """name: main
-widget: Container
-style: {width: 300, height: 200}
-children:
-  - {widget: Rect, name: bar, style: {position: absolute, x: 100, y: 0, width: 20, height: 200, background: "#000000"}}
-  - {widget: NavigationRail, name: rail, items: [{value: a, label: Alpha, icon: home}], %s}
+FROST = """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Width: 300, Height: 200 }
+  Children {
+    Rect {
+      Name: bar
+      Style { Position: absolute, X: 100, Y: 0, Width: 20, Height: 200, Background: "#000000" }
+    }
+    NavigationRail {
+      Name: rail
+      Items {
+        Item { Value: a, Label: Alpha, Icon: home }
+      }
+      %s
+    }
+  }
+}
 """
 
 
@@ -86,8 +107,8 @@ def test_a_frosted_rail_blurs_what_is_behind_it(tmp_path):
     a, b = tmp_path / "a", tmp_path / "b"
     a.mkdir()
     b.mkdir()
-    _, plain = opened(a, FROST % "expanded: true")
-    _, frosted = opened(b, FROST % "expanded: true, frosted: true")
+    _, plain = opened(a, FROST % "Expanded: true")
+    _, frosted = opened(b, FROST % "Expanded: true, Frosted: true")
     rail = plain.node("root.rail")
     edge_x = 100 - 3  # just left of the stripe, still inside the 220 px wide expanded rail
     assert rail.get("layout_width") > 120
@@ -101,11 +122,17 @@ def test_a_frosted_rail_blurs_what_is_behind_it(tmp_path):
     assert sum(frosted_px[:3]) < sum(plain_px[:3]), "the blur did not reach the stripe's edge"
 
 
-RING = """name: main
-widget: Container
-style: {width: 300, height: 200, align_content: center}
-children:
-  - {widget: Button, name: b, label: Focus me, variant: filled, size: m}
+RING = """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Width: 300, Height: 200, Align_Content: center }
+  Children {
+    Button { Name: b, Label: Focus me, Variant: filled, Size: m }
+  }
+}
 """
 
 

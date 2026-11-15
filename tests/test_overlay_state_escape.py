@@ -15,18 +15,29 @@ class VM(ViewModel):
         self.pop = Signal(False)
 
 
-MAIN = """tesserae: 0.6
-name: main
-widget: Container
-style: {flex_direction: horizontal, width: 400, height: 640}
-children:
-  - {widget: ColourPicker, name: cp, popup: true, open: "{{ pop }}", value: "{{ c }}"}
+MAIN = """---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {
+  Name: main
+  Style { Flex_Direction: horizontal, Width: 400, Height: 640 }
+  Children {
+    ColourPicker {
+      Name: cp
+      Popup: true
+      Open: <| pop |>
+      Value: <| c |>
+    }
+  }
+}
 """
 
 
 def opened(tmp_path, state):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(MAIN)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(MAIN)
     rules = {"styles": [{"widget": "ColourPicker", "state": state, "style": {"opacity": 0.99}}]} if state else None
     app = App(root=tmp_path, width=400, height=640, stylesheet_spec=rules)
     app.bind(VM)
