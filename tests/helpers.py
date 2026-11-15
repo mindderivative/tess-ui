@@ -31,9 +31,15 @@ def elevation(node) -> float:
     raise AssertionError(f"shadows {shadows!r} aren't an MD3 elevation level")
 
 
-def view_from(expanded_yaml: str, **kwargs):
-    """A Tesserae `View` built from `expand_components`' YAML text -- what
-    `tess_re.View("T.yaml", source=...)` did before M37."""
+def view_from(expanded_text: str, **kwargs):
+    """A Tesserae `View` built from a view's text: TDL (it starts with the `---` metadata block), or YAML while the last tests still use it.
+
+    The YAML branch goes with the YAML loaders (design/tdl-switch-plan.md)."""
     from tess_ui import View
 
-    return View(yaml.safe_load(expanded_yaml), **kwargs)
+    if expanded_text.lstrip().startswith("---"):
+        from tess_ui.spec.tdl import load_marked_tdl
+        from tess_ui.spec.tdl_theme import plain
+
+        return View(plain(load_marked_tdl(expanded_text, "T_View.tdl")), **kwargs)
+    return View(yaml.safe_load(expanded_text), **kwargs)
