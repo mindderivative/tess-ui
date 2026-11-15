@@ -9,6 +9,7 @@ import pytest
 
 from tess_ui import App, View, ViewModel
 from tess_ui.spec.build import SpecBuildError
+from tess_ui.spec.nodes import LoadError
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 
@@ -108,6 +109,47 @@ def test_the_handlers_call_the_apps_actions(tmp_path, monkeypatch):
         other = _opened(tmp_path, app, _button(action), action.title())
         app.window.simulate("click", node=other.node("root.button"))
     assert called == ["minimize", "maximize", "restore", "close"]
+
+
+def _calls(action, args=""):
+    return ("    Rect {\n      Name: button\n      Handlers { On_Click { Call { Action: " + action + args + " } } }\n"
+            "      Style { Width: 40, Height: 40, Background: \"#6750A4\" }\n    }\n")
+
+
+def test_an_unknown_window_action_is_a_load_error_naming_the_line(tmp_path):
+    app = _app(tmp_path)
+    with pytest.raises(LoadError, match=r"Home_View\.tdl:\d+:\d+: error: 'window\.fullscreen' isn't a window action") as caught:
+        _opened(tmp_path, app, _button("fullscreen"))
+    assert "window.minimize" in str(caught.value) and caught.value.line == 11  # the actions there are are listed; the line is the handler's
+
+
+def test_an_unknown_window_action_called_with_arguments_is_found_too(tmp_path):
+    """A call with arguments is statements, not a bare action name: they are checked as well."""
+    app = _app(tmp_path)
+    with pytest.raises(LoadError, match=r"'window\.minimise' isn't a window action.*did you mean 'window\.minimize'"):
+        _opened(tmp_path, app, _calls("window.minimise", ", Args: [<| 1 |>]"))
+
+
+def test_an_unknown_surface_action_is_a_load_error(tmp_path):
+    app = _app(tmp_path)
+    with pytest.raises(LoadError, match=r"'surface\.explode' isn't a surface action.*surface\.dismiss"):
+        _opened(tmp_path, app, _calls("surface.explode"))
+
+
+def test_a_window_action_in_a_tooltip_button_is_checked_too(tmp_path):
+    app = _app(tmp_path)
+    tip = ("    Rect {\n      Name: button\n      Style { Width: 40, Height: 40, Background: \"#6750A4\" }\n"
+           "      Tooltip { Text: Close, Title: T, Actions { Item { Label: Go, On_Click: window.fullscreen } } }\n    }\n")
+    with pytest.raises(LoadError, match="'window.fullscreen' isn't a window action"):
+        _opened(tmp_path, app, tip)
+
+
+def test_a_window_action_written_at_a_view_call_is_checked_too(tmp_path):
+    app = _app(tmp_path)
+    (tmp_path / "Views").mkdir(exist_ok=True)
+    (tmp_path / "Views" / "Btn_View.tdl").write_text("---\nTDL: 0.2\nName: Btn\n---\nRect { Name: face, Style { Width: 40, Height: 40, Background: \"#6750A4\" } }\n")
+    with pytest.raises(LoadError, match="'surface.explode' isn't a surface action"):
+        _opened(tmp_path, app, "    Btn { Name: b, Handlers { On_Click: surface.explode } }\n")
 
 
 def _button_spec(action):
