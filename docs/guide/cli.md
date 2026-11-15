@@ -114,9 +114,8 @@ briefly to see it start. Options: `--name`, `--icon`, `--console`, `--include GL
 ## Find the editor schemas
 
 ```bash
-tesserae schema            # where the YAML schemas are
-tesserae schema --settings # the `yaml.schemas` setting for Red Hat's YAML language server
-tesserae schema --settings --project   # the same, with the schema of this project's own views (see Editor Support)
+tesserae schema            # where the JSON schemas are: a view, a stylesheet and a theme
+tesserae schema --project  # also writes a schema that knows this project's own views (see Editor Support)
 ```
 
 See [Editor Support](editor-support.md).
