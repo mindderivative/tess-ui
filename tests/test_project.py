@@ -259,14 +259,3 @@ def test_hot_reload_watches_the_projects_views_and_stylesheets(tmp_path):
     watched = ComposedWatcher(view, view.source, app._composed_docs, lambda library, doc: app._composed_rules(library, doc=doc)[0]).files
     assert {p.name for p in watched} >= {"Main_View.tdl", "Stat_View.tdl", "Stat_Stylesheet.tdl"}
 
-
-# -- fragments -----------------------------------------------------------------------------
-
-
-def test_a_view_built_outside_an_app_does_not_search_a_project():
-    spec = {"id": "r", "kind": "Container", "children": [{"id": "c", "component": "NoSuch"}]}
-    from tess_ui.spec import expand_components_to_spec
-    from tess_ui.spec.expand import ComponentError
-
-    with pytest.raises(ComponentError, match="unknown component 'NoSuch'"):
-        expand_components_to_spec(__import__("yaml").safe_dump(spec))

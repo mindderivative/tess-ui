@@ -1,6 +1,0 @@
-# A slider: picks a value from a range by dragging.
-# Structure only: its look is in Slider_Stylesheet.yaml.
-params: [background, width, height, value]
-id: root
-kind: Slider
-value: "{{ value }}"

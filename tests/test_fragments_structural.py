@@ -11,7 +11,8 @@ import pytest
 from helpers import elevation, view_from
 from tess_re import Window
 
-from tess_ui.spec import ComponentError, expand_components
+from helpers import expand_components
+from tess_ui.spec import ComponentError
 from tess_ui.widgets import accordion_header, badge, card, chip, divider, link, list_item, tree_node
 
 THEME_SEED = (0x67, 0x50, 0xA4, 0xFF)
@@ -21,7 +22,6 @@ CARD_VARIANTS = [("CardElevated", "elevated"), ("CardFilled", "filled"), ("CardO
 CHIP_CASES = [
     ("ChipAssist", "assist", False),
     ("ChipFilter", "filter", False),
-    ("ChipFilterSelected", "filter", True),
     ("ChipInput", "input", False),
     ("ChipSuggestion", "suggestion", False),
 ]

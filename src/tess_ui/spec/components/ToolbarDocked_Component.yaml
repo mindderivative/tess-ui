@@ -1,6 +1,0 @@
-# A docked toolbar: a bar of actions fixed to an edge of the window.
-# Structure only: its look is in ToolbarDocked_Stylesheet.yaml.
-params: [background, width]
-id: root
-kind: Container
-children: []

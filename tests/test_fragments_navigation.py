@@ -10,7 +10,7 @@ already named for `button_group`/`list_`/`menu`).
 
 from tess_re import Window
 
-from tess_ui.spec import expand_components
+from helpers import expand_components
 from tess_ui.widgets import status_bar, toolbar, top_app_bar
 
 THEME_SEED = (0x67, 0x50, 0xA4, 0xFF)

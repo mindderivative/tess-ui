@@ -1,6 +1,6 @@
 from helpers import elevation, view_from
 """Real coverage for the `icon_button`/`fab`/`extended_fab` component
-fragment families (`src/tess_ui/spec/components/`). Same cross-check
+fragment families (`src/tess_ui/spec/fragments.py`). Same cross-check
 strategy as `test_spec_expand.py`'s own `Button` test: expand a real
 `component:` usage, construct via `tess_re.View(source=...)`, and compare
 against `tess_ui.widgets`'s own imperative output for the identical
@@ -9,7 +9,7 @@ widget/variant.
 
 from tess_re import Window
 
-from tess_ui.spec import expand_components
+from helpers import expand_components
 from tess_ui.widgets import extended_fab, fab, icon_button
 
 ICON_BUTTON_VARIANTS = [

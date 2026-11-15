@@ -1,5 +1,0 @@
-# A filled card: a container on a higher surface, with no shadow or border.
-# Structure only: its look is in CardFilled_Stylesheet.yaml.
-params: [width, height]
-id: root
-kind: Rect

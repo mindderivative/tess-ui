@@ -1,6 +1,0 @@
-# A checkbox: one choice, on or off.
-# Structure only: its look is in Checkbox_Stylesheet.yaml.
-params: [background, width, height, checked]
-id: root
-kind: Checkbox
-checked: "{{ checked }}"

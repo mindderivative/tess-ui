@@ -9,7 +9,7 @@ import pytest
 import tess_re
 
 from tess_ui import Theme, interaction, tokens
-from tess_ui.spec import expand_components
+from helpers import expand_components
 from tess_ui.widgets import button
 from tess_ui.widgets._composed import Widget
 
@@ -119,9 +119,8 @@ def test_arguments_reach_the_button():
         button(window, "x", 10, 10, variant="huge")
 
 
-# legacy syntax: deleted with spec/expand.py at the cutover
-def test_the_python_and_yaml_paths_are_one_definition():
-    """`button()` expands the same fragment a `component: ButtonFilled` does."""
+def test_the_widget_and_a_component_call_are_one_definition():
+    """`button()` expands the same fragment a `component: ButtonFilled` call does."""
     from tess_ui import View
 
     window = _window()
@@ -134,8 +133,7 @@ children:
     component: ButtonFilled
     with: {label: Save, width: 120, height: 40, corner_radius: 20}
 ''')
-    import yaml
-    view = View(yaml.safe_load(spec)["children"][0], theme_seed=tokens.BASELINE["primary"])
+    view = View(spec["children"][0], theme_seed=tokens.BASELINE["primary"])
     view._use_scheme(BASE)
     for prop in ("fill", "corner_radius", "width", "height", "align_items", "justify_content"):
         assert view.root.get(prop) == b.node.get(prop), prop

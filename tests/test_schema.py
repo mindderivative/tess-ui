@@ -55,7 +55,7 @@ def test_each_schema_is_valid_draft_07_and_says_what_it_is(kind):
 
 
 def test_only_the_schemas_of_the_tdl_files_are_shipped():
-    """The older syntax's schemas (a `kind:` view, a `*_Component.yaml` fragment, a `*_Style.yaml` file) were for a YAML language server and are gone."""
+    """The older syntax's schemas (a `kind:` view, a `*_Style.yaml` file) were for a YAML language server and are gone."""
     assert sorted(p.name for p in SCHEMAS.glob("*.json")) == sorted(NAMES.values())
     assert sorted(p.name for p in SITE.glob("*.json")) == sorted(NAMES.values())
 

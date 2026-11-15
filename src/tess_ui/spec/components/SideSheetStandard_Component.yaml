@@ -1,5 +1,0 @@
-# A standard side sheet: a panel at the side that shares the window with the content.
-# Structure only: its look is in SideSheetStandard_Stylesheet.yaml.
-params: [width, height]
-id: root
-kind: Rect

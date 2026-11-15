@@ -1,7 +1,0 @@
-# A time picker dial: a clock face for picking the hour, then the minute.
-# Structure only: its look is in TimePickerDial_Stylesheet.yaml.
-params: [size, hour, minute]
-id: root
-kind: TimePickerDial
-hour: "{{ hour }}"
-minute: "{{ minute }}"

@@ -1,9 +1,0 @@
-# A navigation rail: a narrow column of destinations beside the content.
-# Structure only: its look is in NavigationRail_Stylesheet.yaml.
-params: [items]
-id: root
-kind: Container
-children:
-  - id: item
-    component: NavigationRailItem
-    repeat: "{{ items }}"
