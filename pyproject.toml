@@ -25,7 +25,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "tesserae-engine==0.6.7",  # tess_re, on PyPI as tesserae-engine (`import tess_re`; it was `import tre` before 0.6.0), pinned to the release the whole suite was run on. A new engine release is tried first, by the user: a new engine line is a new Tesserae line. PyPI's own `tre` is an unrelated regex library.
+    "tesserae-engine==0.6.8",  # tess_re, on PyPI as tesserae-engine (`import tess_re`; it was `import tre` before 0.6.0), pinned to the release the whole suite was run on. A new engine release is tried first, by the user: a new engine line is a new Tesserae line. PyPI's own `tre` is an unrelated regex library.
     "tesserae-dl>=0.2.0,<0.3",  # tess_dl: TDL, the format of views, stylesheets and themes
     "tesserae-el==0.1.2",  # tess_el: TEL, the language of expressions (`{{ }}` bindings and handler values)
     "Pillow>=10.0",

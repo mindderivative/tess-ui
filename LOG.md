@@ -3528,3 +3528,7 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 - **Timing** (headless, lavapipe, 150-row `For` with templates and handlers, median of 6): open the view 55-57 ms before, 50-51 ms after; one Signal change plus a frame 32 ms before, 30-31 ms after; replacing the rows 36 ms before, 32-33 ms after.
 - **Verified.** Full suite 8774 passed, 21 skipped, in 1m43 (`-n 4`); `tools/mypy_ratchet.py` (11 old `expr.py` errors gone, baseline updated), `tools/check.py`, `generate_schema.py`, `docs_audit.py`.
 - **NOT verified.** CI (Windows, macOS, the full-mode run), the real running shell, a registry TEL could build once (no need seen in the load time).
+
+## 2026-11-15 Engine 0.6.8
+
+- `tesserae-engine==0.6.8` (PyPI, verified by the maintainer) replaces 0.6.7 in pyproject, both CI checkouts (`ref: v0.6.8`), release.yml, README and DEVELOPING. Full suite on a fresh venv with 0.6.8 under the lavapipe pin: 8696 passed, 23 skipped (the TEL parity tests skip there: `tesserae-el` is not in that venv; piece 11b adds it).
