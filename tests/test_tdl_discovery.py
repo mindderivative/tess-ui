@@ -399,7 +399,7 @@ def test_a_named_theme_gives_the_same_dict_from_tdl_and_from_yaml(tmp_path):
 
 # -- hot reload ---------------------------------------------------------------------------------------------------------------
 
-TDL_V1, TDL_V2 = yaml_to_tdl(V1, "Main"), yaml_to_tdl(V2, "Main")
+TDL_V1, TDL_V2 = V1, V2  # test_hot_reload_composed writes its views in TDL
 
 
 @pytest.fixture
