@@ -299,7 +299,7 @@ def test_a_closing_braces_inside_a_string_or_brackets_belongs_to_the_expression(
 
 def test_a_template_that_is_not_closed_is_an_error_with_a_position():
     with pytest.raises(ExprError, match="never closed") as raised:
-        compile_template("Hello {{ name", origin=Origin("A_View.yaml", 4, 8))
+        compile_template("Hello {{ name", origin=Origin("A_View.tdl", 4, 8))
     assert (raised.value.line, raised.value.column) == (4, 14)
 
 
@@ -322,11 +322,11 @@ def test_an_expression_is_reactive_when_any_name_it_reads_is():
 # -- errors carry the position (14) ------------------------------------------------------------------------------------------------
 
 
-def test_errors_name_the_file_line_and_column_of_the_text_in_the_yaml():
+def test_errors_name_the_file_line_and_column_of_the_text_in_the_view():
     with pytest.raises(ExprError) as raised:
-        compile_expr("count + cnt", origin=Origin("Main_View.yaml", 14, 7)).evaluate(MapScope({"count": 1}))
+        compile_expr("count + cnt", origin=Origin("Main_View.tdl", 14, 7)).evaluate(MapScope({"count": 1}))
     error = raised.value
-    assert str(error).startswith("Main_View.yaml:14:16: ") and (error.line, error.column) == (14, 15)
+    assert str(error).startswith("Main_View.tdl:14:16: ") and (error.line, error.column) == (14, 15)
     assert "'cnt' is not defined" in str(error) and "did you mean 'count'" in str(error)
     rendered = error.render()
     assert "count + cnt" in rendered and rendered.rstrip().endswith("^^^")
@@ -334,16 +334,16 @@ def test_errors_name_the_file_line_and_column_of_the_text_in_the_yaml():
 
 def test_a_syntax_error_points_into_the_text_and_leading_whitespace_is_accounted_for():
     with pytest.raises(ExprError) as raised:
-        compile_expr("   x +", origin=Origin("A_View.yaml", 2, 10))
+        compile_expr("   x +", origin=Origin("A_View.tdl", 2, 10))
     assert raised.value.line == 2 and "syntax error" in str(raised.value)
     with pytest.raises(ExprError) as raised:
-        compile_expr("  nope", origin=Origin("A_View.yaml", 2, 10)).evaluate(MapScope())
+        compile_expr("  nope", origin=Origin("A_View.tdl", 2, 10)).evaluate(MapScope())
     assert raised.value.column == 12  # 10 + the two leading spaces
 
 
 def test_an_error_inside_a_multiline_expression_is_on_its_own_line():
     with pytest.raises(ExprError) as raised:
-        compile_expr("(1 +\n  oops)", origin=Origin("A_View.yaml", 5, 4)).evaluate(MapScope())
+        compile_expr("(1 +\n  oops)", origin=Origin("A_View.tdl", 5, 4)).evaluate(MapScope())
     assert (raised.value.line, raised.value.column) == (6, 2)
 
 

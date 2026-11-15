@@ -9,15 +9,22 @@ class VM(ViewModel):
     views = "main"
 
 
-VIEW = """name: main
-widget: Container
-style: {flex_direction: vertical, width: 200, height: 200}
-children:
-  - widget: Container
-    name: card
-    classes: [lift]
-    style: {width: 80, height: 80, background: surface_container_low}
-    handlers: {on_click: noop}
+VIEW = """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Flex_Direction: vertical, Width: 200, Height: 200 }
+  Children {
+    Container {
+      Name: card
+      Classes: [lift]
+      Style { Width: 80, Height: 80, Background: surface_container_low }
+      Handlers { On_Click: noop }
+    }
+  }
+}
 """
 SHEET = {"styles": [
     {"widget": "Container", "classes": ["lift"], "style": {"elevation": 1, "transition": {"elevation": 200}}},
@@ -33,7 +40,7 @@ class WithNoop(VM):
 
 def opened(tmp_path, sheet=SHEET, **kwargs):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(VIEW)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(VIEW)
     app = App(root=tmp_path, stylesheet_spec=sheet, **kwargs)
     app.bind(WithNoop)
     view = app.open_view("Main")
@@ -151,10 +158,22 @@ class DragVM(ViewModel):
 
 def test_a_drag_state_in_the_view_lifts_it_the_same_way(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {width: 200, height: 200}\nchildren:\n"
-        "  - {widget: Container, name: card, style: {width: 80, height: 80, background: surface, elevation: \"{{ 4 if dragging else 1 }}\","
-        " transition: {elevation: 200}}}\n")
+    (tmp_path / "Views" / "Main_View.tdl").write_text(
+        """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Width: 200, Height: 200 }
+  Children {
+    Container {
+      Name: card
+      Style { Width: 80, Height: 80, Background: surface, Elevation: <| 4 if dragging else 1 |>, Transition { Elevation: 200 } }
+    }
+  }
+}
+""")
     app = App(root=tmp_path)
     app.bind(DragVM)
     view = app.open_view("Main")

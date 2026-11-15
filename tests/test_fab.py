@@ -20,11 +20,17 @@ class VM(ViewModel):
 
 def opened(tmp_path, props="", icon="home"):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{flex_direction: vertical, align_content: top_left, width: 500, height: 400}}
-children:
-  - {{widget: Fab, name: f, icon: '{icon}', handlers: {{on_click: bump}}{', ' + props if props else ''}}}
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Align_Content: top_left, Width: 500, Height: 400 }}
+  Children {{
+    Fab {{ Name: f, Icon: "{icon}", Handlers {{ On_Click: bump }}{', ' + props if props else ''} }}
+  }}
+}}
 """)
     app = App(root=tmp_path)
     app.bind(VM)
@@ -64,20 +70,20 @@ def test_a_fab_is_a_56_pixel_square_with_16_pixel_corners_at_level_three(tmp_pat
     ("tertiary", "tertiary_container", "on_tertiary_container"), ("surface", "surface_container_high", "primary"),
 ])
 def test_the_four_colours(tmp_path, variant, container, content):
-    view, _ = opened(tmp_path, f"variant: {variant}, label: Add")
+    view, _ = opened(tmp_path, f"Variant: {variant}, Label: Add")
     assert f(view).get("fill") == role(view, container)
     assert view.node("root.f.icon").get("fill") == role(view, content) and view.node("root.f.label").get("fill") == role(view, content)
 
 
 @pytest.mark.parametrize("size, side, radius, glyph", [("small", 40, 12, 24), ("medium", 56, 16, 24), ("large", 96, 28, 36)])
 def test_the_three_sizes(tmp_path, size, side, radius, glyph):
-    view, _ = opened(tmp_path, f"size: {size}")
+    view, _ = opened(tmp_path, f"Size: {size}")
     assert (f(view).get("layout_width"), f(view).get("layout_height")) == (float(side), float(side))
     assert f(view).get("corner_radius") == float(radius) and view.node("root.f.icon").get("layout_width") == float(glyph)
 
 
 def test_a_label_makes_it_extended_with_16_before_the_icon_and_20_after_the_text(tmp_path):
-    view, _ = opened(tmp_path, "label: Compose")
+    view, _ = opened(tmp_path, "Label: Compose")
     text = view.node("root.f.label")
     assert f(view).get("layout_height") == 56.0
     assert f(view).get("layout_width") == 16 + 24 + 8 + text.get("layout_width") + 20
@@ -85,18 +91,18 @@ def test_a_label_makes_it_extended_with_16_before_the_icon_and_20_after_the_text
 
 
 def test_an_extended_fab_without_an_icon_has_just_its_label(tmp_path):
-    view, _ = opened(tmp_path, "label: Compose", icon="")
+    view, _ = opened(tmp_path, "Label: Compose", icon="")
     assert "root.f.icon" not in view._built.specs and f(view).get("layout_width") > 56
 
 
 def test_collapsing_leaves_the_icon_in_a_square(tmp_path):
-    view, _ = opened(tmp_path, "label: Compose, collapsed: true")
+    view, _ = opened(tmp_path, "Label: Compose, Collapsed: true")
     assert "root.f.label" not in view._built.specs
     assert (f(view).get("layout_width"), f(view).get("layout_height")) == (56.0, 56.0)
 
 
 def test_it_collapses_and_extends_with_a_signal(tmp_path):
-    view, vm = opened(tmp_path, 'label: Compose, collapsed: "{{ small }}"')
+    view, vm = opened(tmp_path, 'Label: Compose, Collapsed: <| small |>')
     wide = f(view).get("layout_width")
     vm.small.set(True)
     settle(view)
@@ -107,7 +113,7 @@ def test_it_collapses_and_extends_with_a_signal(tmp_path):
 
 
 def test_the_label_is_the_name_and_a_collapsed_one_shows_it_as_a_tooltip(tmp_path):
-    view, _ = opened(tmp_path, "label: Compose, collapsed: true")
+    view, _ = opened(tmp_path, "Label: Compose, Collapsed: true")
     assert f(view).get("role") == "button" and f(view).get("label") == "Compose"
     view.window.simulate("key_down", key="tab")
     view.window.advance(16)
@@ -115,7 +121,7 @@ def test_the_label_is_the_name_and_a_collapsed_one_shows_it_as_a_tooltip(tmp_pat
 
 
 def test_an_extended_one_has_no_tooltip_since_its_label_shows(tmp_path):
-    view, _ = opened(tmp_path, "label: Compose")
+    view, _ = opened(tmp_path, "Label: Compose")
     view.window.simulate("key_down", key="tab")
     view.window.advance(16)
     assert not view._tips
@@ -139,6 +145,6 @@ def test_a_press_runs_the_calls_handler_unless_disabled(tmp_path):
     view.window.simulate("click", node=f(view))
     assert vm.clicks.get() == 1
     (tmp_path / "x").mkdir()
-    view2, vm2 = opened(tmp_path / "x", "disabled: true")
+    view2, vm2 = opened(tmp_path / "x", "Disabled: true")
     view2.window.simulate("click", node=f(view2))
     assert vm2.clicks.get() == 0 and f(view2).get("disabled") is True and f(view2).get("opacity") < 0.5

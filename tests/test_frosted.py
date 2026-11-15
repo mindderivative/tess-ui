@@ -4,27 +4,38 @@ import pytest
 
 from tess_ui import App, tokens
 
-ITEMS = "[{value: a, label: Alpha, icon: home}, {value: b, label: Beta, icon: search}]"
-ROWS = "[{value: a, label: Alpha}, {value: b, label: Beta}]"
+ITEMS = "Items { Item { Value: a, Label: Alpha, Icon: home } Item { Value: b, Label: Beta, Icon: search } }"
+ROWS = "Items { Item { Value: a, Label: Alpha } Item { Value: b, Label: Beta } }"
 
 # (widget line, the node holding the surface, the colour role it has)
 CASES = {
-    "rail": (f"{{widget: NavigationRail, name: w, items: {ITEMS}%s}}", "root.w", "surface"),
-    "drawer": (f"{{widget: NavigationDrawer, name: w, items: {ITEMS}%s}}", "root.w", "surface"),
-    "bar": ("{widget: SearchBar, name: w%s}", "root.w", "surface_container_high"),
-    "top": ("{widget: TopAppBar, name: w, title: Notes%s}", "root.w", "surface"),
-    "menu": (f"{{widget: Menu, name: w, open: '{{{{ o }}}}', items: {ROWS}%s}}", "root.w.surface", "surface_container"),
-    "search": (f"{{widget: SearchView, name: w, open: '{{{{ o }}}}'%s}}", "root.w.panel", "surface_container_high"),
-    "modal": (f"{{widget: NavigationDrawerModal, name: w, open: '{{{{ o }}}}', items: {ITEMS}%s}}", "root.w.sheet", "surface_container_low"),
+    "rail": (f"NavigationRail {{ Name: w, {ITEMS}%s }}", "root.w", "surface"),
+    "drawer": (f"NavigationDrawer {{ Name: w, {ITEMS}%s }}", "root.w", "surface"),
+    "bar": ("SearchBar { Name: w%s }", "root.w", "surface_container_high"),
+    "top": ("TopAppBar { Name: w, Title: Notes%s }", "root.w", "surface"),
+    "menu": (f"Menu {{ Name: w, Open: <| o |>, {ROWS}%s }}", "root.w.surface", "surface_container"),
+    "search": ("SearchView { Name: w, Open: <| o |>%s }", "root.w.panel", "surface_container_high"),
+    "modal": (f"NavigationDrawerModal {{ Name: w, Open: <| o |>, {ITEMS}%s }}", "root.w.sheet", "surface_container_low"),
 }
 
 
 def opened(tmp_path, case, frosted):
     line, node_id, role = CASES[case]
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstate: {o: true}\nstyle: {width: 500, height: 400, align_content: top_left}\nchildren:\n  - "
-        + line % (", frosted: true" if frosted else "") + "\n")
+    (tmp_path / "Views" / "Main_View.tdl").write_text(
+        """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  State { O: true }
+  Style { Width: 500, Height: 400, Align_Content: top_left }
+  Children {
+    """ + line % (", Frosted: true" if frosted else "") + """
+  }
+}
+""")
     app = App(root=tmp_path, width=500, height=400)
     view = app.open_view("Main")
     app.show("main")
@@ -51,8 +62,19 @@ def test_the_default_is_solid_with_no_blur(tmp_path, case):
 
 def test_a_top_app_bar_keeps_its_scrolled_colour_when_frosted(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {width: 500, height: 300}\nchildren:\n  - {widget: TopAppBar, name: w, title: T, scrolled: true, frosted: true}\n")
+    (tmp_path / "Views" / "Main_View.tdl").write_text(
+        """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Width: 500, Height: 300 }
+  Children {
+    TopAppBar { Name: w, Title: T, Scrolled: true, Frosted: true }
+  }
+}
+""")
     app = App(root=tmp_path, width=500, height=300)
     view = app.open_view("Main")
     app.show("main")

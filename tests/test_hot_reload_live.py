@@ -48,28 +48,26 @@ SCRIPT = textwrap.dedent(
 
     def view_text(content):
         return (
-            "id: root\\nkind: Container\\nchildren:\\n"
-            "  - {id: label, kind: Text, text: {content: " + content + ", font_family: Roboto, font_size: 16},"
-            ' style: {width: 100, height: 20, foreground: "#000000"}}\\n'
+            "---\\nTDL: 0.2\\nName: home\\n---\\nContainer {\\n  Name: home\\n  Children {\\n"
+            "    Text { Name: label, Text: " + content + ", Typography_Role: body_large,"
+            ' Style { Width: 100, Height: 20, Foreground: "#000000" } }\\n  }\\n}\\n'
         )
 
-    view_path = work / "Home_View.yaml"
+    (work / "Views").mkdir()
+    view_path = work / "Views" / "Home_View.tdl"
     view_path.write_text(view_text("Hello"))
 
-    app = App(width=200, height=80, title="hot_reload_live")
-    if sys.argv[2] == "register":  # M48: built with build_view() and register()ed
-        view = app.build_view(view_path)
-        app.register("Home", view, HomeViewModel(view))
-    else:
-        view, _ = app.load(view_path, HomeViewModel)
-    app.show("Home")
+    app = App(root=work, width=200, height=80, title="hot_reload_live")
+    app.bind(HomeViewModel)
+    view = app.open_view("Home")
+    app.show("home")
     handle = app.thread_handle()
     state = {"frames": 0, "seen": None}
     deadline = time.monotonic() + 10
 
     def check():
         state["frames"] += 1
-        if view.node("label").get("text") == "Goodbye":
+        if view.node("root.label").get("text") == "Goodbye":
             state["seen"] = "Goodbye"
             return
         if time.monotonic() < deadline:
@@ -85,17 +83,16 @@ SCRIPT = textwrap.dedent(
 )
 
 
-@pytest.mark.parametrize("how", ["load", "register"])
-def test_app_run_hot_reload_updates_the_live_view(tmp_path: Path, how):
-    """M48: a screen given to `register()` reloads too, not just `load()`'s."""
+def test_app_run_hot_reload_updates_the_live_view(tmp_path: Path):
+    """A view opened with `open_view` reloads while `run(hot_reload=True)` runs."""
     (tmp_path / "Home_ViewModel.py").write_text(
-        "from tess_ui import ViewModel\n\n\nclass HomeViewModel(ViewModel):\n    pass\n"
+        "from tess_ui import ViewModel\n\n\nclass HomeViewModel(ViewModel):\n    views = \"home\"\n"
     )
     script = tmp_path / "run_app.py"
     script.write_text(SCRIPT)
 
     result = subprocess.run(
-        [sys.executable, str(script), str(tmp_path), how], capture_output=True, text=True, timeout=60
+        [sys.executable, str(script), str(tmp_path)], capture_output=True, text=True, timeout=60
     )
     assert result.returncode == 0, result.stderr
     frames, seen = result.stdout.split()[1], result.stdout.split()[3]
@@ -128,28 +125,35 @@ STYLE_SCRIPT = textwrap.dedent(
     from tess_ui import App
     from tess_ui.tokens import elevation_shadows
 
-    def rule(prop, value):
-        return "styles:\\n  - kind: Rect\\n    style: {" + prop + ": " + str(value) + "}\\n"
+    HEADER = "---\\nTDL: 0.2\\nName: %s\\n---\\n"
 
-    theme = work / "brand.yaml"
-    sheet = work / "default.yaml"
-    theme.write_text(rule("elevation", 1))
-    sheet.write_text(rule("corner_radius", 2))
-    view_path = work / "Home_View.yaml"
-    view_path.write_text('id: box\\nkind: Rect\\nstyle: {width: 10, height: 10, background: "#112233"}\\n')
+    def theme_text(elevation, colours=""):
+        return HEADER % "brand" + "Theme {\\n  Styles { Item { Kind: Rect, Style { Elevation: " + str(elevation) + " } } }\\n" + colours + "}\\n"
 
-    app = App(width=200, height=80, title="style_reload_live",
+    def sheet_text(radius):
+        return HEADER % "default" + "Styles { Rule { Widget: Rect, Style { Corner_Radius: " + str(radius) + " } } }\\n"
+
+    theme = work / "brand_Theme.tdl"
+    sheet = work / "default_Stylesheet.tdl"
+    theme.write_text(theme_text(1))
+    sheet.write_text(sheet_text(2))
+    (work / "Views").mkdir()
+    view_path = work / "Views" / "Home_View.tdl"
+    view_path.write_text(HEADER % "home" + 'Rect { Name: home, Style { Width: 10, Height: 10, Background: "#112233" } }\\n')
+
+    app = App(root=work, width=200, height=80, title="style_reload_live",
               theme_seed=(0x67, 0x50, 0xA4, 0xFF), custom_theme=theme, stylesheet=sheet)
-    view, _ = app.load(view_path, HomeViewModel)
-    app.show("Home")
+    app.bind(HomeViewModel)
+    view = app.open_view("Home")
+    app.show("home")
     handle = app.thread_handle()
     state = {"frames": 0, "seen": None}
     deadline = time.monotonic() + 10
-    new_theme = rule("elevation", 5) + 'colors: {primary: "#0000FF"}\\n'
+    new_theme = theme_text(5, '  Colors { Primary: "#0000FF" }\\n')
 
     def check():
         state["frames"] += 1
-        box = view.node("box")
+        box = view.node("root")
         got = (box.get("shadows"), box.get("corner_radius"), app.theme.role("primary"))
         if got == (elevation_shadows(5), 9.0, (0, 0, 255, 255)):
             state["seen"] = "restyled"
@@ -157,7 +161,7 @@ STYLE_SCRIPT = textwrap.dedent(
         if time.monotonic() < deadline:
             if save_due():
                 theme.write_text(new_theme)  # the "editor saves"
-                sheet.write_text(rule("corner_radius", 9))
+                sheet.write_text(sheet_text(9))
             time.sleep(0.02)
             handle.call_soon(check)
         else:
@@ -174,7 +178,7 @@ def test_app_run_hot_reload_restyles_on_theme_and_stylesheet_edits(tmp_path: Pat
     """M31: editing the theme file and the default stylesheet file while
     the app runs re-styles the live screen and re-themes the app."""
     (tmp_path / "Home_ViewModel.py").write_text(
-        "from tess_ui import ViewModel\n\n\nclass HomeViewModel(ViewModel):\n    pass\n"
+        "from tess_ui import ViewModel\n\n\nclass HomeViewModel(ViewModel):\n    views = \"home\"\n"
     )
     script = tmp_path / "run_app.py"
     script.write_text(STYLE_SCRIPT)
@@ -210,36 +214,35 @@ COMPONENT_SCRIPT = textwrap.dedent(
     work = Path(sys.argv[1])
     sys.path.insert(0, str(work))
     from Home_ViewModel import HomeViewModel
-    from Row_ViewModel import RowViewModel
-    from tess_ui import App, instantiate
+    from tess_ui import App
 
     def row_text(content):
-        return ("id: row\\nkind: Text\\ntext: {content: " + content + ", font_family: Roboto, font_size: 16}\\n"
-                'style: {width: 100, height: 20, foreground: "#000000"}\\n')
+        return ("---\\nTDL: 0.2\\nName: Row\\n---\\nText { Typography_Role: body_large, Text: " + content + ","
+                ' Style { Width: 100, Height: 20, Foreground: "#000000" } }\\n')
 
-    row_path = work / "Row_View.yaml"
+    (work / "Views").mkdir()
+    row_path = work / "Views" / "Row_View.tdl"
     row_path.write_text(row_text("Hello"))
-    view_path = work / "Home_View.yaml"
-    view_path.write_text("id: root\\nkind: Container\\nstyle: {flex_direction: vertical}\\n")
+    view_path = work / "Views" / "Home_View.tdl"
+    view_path.write_text("---\\nTDL: 0.2\\nName: home\\n---\\nContainer {\\n  Name: home\\n  Style { Flex_Direction: vertical }\\n"
+                         "  Children {\\n    Row { Name: one }\\n    Row { Name: two }\\n  }\\n}\\n")
 
-    app = App(width=200, height=80, title="component_reload_live")
-    view, _ = app.load(view_path, HomeViewModel)
-    rows = [instantiate(view, row_path, RowViewModel, view.root)[0]]
-    app.show("Home")
+    app = App(root=work, width=200, height=80, title="component_reload_live")
+    app.bind(HomeViewModel)
+    view = app.open_view("Home")
+    app.show("home")
     handle = app.thread_handle()
     state = {"frames": 0, "seen": None}
     deadline = time.monotonic() + 10
 
     def check():
         state["frames"] += 1
-        if state["frames"] == 2:  # a row added while the app runs
-            rows.append(instantiate(view, row_path, RowViewModel, view.root)[0])
-        texts = [row.root.get("text") for row in rows]
-        if len(rows) == 2 and texts == ["Goodbye", "Goodbye"]:
+        texts = [view.node(f"root.{n}").get("text") for n in ("one", "two")]
+        if texts == ["Goodbye", "Goodbye"]:
             state["seen"] = "Goodbye"
             return
         if time.monotonic() < deadline:
-            if state["frames"] > 2 and save_due():
+            if save_due():
                 row_path.write_text(row_text("Goodbye"))  # the "editor save"
             time.sleep(0.02)
             handle.call_soon(check)
@@ -248,20 +251,16 @@ COMPONENT_SCRIPT = textwrap.dedent(
 
     handle.call_soon(check)
     app.run(max_frames=2000, hot_reload=True)
-    stopped = not app._watchers and not app._component_watchers  # run() stopped them, the mid-run one too
+    stopped = not app._watchers  # run() stopped them
     print("FRAMES", state["frames"], "SEEN", state["seen"], "STOPPED", stopped)
     '''
 )
 
 
-def test_app_run_hot_reload_updates_components_added_before_and_during_the_run(tmp_path: Path):
-    """M51: a component file is watched, and every live row reloads --
-    one added before `run()` and one added while it runs."""
+def test_app_run_hot_reload_updates_every_use_of_a_view_it_calls(tmp_path: Path):
+    """M51: a view the screen calls is watched, and every live use of it reloads."""
     (tmp_path / "Home_ViewModel.py").write_text(
-        "from tess_ui import ViewModel\n\n\nclass HomeViewModel(ViewModel):\n    pass\n"
-    )
-    (tmp_path / "Row_ViewModel.py").write_text(
-        "from tess_ui import ViewModel\n\n\nclass RowViewModel(ViewModel):\n    pass\n"
+        "from tess_ui import ViewModel\n\n\nclass HomeViewModel(ViewModel):\n    views = \"home\"\n"
     )
     script = tmp_path / "run_app.py"
     script.write_text(COMPONENT_SCRIPT)

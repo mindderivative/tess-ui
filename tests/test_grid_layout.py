@@ -9,9 +9,8 @@ a grid.
 
 import pytest
 import tess_re
-import yaml
 
-from tess_ui import View
+from tess_ui import App, View
 from tess_ui.spec.build import SpecBuildError
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
@@ -165,18 +164,28 @@ def test_tres_grid_errors_name_the_widget(style, message):
         View(_spec(style))
 
 
-def test_a_grid_written_in_yaml():
-    text = """
-id: root
-kind: Container
-style: {width: 300, height: 120, display: grid, grid_template_columns: "80 1fr", column_gap: 8}
-children:
-  - {id: label, kind: Text, text: {content: "Name", font_family: Roboto, font_size: 14}, style: {foreground: "#000000"}}
-  - {id: field, kind: Rect, style: {height: 24, background: "#EEEEEE"}}
+def test_a_grid_written_in_a_view_file(tmp_path):
+    text = """---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {
+  Name: main
+  Style { Width: 300, Height: 120, Display: grid, Grid_Template_Columns: "80 1fr", Column_Gap: 8 }
+  Children {
+    Text { Name: label, Text: Name, Typography_Role: body_medium, Style { Foreground: "#000000" } }
+    Rect { Name: field, Style { Height: 24, Background: "#EEEEEE" } }
+  }
+}
 """
-    view = View(yaml.safe_load(text), theme_seed=SEED)
+    (tmp_path / "Views").mkdir()
+    (tmp_path / "Views" / "Main_View.tdl").write_text(text)
+    app = App(root=tmp_path, width=300, height=120, theme_seed=SEED)
+    view = app.open_view("Main")
+    app.show("main")
     view.window.advance(16)
-    assert view.node("field").get("layout_x") == 88.0 and view.node("field").get("layout_width") == 212.0
+    assert view.node("root.field").get("layout_x") == 88.0 and view.node("root.field").get("layout_width") == 212.0
 
 
 def test_a_bare_number_is_one_track():

@@ -200,22 +200,28 @@ class VM(ViewModel):
         self.log.append(self.font.get())
 
 
-CALL = '{widget: FontList, name: fl, value: "{{ font }}", on_change: changed%s}'
-POPUP = '{widget: FontList, name: fl, popup: true, open: "{{ pop }}", value: "{{ font }}", on_change: changed%s}'
+CALL = "FontList { Name: fl, Value: <| font |>, On_Change: changed%s }"
+POPUP = "FontList { Name: fl, Popup: true, Open: <| pop |>, Value: <| font |>, On_Change: changed%s }"
 
 
 def opened(tmp_path, call=CALL, options="", dark=False, size=(460, 600), sheet=None):
     (tmp_path / "Views").mkdir(parents=True, exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""tesserae: 0.6
-name: main
-widget: Container
-style: {{flex_direction: vertical, gap: 16, padding: 16, width: {size[0]}, height: {size[1]}}}
-children:
-  - {call % options}
-  - {{widget: Rect, name: elsewhere, style: {{width: 80, height: 80, background: surface_variant}}}}
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Gap: 16, Padding: 16, Width: {size[0]}, Height: {size[1]} }}
+  Children {{
+    {call % options}
+    Rect {{ Name: elsewhere, Style {{ Width: 80, Height: 80, Background: surface_variant }} }}
+  }}
+}}
 """)
     if sheet:
-        (tmp_path / "Views" / "Main_Stylesheet.yaml").write_text(sheet)
+        (tmp_path / "Views" / "Main_Stylesheet.tdl").write_text(sheet)
     app = App(root=tmp_path, width=size[0], height=size[1], theme_seed=(0x67, 0x50, 0xA4, 0xFF), dark=dark)
     app.bind(VM)
     view = app.open_view("Main")
@@ -415,7 +421,7 @@ def test_the_list_is_in_the_tab_order_after_the_search_field(tmp_path):
 
 
 def test_the_names_a_screen_reader_hears(tmp_path):
-    view, vm = opened(tmp_path, options=", label: Body font")
+    view, vm = opened(tmp_path, options=', Label: "Body font"')
     box = node(view, "list_group.list_box")
     assert box.get("role") == "list" and box.get("label") == "Body font families"
     assert row(view, "Roboto").get("role") == "listitem" and row(view, "Roboto").get("label") == "Roboto" and row(view, "Roboto").get("selected") is True
@@ -424,7 +430,7 @@ def test_the_names_a_screen_reader_hears(tmp_path):
 
 
 def test_disabled_it_changes_nothing(tmp_path):
-    view, vm = opened(tmp_path, options=", disabled: true")
+    view, vm = opened(tmp_path, options=", Disabled: true")
     assert ctl(view).disabled.get()
     press(view, row(view, shown(view)[0]))
     key(view, "enter")
@@ -488,7 +494,7 @@ def test_fc_list_missing_through_the_default_provider_gives_the_text_field(tmp_p
 # -- the popup ---------------------------------------------------------------------------------------------------------------------------
 
 def test_a_popup_is_a_button_with_the_family_in_its_own_face_until_it_is_opened(tmp_path, provider):
-    view, vm = opened(tmp_path, POPUP, options=", label: Typeface")
+    view, vm = opened(tmp_path, POPUP, options=", Label: Typeface")
     trigger = view.node("root.fl.field.trigger")
     assert trigger.get("role") == "button" and trigger.get("label") == "Typeface: Roboto" and trigger.get("expanded") is False
     text = view.node("root.fl.field.trigger_text")
@@ -522,7 +528,7 @@ def test_a_pick_closes_the_popup_and_writes_the_value(tmp_path):
 
 
 def test_a_pick_leaves_the_popup_open_when_it_says_not_to_close(tmp_path):
-    view, vm = opened(tmp_path, POPUP, options=", close_on_pick: false")
+    view, vm = opened(tmp_path, POPUP, options=", Close_On_Pick: false")
     press(view, view.node("root.fl.field.trigger"))
     key(view, "home", popup=True)
     press(view, row(view, "arial", True))
@@ -583,7 +589,7 @@ def test_a_press_outside_closes_the_popup_and_the_button_closes_it_too(tmp_path)
 
 
 def test_a_disabled_popup_does_not_open_and_one_can_be_opened_from_the_viewmodel(tmp_path):
-    view, vm = opened(tmp_path / "a", POPUP, options=", disabled: true")
+    view, vm = opened(tmp_path / "a", POPUP, options=", Disabled: true")
     press(view, view.node("root.fl.field.trigger"))
     assert vm.pop.get() is False and not view._shown_layers
     view, vm = opened(tmp_path / "b", POPUP)
@@ -620,11 +626,16 @@ def _collect_reentrant(monkeypatch):
     return errors
 
 
-STATE_RULES = """tesserae: 0.6
-styles:
-  - {widget: FontList, state: focused, style: {opacity: 0.99}}
-  - {widget: FontList, state: hovered, style: {opacity: 0.98}}
-  - {widget: FontList, state: pressed, style: {opacity: 0.97}}
+STATE_RULES = """---
+TDL: 0.2
+Name: Main
+Tesserae: "0.6"
+---
+Styles {
+  Rule { Widget: FontList, State: focused, Style { Opacity: 0.99 } }
+  Rule { Widget: FontList, State: hovered, Style { Opacity: 0.98 } }
+  Rule { Widget: FontList, State: pressed, Style { Opacity: 0.97 } }
+}
 """
 
 
@@ -643,4 +654,4 @@ def test_escape_and_a_pick_with_a_state_rule_on_the_popup_root_raise_no_reentran
 
 def test_an_unknown_property_of_the_list_is_named(tmp_path):
     with pytest.raises(LoadError, match="colour"):
-        opened(tmp_path, call="{widget: FontList, name: fl, colour: red%s}")
+        opened(tmp_path, call="FontList { Name: fl, Colour: red%s }")
