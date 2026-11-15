@@ -18,8 +18,26 @@ class VM(ViewModel):
         self.n = Signal(1)
 
 
-VIEW = ("name: main\nwidget: Container\nstyle: {width: 300, height: 200, flex_direction: vertical, background: surface}\nstate: {open: false}\n"
-        "children:\n  - {widget: Button, name: box, label: A}\n  - {widget: Button, name: other, variant: outlined, label: B}\n")
+VIEW = """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Width: 300, Height: 200, Flex_Direction: vertical, Background: surface }
+  State { Open: false }
+  Children {
+    Button { Name: box, Label: A }
+    Button { Name: other, Variant: outlined, Label: B }
+  }
+}
+"""
+
+
+def sheet_text(radius, outlined=2):
+    """The same two rules as a stylesheet file."""
+    return (f"---\nTDL: 0.2\nName: App\n---\nStyles {{\n  Rule {{ Widget: Button, Style {{ Corner_Radius: {radius} }} }}\n"
+            f"  Rule {{ Widget: Button, Variant: outlined, Style {{ Corner_Radius: {outlined} }} }}\n}}\n")
 
 
 def sheet(radius, outlined=2):
@@ -31,7 +49,7 @@ def sheet(radius, outlined=2):
 @pytest.fixture
 def opened(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(VIEW)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(VIEW)
     app = App(root=tmp_path, stylesheet_spec=sheet(7))
     app.bind(VM)
     view = app.open_view("Main")
@@ -69,7 +87,7 @@ def test_the_old_rules_stay_if_the_new_sheet_is_wrong(opened):
 def test_a_view_opened_after_a_change_uses_the_new_rules(opened, tmp_path):
     app, view = opened
     app.set_stylesheet_spec(sheet(11, 5))
-    (tmp_path / "Views" / "Second_View.yaml").write_text(VIEW.replace("name: main", "name: second"))
+    (tmp_path / "Views" / "Second_View.tdl").write_text(VIEW.replace("Name: main", "Name: second"))
 
     class Second(VM):
         views = "second"
@@ -97,10 +115,10 @@ def test_taking_the_sheet_away_goes_back_to_the_shipped_looks(opened):
 def test_a_sheet_one_view_rejects_leaves_every_view_with_the_old_rules(tmp_path):
     """The first view takes the new rules, the second rejects them: the first is put back."""
     (tmp_path / "Views").mkdir()
-    plain = VIEW.replace("name: main", "name: first").replace(
-        "  - {widget: Button, name: other, variant: outlined, label: B}\n", "")
-    (tmp_path / "Views" / "First_View.yaml").write_text(plain)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(VIEW)
+    plain = VIEW.replace("Name: main", "Name: first").replace(
+        "    Button { Name: other, Variant: outlined, Label: B }\n", "")
+    (tmp_path / "Views" / "First_View.tdl").write_text(plain)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(VIEW)
 
     class First(VM):
         views = "first"
@@ -124,7 +142,6 @@ def test_a_sheet_one_view_rejects_leaves_every_view_with_the_old_rules(tmp_path)
 
 def test_saving_the_stylesheet_file_restyles_the_open_view(tmp_path):
     import queue
-    import yaml
 
     class Loop:
         def __init__(self):
@@ -134,9 +151,9 @@ def test_saving_the_stylesheet_file_restyles_the_open_view(tmp_path):
             self.calls.put(fn)
 
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(VIEW)
-    sheet_file = tmp_path / "App_Stylesheet.yaml"
-    sheet_file.write_text(yaml.safe_dump(sheet(7)))
+    (tmp_path / "Views" / "Main_View.tdl").write_text(VIEW)
+    sheet_file = tmp_path / "App_Stylesheet.tdl"
+    sheet_file.write_text(sheet_text(7))
     app = App(root=tmp_path, stylesheet=sheet_file)
     app.bind(VM)
     view = app.open_view("Main")
@@ -146,7 +163,7 @@ def test_saving_the_stylesheet_file_restyles_the_open_view(tmp_path):
     watchers = app._start_watchers(loop)
     try:
         time.sleep(0.3)
-        sheet_file.write_text(yaml.safe_dump(sheet(13, 4)))
+        sheet_file.write_text(sheet_text(13, 4))
         stat = sheet_file.stat()
         os.utime(sheet_file, ns=(stat.st_atime_ns, stat.st_mtime_ns + 5_000_000_000))
         loop.calls.get(timeout=10)()
