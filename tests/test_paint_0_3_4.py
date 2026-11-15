@@ -14,6 +14,7 @@ and neither shows up anywhere but on screen:
 every view, fragment and docs snippet declares.
 """
 
+import importlib.util
 import re
 from pathlib import Path
 
@@ -28,8 +29,14 @@ HEX = re.compile(r"^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]
 def _documents():
     """`(label, parsed YAML)` for every view and fragment file, and every
     `yaml` block in the docs that parses."""
-    for path in sorted([*ROOT.glob("examples/**/*.yaml"), *ROOT.glob("src/tess_ui/**/*.yaml")]):
+    for path in sorted(ROOT.glob("src/tess_ui/**/*.yaml")):
         yield path.relative_to(ROOT).as_posix(), yaml.safe_load(path.read_text())  # "/" on Windows too
+    if importlib.util.find_spec("tess_dl") is not None:  # the examples' views are TDL (Python 3.14): read through the front end
+        from tess_ui.spec.tdl import load_tdl_file
+        from tess_ui.spec.tdl_theme import plain
+
+        for path in sorted(ROOT.glob("examples/**/*_View.tdl")):
+            yield path.relative_to(ROOT).as_posix(), plain(load_tdl_file(path))
     for path in sorted([*ROOT.glob("docs/**/*.md"), ROOT / "README.md"]):
         for i, block in enumerate(FENCE.findall(path.read_text())):
             try:
@@ -63,7 +70,7 @@ DOCS = list(_documents())
 
 def test_the_scan_covers_views_fragments_and_docs():
     labels = [label for label, _ in DOCS]
-    assert any(label.startswith("examples/") for label in labels)
+    assert any(label.startswith("examples/") for label in labels) or importlib.util.find_spec("tess_dl") is None  # the examples are TDL: read only with tess_dl
     assert sum(label.startswith("src/tess_ui/spec/components/") for label in labels) >= 60
     assert any("yaml block" in label for label in labels)
 

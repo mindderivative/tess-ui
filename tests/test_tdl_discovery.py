@@ -378,17 +378,23 @@ def test_every_shipped_stylesheet_gives_the_same_rules_from_tdl_and_from_yaml(mo
     assert [canon(s.rules) for s in from_tdl] == [canon(s.rules) for s in from_yaml] and len(from_tdl) == 49
 
 
-@pytest.mark.parametrize("twin", ["examples/tutorial/step3/Brand_Theme", "examples/tutorial_project/step6/Themes/Brand_Theme", "src/tess_ui/spec/default_theme"])
-def test_a_theme_gives_the_same_dict_from_tdl_and_from_yaml(twin):
-    root = Path(__file__).parent.parent
-    yaml_file, tdl_file = root / f"{twin}.yaml", root / f"{twin}.tdl"
-    if "default_theme" in twin:  # not named *_Theme: it is read as the shipped default is
-        from tess_ui.spec.tdl_theme import load_theme_tdl
-        import yaml
+def test_the_default_theme_gives_the_same_dict_from_tdl_and_from_yaml():
+    root = Path(__file__).parent.parent / "src" / "tess_ui" / "spec"  # not named *_Theme: it is read as the shipped default is
+    from tess_ui.spec.tdl_theme import load_theme_tdl
+    import yaml
 
-        assert load_theme_tdl(tdl_file.read_text(encoding="utf-8"), str(tdl_file)) == marker.strip(yaml.safe_load(yaml_file.read_text(encoding="utf-8")))
-    else:
-        assert load_theme(tdl_file) == load_theme(yaml_file)
+    tdl_file = root / "default_theme.tdl"
+    assert load_theme_tdl(tdl_file.read_text(encoding="utf-8"), str(tdl_file)) == marker.strip(yaml.safe_load((root / "default_theme.yaml").read_text(encoding="utf-8")))
+
+
+def test_a_named_theme_gives_the_same_dict_from_tdl_and_from_yaml(tmp_path):
+    """The examples' themes have no YAML twin now, so the twin is made here: a YAML theme and the converter's TDL of it, loaded by the suffix."""
+    from tess_ui.migrate_tdl_theme import convert_theme
+
+    text = 'tesserae: 0.6\nseed: "#0B6B58"\ntypography:\n  headline_medium: {font_weight: 600}\n'
+    (tmp_path / "Brand_Theme.yaml").write_text(text, encoding="utf-8")
+    (tmp_path / "Brand_Theme.tdl").write_text(convert_theme(text, "Brand", "Brand_Theme.yaml").text, encoding="utf-8")
+    assert load_theme(tmp_path / "Brand_Theme.tdl") == load_theme(tmp_path / "Brand_Theme.yaml")
 
 
 # -- hot reload ---------------------------------------------------------------------------------------------------------------

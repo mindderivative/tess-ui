@@ -1,6 +1,5 @@
-"""Piece 5 of the TDL switch: every real theme file (the examples' `*_Theme.yaml` and Tesserae's own `default_theme.yaml`) has its `.tdl` beside it, current, and
-loading to the same mapping as the YAML. The YAML files are still what tess-ui loads; the `.tdl` files are the converter's output, kept in step until the
-cutover (piece 10)."""
+"""Piece 5 of the TDL switch: Tesserae's own `default_theme.yaml` has its `.tdl` beside it, current, and loading to the same mapping as the YAML (kept in step until
+the cutover, piece 10); the examples' themes (piece 6b) are `.tdl` only, and each loads and checks."""
 
 from pathlib import Path
 
@@ -18,14 +17,22 @@ from tess_ui.spec.tdl_theme import load_theme_tdl, load_theme_tdl_file  # noqa: 
 from tess_ui.spec.themes import load_theme  # noqa: E402
 
 ROOT = Path(__file__).parent.parent
-SHIPPED = sorted([*ROOT.joinpath("examples").rglob("*_Theme.yaml"), ROOT / "src" / "tess_ui" / "spec" / "default_theme.yaml"])
+DEFAULT = ROOT / "src" / "tess_ui" / "spec" / "default_theme.yaml"
+SHIPPED = [DEFAULT]
+EXAMPLES = sorted(ROOT.joinpath("examples").rglob("*_Theme.tdl"))
 
 
-def test_every_real_theme_has_a_tdl_file_and_no_tdl_theme_is_left_without_its_yaml():
-    yaml_names = {p.with_suffix(".tdl") for p in SHIPPED}
-    tdl_names = {*ROOT.joinpath("examples").rglob("*_Theme.tdl"), ROOT / "src" / "tess_ui" / "spec" / "default_theme.tdl"}
-    assert len(SHIPPED) == 9
-    assert yaml_names == tdl_names
+def test_the_default_theme_has_a_tdl_file_and_the_examples_themes_are_tdl_only():
+    assert DEFAULT.with_suffix(".tdl").is_file()
+    assert len(EXAMPLES) == 8
+    assert not list(ROOT.joinpath("examples").rglob("*_Theme.yaml"))
+
+
+@pytest.mark.parametrize("path", EXAMPLES, ids=lambda p: p.relative_to(ROOT).as_posix())
+def test_an_example_theme_loads_and_checks(path):
+    theme = load_theme_tdl_file(path)  # the file loader: includes, check_theme, fonts
+    assert load_theme(path) == theme  # the app's loader picks the front end by suffix
+    assert "seed" in theme
 
 
 @pytest.mark.parametrize("path", SHIPPED, ids=lambda p: p.relative_to(ROOT).as_posix())

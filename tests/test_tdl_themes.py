@@ -21,7 +21,7 @@ from tess_ui.spec.tdl_theme import THEME_KEYS, load_marked_theme_tdl, load_theme
 from tess_ui.theme import _COMPONENT_FIELDS, _TYPE_FIELDS  # noqa: E402
 
 ROOT = Path(__file__).parent.parent
-REAL = sorted(p for p in [*ROOT.joinpath("examples").rglob("*_Theme.yaml"), ROOT / "src" / "tess_ui" / "spec" / "default_theme.yaml"])
+REAL = [ROOT / "src" / "tess_ui" / "spec" / "default_theme.yaml"]  # the one real theme that keeps a YAML twin; the examples' themes are .tdl only (piece 6b)
 
 
 def yaml_mapping(text):
@@ -49,7 +49,7 @@ def body_of(tdl_text):
 
 
 def test_there_are_real_themes_to_check():
-    assert len(REAL) == 9
+    assert len(REAL) == 1 and REAL[0].with_suffix(".tdl").is_file()
 
 
 @pytest.mark.parametrize("path", REAL, ids=lambda p: p.relative_to(ROOT).as_posix())

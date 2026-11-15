@@ -1,6 +1,7 @@
 """#275: the editor schemas of the current language. Every view of the repository validates against the widget schema (with the project's own views in it, as
 `tesserae schema --project` writes it), every stylesheet of rules against the stylesheet schema, and the mistakes an editor should flag are flagged."""
 
+import importlib.util
 import json
 import sys
 from pathlib import Path
@@ -19,6 +20,18 @@ STYLESHEET = json.loads((SCHEMAS / "tess-ui-stylesheet-schema.json").read_text(e
 
 
 def _load(path):
+    if path.suffix == ".tdl":  # the examples: read through the TDL front end, as the app reads them
+        if importlib.util.find_spec("tess_dl") is None:
+            return None  # the examples are TDL and need tess_dl (Python 3.14): the count test below skips
+        from tess_ui.spec.tdl_theme import plain
+
+        if path.name.endswith("_View.tdl"):
+            from tess_ui.spec.tdl import load_tdl_file
+
+            return plain(load_tdl_file(path))
+        from tess_ui.spec.tdl_stylesheet import load_tdl_stylesheet_file
+
+        return plain(load_tdl_stylesheet_file(path))
     try:
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
     except yaml.YAMLError:
@@ -28,7 +41,7 @@ def _load(path):
 
 def _view_files():
     """Each view file of the current language, with the folder whose views it can call: its example project, or the shipped ones alone."""
-    for path in sorted([*(ROOT / "src").rglob("*_View.yaml"), *(ROOT / "examples").rglob("*_View.yaml")]):
+    for path in sorted([*(ROOT / "src").rglob("*_View.yaml"), *(ROOT / "examples").rglob("*_View.tdl")]):
         data = _load(path)
         if data is not None and "widget" in data:
             project = next((p for p in path.parents if (p / "app.py").is_file()), None) if "examples" in path.parts else None
@@ -36,7 +49,7 @@ def _view_files():
 
 
 def _rule_sheets():
-    for path in sorted([*(ROOT / "src").rglob("*_Stylesheet.yaml"), *(ROOT / "examples").rglob("*_Stylesheet.yaml")]):
+    for path in sorted([*(ROOT / "src").rglob("*_Stylesheet.yaml"), *(ROOT / "examples").rglob("*_Stylesheet.tdl")]):
         data = _load(path)
         if data is not None and is_rule_sheet(data):  # the older `kind:` sheets (the fragments') have the theme schema
             yield pytest.param(path, data, id=path.relative_to(ROOT).as_posix())
@@ -52,6 +65,7 @@ def _problems(validator, data):
 
 
 def test_there_are_views_and_stylesheets_to_check():
+    pytest.importorskip("tess_dl", reason="the examples' views are TDL")
     assert len(list(_view_files())) > 80 and len(list(_rule_sheets())) > 40
 
 
