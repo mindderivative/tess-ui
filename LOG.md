@@ -3546,3 +3546,9 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 - Version 0.6.1 (was 0.6.0.1, which is on PyPI). What it holds is the `## 0.6.1` section of `docs/changelog.md`: YAML is no longer read, the converter is in `tesserae-ui<0.6.1`, the Python widget factories call the shipped views, expressions and handlers run on `tesserae-el`, engine 0.6.8, Python 3.14 minimum. Checked: docs audit, `tools/check.py` (types, schema, docs), and the full suite on main in CI (Linux, macOS, Windows) at the merge of #311.
 - Not verified: a real running shell, real GPUs other than lavapipe in CI.
+
+## 2026-11-15 Continuous delivery: the release workflow creates the tag and the GitHub Release
+
+- `release.yml` no longer waits for a hand-made GitHub Release. It runs when CI is green on `main`, and a version without a tag is a release: build and wheel tests, `pypi` environment (the maintainer's approval, kept), then install of the published package, tag `vX` and the Release with notes from the changelog, wheel and sdist attached, marked latest. Re-runnable (`workflow_dispatch`): upload skips files already on PyPI, the Release only if absent. Actions pinned to commit SHAs, runner `ubuntu-24.04`, as the gh-cicd skill says (the skill's tesserae variant, `on: release: published`, is replaced: a Release made with the workflow's token starts no workflow).
+- DEVELOPING section 6 and the `release-checklist` skill describe the new flow. 0.6.1 itself was released by hand (the last one).
+- Not run: the workflow has not executed on a real release yet; the first one is the 0.6.2 (or next) release commit.

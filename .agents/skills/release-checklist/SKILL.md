@@ -7,7 +7,7 @@ description: Use when preparing, checking or cutting a Tesserae release (a versi
 
 The process is written in `DEVELOPING.md` section 6 and `.github/workflows/release.yml`. This skill is the ordered checklist, with the stops that need the user.
 
-**Standing rule (CLAUDE.md): commit locally only. Pushing, fast-forwarding `main`, creating the GitHub Release, approving the `pypi` environment and moving an issue to Done each need the user's separate, explicit instruction. A past approval does not carry over to the next release.**
+**Standing rule (CLAUDE.md): a release needs the user's word. Merging the release commit, approving the `pypi` environment and moving an issue to Done each need the user's separate, explicit instruction. A past approval does not carry over to the next release.**
 
 ## 1. Pre-flight (read-only)
 
@@ -39,15 +39,11 @@ Tests that need a display skip without one: say so. CI runs `full` by itself whe
 
 Release commit "Tesserae X" in the repo's style (check `git log`). Tell the user what is ready and wait.
 
-## 6. Steps that wait for the user, in order
+## 6. After the release commit is merged (continuous delivery)
 
-1. Push the branch, fast-forward `main`, push it; wait for CI on that commit (Linux, Windows, macOS, Deploy Docs).
-2. `gh release create vX --target <sha> --prerelease --title "Tesserae X" --notes-file <changelog section>`.
-3. The Release workflow stops at the `pypi` environment: the user approves it. Claude does not.
-4. Check PyPI (the index lags a few minutes), install `tesserae-ui==X` in a scratch venv, run a smoke test, add the `LOG.md` entry.
-5. Push the log, promote the release (`gh release edit vX --prerelease=false --latest`), move the issues to Done with `tools/board.py move N Done --approved` only after the user approves.
+`.github/workflows/release.yml` takes over when CI is green on the merge commit (DEVELOPING.md section 6): build, wheel tests, then the `pypi` environment. **The user approves the `pypi` environment; Claude does not.** After approval the workflow installs the published package, creates the tag `vX` and the GitHub Release (notes from the changelog, marked latest). Nothing is created by hand: do NOT run `gh release create` (it would take the tag from the workflow and make it fail).
 
-Update the `Tesserae` memory entity only after step 4 has been seen to work. Do not write "released" before that.
+Claude may: tell the user the run is waiting at `pypi` (`gh run list --workflow release.yml`), retry a failed run with `gh workflow run release.yml`, read the run's logs, smoke-test the published `tesserae-ui==X` in a scratch venv, add the `LOG.md` entry, and update the `Tesserae` memory entity only after the published package installs. The board moves to Done with `tools/board.py move N Done --approved` only after the user approves.
 
 ## Report
 
