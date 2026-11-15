@@ -245,7 +245,7 @@ nav:
   # <<< components
   - Reference:
       - Python API: api/python.md
-      - YAML Reference: api/yaml.md
+      - TDL Reference: api/tdl.md
   - Architecture: architecture.md
   - Migrating: migration.md
   - Changelog: changelog.md

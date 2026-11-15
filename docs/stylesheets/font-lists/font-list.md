@@ -1,4 +1,4 @@
-# FontList_Stylesheet.yaml
+# FontList_Stylesheet.tdl
 
 The look of FontList: the button that opens a popup (`field`, with `trigger` pressable over it) is 48 pixels tall with 12 pixel corners, 12 pixels of padding and a 1 pixel `outline` border, and the layer is a `surface_container` surface with 12 pixel corners and 8 pixels of padding at level 2. The button has the state layer, ripple and focus ring of any pressable node, and a disabled one fades to 38%.
 
@@ -6,24 +6,33 @@ The look of [`FontList`](../../components/font-lists.md) (in [Font list](../../c
 
 ## The stylesheet
 
-```yaml
-tesserae: 0.6
+```tdl
+---
+TDL: 0.2
+Name: FontList
+Tesserae: "0.6"
+---
 # The look of FontList: the button that opens a popup (`field`, with `trigger` pressable over it) is 48 pixels tall with 12 pixel corners, 12 pixels of padding and a 1 pixel `outline` border,
 # and the layer is a `surface_container` surface with 12 pixel corners and 8 pixels of padding at level 2. The button has the state layer, ripple and focus ring of any pressable node, and a
 # disabled one fades to 38%.
-styles:
-  - widget: FontList
-    part: field
-    style: {min_height: 48, corner_radius: 12, border_width: 1, border_color: outline, padding: {left: 12, right: 12, top: 0, bottom: 0}}
-  - {widget: FontList, part: trigger, style: {corner_radius: 12}}
-  - widget: FontList
-    part: surface
-    style: {background: surface_container, corner_radius: 12, padding: 8, elevation: 2}
+Styles {
+  Rule {
+    Widget: FontList
+    Part: field
+    Style { Min_Height: 48, Corner_Radius: 12, Border_Width: 1, Border_Color: outline, Padding { Left: 12, Right: 12, Top: 0, Bottom: 0 } }
+  }
+  Rule { Widget: FontList, Part: trigger, Style { Corner_Radius: 12 } }
+  Rule {
+    Widget: FontList
+    Part: surface
+    Style { Background: surface_container, Corner_Radius: 12, Padding: 8, Elevation: 2 }
+  }
+}
 ```
 
 ## How it reaches the view
 
-Each rule names `widget: FontList` and may add the properties the view declares (a `variant`, a `size`, a `shape`), `classes`, a node `name`, a `part` (one of the view's named nodes) and a `state` (`hovered`, `focused`, `pressed`, `disabled`, `selected`, ...). A rule's values may be expressions over the view's parameters. The most specific rule wins: a `name`, then the number of properties matched (all the `classes` count as one more), then a `state`, then the widget alone; a later rule wins a tie. These rules are the lowest layer: your app's stylesheet goes over them, and a node's own `style:` beats every rule for the fields it sets.
+Each rule names `Widget: FontList` and may add the properties the view declares (a `Variant`, a `Size`, a `Shape`), `Classes`, a node `Name`, a `Part` (one of the view's named nodes) and a `State` (`hovered`, `focused`, `pressed`, `disabled`, `selected`, ...). A rule's values may be expressions over the view's parameters. The most specific rule wins: a `Name`, then the number of properties matched (all the `Classes` count as one more), then a `State`, then the widget alone; a later rule wins a tie. These rules are the lowest layer: your app's stylesheet goes over them, and a node's own `Style` beats every rule for the fields it sets.
 
 ## The rules
 
@@ -31,34 +40,37 @@ Each rule names `widget: FontList` and may add the properties the view declares 
 
 | When | Field | Value | What it does |
 | --- | --- | --- | --- |
-| always | `min_height` | `48` | The least height it can take. |
-| always | `corner_radius` | `12` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`top`, `right`, `bottom`, `left`) with the rest square. |
-| always | `border_width` | `1` | The width of its border, in pixels. |
-| always | `border_color` | `outline` | The colour of its border: a colour or a gradient. |
-| always | `padding` | `{bottom: 0, left: 12, right: 12, top: 0}` | Space inside it: one number, or `{left, right, top, bottom}`. |
+| always | `Min_Height` | `48` | The least height it can take. |
+| always | `Corner_Radius` | `12` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`Top`, `Right`, `Bottom`, `Left`) with the rest square. |
+| always | `Border_Width` | `1` | The width of its border, in pixels. |
+| always | `Border_Color` | `outline` | The colour of its border: a colour or a gradient. |
+| always | `Padding` | `{ Left: 12, Right: 12, Top: 0, Bottom: 0 }` | Space inside it: one number, or `{Left, Right, Top, Bottom}`. |
 
 ### `trigger` (Container)
 
 | When | Field | Value | What it does |
 | --- | --- | --- | --- |
-| always | `corner_radius` | `12` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`top`, `right`, `bottom`, `left`) with the rest square. |
+| always | `Corner_Radius` | `12` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`Top`, `Right`, `Bottom`, `Left`) with the rest square. |
 
 ### `surface` (Container)
 
 | When | Field | Value | What it does |
 | --- | --- | --- | --- |
-| always | `background` | `surface_container` | Its fill: a theme role such as `surface`, `#RRGGBB`, any CSS colour, or a gradient such as `linear-gradient(90deg, primary, tertiary)`. |
-| always | `corner_radius` | `12` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`top`, `right`, `bottom`, `left`) with the rest square. |
-| always | `padding` | `8` | Space inside it: one number, or `{left, right, top, bottom}`. |
-| always | `elevation` | `2` | A shadow level, 0 to 5. |
+| always | `Background` | `surface_container` | Its fill: a theme role such as `surface`, `#RRGGBB`, any CSS colour, or a gradient such as `linear-gradient(90deg, primary, tertiary)`. |
+| always | `Corner_Radius` | `12` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`Top`, `Right`, `Bottom`, `Left`) with the rest square. |
+| always | `Padding` | `8` | Space inside it: one number, or `{Left, Right, Top, Bottom}`. |
+| always | `Elevation` | `2` | A shadow level, 0 to 5. |
 
 ## Changing it
 
 Write a rule of your own; it goes over this file's, field by field:
 
-```yaml
-styles:
-  - widget: FontList
-    part: surface
-    style: {background: tertiary}
+```tdl
+Styles {
+  Rule {
+    Widget: FontList
+    Part: surface
+    Style { Background: tertiary }
+  }
+}
 ```

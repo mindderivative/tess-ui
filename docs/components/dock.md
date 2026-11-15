@@ -9,11 +9,11 @@ resize: files on the left, output below.
 
 ## In Tesserae
 
-`widget: Dock` holds `DockPanel`s; each says its zone with the style field `zone`: `left`, `right`, `top`, `bottom` or `center`. A left or right zone's size is its panel's
-`width`, and a top or bottom one's its `height` (240 and 180 pixels when the panel gives none). Each zone is a column: a strip of tabs, one for each panel, over the panel
-that is showing. The tab is the panel's `title` (else its name). A click or Enter on a tab shows its panel, and the left and right arrow keys move along the strip. The user
+`Dock` holds `DockPanel`s; each says its zone with the style field `Zone`: `left`, `right`, `top`, `bottom` or `center`. A left or right zone's size is its panel's
+`Width`, and a top or bottom one's its `Height` (240 and 180 pixels when the panel gives none). Each zone is a column: a strip of tabs, one for each panel, over the panel
+that is showing. The tab is the panel's `Title` (else its name). A click or Enter on a tab shows its panel, and the left and right arrow keys move along the strip. The user
 drags a tab to another zone, or to a half of a split (see the dock panel), and drags the handles between zones to resize them. Dragging is pointer only, so a tab's context menu
-(a right click, the Menu key or Shift+F10) offers "Move to ..." for each zone and each half. A window has one `Dock`, and `zone:` is an error on anything but a `DockPanel` in a `Dock`.
+(a right click, the Menu key or Shift+F10) offers "Move to ..." for each zone and each half. A window has one `Dock`, and `Zone:` is an error on anything but a `DockPanel` in a `Dock`.
 
 `view.dock_host(id)` reads and sets the layout from Python. A node's id is its path from the view's root, so the dock named `dock` is `view.dock_host("root.dock")`, and
 its panel `files` is `"root.dock.files"`:
@@ -26,9 +26,9 @@ its panel `files` is `"root.dock.files"`:
 | `move(panel, where)` | a panel (its id) to the tabs of a zone (`"left"`) or a half (its id), from code |
 | `closed()`, `close(panel)`, `reopen(panel)`, `on_closed(fn)` | the closable panels that are shut |
 
-Editing the YAML while the app runs keeps the layout the user made: which zone each panel is in, which tab shows, and the sizes.
+Editing the view while the app runs keeps the layout the user made: which zone each panel is in, which tab shows, and the sizes.
 
-A panel with `closable: true` has a close button on its tab. A Dock's `closed` (a list, two-way) holds the names of the closable panels that are shut: a close
+A panel with `Closable: true` has a close button on its tab. A Dock's `Closed` (a list, two-way) holds the names of the closable panels that are shut: a close
 button adds its panel's name, and taking a name out opens the panel again, as the last tab of its zone. Putting names in shuts them without the button. Not built: floating
 panels, tearing a panel off into a window, maximising a panel, reordering tabs, and layouts saved by name.
 
@@ -40,21 +40,34 @@ Panels docked around a centre.
 
 | Property | Type | Default | Meaning |
 | --- | --- | --- | --- |
-| `closed` | `list` |  | The names of the closable panels that are shut; a close button adds its panel, and taking a name out opens the panel again. Two-way. |
+| `Closed` | `list` |  | The names of the closable panels that are shut; a close button adds its panel, and taking a name out opens the panel again. Two-way. |
 
 ## Using it
 
-```yaml
-name: studio
-widget: Window
-title: Studio
-style: {width: 900, height: 600, flex_direction: vertical}
-children:
-  - widget: Dock
-    closed: "{{ shut }}"
-    children:
-      - {widget: DockPanel, name: files, title: Files, closable: true, style: {zone: left, width: 220}}
-      - {widget: DockPanel, name: editor, title: Editor, style: {zone: center}}
+```tdl
+Window {
+  Name: studio
+  Title: Studio
+  Style { Width: 900, Height: 600, Flex_Direction: vertical }
+  Children {
+    Dock {
+      Closed: <| shut |>
+      Children {
+        DockPanel {
+          Name: files
+          Title: Files
+          Closable: true
+          Style { Zone: left, Width: 220 }
+        }
+        DockPanel {
+          Name: editor
+          Title: Editor
+          Style { Zone: center }
+        }
+      }
+    }
+  }
+}
 ```
 
 ## See also
@@ -62,4 +75,4 @@ children:
 - [Windows And Docks](../guide/windows-and-docks.md)
 - [Docking](../guide/docking.md)
 - [Python API reference](../api/python.md)
-- [YAML reference](../api/yaml.md)
+- [TDL reference](../api/tdl.md)

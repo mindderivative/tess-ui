@@ -8,11 +8,11 @@ Material Design 3 has no dock panel. It is one panel of a dock: a titled tab in 
 
 ## In Tesserae
 
-`widget: DockPanel`, with `zone` in its `style` and a `title` for its tab (else its name). `closable: true` puts a close button on its tab (see the Dock's `closed`).
+`DockPanel`, with `Zone` in its `Style` and a `Title` for its tab (else its name). `Closable: true` puts a close button on its tab (see the Dock's `Closed`).
 
-A `DockPanel` inside another is a split of it, side by side (`flex_direction: horizontal`, the default) or top and bottom (`vertical`), with a handle between the halves
-to resize them. A half with a `width` (or `height`) of its own keeps it, and the others share what is left. A panel has either splits or content, not both, and a half has no
-`zone`. Each half is a small zone of its own: a tab strip over it, with a tab for the half's own content (titled by its `title:`, else its name) and one for each panel dropped
+A `DockPanel` inside another is a split of it, side by side (`Flex_Direction: horizontal`, the default) or top and bottom (`vertical`), with a handle between the halves
+to resize them. A half with a `Width` (or `Height`) of its own keeps it, and the others share what is left. A panel has either splits or content, not both, and a half has no
+`Zone`. Each half is a small zone of its own: a tab strip over it, with a tab for the half's own content (titled by its `Title:`, else its name) and one for each panel dropped
 on it.
 
 Drag a tab over a half and the highlight shows what a drop will do. The outer quarter of each side of a half is an **edge**: dropping there splits the half, the panel
@@ -31,11 +31,11 @@ From Python, with `dock = view.dock_host("root.dock")`. The half and the panel a
 | `dock.move(panel, where)` | a panel into a half or a zone (`"left"`) |
 
 `dock.layout()` records the halves, so the arrangement the user made survives a restart: `halves` has, for each half, the titles of the panels in it and the tab it shows,
-and `made` has, for each half of the YAML that the user split, the tree of the splits (an `axis` of `x` or `y`, the first part's `size` in pixels, and its `first` and
+and `made` has, for each half of the view that the user split, the tree of the splits (an `axis` of `x` or `y`, the first part's `size` in pixels, and its `first` and
 `second` parts), as plain data you can write to a file. `dock.restore(saved)` takes the user's splits apart, makes the ones in the layout and puts the panels in their
 halves; halves and titles the dock does not have are skipped, and a split none of whose panels come back is not made. A half is found by its id, so renaming one in the
-file means a saved layout no longer finds it. Editing the YAML while the app runs keeps the strips, the panels dropped on a half and the splits the user made; a half the
-file removes sends the panels dropped in it back to their zones. Not built: dragging or closing a half's own content (what the YAML put in it), and reordering tabs.
+file means a saved layout no longer finds it. Editing the view while the app runs keeps the strips, the panels dropped on a half and the splits the user made; a half the
+file removes sends the panels dropped in it back to their zones. Not built: dragging or closing a half's own content (what the view put in it), and reordering tabs.
 
 ## How it is built
 
@@ -45,31 +45,48 @@ One panel of a Dock.
 
 | Property | Type | Default | Meaning |
 | --- | --- | --- | --- |
-| `title` | `str` |  | The panel's tab, when its zone has several. |
-| `closable` | `bool` |  | Its tab has a close button. |
+| `Title` | `str` |  | The panel's tab, when its zone has several. |
+| `Closable` | `bool` |  | Its tab has a close button. |
 
 ## Using it
 
-```yaml
-name: studio
-widget: Window
-title: Studio
-style: {width: 900, height: 600, flex_direction: vertical}
-children:
-  - widget: Dock
-    children:
-      - {widget: DockPanel, name: outline, title: Outline, style: {zone: left, width: 220}}
-      - widget: DockPanel
-        name: editor
-        title: Editor
-        style: {zone: center}
-        children:
-          - {widget: DockPanel, name: source, title: Source, style: {width: 400}}
-          - {widget: DockPanel, name: preview, title: Preview}
+```tdl
+Window {
+  Name: studio
+  Title: Studio
+  Style { Width: 900, Height: 600, Flex_Direction: vertical }
+  Children {
+    Dock {
+      Children {
+        DockPanel {
+          Name: outline
+          Title: Outline
+          Style { Zone: left, Width: 220 }
+        }
+        DockPanel {
+          Name: editor
+          Title: Editor
+          Style { Zone: center }
+          Children {
+            DockPanel {
+              Name: source
+              Title: Source
+              Style { Width: 400 }
+            }
+            DockPanel {
+              Name: preview
+              Title: Preview
+            }
+          }
+        }
+      }
+    }
+  }
+}
 ```
 
 ## See also
 
 - [Windows And Docks](../guide/windows-and-docks.md)
 - [Python API reference](../api/python.md)
-- [YAML reference](../api/yaml.md)
+- [TDL reference](../api/tdl.md)

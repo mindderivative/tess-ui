@@ -2,14 +2,16 @@
 """Writes the component pages and the stylesheet pages.
 
 - `docs/components/<slug>.md`: one page for each MD3 component, from `tools/component_docs.yaml` (the MD3 text, the usage examples) and from the
-  code itself: each shipped view (`src/tess_ui/views/<Name>_View.yaml`: its parameters, slots and parts) and each built-in widget it names
+  code itself: each shipped view (`src/tess_ui/views/<Name>_View.tdl`: its parameters, slots and parts) and each built-in widget it names
   (`tess_ui.spec.widgets`: its properties).
-- `docs/stylesheets/<slug>/<view>.md`: one page for each shipped stylesheet (`<Name>_Stylesheet.yaml`): the file, how rules reach the view, and what
+- `docs/stylesheets/<slug>/<view>.md`: one page for each shipped stylesheet (`<Name>_Stylesheet.tdl`): the file, how rules reach the view, and what
   each part's rules do.
 - the two overview pages, and the `nav:` entries for both, between markers in `mkdocs.yml`.
 
-Nothing here is written by hand except `tools/component_docs.yaml`. Every shipped view must be listed under exactly one component and every
-built-in widget under one or in `NOT_COMPONENTS`, so a new one cannot go undocumented.
+Nothing here is written by hand except `tools/component_docs.yaml`: this generator's own data (prose, and the usage examples as TDL text), read by the
+tools only, so it stays a YAML file and `pyyaml` stays a development dependency for it. The views and stylesheets are read as TDL through the front
+ends. Every shipped view must be listed under exactly one component and every built-in widget under one or in `NOT_COMPONENTS`, so a new one cannot go
+undocumented.
 
     python tools/generate_component_docs.py          # write them
     python tools/generate_component_docs.py --check  # exit 1 if they are out of date
@@ -28,16 +30,21 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "tools"))
+import tdl_format  # noqa: E402  (tools/tdl_format.py: the TDL spelling of a value)
+
 DATA = ROOT / "tools" / "component_docs.yaml"
 VIEWS = ROOT / "src" / "tess_ui" / "views"
 DOCS = ROOT / "docs"
 MKDOCS = ROOT / "mkdocs.yml"
 NAV_MARKS = ("# >>> components (written by tools/generate_component_docs.py)", "# <<< components")
 
-#: Built-in widgets that are building blocks, not components: they are in the view language guide and the YAML reference.
+#: Built-in widgets that are building blocks, not components: they are in the view language guide and the TDL reference.
 NOT_COMPONENTS = frozenset({"Container", "Rect", "Icon", "Canvas", "ScrollView", "VirtualList", "Overlay", "Slot"})
 #: A value longer than this is cut in a table (the whole stylesheet is on the page).
 CUT = 110
+#: The names a shipped file's header comment may carry in the old spelling (`Button_Stylesheet.yaml`); the page says the file's real name.
+_OLD_NAME = re.compile(r"\b(\w+_(?:View|Stylesheet|Theme))\.yaml\b")
 
 
 def _kebab(name: str) -> str:
@@ -46,29 +53,56 @@ def _kebab(name: str) -> str:
 
 def _style_field_help() -> dict[str, str]:
     """What each style field does, from the schema generator's own descriptions."""
-    spec = importlib.util.spec_from_file_location("generate_yaml_schema", ROOT / "tools" / "generate_yaml_schema.py")
+    spec = importlib.util.spec_from_file_location("generate_schema", ROOT / "tools" / "generate_schema.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     style = module._definitions(fragment=False)["style"]["properties"]
-    return {name: " ".join(prop.get("description", "").split()).removesuffix(f" ({prop['x-group']}.)") if "x-group" in prop
-            else " ".join(prop.get("description", "").split()) for name, prop in style.items()}
+    return {name: tdl_format.prose(" ".join(prop.get("description", "").split()).removesuffix(f" ({prop['x-group']}.)") if "x-group" in prop
+                                   else " ".join(prop.get("description", "").split()), widget_properties=False) for name, prop in style.items()}
 
 
 # -- reading the code ----------------------------------------------------------------------------
+
+_LIBRARY: Any = None
+
+
+def _library() -> Any:
+    """The shipped views, as the resolver the TDL front end wants (a node-typed property is found through the view that declares it)."""
+    global _LIBRARY
+    if _LIBRARY is None:
+        from tess_ui.shipped import ViewLibrary
+
+        _LIBRARY = ViewLibrary()
+    return _LIBRARY
+
+
+def _read_view(path: Path) -> dict[str, Any]:
+    from tess_ui.spec.tdl import load_tdl_file
+    from tess_ui.spec.tdl_theme import plain
+
+    return plain(load_tdl_file(path, resolver=_library().decl))
+
+
+def _read_rules(path: Path) -> list[dict[str, Any]]:
+    from tess_ui.spec.tdl_stylesheet import load_tdl_stylesheet_file
+    from tess_ui.spec.tdl_theme import plain
+
+    return plain(load_tdl_stylesheet_file(path)).get("styles", [])
+
 
 class View:
     """A shipped view: its header comment, parameters, slots and parts, and its stylesheet's rules."""
 
     def __init__(self, name: str) -> None:
         self.name = name
-        self.path = VIEWS / f"{name}_View.yaml"
+        self.path = VIEWS / f"{name}_View.tdl"
         self.text = self.path.read_text(encoding="utf-8")
-        self.data = yaml.safe_load(self.text)
+        self.data = _read_view(self.path)
         self.summary = _header(self.text)
         self.params: dict[str, Any] = self.data.get("params") or {}
-        self.sheet_path = VIEWS / f"{name}_Stylesheet.yaml"
+        self.sheet_path = VIEWS / f"{name}_Stylesheet.tdl"
         self.sheet_text = self.sheet_path.read_text(encoding="utf-8") if self.sheet_path.exists() else None
-        self.rules: list[dict[str, Any]] = (yaml.safe_load(self.sheet_text) or {}).get("styles", []) if self.sheet_text else []
+        self.rules: list[dict[str, Any]] = _read_rules(self.sheet_path) if self.sheet_text else []
         self.sheet_summary = _header(self.sheet_text) if self.sheet_text else ""
         self.slots: list[str] = []
         self.parts: list[tuple[str, str]] = []
@@ -89,29 +123,31 @@ class View:
 
 
 def _header(text: str) -> str:
-    """The comment at the top of a file, as one paragraph."""
+    """The comment at the top of a file (after its metadata block), as one paragraph."""
+    body = text.splitlines()
+    start = 0
+    if body and body[0].strip() == "---":
+        start = next((n for n in range(1, len(body)) if body[n].strip() == "---"), 0) + 1
     lines = []
-    for number, line in enumerate(text.splitlines()):
-        if number == 0 and line.startswith("tesserae:"):  # the first-line marker (`tesserae: <line>`) comes before the header comment
-            continue
+    for line in body[start:]:
         if not line.startswith("#"):
             break
         lines.append(line.lstrip("#").strip())
-    return " ".join(part for part in lines if part)
+    return tdl_format.prose(_OLD_NAME.sub(r"\1.tdl", " ".join(part for part in lines if part)))
 
 
-def _cell(value: Any) -> str:
-    """A value in a table cell: code, cut if it is long, with `|` kept from ending the cell."""
-    if value is None or value == "":
+def _cell(item: Any) -> str:
+    """A value in a table cell: code in TDL spelling, cut if it is long, with `|` kept from ending the cell."""
+    if item is None or item == "":
         return ""
-    text = value if isinstance(value, str) else yaml.safe_dump(value, default_flow_style=True, width=10_000).strip().removesuffix("...").strip()
+    text = tdl_format.value(item)
     if len(text) > CUT:
         text = text[:CUT - 1] + "…"
     return "`" + text.replace("|", "\\|").replace("`", "'") + "`"
 
 
 def _doc(text: Any) -> str:
-    return " ".join(str(text or "").split()).replace("|", "\\|")
+    return tdl_format.prose(" ".join(str(text or "").split())).replace("|", "\\|")
 
 
 def _type(spec: Any) -> str:
@@ -157,16 +193,16 @@ def _view_section(view: View, entry: dict[str, Any]) -> list[str]:
             spec = spec if isinstance(spec, dict) else {"type": spec}
             default = "required" if spec.get("required") else _cell(spec.get("default"))
             model = " Two-way: give it a bare reference and the view writes it back." if spec.get("model") else ""
-            out.append(f"| `{name}` | {_type(spec)} | {default} | {_doc(spec.get('doc'))}{model} |")
+            out.append(f"| `{tdl_format.key(name)}` | {_type(spec)} | {default} | {_doc(spec.get('doc'))}{model} |")
         out.append("")
     else:
         out += ["It takes no parameters.", ""]
     if view.slots:
         out += ["Children go in " + (", ".join(f"the `{s}` slot" if s != "default" else "the default slot" for s in view.slots)) + ".", ""]
     if view.parts:
-        out += ["Its parts, by name (a stylesheet rule's `part:` or `name:` addresses one): " + ", ".join(f"`{n}` ({w})" for n, w in view.parts) + ".", ""]
+        out += ["Its parts, by name (a stylesheet rule's `Part` or `Name` addresses one): " + ", ".join(f"`{n}` ({w})" for n, w in view.parts) + ".", ""]
     if view.sheet_text:
-        out += [f"Its look is in [`{view.name}_Stylesheet.yaml`](../stylesheets/{entry['slug']}/{_kebab(view.name)}.md).", ""]
+        out += [f"Its look is in [`{view.name}_Stylesheet.tdl`](../stylesheets/{entry['slug']}/{_kebab(view.name)}.md).", ""]
     return out
 
 
@@ -182,13 +218,23 @@ def _widget_section(name: str) -> list[str]:
                 default = _cell(prop.default) if prop.default not in (None, "", False) else ""
             spec = {"type": prop.type, "choices": prop.choices, "min": prop.minimum, "max": prop.maximum}
             model = " Two-way." if prop.model else ""
-            out.append(f"| `{pname}` | {_type(spec)} | {default} | {_doc(prop.doc)}{model} |")
+            out.append(f"| `{tdl_format.key(pname)}` | {_type(spec)} | {default} | {_doc(prop.doc)}{model} |")
         out.append("")
     else:
         out += ["It takes no properties of its own (see [The View Language](../guide/view-language.md) for what every node takes).", ""]
     if decl.extras:
-        out += ["Its `style:` also takes " + ", ".join(f"`{e}`" for e in decl.extras) + ".", ""]
+        out += ["Its `Style` also takes " + ", ".join(f"`{tdl_format.key(e)}`" for e in decl.extras) + ".", ""]
     return out
+
+
+def _look_rule(view: View) -> tuple[dict[str, Any], dict[str, Any]]:
+    """A rule of the view's stylesheet to show as the example of restyling it, with a field to change."""
+    rule = next((r for r in view.rules if {"background", "foreground"} & set(r["style"]) and r.get("part")), None) \
+        or next((r for r in view.rules if {"background", "foreground"} & set(r["style"])), view.rules[0])
+    field = "background" if "background" in rule["style"] else "foreground" if "foreground" in rule["style"] else next(iter(rule["style"]))
+    selectors = {k: v for k, v in rule.items() if k not in ("style",)}
+    selectors.setdefault("widget", view.name)
+    return selectors, {field: "tertiary"}
 
 
 def component_page(entry: dict[str, Any], views: dict[str, View]) -> str:
@@ -199,8 +245,8 @@ def component_page(entry: dict[str, Any], views: dict[str, View]) -> str:
     if shown_views or widgets:
         out += ["## How it is built", ""]
         if shown_views:
-            out += ["A view Tesserae ships is a `<Name>_View.yaml` (what it takes and what it is made of) with a `<Name>_Stylesheet.yaml` (how it looks). "
-                    "Use it by name: `widget: " + shown_views[0].name + "`. A file of the same name in your project replaces it.", ""]
+            out += ["A view Tesserae ships is a `<Name>_View.tdl` (what it takes and what it is made of) with a `<Name>_Stylesheet.tdl` (how it looks). "
+                    "Use it by name: `" + shown_views[0].name + " { ... }`. A file of the same name in your project replaces it.", ""]
         for view in shown_views:
             out += _view_section(view, entry)
         for name in widgets:
@@ -208,7 +254,7 @@ def component_page(entry: dict[str, Any], views: dict[str, View]) -> str:
     elif entry.get("shares"):
         out += ["## How it is built", "", f"It is the same view as the [{entry['shares'].replace('-', ' ')}](../components/{entry['shares']}.md): see there for what it takes and how it looks.", ""]
     if entry.get("usage_view"):
-        out += ["## Using it", ""] + _fence(entry["usage_view"].rstrip("\n"), "yaml")
+        out += ["## Using it", ""] + _fence(entry["usage_view"].rstrip("\n"), "tdl")
     if entry.get("after"):
         out += entry["after"].rstrip("\n").split("\n") + [""]
     if entry.get("python"):
@@ -217,26 +263,21 @@ def component_page(entry: dict[str, Any], views: dict[str, View]) -> str:
     sheeted = [v for v in shown_views if v.sheet_text]
     if sheeted:
         view = sheeted[0]
-        rule = next((r for r in view.rules if {"background", "foreground"} & set(r["style"]) and r.get("part")), None) \
-            or next((r for r in view.rules if {"background", "foreground"} & set(r["style"])), view.rules[0])
-        field = "background" if "background" in rule["style"] else "foreground" if "foreground" in rule["style"] else next(iter(rule["style"]))
-        selectors = {k: v for k, v in rule.items() if k not in ("style",)}
-        selectors.setdefault("widget", view.name)
+        selectors, style = _look_rule(view)
         out += ["## Changing its look", "",
-                "To restyle it in your whole app, write rules for it in your app's stylesheet, or put `<Name>_Stylesheet.yaml` next to your views (or in `Styles/`); it is read only while the app uses the view. "
+                "To restyle it in your whole app, write rules for it in your app's stylesheet, or put `<Name>_Stylesheet.tdl` next to your views (or in `Styles/`); it is read only while the app uses the view. "
                 "A rule names the widget and may narrow it by the properties it declares, a part and a state; the most specific rule wins, "
-                "and a node's own `style:` beats every rule:", ""]
-        out += _fence(f"# {view.name}_Stylesheet.yaml, or any stylesheet your app loads\nstyles:\n  - " + yaml.safe_dump(
-            {**selectors, "style": {field: "tertiary"}}, default_flow_style=None, sort_keys=False, width=200).strip().replace("\n", "\n    "), "yaml")
+                "and a node's own `Style` beats every rule:", ""]
+        out += _fence(f"# {view.name}_Stylesheet.tdl, or any stylesheet your app loads\n" + tdl_format.stylesheet([(selectors, style)]), "tdl")
         out += ["See [Component stylesheets](../stylesheets/index.md).", ""]
     see = [f"[{Path(p).stem.replace('-', ' ').title()}](../{p})" for p in entry.get("see", [])]
-    out += ["## See also", "", "- " + "\n- ".join(see + ["[Python API reference](../api/python.md)", "[YAML reference](../api/yaml.md)"]), ""]
+    out += ["## See also", "", "- " + "\n- ".join(see + ["[Python API reference](../api/python.md)", "[TDL reference](../api/tdl.md)"]), ""]
     return "\n".join(out)
 
 
 def _when(rule: dict[str, Any]) -> str:
     """When a rule applies, in words: its selectors, state, classes and name."""
-    parts = [f"`{k}: {v}`" for k, v in rule.items() if k not in ("widget", "part", "style", "state", "classes", "name")]
+    parts = [f"`{tdl_format.key(k)}: {tdl_format.value(v)}`" for k, v in rule.items() if k not in ("widget", "part", "style", "state", "classes", "name")]
     if rule.get("state"):
         parts.append(f"state `{rule['state']}`")
     if rule.get("classes"):
@@ -247,15 +288,15 @@ def _when(rule: dict[str, Any]) -> str:
 
 
 def stylesheet_page(entry: dict[str, Any], view: View, help_: dict[str, str]) -> str:
-    out = [f"# {view.name}_Stylesheet.yaml", "", view.sheet_summary or f"The look of `{view.name}`.", "",
+    out = [f"# {view.name}_Stylesheet.tdl", "", view.sheet_summary or f"The look of `{view.name}`.", "",
            f"The look of [`{view.name}`](../../components/{entry['slug']}.md) (in [{entry['title']}](../../components/{entry['slug']}.md)). "
            "[How component stylesheets work](../index.md).", "", "## The stylesheet", ""]
-    out += _fence(view.sheet_text.rstrip("\n"), "yaml")
+    out += _fence(view.sheet_text.rstrip("\n"), "tdl")
     out += ["## How it reaches the view", "",
-            f"Each rule names `widget: {view.name}` and may add the properties the view declares (a `variant`, a `size`, a `shape`), `classes`, a node `name`, "
-            "a `part` (one of the view's named nodes) and a `state` (`hovered`, `focused`, `pressed`, `disabled`, `selected`, ...). A rule's values may be "
-            "expressions over the view's parameters. The most specific rule wins: a `name`, then the number of properties matched (all the `classes` count as one more), then a `state`, "
-            "then the widget alone; a later rule wins a tie. These rules are the lowest layer: your app's stylesheet goes over them, and a node's own `style:` "
+            f"Each rule names `Widget: {view.name}` and may add the properties the view declares (a `Variant`, a `Size`, a `Shape`), `Classes`, a node `Name`, "
+            "a `Part` (one of the view's named nodes) and a `State` (`hovered`, `focused`, `pressed`, `disabled`, `selected`, ...). A rule's values may be "
+            "expressions over the view's parameters. The most specific rule wins: a `Name`, then the number of properties matched (all the `Classes` count as one more), then a `State`, "
+            "then the widget alone; a later rule wins a tie. These rules are the lowest layer: your app's stylesheet goes over them, and a node's own `Style` "
             "beats every rule for the fields it sets.", ""]
     by_part: dict[str, list[dict[str, Any]]] = {}
     for rule in view.rules:
@@ -268,13 +309,13 @@ def stylesheet_page(entry: dict[str, Any], view: View, help_: dict[str, str]) ->
         for rule in rules:
             when = _when(rule)
             for field, raw in rule["style"].items():
-                out.append(f"| {when} | `{field}` | {_cell(raw)} | {_doc(help_.get(field, ''))} |")
+                out.append(f"| {when} | `{tdl_format.key(field)}` | {_cell(raw)} | {_doc(help_.get(field, ''))} |")
         out.append("")
     first = next((r for r in view.rules if {"background", "foreground"} & set(r["style"])), view.rules[0])
     field = "background" if "background" in first["style"] else "foreground" if "foreground" in first["style"] else next(iter(first["style"]))
     selectors = {k: v for k, v in first.items() if k != "style"}
     out += ["## Changing it", "", "Write a rule of your own; it goes over this file's, field by field:", ""]
-    out += _fence("styles:\n  - " + yaml.safe_dump({**selectors, "style": {field: "tertiary"}}, default_flow_style=None, sort_keys=False, width=200).strip().replace("\n", "\n    "), "yaml")
+    out += _fence(tdl_format.stylesheet([(selectors, {field: "tertiary"})]), "tdl")
     return "\n".join(out)
 
 
@@ -295,17 +336,18 @@ def overview_components(data: dict[str, Any]) -> str:
 
 def overview_stylesheets(data: dict[str, Any], views: dict[str, View]) -> str:
     out = ["# Component Stylesheets", "",
-           "Most shipped views keep their look in a stylesheet, `<Name>_Stylesheet.yaml`, beside the view itself, `<Name>_View.yaml` (a few, such as the tab and chip groups, have only their params). Each page here shows one "
+           "Most shipped views keep their look in a stylesheet, `<Name>_Stylesheet.tdl`, beside the view itself, `<Name>_View.tdl` (a few, such as the tab and chip groups, have only their params). Each page here shows one "
            "stylesheet, how its rules reach the view, and what each part's rules do.", "",
            "## How they work", "",
-           "A stylesheet is a list of rules. A rule names a widget (the view), may narrow it, and gives a `style`:", ""]
-    out += _fence("styles:\n  - widget: Button\n    variant: filled\n    style: {background: primary, foreground: on_primary}\n"
-                  "  - widget: Button\n    variant: filled\n    state: disabled\n    style: {background: \"on_surface@12%\"}\n"
-                  "  - widget: Card\n    part: headline\n    style: {foreground: on_surface}", "yaml")
-    out += ["- A rule narrows by the properties the view declares (`variant`, `size`, `shape`), `classes`, a node `name`, a `part` (a named node inside the view; a name the view does not have is an error that suggests the nearest) and a `state`.",
-            "- A value in `{{ }}` is an expression over the view's parameters, worked out where the view is used.",
-            "- The most specific rule wins; a node's own `style:` beats every rule for the fields it sets.",
-            "- A stylesheet is read only when the application uses its widget: the widgets in the views you open, and in the views those call. The shipped rules are the lowest layer, a `<Name>_Stylesheet.yaml` of yours (next to your views, or in `Styles/`) goes over them, and your app's stylesheet goes over that. A view of the same name that you wrote replaces the shipped one and its look.",
+           "A stylesheet is a list of rules. A rule names a widget (the view), may narrow it, and gives a `Style`:", ""]
+    out += _fence(tdl_format.stylesheet([
+        ({"widget": "Button", "variant": "filled"}, {"background": "primary", "foreground": "on_primary"}),
+        ({"widget": "Button", "variant": "filled", "state": "disabled"}, {"background": "on_surface@12%"}),
+        ({"widget": "Card", "part": "headline"}, {"foreground": "on_surface"})]), "tdl")
+    out += ["- A rule narrows by the properties the view declares (`Variant`, `Size`, `Shape`), `Classes`, a node `Name`, a `Part` (a named node inside the view; a name the view does not have is an error that suggests the nearest) and a `State`.",
+            "- A value in `<| |>` is an expression over the view's parameters, worked out where the view is used.",
+            "- The most specific rule wins; a node's own `Style` beats every rule for the fields it sets.",
+            "- A stylesheet is read only when the application uses its widget: the widgets in the views you open, and in the views those call. The shipped rules are the lowest layer, a `<Name>_Stylesheet.tdl` of yours (next to your views, or in `Styles/`) goes over them, and your app's stylesheet goes over that. A view of the same name that you wrote replaces the shipped one and its look.",
             "- Hot reload watches the stylesheets a view uses.", "",
             "See [The View Language](../guide/view-language.md#style) for the rule syntax and [Themes](../themes/index.md) for colours, type and shape.", ""]
     for group in data["groups"]:
@@ -364,9 +406,14 @@ def check_coverage(data: dict[str, Any], shipped: list[str]) -> None:
         raise SystemExit("tools/component_docs.yaml: " + "; ".join(problems))
 
 
+def shipped_views() -> list[str]:
+    """The shipped views' names: the `.tdl` files (the generators read nothing else)."""
+    return sorted(p.name.removesuffix("_View.tdl") for p in VIEWS.glob("*_View.tdl"))
+
+
 def build() -> dict[Path, str]:
     data = yaml.safe_load(DATA.read_text(encoding="utf-8"))
-    shipped = sorted(p.name.removesuffix("_View.yaml") for p in VIEWS.glob("*_View.yaml"))
+    shipped = shipped_views()
     check_coverage(data, shipped)
     views = {name: View(name) for name in shipped}
     help_ = _style_field_help()

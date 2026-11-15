@@ -1,4 +1,4 @@
-# Button_Stylesheet.yaml
+# Button_Stylesheet.tdl
 
 The look of Button (Material 3, with the Expressive sizes). Sizes set the height, the padding (by size: 12 for `xs`, 24 for `s` and `m` (16 on the side with an icon on `s`), 48 for `l`, 64 for `xl`) and the gap; variants set the colours; the shape is a pill or a rounded square, and a toggle that is on, or a press, takes the other. A state layer and a ripple come from the node's interaction; a filled, tonal or elevated button lifts when hovered.
 
@@ -6,106 +6,181 @@ The look of [`Button`](../../components/buttons.md) (in [Buttons](../../componen
 
 ## The stylesheet
 
-```yaml
-tesserae: 0.6
+```tdl
+---
+TDL: 0.2
+Name: Button
+Tesserae: "0.6"
+---
 # The look of Button (Material 3, with the Expressive sizes). Sizes set the height, the padding (by size: 12 for `xs`, 24 for `s` and `m` (16 on the side with an icon on `s`), 48 for `l`, 64 for `xl`) and the gap; variants set the colours; the shape is a pill or a rounded square, and a toggle that is on, or a press, takes the other.
 # A state layer and a ripple come from the node's interaction; a filled, tonal or elevated button lifts when hovered.
-styles:
-  - widget: Button
-    style:
-      height: 40
-      transition: {corner_radius: 200, elevation: 200, background: 150}
+Styles {
+  Rule {
+    Widget: Button
+    Style {
+      Height: 40
+      Transition { Corner_Radius: 200, Elevation: 200, Background: 150 }
+    }
+  }
   # sizes
-  - {widget: Button, size: xs, style: {height: 32, gap: 4}}
-  - {widget: Button, size: s, style: {height: 40, gap: 8}}
-  - {widget: Button, size: m, style: {height: 56, gap: 8}}
-  - {widget: Button, size: l, style: {height: 96, gap: 12}}
-  - {widget: Button, size: xl, style: {height: 136, gap: 16}}
-  - widget: Button
-    style:
-      padding: "{{ {'left': (({'xs': 12, 's': 16, 'm': 24, 'l': 48, 'xl': 64}[size]) if (icon != '' or loading) else ({'xs': 12, 's': 24, 'm': 24, 'l': 48, 'xl': 64}[size])) if variant != 'text' else 12, 'right': (({'xs': 12, 's': 16, 'm': 24, 'l': 48, 'xl': 64}[size]) if trailing_icon != '' else ({'xs': 12, 's': 24, 'm': 24, 'l': 48, 'xl': 64}[size])) if variant != 'text' else 12, 'top': 0, 'bottom': 0} }}"
+  Rule { Widget: Button, Size: xs, Style { Height: 32, Gap: 4 } }
+  Rule { Widget: Button, Size: s, Style { Height: 40, Gap: 8 } }
+  Rule { Widget: Button, Size: m, Style { Height: 56, Gap: 8 } }
+  Rule { Widget: Button, Size: l, Style { Height: 96, Gap: 12 } }
+  Rule { Widget: Button, Size: xl, Style { Height: 136, Gap: 16 } }
+  Rule {
+    Widget: Button
+    Style {
+      Padding: <| {'left': (({'xs': 12, 's': 16, 'm': 24, 'l': 48, 'xl': 64}[size]) if (icon != '' or loading) else ({'xs': 12, 's': 24, 'm': 24, 'l': 48, 'xl': 64}[size])) if variant != 'text' else 12, 'right': (({'xs': 12, 's': 16, 'm': 24, 'l': 48, 'xl': 64}[size]) if trailing_icon != '' else ({'xs': 12, 's': 24, 'm': 24, 'l': 48, 'xl': 64}[size])) if variant != 'text' else 12, 'top': 0, 'bottom': 0} |>
+    }
+  }
   # shapes: a pill, or a rounded square; a toggle that is on (and a press) takes the other
-  - widget: Button
-    shape: round
-    style: {corner_radius: full}
-  - widget: Button
-    shape: square
-    style: {corner_radius: "{{ {'xs': 12, 's': 12, 'm': 16, 'l': 28, 'xl': 28}[size] }}"}
-  - widget: Button
-    shape: round
-    state: selected
-    style: {corner_radius: "{{ {'xs': 12, 's': 12, 'm': 16, 'l': 28, 'xl': 28}[size] }}"}
-  - widget: Button
-    shape: square
-    state: selected
-    style: {corner_radius: full}
-  - widget: Button
-    shape: round
-    state: pressed
-    style: {corner_radius: "{{ {'xs': 12, 's': 12, 'm': 16, 'l': 28, 'xl': 28}[size] }}"}
+  Rule {
+    Widget: Button
+    Shape: round
+    Style { Corner_Radius: full }
+  }
+  Rule {
+    Widget: Button
+    Shape: square
+    Style { Corner_Radius: <| {'xs': 12, 's': 12, 'm': 16, 'l': 28, 'xl': 28}[size] |> }
+  }
+  Rule {
+    Widget: Button
+    Shape: round
+    State: selected
+    Style { Corner_Radius: <| {'xs': 12, 's': 12, 'm': 16, 'l': 28, 'xl': 28}[size] |> }
+  }
+  Rule {
+    Widget: Button
+    Shape: square
+    State: selected
+    Style { Corner_Radius: full }
+  }
+  Rule {
+    Widget: Button
+    Shape: round
+    State: pressed
+    Style { Corner_Radius: <| {'xs': 12, 's': 12, 'm': 16, 'l': 28, 'xl': 28}[size] |> }
+  }
   # variants
-  - widget: Button
-    variant: filled
-    style: {background: "{{ 'primary' if (not toggle or selected) else 'surface_container_highest' }}"}
-  - widget: Button
-    variant: tonal
-    style: {background: "{{ 'secondary_container' if (not toggle or not selected) else 'secondary' }}"}
-  - widget: Button
-    variant: elevated
-    style: {background: "{{ 'surface_container_low' if (not toggle or not selected) else 'primary' }}", elevation: 1}
-  - widget: Button
-    variant: outlined
-    style:
-      background: "{{ 'transparent' if (not toggle or not selected) else 'inverse_surface' }}"
-      border_width: "{{ 1 if (not toggle or not selected) else 0 }}"
-      border_color: outline
-  - widget: Button
-    variant: text
-    style: {background: transparent}
+  Rule {
+    Widget: Button
+    Variant: filled
+    Style { Background: <| 'primary' if (not toggle or selected) else 'surface_container_highest' |> }
+  }
+  Rule {
+    Widget: Button
+    Variant: tonal
+    Style { Background: <| 'secondary_container' if (not toggle or not selected) else 'secondary' |> }
+  }
+  Rule {
+    Widget: Button
+    Variant: elevated
+    Style { Background: <| 'surface_container_low' if (not toggle or not selected) else 'primary' |>, Elevation: 1 }
+  }
+  Rule {
+    Widget: Button
+    Variant: outlined
+    Style {
+      Background: <| 'transparent' if (not toggle or not selected) else 'inverse_surface' |>
+      Border_Width: <| 1 if (not toggle or not selected) else 0 |>
+      Border_Color: outline
+    }
+  }
+  Rule {
+    Widget: Button
+    Variant: text
+    Style { Background: transparent }
+  }
   # lifting
-  - {widget: Button, variant: filled, state: hovered, style: {elevation: 1}}
-  - {widget: Button, variant: tonal, state: hovered, style: {elevation: 1}}
-  - {widget: Button, variant: elevated, state: hovered, style: {elevation: 2}}
-  - {widget: Button, variant: elevated, state: pressed, style: {elevation: 1}}
+  Rule { Widget: Button, Variant: filled, State: hovered, Style { Elevation: 1 } }
+  Rule { Widget: Button, Variant: tonal, State: hovered, Style { Elevation: 1 } }
+  Rule { Widget: Button, Variant: elevated, State: hovered, Style { Elevation: 2 } }
+  Rule { Widget: Button, Variant: elevated, State: pressed, Style { Elevation: 1 } }
   # content colours
-  - widget: Button
-    variant: filled
-    part: label
-    style: {foreground: "{{ 'on_primary' if (not toggle or selected) else 'on_surface_variant' }}"}
-  - widget: Button
-    variant: tonal
-    part: label
-    style: {foreground: "{{ 'on_secondary_container' if (not toggle or not selected) else 'on_secondary' }}"}
-  - widget: Button
-    variant: elevated
-    part: label
-    style: {foreground: "{{ 'primary' if (not toggle or not selected) else 'on_primary' }}"}
-  - widget: Button
-    variant: outlined
-    part: label
-    style: {foreground: "{{ 'primary' if not toggle else ('inverse_on_surface' if selected else 'on_surface_variant') }}"}
-  - widget: Button
-    variant: text
-    part: label
-    style: {foreground: primary}
-  - {widget: Button, variant: filled, part: icon, style: {foreground: "{{ 'on_primary' if (not toggle or selected) else 'on_surface_variant' }}"}}
-  - {widget: Button, variant: tonal, part: icon, style: {foreground: "{{ 'on_secondary_container' if (not toggle or not selected) else 'on_secondary' }}"}}
-  - {widget: Button, variant: elevated, part: icon, style: {foreground: "{{ 'primary' if (not toggle or not selected) else 'on_primary' }}"}}
-  - {widget: Button, variant: outlined, part: icon, style: {foreground: "{{ 'primary' if not toggle else ('inverse_on_surface' if selected else 'on_surface_variant') }}"}}
-  - {widget: Button, variant: text, part: icon, style: {foreground: primary}}
-  - {widget: Button, variant: filled, part: trailing, style: {foreground: "{{ 'on_primary' if (not toggle or selected) else 'on_surface_variant' }}"}}
-  - {widget: Button, variant: tonal, part: trailing, style: {foreground: "{{ 'on_secondary_container' if (not toggle or not selected) else 'on_secondary' }}"}}
-  - {widget: Button, variant: elevated, part: trailing, style: {foreground: "{{ 'primary' if (not toggle or not selected) else 'on_primary' }}"}}
-  - {widget: Button, variant: outlined, part: trailing, style: {foreground: "{{ 'primary' if not toggle else ('inverse_on_surface' if selected else 'on_surface_variant') }}"}}
-  - {widget: Button, variant: text, part: trailing, style: {foreground: primary}}
+  Rule {
+    Widget: Button
+    Variant: filled
+    Part: label
+    Style { Foreground: <| 'on_primary' if (not toggle or selected) else 'on_surface_variant' |> }
+  }
+  Rule {
+    Widget: Button
+    Variant: tonal
+    Part: label
+    Style { Foreground: <| 'on_secondary_container' if (not toggle or not selected) else 'on_secondary' |> }
+  }
+  Rule {
+    Widget: Button
+    Variant: elevated
+    Part: label
+    Style { Foreground: <| 'primary' if (not toggle or not selected) else 'on_primary' |> }
+  }
+  Rule {
+    Widget: Button
+    Variant: outlined
+    Part: label
+    Style { Foreground: <| 'primary' if not toggle else ('inverse_on_surface' if selected else 'on_surface_variant') |> }
+  }
+  Rule {
+    Widget: Button
+    Variant: text
+    Part: label
+    Style { Foreground: primary }
+  }
+  Rule { Widget: Button, Variant: filled, Part: icon, Style { Foreground: <| 'on_primary' if (not toggle or selected) else 'on_surface_variant' |> } }
+  Rule {
+    Widget: Button
+    Variant: tonal
+    Part: icon
+    Style { Foreground: <| 'on_secondary_container' if (not toggle or not selected) else 'on_secondary' |> }
+  }
+  Rule { Widget: Button, Variant: elevated, Part: icon, Style { Foreground: <| 'primary' if (not toggle or not selected) else 'on_primary' |> } }
+  Rule {
+    Widget: Button
+    Variant: outlined
+    Part: icon
+    Style { Foreground: <| 'primary' if not toggle else ('inverse_on_surface' if selected else 'on_surface_variant') |> }
+  }
+  Rule { Widget: Button, Variant: text, Part: icon, Style { Foreground: primary } }
+  Rule {
+    Widget: Button
+    Variant: filled
+    Part: trailing
+    Style { Foreground: <| 'on_primary' if (not toggle or selected) else 'on_surface_variant' |> }
+  }
+  Rule {
+    Widget: Button
+    Variant: tonal
+    Part: trailing
+    Style { Foreground: <| 'on_secondary_container' if (not toggle or not selected) else 'on_secondary' |> }
+  }
+  Rule { Widget: Button, Variant: elevated, Part: trailing, Style { Foreground: <| 'primary' if (not toggle or not selected) else 'on_primary' |> } }
+  Rule {
+    Widget: Button
+    Variant: outlined
+    Part: trailing
+    Style { Foreground: <| 'primary' if not toggle else ('inverse_on_surface' if selected else 'on_surface_variant') |> }
+  }
+  Rule { Widget: Button, Variant: text, Part: trailing, Style { Foreground: primary } }
   # icon sizes
-  - {widget: Button, part: icon, style: {width: "{{ {'xs': 20, 's': 18, 'm': 24, 'l': 32, 'xl': 40}[size] }}", height: "{{ {'xs': 20, 's': 18, 'm': 24, 'l': 32, 'xl': 40}[size] }}"}}
-  - {widget: Button, part: trailing, style: {width: "{{ {'xs': 20, 's': 18, 'm': 24, 'l': 32, 'xl': 40}[size] }}", height: "{{ {'xs': 20, 's': 18, 'm': 24, 'l': 32, 'xl': 40}[size] }}"}}
+  Rule {
+    Widget: Button
+    Part: icon
+    Style { Width: <| {'xs': 20, 's': 18, 'm': 24, 'l': 32, 'xl': 40}[size] |>, Height: <| {'xs': 20, 's': 18, 'm': 24, 'l': 32, 'xl': 40}[size] |> }
+  }
+  Rule {
+    Widget: Button
+    Part: trailing
+    Style { Width: <| {'xs': 20, 's': 18, 'm': 24, 'l': 32, 'xl': 40}[size] |>, Height: <| {'xs': 20, 's': 18, 'm': 24, 'l': 32, 'xl': 40}[size] |> }
+  }
+}
 ```
 
 ## How it reaches the view
 
-Each rule names `widget: Button` and may add the properties the view declares (a `variant`, a `size`, a `shape`), `classes`, a node `name`, a `part` (one of the view's named nodes) and a `state` (`hovered`, `focused`, `pressed`, `disabled`, `selected`, ...). A rule's values may be expressions over the view's parameters. The most specific rule wins: a `name`, then the number of properties matched (all the `classes` count as one more), then a `state`, then the widget alone; a later rule wins a tie. These rules are the lowest layer: your app's stylesheet goes over them, and a node's own `style:` beats every rule for the fields it sets.
+Each rule names `Widget: Button` and may add the properties the view declares (a `Variant`, a `Size`, a `Shape`), `Classes`, a node `Name`, a `Part` (one of the view's named nodes) and a `State` (`hovered`, `focused`, `pressed`, `disabled`, `selected`, ...). A rule's values may be expressions over the view's parameters. The most specific rule wins: a `Name`, then the number of properties matched (all the `Classes` count as one more), then a `State`, then the widget alone; a later rule wins a tie. These rules are the lowest layer: your app's stylesheet goes over them, and a node's own `Style` beats every rule for the fields it sets.
 
 ## The rules
 
@@ -113,78 +188,81 @@ Each rule names `widget: Button` and may add the properties the view declares (a
 
 | When | Field | Value | What it does |
 | --- | --- | --- | --- |
-| always | `height` | `40` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
-| always | `transition` | `{background: 150, corner_radius: 200, elevation: 200}` | Which style changes ease to their new value: a duration in milliseconds, or `{duration, easing, bounce}`. `all` covers every one that can. A node is where it says when first drawn; only a change eases. |
-| `size: xs` | `height` | `32` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
-| `size: xs` | `gap` | `4` | Space between its children. |
-| `size: s` | `height` | `40` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
-| `size: s` | `gap` | `8` | Space between its children. |
-| `size: m` | `height` | `56` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
-| `size: m` | `gap` | `8` | Space between its children. |
-| `size: l` | `height` | `96` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
-| `size: l` | `gap` | `12` | Space between its children. |
-| `size: xl` | `height` | `136` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
-| `size: xl` | `gap` | `16` | Space between its children. |
-| always | `padding` | `{{ {'left': (({'xs': 12, 's': 16, 'm': 24, 'l': 48, 'xl': 64}[size]) if (icon != '' or loading) else ({'xs': …` | Space inside it: one number, or `{left, right, top, bottom}`. |
-| `shape: round` | `corner_radius` | `full` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`top`, `right`, `bottom`, `left`) with the rest square. |
-| `shape: square` | `corner_radius` | `{{ {'xs': 12, 's': 12, 'm': 16, 'l': 28, 'xl': 28}[size] }}` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`top`, `right`, `bottom`, `left`) with the rest square. |
-| `shape: round`, state `selected` | `corner_radius` | `{{ {'xs': 12, 's': 12, 'm': 16, 'l': 28, 'xl': 28}[size] }}` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`top`, `right`, `bottom`, `left`) with the rest square. |
-| `shape: square`, state `selected` | `corner_radius` | `full` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`top`, `right`, `bottom`, `left`) with the rest square. |
-| `shape: round`, state `pressed` | `corner_radius` | `{{ {'xs': 12, 's': 12, 'm': 16, 'l': 28, 'xl': 28}[size] }}` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`top`, `right`, `bottom`, `left`) with the rest square. |
-| `variant: filled` | `background` | `{{ 'primary' if (not toggle or selected) else 'surface_container_highest' }}` | Its fill: a theme role such as `surface`, `#RRGGBB`, any CSS colour, or a gradient such as `linear-gradient(90deg, primary, tertiary)`. |
-| `variant: tonal` | `background` | `{{ 'secondary_container' if (not toggle or not selected) else 'secondary' }}` | Its fill: a theme role such as `surface`, `#RRGGBB`, any CSS colour, or a gradient such as `linear-gradient(90deg, primary, tertiary)`. |
-| `variant: elevated` | `background` | `{{ 'surface_container_low' if (not toggle or not selected) else 'primary' }}` | Its fill: a theme role such as `surface`, `#RRGGBB`, any CSS colour, or a gradient such as `linear-gradient(90deg, primary, tertiary)`. |
-| `variant: elevated` | `elevation` | `1` | A shadow level, 0 to 5. |
-| `variant: outlined` | `background` | `{{ 'transparent' if (not toggle or not selected) else 'inverse_surface' }}` | Its fill: a theme role such as `surface`, `#RRGGBB`, any CSS colour, or a gradient such as `linear-gradient(90deg, primary, tertiary)`. |
-| `variant: outlined` | `border_width` | `{{ 1 if (not toggle or not selected) else 0 }}` | The width of its border, in pixels. |
-| `variant: outlined` | `border_color` | `outline` | The colour of its border: a colour or a gradient. |
-| `variant: text` | `background` | `transparent` | Its fill: a theme role such as `surface`, `#RRGGBB`, any CSS colour, or a gradient such as `linear-gradient(90deg, primary, tertiary)`. |
-| `variant: filled`, state `hovered` | `elevation` | `1` | A shadow level, 0 to 5. |
-| `variant: tonal`, state `hovered` | `elevation` | `1` | A shadow level, 0 to 5. |
-| `variant: elevated`, state `hovered` | `elevation` | `2` | A shadow level, 0 to 5. |
-| `variant: elevated`, state `pressed` | `elevation` | `1` | A shadow level, 0 to 5. |
+| always | `Height` | `40` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| always | `Transition` | `{ Corner_Radius: 200, Elevation: 200, Background: 150 }` | Which style changes ease to their new value: a duration in milliseconds, or `{Duration, easing, bounce}`. `all` covers every one that can. A node is where it says when first drawn; only a change eases. |
+| `Size: xs` | `Height` | `32` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| `Size: xs` | `Gap` | `4` | Space between its children. |
+| `Size: s` | `Height` | `40` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| `Size: s` | `Gap` | `8` | Space between its children. |
+| `Size: m` | `Height` | `56` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| `Size: m` | `Gap` | `8` | Space between its children. |
+| `Size: l` | `Height` | `96` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| `Size: l` | `Gap` | `12` | Space between its children. |
+| `Size: xl` | `Height` | `136` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| `Size: xl` | `Gap` | `16` | Space between its children. |
+| always | `Padding` | `<\| {'left': (({'xs': 12, 's': 16, 'm': 24, 'l': 48, 'xl': 64}[size]) if (icon != '' or loading) else ({'xs': …` | Space inside it: one number, or `{Left, Right, Top, Bottom}`. |
+| `Shape: round` | `Corner_Radius` | `full` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`Top`, `Right`, `Bottom`, `Left`) with the rest square. |
+| `Shape: square` | `Corner_Radius` | `<\| {'xs': 12, 's': 12, 'm': 16, 'l': 28, 'xl': 28}[size] \|>` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`Top`, `Right`, `Bottom`, `Left`) with the rest square. |
+| `Shape: round`, state `selected` | `Corner_Radius` | `<\| {'xs': 12, 's': 12, 'm': 16, 'l': 28, 'xl': 28}[size] \|>` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`Top`, `Right`, `Bottom`, `Left`) with the rest square. |
+| `Shape: square`, state `selected` | `Corner_Radius` | `full` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`Top`, `Right`, `Bottom`, `Left`) with the rest square. |
+| `Shape: round`, state `pressed` | `Corner_Radius` | `<\| {'xs': 12, 's': 12, 'm': 16, 'l': 28, 'xl': 28}[size] \|>` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`Top`, `Right`, `Bottom`, `Left`) with the rest square. |
+| `Variant: filled` | `Background` | `<\| 'primary' if (not toggle or selected) else 'surface_container_highest' \|>` | Its fill: a theme role such as `surface`, `#RRGGBB`, any CSS colour, or a gradient such as `linear-gradient(90deg, primary, tertiary)`. |
+| `Variant: tonal` | `Background` | `<\| 'secondary_container' if (not toggle or not selected) else 'secondary' \|>` | Its fill: a theme role such as `surface`, `#RRGGBB`, any CSS colour, or a gradient such as `linear-gradient(90deg, primary, tertiary)`. |
+| `Variant: elevated` | `Background` | `<\| 'surface_container_low' if (not toggle or not selected) else 'primary' \|>` | Its fill: a theme role such as `surface`, `#RRGGBB`, any CSS colour, or a gradient such as `linear-gradient(90deg, primary, tertiary)`. |
+| `Variant: elevated` | `Elevation` | `1` | A shadow level, 0 to 5. |
+| `Variant: outlined` | `Background` | `<\| 'transparent' if (not toggle or not selected) else 'inverse_surface' \|>` | Its fill: a theme role such as `surface`, `#RRGGBB`, any CSS colour, or a gradient such as `linear-gradient(90deg, primary, tertiary)`. |
+| `Variant: outlined` | `Border_Width` | `<\| 1 if (not toggle or not selected) else 0 \|>` | The width of its border, in pixels. |
+| `Variant: outlined` | `Border_Color` | `outline` | The colour of its border: a colour or a gradient. |
+| `Variant: text` | `Background` | `transparent` | Its fill: a theme role such as `surface`, `#RRGGBB`, any CSS colour, or a gradient such as `linear-gradient(90deg, primary, tertiary)`. |
+| `Variant: filled`, state `hovered` | `Elevation` | `1` | A shadow level, 0 to 5. |
+| `Variant: tonal`, state `hovered` | `Elevation` | `1` | A shadow level, 0 to 5. |
+| `Variant: elevated`, state `hovered` | `Elevation` | `2` | A shadow level, 0 to 5. |
+| `Variant: elevated`, state `pressed` | `Elevation` | `1` | A shadow level, 0 to 5. |
 
 ### `label` (Text)
 
 | When | Field | Value | What it does |
 | --- | --- | --- | --- |
-| `variant: filled` | `foreground` | `{{ 'on_primary' if (not toggle or selected) else 'on_surface_variant' }}` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
-| `variant: tonal` | `foreground` | `{{ 'on_secondary_container' if (not toggle or not selected) else 'on_secondary' }}` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
-| `variant: elevated` | `foreground` | `{{ 'primary' if (not toggle or not selected) else 'on_primary' }}` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
-| `variant: outlined` | `foreground` | `{{ 'primary' if not toggle else ('inverse_on_surface' if selected else 'on_surface_variant') }}` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
-| `variant: text` | `foreground` | `primary` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
+| `Variant: filled` | `Foreground` | `<\| 'on_primary' if (not toggle or selected) else 'on_surface_variant' \|>` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
+| `Variant: tonal` | `Foreground` | `<\| 'on_secondary_container' if (not toggle or not selected) else 'on_secondary' \|>` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
+| `Variant: elevated` | `Foreground` | `<\| 'primary' if (not toggle or not selected) else 'on_primary' \|>` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
+| `Variant: outlined` | `Foreground` | `<\| 'primary' if not toggle else ('inverse_on_surface' if selected else 'on_surface_variant') \|>` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
+| `Variant: text` | `Foreground` | `primary` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
 
 ### `icon` (Icon)
 
 | When | Field | Value | What it does |
 | --- | --- | --- | --- |
-| `variant: filled` | `foreground` | `{{ 'on_primary' if (not toggle or selected) else 'on_surface_variant' }}` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
-| `variant: tonal` | `foreground` | `{{ 'on_secondary_container' if (not toggle or not selected) else 'on_secondary' }}` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
-| `variant: elevated` | `foreground` | `{{ 'primary' if (not toggle or not selected) else 'on_primary' }}` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
-| `variant: outlined` | `foreground` | `{{ 'primary' if not toggle else ('inverse_on_surface' if selected else 'on_surface_variant') }}` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
-| `variant: text` | `foreground` | `primary` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
-| always | `width` | `{{ {'xs': 20, 's': 18, 'm': 24, 'l': 32, 'xl': 40}[size] }}` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
-| always | `height` | `{{ {'xs': 20, 's': 18, 'm': 24, 'l': 32, 'xl': 40}[size] }}` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| `Variant: filled` | `Foreground` | `<\| 'on_primary' if (not toggle or selected) else 'on_surface_variant' \|>` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
+| `Variant: tonal` | `Foreground` | `<\| 'on_secondary_container' if (not toggle or not selected) else 'on_secondary' \|>` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
+| `Variant: elevated` | `Foreground` | `<\| 'primary' if (not toggle or not selected) else 'on_primary' \|>` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
+| `Variant: outlined` | `Foreground` | `<\| 'primary' if not toggle else ('inverse_on_surface' if selected else 'on_surface_variant') \|>` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
+| `Variant: text` | `Foreground` | `primary` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
+| always | `Width` | `<\| {'xs': 20, 's': 18, 'm': 24, 'l': 32, 'xl': 40}[size] \|>` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| always | `Height` | `<\| {'xs': 20, 's': 18, 'm': 24, 'l': 32, 'xl': 40}[size] \|>` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
 
 ### `trailing` (Icon)
 
 | When | Field | Value | What it does |
 | --- | --- | --- | --- |
-| `variant: filled` | `foreground` | `{{ 'on_primary' if (not toggle or selected) else 'on_surface_variant' }}` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
-| `variant: tonal` | `foreground` | `{{ 'on_secondary_container' if (not toggle or not selected) else 'on_secondary' }}` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
-| `variant: elevated` | `foreground` | `{{ 'primary' if (not toggle or not selected) else 'on_primary' }}` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
-| `variant: outlined` | `foreground` | `{{ 'primary' if not toggle else ('inverse_on_surface' if selected else 'on_surface_variant') }}` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
-| `variant: text` | `foreground` | `primary` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
-| always | `width` | `{{ {'xs': 20, 's': 18, 'm': 24, 'l': 32, 'xl': 40}[size] }}` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
-| always | `height` | `{{ {'xs': 20, 's': 18, 'm': 24, 'l': 32, 'xl': 40}[size] }}` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| `Variant: filled` | `Foreground` | `<\| 'on_primary' if (not toggle or selected) else 'on_surface_variant' \|>` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
+| `Variant: tonal` | `Foreground` | `<\| 'on_secondary_container' if (not toggle or not selected) else 'on_secondary' \|>` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
+| `Variant: elevated` | `Foreground` | `<\| 'primary' if (not toggle or not selected) else 'on_primary' \|>` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
+| `Variant: outlined` | `Foreground` | `<\| 'primary' if not toggle else ('inverse_on_surface' if selected else 'on_surface_variant') \|>` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
+| `Variant: text` | `Foreground` | `primary` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
+| always | `Width` | `<\| {'xs': 20, 's': 18, 'm': 24, 'l': 32, 'xl': 40}[size] \|>` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| always | `Height` | `<\| {'xs': 20, 's': 18, 'm': 24, 'l': 32, 'xl': 40}[size] \|>` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
 
 ## Changing it
 
 Write a rule of your own; it goes over this file's, field by field:
 
-```yaml
-styles:
-  - widget: Button
-    variant: filled
-    style: {background: tertiary}
+```tdl
+Styles {
+  Rule {
+    Widget: Button
+    Variant: filled
+    Style { Background: tertiary }
+  }
+}
 ```

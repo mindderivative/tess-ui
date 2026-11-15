@@ -1,29 +1,36 @@
 # Component Stylesheets
 
-Most shipped views keep their look in a stylesheet, `<Name>_Stylesheet.yaml`, beside the view itself, `<Name>_View.yaml` (a few, such as the tab and chip groups, have only their params). Each page here shows one stylesheet, how its rules reach the view, and what each part's rules do.
+Most shipped views keep their look in a stylesheet, `<Name>_Stylesheet.tdl`, beside the view itself, `<Name>_View.tdl` (a few, such as the tab and chip groups, have only their params). Each page here shows one stylesheet, how its rules reach the view, and what each part's rules do.
 
 ## How they work
 
-A stylesheet is a list of rules. A rule names a widget (the view), may narrow it, and gives a `style`:
+A stylesheet is a list of rules. A rule names a widget (the view), may narrow it, and gives a `Style`:
 
-```yaml
-styles:
-  - widget: Button
-    variant: filled
-    style: {background: primary, foreground: on_primary}
-  - widget: Button
-    variant: filled
-    state: disabled
-    style: {background: "on_surface@12%"}
-  - widget: Card
-    part: headline
-    style: {foreground: on_surface}
+```tdl
+Styles {
+  Rule {
+    Widget: Button
+    Variant: filled
+    Style { Background: primary, Foreground: on_primary }
+  }
+  Rule {
+    Widget: Button
+    Variant: filled
+    State: disabled
+    Style { Background: "on_surface@12%" }
+  }
+  Rule {
+    Widget: Card
+    Part: headline
+    Style { Foreground: on_surface }
+  }
+}
 ```
 
-- A rule narrows by the properties the view declares (`variant`, `size`, `shape`), `classes`, a node `name`, a `part` (a named node inside the view; a name the view does not have is an error that suggests the nearest) and a `state`.
-- A value in `{{ }}` is an expression over the view's parameters, worked out where the view is used.
-- The most specific rule wins; a node's own `style:` beats every rule for the fields it sets.
-- A stylesheet is read only when the application uses its widget: the widgets in the views you open, and in the views those call. The shipped rules are the lowest layer, a `<Name>_Stylesheet.yaml` of yours (next to your views, or in `Styles/`) goes over them, and your app's stylesheet goes over that. A view of the same name that you wrote replaces the shipped one and its look.
+- A rule narrows by the properties the view declares (`Variant`, `Size`, `Shape`), `Classes`, a node `Name`, a `Part` (a named node inside the view; a name the view does not have is an error that suggests the nearest) and a `State`.
+- A value in `<| |>` is an expression over the view's parameters, worked out where the view is used.
+- The most specific rule wins; a node's own `Style` beats every rule for the fields it sets.
+- A stylesheet is read only when the application uses its widget: the widgets in the views you open, and in the views those call. The shipped rules are the lowest layer, a `<Name>_Stylesheet.tdl` of yours (next to your views, or in `Styles/`) goes over them, and your app's stylesheet goes over that. A view of the same name that you wrote replaces the shipped one and its look.
 - Hot reload watches the stylesheets a view uses.
 
 See [The View Language](../guide/view-language.md#style) for the rule syntax and [Themes](../themes/index.md) for colours, type and shape.

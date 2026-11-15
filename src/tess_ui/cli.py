@@ -3,19 +3,18 @@
     tesserae new <name> [--window [--custom-title-bar]] [--dir PARENT]
     tesserae add screen <Name> [--dir DIR]
     tesserae build [app.py] [--name N] [--icon F] [--console] [--include G] [--exclude G] [--check]
-    tesserae schema [--settings] [--project [DIR]]
+    tesserae schema [--project [DIR]]
     tesserae migrate-yaml [PATH] [--write] [--force]
     tesserae migrate-tdl [PATH] [--write] [--remove-source]
 
 `new` makes `<name>/` with `app.py` and a `Main` View/ViewModel pair
 following the naming convention, runnable at once; `--window` makes the app
-one `widget: Window` view (title bar, rail, and two routed screens). `add screen` adds a pair and, at the
+one `Window` view (title bar, rail, and two routed screens). `add screen` adds a pair and, at the
 marker comments `new` leaves in `app.py`, its bind, `open_view()` and route.
 Neither overwrites a file. The templates are in `tess_ui/templates/`.
 `build` makes the app one executable: see `tess_ui.build`.
-`schema` says where the YAML schemas for Red Hat's YAML language
-server are, and with `--settings` prints the `yaml.schemas` setting for them. `--project` writes a schema of the views too that the project
-DIR (here by default) has of its own, in `DIR/.tesserae/`, and maps the views to it.
+`schema` says where the JSON schemas of the data a `.tdl` file loads to are, for editor tools. `--project` writes a schema of the views too that the project
+DIR (here by default) has of its own, in `DIR/.tesserae/`, and lists that one.
 `migrate-tdl` writes the `*_View.yaml` and `*_Stylesheet.yaml` files of a file or folder as `*_View.tdl` and `*_Stylesheet.tdl`, keeping comments and key order (see `tess_ui.migrate_tdl`).
 """
 
@@ -37,19 +36,12 @@ TEMPLATES = Path(__file__).parent / "templates"
 IMPORT_MARKER = "# (tesserae add screen adds each new screen's import above this line)"
 LOAD_MARKER = "# (tesserae add screen adds each new screen's lines above this line)"
 SCHEMAS = Path(__file__).parent / "schema"
-#: Each YAML schema and the files it is for, as `yaml.schemas` globs (a `!` leaves files out).
+#: Each JSON schema and what it describes: the data a `.tdl` file of that kind loads to.
 SCHEMA_FILES = {
-    "tess-ui-widget-schema.json": ["**/*_View.yaml"],
-    "tess-ui-stylesheet-schema.json": ["**/*_Stylesheet.yaml", "**/*stylesheet*.yaml"],
-    # A theme file: the suffix, and a guess at other names (not a view or a stylesheet).
-    "tess-ui-theme-schema.json": ["**/*_Theme.yaml", "**/*theme*.yaml", "!**/*_View.yaml", "!**/*_Component.yaml", "!**/*_Stylesheet.yaml",
-                                   "!**/*stylesheet*.yaml"],
-    # The older syntax, for the files of a project that has not moved yet.
-    "tess-ui-component-schema.json": ["**/*_Component.yaml"],
-    "tess-ui-style-schema.json": ["**/*_Style.yaml"],
+    "tess-ui-widget-schema.json": "a view, `*_View.tdl`",
+    "tess-ui-stylesheet-schema.json": "a stylesheet of rules, `*_Stylesheet.tdl`",
+    "tess-ui-theme-schema.json": "a theme, `*_Theme.tdl`",
 }
-#: The view schema of the older syntax (`kind:`, `id:`): shipped, and for a file that names it in a comment.
-OLDER_VIEW_SCHEMA = "tess-ui-yaml-schema.json"
 #: Where `--project` writes the schema of the project's own views, under the project.
 PROJECT_SCHEMA = Path(".tesserae") / "tess-ui-widget-schema.json"
 
@@ -202,9 +194,7 @@ def _parser() -> argparse.ArgumentParser:
     tdl_cmd.add_argument("path", nargs="?", type=Path, default=Path("."), help="a *_View.yaml or *_Stylesheet.yaml file or the project's folder (default: here)")
     tdl_cmd.add_argument("--write", action="store_true", help="write the files (without it, only report what would change)")
     tdl_cmd.add_argument("--remove-source", action="store_true", help="with --write: delete each YAML file once its TDL file is written")
-    schema_cmd = commands.add_parser("schema", help="where the YAML schemas for editors are")
-    schema_cmd.add_argument("--settings", action="store_true",
-                            help="print the `yaml.schemas` setting for Red Hat's YAML language server")
+    schema_cmd = commands.add_parser("schema", help="where the JSON schemas for editor tools are")
     schema_cmd.add_argument("--project", nargs="?", const=Path("."), type=Path, metavar="DIR",
                             help="also know the views DIR (here by default) has of its own: writes DIR/.tesserae/tess-ui-widget-schema.json")
     build_cmd = commands.add_parser("build", help="build the app into one executable (needs tesserae-ui[build])")
@@ -281,22 +271,16 @@ def project_schema(folder: Path) -> Path:
 
 
 def _schema(args: argparse.Namespace) -> int:
-    """Prints the schemas' places, or the setting that maps them to their files."""
-    import json
-
-    missing = [name for name in [*SCHEMA_FILES, OLDER_VIEW_SCHEMA] if not (SCHEMAS / name).is_file()]
+    """Prints where the JSON schemas are and what each describes; with `--project`, writes the project's own first."""
+    missing = [name for name in SCHEMA_FILES if not (SCHEMAS / name).is_file()]
     if missing:
         raise CliError(f"this install has no {', '.join(missing)}")
     places = {name: SCHEMAS / name for name in SCHEMA_FILES}
     if args.project is not None:
         places["tess-ui-widget-schema.json"] = project_schema(args.project.resolve())
-    if args.settings:
-        print(json.dumps({"yaml.schemas": {str(path): SCHEMA_FILES[name] for name, path in places.items()}}, indent=2))
-        return 0
-    for name, globs in SCHEMA_FILES.items():
-        print(f"{places[name]}\n    for {', '.join(g for g in globs if not g.startswith('!'))}")
-    print(f"{SCHEMAS / OLDER_VIEW_SCHEMA}\n    for a view in the older syntax (`kind:`), by a comment at the top of the file")
-    print("\nFor Red Hat's YAML language server, `tesserae schema --settings` prints the setting. `--project` adds the views of your own project. "
+    for name, what in SCHEMA_FILES.items():
+        print(f"{places[name]}\n    for {what}")
+    print("\nJSON Schema (draft-07) of the data a .tdl file loads to, for a tool that checks or completes one. `--project` adds the views of your own project. "
           "See https://mindderivative.github.io/tess-ui/guide/editor-support/")
     return 0
 

@@ -9,16 +9,16 @@ label), each large, medium or small, with a font, size, weight, line height and 
 
 ## In Tesserae
 
-`widget: Text`. Name a `typography_role` (or a `font_family`) and Tesserae fills in the rest; a theme's `typography:` can change
-what a role means. A `Text` needs one of them and a `style.foreground`: without either the view does not build, and the error says which.
+`Text`. Name a `Typography_Role` (or a `Font_Family`) and Tesserae fills in the rest; a theme's `Typography` can change
+what a role means. A `Text` needs one of them and a `Style.Foreground`: without either the view does not build, and the error says which.
 
-`text` can be an expression, and follows the Signals it reads. `font_family`, `font_size` and `font_weight` replace what the role gives. `wrap` is `word` or `none`,
-`runs` gives pieces of one text their own style and links ([Rich Text & Links](../guide/rich-text.md)). `overflow` is `clip` or `ellipsis`, `text_align` is `start`, `center` or `end`, and `max_lines` cuts a longer text to that many lines (with `overflow: ellipsis` the last
-one ends in an ellipsis). `letter_spacing` adds space between letters, in pixels. `selectable: true` lets the text be selected and copied, and `heading: 1` to `6` makes it a heading of that level for a screen reader.
+`Text` can be an expression, and follows the Signals it reads. `Font_Family`, `Font_Size` and `Font_Weight` replace what the role gives. `Wrap` is `word` or `none`,
+`Runs` gives pieces of one text their own style and links ([Rich Text & Links](../guide/rich-text.md)). `Overflow` is `clip` or `ellipsis`, `Text_Align` is `start`, `center` or `end`, and `Max_Lines` cuts a longer text to that many lines (with `Overflow: ellipsis` the last
+one ends in an ellipsis). `Letter_Spacing` adds space between letters, in pixels. `Selectable: true` lets the text be selected and copied, and `Heading: 1` to `6` makes it a heading of that level for a screen reader.
 
-The colour is `style.foreground` (required). Tracking: the roles are drawn with none, as the engine draws them; Material 3's per-role values are
-`tokens.MD3_TRACKING`, and a theme turns them on with `typography: tokens.MD3_TRACKING_TYPOGRAPHY` (or one role at a time:
-`typography: {body_large: {tracking: 0.5}}`). A node's own `letter_spacing` wins.
+The colour is `Style.Foreground` (required). Tracking: the roles are drawn with none, as the engine draws them; Material 3's per-role values are
+`tokens.MD3_TRACKING`, and a theme turns them on with `Typography: tokens.MD3_TRACKING_TYPOGRAPHY` (or one role at a time:
+`Typography { Body_Large { Tracking: 0.5 } }`). A node's own `Letter_Spacing` wins.
 
 ## How it is built
 
@@ -28,37 +28,45 @@ A run of text.
 
 | Property | Type | Default | Meaning |
 | --- | --- | --- | --- |
-| `text` | `str` |  | The text shown. |
-| `typography_role` | `str` |  | A type role of the theme, such as body_large or title_large. |
-| `font_family` | `str` |  |  |
-| `font_size` | `float` |  |  |
-| `font_weight` | `any` |  |  |
-| `wrap` | `word` or `none` | `word` | 'word' breaks a long line; 'none' never does. |
-| `overflow` | `clip` or `ellipsis` | `clip` |  |
-| `text_align` | `start` or `center` or `end` | `start` |  |
-| `max_lines` | `int` |  | The most lines shown, from 1; a longer text is cut (with `overflow: ellipsis`, an ellipsis ends the last line). |
-| `letter_spacing` | `float` |  | Extra space between letters, in pixels (tracking). |
-| `selectable` | `bool` |  | The text can be selected and copied. |
-| `runs` | `list` |  | Pieces of one text in different styles, instead of `text`: each a string, or `{text, color, weight, italic, underline, strikethrough, font_size, font_family, link}`. A piece with a `link` is the theme's `primary` and underlined, and `on_link` runs with `event.href` when it is pressed. |
-| `heading` | `1` or `2` or `3` or `4` or `5` or `6` |  | Makes it a heading of this level for a screen reader. |
+| `Text` | `str` |  | The text shown. |
+| `Typography_Role` | `str` |  | A type role of the theme, such as body_large or title_large. |
+| `Font_Family` | `str` |  |  |
+| `Font_Size` | `float` |  |  |
+| `Font_Weight` | `any` |  |  |
+| `Wrap` | `word` or `none` | `word` | 'word' breaks a long line; 'none' never does. |
+| `Overflow` | `clip` or `ellipsis` | `clip` |  |
+| `Text_Align` | `start` or `center` or `end` | `start` |  |
+| `Max_Lines` | `int` |  | The most lines shown, from 1; a longer text is cut (with `Overflow: ellipsis`, an ellipsis ends the last line). |
+| `Letter_Spacing` | `float` |  | Extra space between letters, in pixels (tracking). |
+| `Selectable` | `bool` |  | The text can be selected and copied. |
+| `Runs` | `list` |  | Pieces of one text in different styles, instead of `Text`: each a string, or `{Text, color, weight, italic, Underline, strikethrough, Font_Size, Font_Family, link}`. A piece with a `link` is the theme's `primary` and underlined, and `On_Link` runs with `event.href` when it is pressed. |
+| `Heading` | `1` or `2` or `3` or `4` or `5` or `6` |  | Makes it a heading of this level for a screen reader. |
 
-Its `style:` also takes `foreground`.
+Its `Style` also takes `Foreground`.
 
 ## Using it
 
-```yaml
-name: article
-widget: Container
-style: {flex_direction: vertical, gap: 8, width: 360, height: 200}
-children:
-  - {widget: Text, text: Notes, typography_role: headline_medium, heading: 1, style: {foreground: on_surface}}
-  - widget: Text
-    text: "{{ summary }}"
-    typography_role: body_large
-    max_lines: 3
-    overflow: ellipsis
-    selectable: true
-    style: {foreground: on_surface_variant}
+```tdl
+Container {
+  Name: article
+  Style { Flex_Direction: vertical, Gap: 8, Width: 360, Height: 200 }
+  Children {
+    Text {
+      Text: Notes
+      Typography_Role: headline_medium
+      Heading: 1
+      Style { Foreground: on_surface }
+    }
+    Text {
+      Text: <| summary |>
+      Typography_Role: body_large
+      Max_Lines: 3
+      Overflow: ellipsis
+      Selectable: true
+      Style { Foreground: on_surface_variant }
+    }
+  }
+}
 ```
 
 ## Using it in Python
@@ -73,4 +81,4 @@ heading = text(app.window, "Notes", typography_role="headline_medium")
 
 - [Index](../themes/index.md)
 - [Python API reference](../api/python.md)
-- [YAML reference](../api/yaml.md)
+- [TDL reference](../api/tdl.md)
