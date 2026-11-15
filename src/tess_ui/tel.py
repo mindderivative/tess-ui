@@ -41,8 +41,8 @@ import tess_el
 from tess_ui.reactive import Computed, Signal
 
 __all__ = [
-    "BUILTIN_NAMES", "DEFAULT_LIMITS", "HOST_FUNCTIONS", "HOST_METHODS", "LANGUAGE", "ExprError", "Limits", "Origin", "TelExpr", "TelNestedTemplate",
-    "TelScope", "TelTemplate", "adapt", "compile_expr", "compile_template"]
+    "BUILTIN_NAMES", "DEFAULT_LIMITS", "HOST_FUNCTIONS", "HOST_METHODS", "LANGUAGE", "ExprError", "Limits", "Origin", "Expr", "NestedTemplate",
+    "TelScope", "Template", "adapt", "compile_expr", "compile_template"]
 
 #: The language version tess-ui declares to TEL.
 LANGUAGE = "0.1"
@@ -323,7 +323,7 @@ def _strip(source: str, origin: Optional[Origin]) -> Optional[Origin]:
     return Origin(origin.file, origin.line + newlines, column)
 
 
-class TelExpr:
+class Expr:
     """A compiled expression. `names` are the free names it reads (comprehension variables excluded); `paths` the attribute chains on them."""
 
     __slots__ = ("source", "origin", "names", "paths", "_expression", "_bare")
@@ -375,7 +375,7 @@ class TelExpr:
         return self._bare
 
     def __repr__(self) -> str:
-        return f"TelExpr({self.source!r})"
+        return f"Expr({self.source!r})"
 
 
 def _as_text(source: Any, origin: Optional[Origin]) -> None:
@@ -383,21 +383,21 @@ def _as_text(source: Any, origin: Optional[Origin]) -> None:
         raise ExprError(f"an expression is text, got {type(source).__name__}", origin=origin)
 
 
-def compile_expr(source: str, *, origin: Optional[Origin] = None, limits: Any = DEFAULT_LIMITS) -> TelExpr:
+def compile_expr(source: str, *, origin: Optional[Origin] = None, limits: Any = DEFAULT_LIMITS) -> Expr:
     """Parses and checks one expression. Raises `ExprError`."""
     _as_text(source, origin)
     try:
         expression = tess_el.compile_expression(source, language=LANGUAGE, origin=_tel_origin(origin), limits=limits, functions=_REGISTERED, methods=HOST_METHODS)
     except tess_el.TelError as err:
         raise _error(err, origin) from None
-    return TelExpr(expression, source, origin)
+    return Expr(expression, source, origin)
 
 
 # -- templates ----------------------------------------------------------------------------------------------------------
 
 
-class TelTemplate:
-    """Text with `{{ }}` parts: `"Hello {{ name }}!"`. `parts` are strings and `TelExpr`s. When the whole text is one `{{ }}`, the value keeps its own
+class Template:
+    """Text with `{{ }}` parts: `"Hello {{ name }}!"`. `parts` are strings and `Expr`s. When the whole text is one `{{ }}`, the value keeps its own
     type (`single`); otherwise the parts are joined as text (`None` is empty)."""
 
     __slots__ = ("parts", "origin", "_template")
@@ -406,12 +406,12 @@ class TelTemplate:
         self._template = template
         self.origin = origin
         self.parts: list[Any] = []
-        for part in template._parts:  # noqa: SLF001 - TEL gives the parts no public name; each one is made a `TelExpr` of its own
-            self.parts.append(part if isinstance(part, str) else TelExpr(part, part.source, _part_origin(origin, part)))
+        for part in template._parts:  # noqa: SLF001 - TEL gives the parts no public name; each one is made a `Expr` of its own
+            self.parts.append(part if isinstance(part, str) else Expr(part, part.source, _part_origin(origin, part)))
 
     @property
     def single(self) -> bool:
-        return len(self.parts) == 1 and isinstance(self.parts[0], TelExpr)
+        return len(self.parts) == 1 and isinstance(self.parts[0], Expr)
 
     @property
     def names(self) -> frozenset[str]:
@@ -422,7 +422,7 @@ class TelTemplate:
         return frozenset(self._template.paths)
 
     def is_reactive(self, scope: Any) -> bool:
-        return any(p.is_reactive(scope) for p in self.parts if isinstance(p, TelExpr))
+        return any(p.is_reactive(scope) for p in self.parts if isinstance(p, Expr))
 
     def evaluate(self, scope: Any, *, event: Any = MISSING) -> Any:
         try:
@@ -439,7 +439,7 @@ class TelTemplate:
         return _result(value), reads
 
     def __repr__(self) -> str:
-        return f"TelTemplate({self._template.source!r})"
+        return f"Template({self._template.source!r})"
 
 
 def _part_origin(origin: Optional[Origin], part: Any) -> Optional[Origin]:
@@ -449,7 +449,7 @@ def _part_origin(origin: Optional[Origin], part: Any) -> Optional[Origin]:
     return Origin(part.origin.file, part.origin.line, part.origin.column - 1)
 
 
-def compile_template(text: str, *, origin: Optional[Origin] = None, limits: Any = DEFAULT_LIMITS) -> Optional[TelTemplate]:
+def compile_template(text: str, *, origin: Optional[Origin] = None, limits: Any = DEFAULT_LIMITS) -> Optional[Template]:
     """Splits `text` at its `{{ }}` parts and compiles each. Returns `None` when there is no `{{` (plain text). Raises `ExprError`."""
     _as_text(text, origin)
     if "{{" not in text:
@@ -458,21 +458,21 @@ def compile_template(text: str, *, origin: Optional[Origin] = None, limits: Any 
         template = tess_el.compile_template(text, language=LANGUAGE, origin=_tel_origin(origin), limits=limits, functions=_REGISTERED, methods=HOST_METHODS)
     except tess_el.TelError as err:
         raise _error(err, origin) from None
-    return TelTemplate(template, origin)
+    return Template(template, origin)
 
 
 @dataclass
-class TelNestedTemplate:
-    """A list or mapping with `{{ }}` strings inside it (a `Text`'s `runs`), as `TelTemplate`s: it evaluates to the same shape with each of those strings
+class NestedTemplate:
+    """A list or mapping with `{{ }}` strings inside it (a `Text`'s `runs`), as `Template`s: it evaluates to the same shape with each of those strings
     worked out (a string that is one whole `{{ }}` keeps the type of its value), and is reactive if any of them is."""
 
     value: Any
 
-    def templates(self) -> list[TelTemplate]:
-        found: list[TelTemplate] = []
+    def templates(self) -> list[Template]:
+        found: list[Template] = []
 
         def walk(item: Any) -> None:
-            if isinstance(item, TelTemplate):
+            if isinstance(item, Template):
                 found.append(item)
             elif isinstance(item, list):
                 for sub in item:
@@ -495,7 +495,7 @@ class TelNestedTemplate:
         adapted = adapt(scope)
 
         def work(item: Any) -> Any:
-            if isinstance(item, TelTemplate):
+            if isinstance(item, Template):
                 return item.evaluate(adapted)
             if isinstance(item, list):
                 return [work(sub) for sub in item]

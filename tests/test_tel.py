@@ -355,7 +355,7 @@ def test_a_template_with_one_part_keeps_the_type_and_otherwise_makes_text():
     assert template.single and template.evaluate(scope) == 3 and tel.compile_template("{{ items }}").evaluate(scope) == [1]
     text = tel.compile_template("n is {{ n }} and name is [{{ name }}]")
     assert not text.single and text.evaluate(scope) == "n is 3 and name is []"
-    assert text.names == {"n", "name"} and [type(p).__name__ for p in text.parts] == ["str", "TelExpr", "str", "TelExpr", "str"]
+    assert text.names == {"n", "name"} and [type(p).__name__ for p in text.parts] == ["str", "Expr", "str", "Expr", "str"]
     assert tel.compile_template("plain text") is None and expr.compile_template("plain text") is None
     assert tel.compile_template("a {{ {'k': {'j': 1}}['k']['j'] }} b").evaluate(scope) == "a 1 b"
     assert tel.compile_template("{{ n }}").is_reactive(expr.MapScope({}, reactive={"n"})) and not text.is_reactive(expr.MapScope({}))
@@ -363,7 +363,7 @@ def test_a_template_with_one_part_keeps_the_type_and_otherwise_makes_text():
 
 def test_a_nested_template_works_out_each_string_and_keeps_the_shape():
     scope = expr.MapScope({"who": "ada", "n": 2})
-    nested = tel.TelNestedTemplate([{"text": tel.compile_template("Hi {{ who }}"), "count": tel.compile_template("{{ n }}"), "plain": "x"}, "y"])
+    nested = tel.NestedTemplate([{"text": tel.compile_template("Hi {{ who }}"), "count": tel.compile_template("{{ n }}"), "plain": "x"}, "y"])
     assert nested.evaluate(scope) == [{"text": "Hi ada", "count": 2, "plain": "x"}, "y"]
     assert nested.names == {"who", "n"} and nested.is_reactive(expr.MapScope({}, reactive={"n"})) and not nested.is_reactive(expr.MapScope({}))
 
