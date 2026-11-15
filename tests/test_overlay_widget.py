@@ -23,35 +23,75 @@ class VM(ViewModel):
         self.log.append("picked")
 
 
-MENU = """name: main
-widget: Container
-style: {flex_direction: vertical, width: 400, height: 300}
-children:
-  - {widget: Container, name: trigger, style: {width: 100, height: 40, background: primary}, handlers: {on_click: toggle}}
-  - widget: Overlay
-    name: menu
-    open: "{{ shown }}"
-    anchor: trigger
-    style: {width: 120, height: 80, background: surface_container}
-    children:
-      - {widget: Container, name: item, style: {width: 120, height: 40, background: secondary}, handlers: {on_click: picked}}
+MENU = """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Flex_Direction: vertical, Width: 400, Height: 300 }
+  Children {
+    Container {
+      Name: trigger
+      Style { Width: 100, Height: 40, Background: primary }
+      Handlers {
+        On_Click: toggle
+      }
+    }
+    Overlay {
+      Name: menu
+      Open: <| shown |>
+      Anchor: trigger
+      Style { Width: 120, Height: 80, Background: surface_container }
+      Children {
+        Container {
+          Name: item
+          Style { Width: 120, Height: 40, Background: secondary }
+          Handlers {
+            On_Click: picked
+          }
+        }
+      }
+    }
+  }
+}
 """
-MODAL = """name: main
-widget: Container
-style: {flex_direction: vertical, width: 400, height: 300}
-children:
-  - widget: Overlay
-    name: dialog
-    open: "{{ shown }}"
-    modal: true
-    children:
-      - {widget: Container, name: card, style: {width: 200, height: 100, background: surface}, children: [{widget: Container, name: ok, style: {width: 50, height: 30, background: primary}, handlers: {on_click: picked}}]}
+MODAL = """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Flex_Direction: vertical, Width: 400, Height: 300 }
+  Children {
+    Overlay {
+      Name: dialog
+      Open: <| shown |>
+      Modal: true
+      Children {
+        Container {
+          Name: card
+          Style { Width: 200, Height: 100, Background: surface }
+          Children {
+            Container {
+              Name: ok
+              Style { Width: 50, Height: 30, Background: primary }
+              Handlers {
+                On_Click: picked
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
 """
 
 
 def opened(tmp_path, text=MENU):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(text)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(text)
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")
@@ -145,7 +185,7 @@ def test_a_modal_one_follows_the_window_size(tmp_path):
 
 
 def test_a_modal_one_blocks_what_is_under_it_and_a_press_on_the_scrim_closes_it(tmp_path):
-    _, view, vm = opened(tmp_path, MODAL.replace("children:\n  - widget: Overlay", "children:\n  - {widget: Container, name: under, style: {width: 400, height: 300, background: primary}, handlers: {on_click: picked}}\n  - widget: Overlay"))
+    _, view, vm = opened(tmp_path, MODAL.replace("  Children {\n    Overlay {", "  Children {\n    Container {\n      Name: under\n      Style { Width: 400, Height: 300, Background: primary }\n      Handlers {\n        On_Click: picked\n      }\n    }\n    Overlay {"))
     vm.shown.set(True)
     view.window.advance(16)
     view.window.simulate("pointer_down", x=5, y=5)
@@ -155,7 +195,7 @@ def test_a_modal_one_blocks_what_is_under_it_and_a_press_on_the_scrim_closes_it(
 
 
 def test_not_dismissible_ignores_escape(tmp_path):
-    _, view, vm = opened(tmp_path, MODAL.replace("modal: true", "modal: true\n    dismissible: false"))
+    _, view, vm = opened(tmp_path, MODAL.replace("Modal: true", "Modal: true\n      Dismissible: false"))
     vm.shown.set(True)
     view.window.advance(16)
     view.window.simulate("key_down", key="escape")
@@ -164,7 +204,7 @@ def test_not_dismissible_ignores_escape(tmp_path):
 
 
 def test_an_open_that_is_not_a_signal_closes_for_good_until_it_goes_false(tmp_path):
-    _, view, _ = opened(tmp_path, MODAL.replace('open: "{{ shown }}"', "open: true"))
+    _, view, _ = opened(tmp_path, MODAL.replace("Open: <| shown |>", "Open: true"))
     assert showing(view, "dialog")
     view.window.simulate("key_down", key="escape")
     view.window.advance(16)
@@ -182,18 +222,18 @@ def test_a_view_that_goes_takes_its_layers_with_it(tmp_path):
 
 
 def test_the_anchor_must_exist(tmp_path):
-    _, view, vm = opened(tmp_path, MENU.replace("anchor: trigger", "anchor: nowhere"))
+    _, view, vm = opened(tmp_path, MENU.replace("Anchor: trigger", "Anchor: nowhere"))
     with pytest.raises(Exception, match="anchor 'nowhere' is no node by that name"):
         vm.shown.set(True)
 
 
 def test_a_bad_placement_is_a_load_error(tmp_path):
     with pytest.raises(LoadError, match="placement"):
-        opened(tmp_path, MENU.replace("anchor: trigger", "anchor: trigger\n    placement: sideways"))
+        opened(tmp_path, MENU.replace("Anchor: trigger", "Anchor: trigger\n      Placement: sideways"))
 
 
 def test_taking_the_overlay_out_of_the_view_hides_its_layer(tmp_path):
-    _, view, vm = opened(tmp_path, MENU.replace("  - widget: Overlay\n", "  - widget: Overlay\n    if: present\n"))
+    _, view, vm = opened(tmp_path, MENU.replace("    Overlay {\n", "    If <| present |> {\n    Overlay {\n").removesuffix("    }\n  }\n}\n") + "    }\n    }\n  }\n}\n")
     vm.shown.set(True)
     view.window.advance(16)
     assert showing(view)
@@ -203,7 +243,7 @@ def test_taking_the_overlay_out_of_the_view_hides_its_layer(tmp_path):
 
 
 def test_a_change_to_the_view_while_it_is_open_keeps_a_modal_layer_the_size_of_the_window(tmp_path):
-    _, view, vm = opened(tmp_path, MODAL.replace("    modal: true", "    modal: true\n    style: {gap: \"{{ gap }}\"}"))
+    _, view, vm = opened(tmp_path, MODAL.replace("      Modal: true", "      Modal: true\n      Style { Gap: <| gap |> }"))
     vm.shown.set(True)
     view.window.advance(16)
     vm.gap.set(4)  # restyles the layer: the patch puts back its own size, which the renderer sets again
@@ -214,8 +254,8 @@ def test_a_change_to_the_view_while_it_is_open_keeps_a_modal_layer_the_size_of_t
 
 @pytest.mark.parametrize("placement", ["above", "start", "end"])
 def test_the_placement_picks_the_side_of_the_anchor(tmp_path, placement):
-    text = MENU.replace("anchor: trigger", f"anchor: trigger\n    placement: {placement}").replace(
-        "style: {width: 100, height: 40, background: primary}", "style: {width: 100, height: 40, background: primary, margin: {top: 120, left: 150}}")
+    text = MENU.replace("Anchor: trigger", f"Anchor: trigger\n      Placement: {placement}").replace(
+        "Style { Width: 100, Height: 40, Background: primary }", "Style { Width: 100, Height: 40, Background: primary, Margin { Top: 120, Left: 150 } }")
     _, view, vm = opened(tmp_path, text)
     vm.shown.set(True)
     view.window.advance(16)
@@ -242,7 +282,7 @@ def test_a_press_on_the_content_of_a_modal_one_does_not_close_it(tmp_path):
 
 
 def test_a_timeout_closes_it_by_itself_and_on_dismiss_runs(tmp_path):
-    view_text = MENU.replace("    anchor: trigger\n", "    anchor: trigger\n    timeout: 300\n    handlers: {on_dismiss: picked}\n")
+    view_text = MENU.replace("      Anchor: trigger\n", "      Anchor: trigger\n      Timeout: 300\n      Handlers {\n        On_Dismiss: picked\n      }\n")
     app, view, vm = opened(tmp_path, view_text)
     vm.shown.set(True)
     for _ in range(4):

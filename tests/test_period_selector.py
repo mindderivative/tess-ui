@@ -16,15 +16,20 @@ class VM(ViewModel):
 
 def opened(tmp_path, props=""):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    lines = "\n    ".join(props.split(", ")) if props else ""
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{width: 200, height: 200, align_content: top_left}}
-children:
-  - widget: PeriodSelector
-    name: ps
-    period: "{{{{ p }}}}"
-    {lines}
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Width: 200, Height: 200, Align_Content: top_left }}
+  Children {{
+    PeriodSelector {{
+      Name: ps
+      Period: <| p |>
+{props}    }}
+  }}
+}}
 """)
     app = App(root=tmp_path)
     app.bind(VM)
@@ -92,7 +97,7 @@ def test_one_tab_stop_and_the_arrows_choose(tmp_path):
 
 
 def test_a_disabled_selector_does_not_respond(tmp_path):
-    view, vm = opened(tmp_path, "disabled: true")
+    view, vm = opened(tmp_path, "      Disabled: true\n")
     view.window.simulate("click", node=half(view, "PM"))
     settle(view, 6)
     assert vm.p.get() == "AM"
@@ -100,7 +105,7 @@ def test_a_disabled_selector_does_not_respond(tmp_path):
 
 def test_it_works_with_no_binding_at_all(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text("name: main\nwidget: Container\nstyle: {width: 100, height: 100}\nchildren:\n  - {widget: PeriodSelector, name: ps}\n")
+    (tmp_path / "Views" / "Main_View.tdl").write_text("---\nTDL: 0.2\nName: main\n---\nContainer {\n  Name: main\n  Style { Width: 100, Height: 100 }\n  Children {\n    PeriodSelector { Name: ps }\n  }\n}\n")
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")

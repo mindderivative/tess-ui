@@ -17,11 +17,21 @@ class VM(ViewModel):
 
 def opened(tmp_path, props="", page=1):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{flex_direction: vertical, align_content: top_left, width: 600, height: 200}}
-children:
-  - {{widget: Pagination, name: p, page: "{{{{ page }}}}", pages: "{{{{ total }}}}"{', ' + props if props else ''}}}
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Align_Content: top_left, Width: 600, Height: 200 }}
+  Children {{
+    Pagination {{
+      Name: p
+      Page: <| page |>
+      Pages: <| total |>
+{props}    }}
+  }}
+}}
 """)
     app = App(root=tmp_path)
     app.bind(VM)
@@ -127,7 +137,7 @@ def test_previous_and_next_are_named(tmp_path):
 
 
 def test_compact_is_a_text_between_the_arrows(tmp_path):
-    view, vm = opened(tmp_path, "compact: true", page=3)
+    view, vm = opened(tmp_path, "      Compact: true\n", page=3)
     assert view.node("root.p.summary").get("text") == "3 of 12" and not shown(view)
     assert view.node("root.p.previous").get("layout_x") < view.node("root.p.summary").get("layout_x") < view.node("root.p.next").get("layout_x")
     vm.page.set(4)
@@ -139,7 +149,7 @@ def test_compact_is_a_text_between_the_arrows(tmp_path):
 
 
 def test_dots_are_one_to_a_page_with_the_current_one_primary(tmp_path):
-    view, vm = opened(tmp_path, "dots: true", page=2)
+    view, vm = opened(tmp_path, "      Dots: true\n", page=2)
     vm.total.set(5)
     settle(view, 6)
     assert [view.node(f"root.p.dot[{n}].mark").get("fill") == role(view, "primary") for n in range(1, 6)] == [False, True, False, False, False]

@@ -14,23 +14,39 @@ class VM(ViewModel):
         self.dragging = Signal(False)
 
 
-VIEW = """name: main
-widget: Container
-style: {flex_direction: vertical, width: 300, height: 200}
-children:
-  - widget: Container
-    name: thumb
-    style: {width: 40, height: 40}
-    handlers:
-      on_press: "dragging = True; capture(); cursor('grabbing')"
-      on_move: "x = event.x if dragging else x"
-      on_release: "dragging = False; release(); cursor(None)"
+VIEW = """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Flex_Direction: vertical, Width: 300, Height: 200 }
+  Children {
+    Container {
+      Name: thumb
+      Style { Width: 40, Height: 40 }
+      Handlers {
+        On_Press {
+          Set { Target: dragging, Value: <| True |> }
+          Call { Action: "capture" }
+          Call { Action: "cursor", Args: [<| 'grabbing' |>] }
+        }
+        On_Move { Set { Target: x, Value: <| event.x if dragging else x |> } }
+        On_Release {
+          Set { Target: dragging, Value: <| False |> }
+          Call { Action: "release" }
+          Call { Action: "cursor", Args: [<| None |>] }
+        }
+      }
+    }
+  }
+}
 """
 
 
 def opened(tmp_path, view=VIEW):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(view)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(view)
     app = App(root=tmp_path)
     app.bind(VM)
     shown = app.open_view("Main")
@@ -67,7 +83,7 @@ def test_releasing_ends_the_drag_and_clears_the_cursor(tmp_path):
 
 
 def test_without_a_capture_a_move_outside_the_node_is_not_seen(tmp_path):
-    view, vm = opened(tmp_path, VIEW.replace("capture(); ", ""))
+    view, vm = opened(tmp_path, VIEW.replace('          Call { Action: "capture" }\n', ""))
     view.window.simulate("pointer_down", x=10, y=10)
     view.window.simulate("pointer_move", x=200, y=150)
     view.window.advance(16)
@@ -75,10 +91,10 @@ def test_without_a_capture_a_move_outside_the_node_is_not_seen(tmp_path):
 
 
 def test_a_bad_cursor_name_is_the_engines_message(tmp_path):
-    view, _ = opened(tmp_path, VIEW.replace("cursor('grabbing')", "cursor('nope')"))
+    view, _ = opened(tmp_path, VIEW.replace("<| 'grabbing' |>", "<| 'nope' |>"))
     inst = next(i for i in view.handle.composition.walk() if i.id == "root.thumb")
     view._firing.append(inst)  # as the wiring does while a handler runs (the engine would log the error rather than raise it)
-    with pytest.raises(Exception, match=r"Main_View.yaml:9:\d+: cursor\(\) failed: ValueError: .*must be one of: default, pointer"):
+    with pytest.raises(Exception, match=r"Main_View.tdl:13:\d+: cursor\(\) failed: ValueError: .*must be one of: default, pointer"):
         inst.fire("on_press")
 
 
@@ -90,7 +106,7 @@ def test_capture_outside_a_handler_says_so(tmp_path):
 
 def test_the_view_checks_the_new_actions_and_events(tmp_path):
     from tess_ui.spec.nodes import parse_view
-    parse_view(VIEW, "Main_View.yaml")
+    parse_view(VIEW, "Main_View.tdl")
 
 
 def test_the_handler_is_not_running_once_it_has_returned(tmp_path):
@@ -102,19 +118,30 @@ def test_the_handler_is_not_running_once_it_has_returned(tmp_path):
         view.firing_node("cursor")
 
 
-LINK = """name: main
-widget: Container
-style: {flex_direction: vertical, width: 300, height: 200}
-children:
-  - widget: Link
-    name: thumb
-    text: grab
-    font_family: Roboto
-    font_size: 14
-    style: {foreground: "#000000", width: 40, height: 40}
-    handlers:
-      on_press: "dragging = True; capture()"
-      on_move: "x = event.x if dragging else x"
+LINK = """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Flex_Direction: vertical, Width: 300, Height: 200 }
+  Children {
+    Link {
+      Name: thumb
+      Text: grab
+      Font_Family: Roboto
+      Font_Size: 14
+      Style { Foreground: "#000000", Width: 40, Height: 40 }
+      Handlers {
+        On_Press {
+          Set { Target: dragging, Value: <| True |> }
+          Call { Action: "capture" }
+        }
+        On_Move { Set { Target: x, Value: <| event.x if dragging else x |> } }
+      }
+    }
+  }
+}
 """
 
 

@@ -17,8 +17,9 @@ class VM(ViewModel):
 
 def opened(tmp_path, body, **kwargs):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {flex_direction: vertical, align_content: top_left, width: 300, height: 300, gap: 4}\nchildren:\n" + body)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(
+        "---\nTDL: 0.2\nName: main\n---\nContainer {\n  Name: main\n"
+        "  Style { Flex_Direction: vertical, Align_Content: top_left, Width: 300, Height: 300, Gap: 4 }\n  Children {\n" + body + "  }\n}\n")
     app = App(root=tmp_path, **kwargs)
     app.bind(VM)
     view = app.open_view("Main")
@@ -46,14 +47,14 @@ def click(view, node):
     settle(view)
 
 
-SIZES = """  - {widget: RadioButton, name: s, group: size, selected: "{{ size == 's' }}", handlers: {on_change: "size = 's'"}, label: Small}
-  - {widget: RadioButton, name: m, group: size, selected: "{{ size == 'm' }}", handlers: {on_change: "size = 'm'"}, label: Medium}
-  - {widget: RadioButton, name: l, group: size, selected: "{{ size == 'l' }}", handlers: {on_change: "size = 'l'"}, label: Large}
+SIZES = """    RadioButton { Name: s, Group: size, Selected: <| size == 's' |>, Handlers { On_Change { Set { Target: size, Value: <| 's' |> } } }, Label: Small }
+    RadioButton { Name: m, Group: size, Selected: <| size == 'm' |>, Handlers { On_Change { Set { Target: size, Value: <| 'm' |> } } }, Label: Medium }
+    RadioButton { Name: l, Group: size, Selected: <| size == 'l' |>, Handlers { On_Change { Set { Target: size, Value: <| 'l' |> } } }, Label: Large }
 """
 
 
 def test_a_radio_button_is_a_ring_that_fills_with_a_dot_when_chosen(tmp_path):
-    view, _ = opened(tmp_path, "  - {widget: RadioButton, name: r, selected: true}\n  - {widget: RadioButton, name: q}\n")
+    view, _ = opened(tmp_path, "    RadioButton { Name: r, Selected: true }\n    RadioButton { Name: q }\n")
     r, q = control(view, "r"), control(view, "q")
     assert r.ring.get("layout_width") == 20.0 and r.ring.get("stroke_color") == role(view, "primary") and r.dot.get("scale") == 1.0
     assert q.ring.get("stroke_color") == role(view, "on_surface_variant") and q.dot.get("scale") == 0.0 and r.node.get("role") == "radio"
@@ -99,13 +100,13 @@ def test_pressing_a_radios_label_chooses_it(tmp_path):
 
 
 def test_a_radio_in_error_is_drawn_in_the_error_colours(tmp_path):
-    view, _ = opened(tmp_path, '  - {widget: RadioButton, name: a, error: true}\n  - {widget: RadioButton, name: b, selected: true, error: true}\n')
+    view, _ = opened(tmp_path, '    RadioButton { Name: a, Error: true }\n    RadioButton { Name: b, Selected: true, Error: true }\n')
     assert control(view, "a").ring.get("stroke_color") == role(view, "error")
     assert control(view, "b").ring.get("stroke_color") == role(view, "error") and control(view, "b").dot.get("fill") == role(view, "error")
 
 
 def test_a_disabled_radio_is_dimmed_and_does_nothing(tmp_path):
-    view, vm = opened(tmp_path, '  - {widget: RadioButton, name: a, group: g, selected: "{{ on }}", disabled: true, label: "Off"}\n')
+    view, vm = opened(tmp_path, '    RadioButton { Name: a, Group: g, Selected: <| on |>, Disabled: true, Label: "Off" }\n')
     click(view, view.node("root.a"))
     click(view, view.node("root.a.label"))
     assert not control(view, "a").selected.get() and view.node("root.a").get("disabled") is True
@@ -115,7 +116,7 @@ def test_a_disabled_radio_is_dimmed_and_does_nothing(tmp_path):
 
 
 def test_a_switch_is_a_track_and_a_handle_that_slides(tmp_path):
-    view, vm = opened(tmp_path, '  - {widget: Switch, name: w, selected: "{{ on }}"}\n')
+    view, vm = opened(tmp_path, '    Switch { Name: w, Selected: <| on |> }\n')
     w = control(view, "w")
     assert w.track.get("layout_width") == 52.0 and w.track.get("fill") == role(view, "surface_container_highest") and w.handle.get("translate_x") == 0.0
     click(view, view.node("root.w"))
@@ -124,7 +125,7 @@ def test_a_switch_is_a_track_and_a_handle_that_slides(tmp_path):
 
 
 def test_a_switch_toggles_with_space_and_follows_its_signal(tmp_path):
-    view, vm = opened(tmp_path, '  - {widget: Switch, name: w, selected: "{{ on }}"}\n')
+    view, vm = opened(tmp_path, '    Switch { Name: w, Selected: <| on |> }\n')
     view.node("root.w").focus()
     view.window.simulate("key_down", key="space")
     assert vm.on.get() is True
@@ -134,19 +135,19 @@ def test_a_switch_toggles_with_space_and_follows_its_signal(tmp_path):
 
 
 def test_a_switch_label_is_part_of_what_you_press(tmp_path):
-    view, vm = opened(tmp_path, '  - {widget: Switch, name: w, selected: "{{ on }}", label: Wi-Fi}\n')
+    view, vm = opened(tmp_path, '    Switch { Name: w, Selected: <| on |>, Label: "Wi-Fi" }\n')
     click(view, view.node("root.w.label"))
     assert vm.on.get() is True and view.node("root.w").get("label") == "Wi-Fi"
 
 
 def test_a_disabled_switch_is_dimmed_and_stays_put(tmp_path):
-    view, vm = opened(tmp_path, '  - {widget: Switch, name: w, selected: "{{ on }}", disabled: true}\n')
+    view, vm = opened(tmp_path, '    Switch { Name: w, Selected: <| on |>, Disabled: true }\n')
     click(view, view.node("root.w"))
     assert vm.on.get() is False and not view.node("root.w").get("focusable")
 
 
 def test_icons_put_a_cross_on_the_off_handle_and_a_check_on_the_on_one(tmp_path):
-    view, vm = opened(tmp_path, '  - {widget: Switch, name: w, selected: "{{ on }}", icons: true}\n  - {widget: Switch, name: p}\n')
+    view, vm = opened(tmp_path, '    Switch { Name: w, Selected: <| on |>, Icons: true }\n    Switch { Name: p }\n')
     w = control(view, "w")
     assert w.icon.get("visible") is True and control(view, "p").icon.get("visible") is False
     off_data = w.icon.get("data")
@@ -156,5 +157,5 @@ def test_icons_put_a_cross_on_the_off_handle_and_a_check_on_the_on_one(tmp_path)
 
 
 def test_without_icons_the_off_handle_is_the_small_one(tmp_path):
-    view, _ = opened(tmp_path, "  - {widget: Switch, name: w}\n")
+    view, _ = opened(tmp_path, "    Switch { Name: w }\n")
     assert control(view, "w").handle.get("scale") == pytest.approx(16.0 / 28.0, abs=0.01)

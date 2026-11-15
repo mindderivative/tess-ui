@@ -7,8 +7,9 @@ from tess_ui import App, ripple, tokens
 
 def opened(tmp_path, shader=True, width=200):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {width: 300, height: 200}\nchildren:\n  - {widget: Button, name: b, label: Go, variant: filled}\n")
+    (tmp_path / "Views" / "Main_View.tdl").write_text(
+        "---\nTDL: 0.2\nName: main\n---\nContainer {\n  Name: main\n  Style { Width: 300, Height: 200 }\n"
+        "  Children {\n    Button { Name: b, Label: Go, Variant: filled }\n  }\n}\n")
     app = App(root=tmp_path, width=300, height=200, ripple="shader" if shader else "nodes")
     view = app.open_view("Main")
     app.show("main")
