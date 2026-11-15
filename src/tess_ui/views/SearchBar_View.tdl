@@ -21,6 +21,7 @@ Container {
     On_Leading { Type: handler, Doc: "What the leading icon does when it is not a search glass (open a drawer)." }
     Trailing_Icon { Type: str, Default: "", Doc: "An icon at the end, such as a microphone." }
     On_Trailing { Type: handler, Doc: "What the trailing icon does." }
+    Trailing_Icons { Type: list, Default: [], Doc: "More icons at the end, each an icon name (a Python widget wires each one itself). They show while nothing is typed, after `trailing_icon`." }
     Avatar_Text { Type: str, Default: "", Doc: "Letters in a circle at the end." }
     On_Search { Type: handler, Doc: "Called when Enter is pressed." }
     Disabled { Type: bool, Default: false, Doc: "Dimmed and not editable." }
@@ -54,7 +55,7 @@ Container {
         }
       }
     }
-    If <| not active |> {
+    If <| not active and leading_icon != '' |> {
       Container {
         Name: leading
         Interaction: true
@@ -114,6 +115,21 @@ Container {
           Icon {
             Name: trailing_glyph
             Icon: <| trailing_icon |>
+          }
+        }
+      }
+    }
+    For i, glyph In <| enumerate(trailing_icons) |> Key <| i |> {
+      If <| query == '' |> {
+        Container {
+          Name: trailing_item
+          Interaction: true
+          A11y { Role: button, Label: <| glyph |> }
+          Children {
+            Icon {
+              Name: trailing_item_glyph
+              Icon: <| glyph |>
+            }
           }
         }
       }

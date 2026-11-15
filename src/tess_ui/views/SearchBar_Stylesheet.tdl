@@ -37,10 +37,16 @@ Styles {
     Part: trailing
     Style { Width: 48, Height: 48, Corner_Radius: 24, Align_Content: center }
   }
+  Rule {
+    Widget: SearchBar
+    Part: trailing_item
+    Style { Width: 48, Height: 48, Corner_Radius: 24, Align_Content: center }
+  }
   Rule { Widget: SearchBar, Part: back_icon, Style { Width: 24, Height: 24, Foreground: on_surface } }
   Rule { Widget: SearchBar, Part: leading_glyph, Style { Width: 24, Height: 24, Foreground: on_surface } }
   Rule { Widget: SearchBar, Part: clear_icon, Style { Width: 24, Height: 24, Foreground: on_surface_variant } }
   Rule { Widget: SearchBar, Part: trailing_glyph, Style { Width: 24, Height: 24, Foreground: on_surface_variant } }
+  Rule { Widget: SearchBar, Part: trailing_item_glyph, Style { Width: 24, Height: 24, Foreground: on_surface_variant } }
   Rule {
     Widget: SearchBar
     Part: input
