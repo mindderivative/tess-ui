@@ -7,7 +7,6 @@ maximized or fullscreen, and on macOS (its frame); restylable by class.
 import sys
 
 import pytest
-import yaml
 
 from tess_ui import App, Theme, ViewModel, tokens
 
@@ -66,23 +65,24 @@ def test_it_shows_when_a_decorated_window_loses_its_decorations():
 
 
 def test_it_lies_over_the_screens_and_presses_go_through(tmp_path):
-    path = tmp_path / "Home_View.yaml"
-    path.write_text(yaml.safe_dump({"id": "root", "kind": "Container", "style": {"width": 400, "height": 300},
-                                    "children": [{"id": "edge", "kind": "Rect", "handlers": {"on_click": "go"},
-                                                  "style": {"width": 400, "height": 300, "background": "surface"}}]}),
-                    encoding="utf-8")
+    (tmp_path / "Views").mkdir()
+    (tmp_path / "Views" / "Home_View.tdl").write_text(
+        "---\nTDL: 0.2\nName: home\n---\nContainer {\n  Name: home\n  Style { Width: 400, Height: 300 }\n  Children {\n"
+        "    Rect { Name: edge, Handlers { On_Click: go }, Style { Width: 400, Height: 300, Background: surface } }\n  }\n}\n",
+        encoding="utf-8")
 
     class VM(ViewModel):
+        views = "home"
         clicks = 0
 
         def go(self):
             self.clicks += 1
 
-    app = _app(borderless=True)
-    view = app.build_view(path)
-    app.register("Home", view, None)
-    app.show("Home")  # a screen shown after the border was made
-    vm = VM(view)
+    app = _app(borderless=True, root=tmp_path)
+    app.bind(VM)
+    view = app.open_view("Home")
+    app.show("home")  # a screen shown after the border was made
+    vm = app.bindings.viewmodel_for("home")
     app.window.advance(16)
     assert _border(app).get("z_index") > (view.root.get("z_index") or 0)
     # The border is a full-window box (its line drawn at the edge): a press

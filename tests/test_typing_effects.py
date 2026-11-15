@@ -255,22 +255,29 @@ class VM(ViewModel):
         self.caret = Signal("glide")
 
 
-VIEW = """name: main
-widget: Container
-style: {width: 400, height: 200, padding: 20}
-children:
-  - widget: TextField
-    name: tf
-    label: Name
-    text: "{{ text }}"
-    typing_effect: "{{ effect }}"
-    caret_effect: glide
+VIEW = """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Width: 400, Height: 200, Padding: 20 }
+  Children {
+    TextField {
+      Name: tf
+      Label: Name
+      Text: <| text |>
+      Typing_Effect: <| effect |>
+      Caret_Effect: glide
+    }
+  }
+}
 """
 
 
 def opened(tmp_path, **app_kwargs):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(VIEW)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(VIEW)
     app = App(root=tmp_path, **app_kwargs)
     app.bind(VM)
     view = app.open_view("Main")
@@ -318,7 +325,7 @@ def test_an_app_that_asks_for_reduced_motion_gets_no_flash(tmp_path):
 
 def test_a_value_that_is_not_an_effect_is_refused_naming_it(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(VIEW.replace("caret_effect: glide", "caret_effect: sparkle"))
+    (tmp_path / "Views" / "Main_View.tdl").write_text(VIEW.replace("Caret_Effect: glide", "Caret_Effect: sparkle"))
     app = App(root=tmp_path)
     app.bind(VM)
     with pytest.raises(Exception, match="sparkle"):
@@ -432,12 +439,12 @@ def test_an_option_left_out_or_none_is_the_default():
 # -- through the view language: a TextField takes them, and a bad number is a load error --------------
 
 def field_view(extra):
-    return VIEW.replace("    caret_effect: glide\n", "    caret_effect: glide\n" + extra)
+    return VIEW.replace("      Caret_Effect: glide\n", "      Caret_Effect: glide\n" + extra)
 
 
 def test_a_text_field_passes_the_settings_to_its_input(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(field_view("    typing_duration: 700\n    flash_color: tertiary\n    flash_opacity: 0.6\n    glide_duration: 300\n    caret_blink: 0\n"))
+    (tmp_path / "Views" / "Main_View.tdl").write_text(field_view("      Typing_Duration: 700\n      Flash_Color: tertiary\n      Flash_Opacity: 0.6\n      Glide_Duration: 300\n      Caret_Blink: 0\n"))
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")
@@ -491,7 +498,7 @@ def test_the_effects_are_made_once_and_live_through_every_focus_change_and_keyst
     time, the caret would begin every move where it ended, and a glide would never be seen."""
     made, detached = counting(monkeypatch)
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(field_view("    glide_duration: 600\n    caret_blink: 0\n"))
+    (tmp_path / "Views" / "Main_View.tdl").write_text(field_view("      Glide_Duration: 600\n      Caret_Blink: 0\n"))
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")
@@ -511,7 +518,7 @@ def test_the_effects_are_made_once_and_live_through_every_focus_change_and_keyst
 def test_turning_an_effect_off_removes_it_and_gives_the_engines_caret_back(tmp_path, monkeypatch):
     made, detached = counting(monkeypatch)
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(VIEW.replace("caret_effect: glide", 'caret_effect: "{{ caret }}"'))
+    (tmp_path / "Views" / "Main_View.tdl").write_text(VIEW.replace("Caret_Effect: glide", "Caret_Effect: <| caret |>"))
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")
@@ -534,8 +541,7 @@ def test_turning_an_effect_off_removes_it_and_gives_the_engines_caret_back(tmp_p
 def test_changing_a_setting_makes_the_effects_again(tmp_path, monkeypatch):
     made, detached = counting(monkeypatch)
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(VIEW.replace("caret_effect: glide", "caret_effect: glide\n    glide_duration: \"{{ speed }}\"").replace(
-        "self.caret", "self.caret"))
+    (tmp_path / "Views" / "Main_View.tdl").write_text(VIEW.replace("Caret_Effect: glide", "Caret_Effect: glide\n      Glide_Duration: <| speed |>"))
     app = App(root=tmp_path)
     app.bind(VMWithSpeed)
     view = app.open_view("Main")
@@ -556,7 +562,7 @@ class VMWithSpeed(VM):
 def test_closing_the_view_takes_the_effects_away(tmp_path, monkeypatch):
     made, detached = counting(monkeypatch)
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(VIEW)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(VIEW)
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")
@@ -569,7 +575,7 @@ def test_closing_the_view_takes_the_effects_away(tmp_path, monkeypatch):
 
 def test_the_flash_follows_the_apps_theme_including_when_it_changes(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(field_view("    typing_duration: 5000\n    flash_opacity: 1.0\n"))
+    (tmp_path / "Views" / "Main_View.tdl").write_text(field_view("      Typing_Duration: 5000\n      Flash_Opacity: 1.0\n"))
     app = App(root=tmp_path, theme_seed=(0xB3, 0x26, 0x1E, 0xFF), dark=False)  # a red seed: its primary is not the baseline's violet
     app.bind(VM)
     view = app.open_view("Main")
@@ -597,20 +603,20 @@ def test_the_flash_follows_the_apps_theme_including_when_it_changes(tmp_path):
 
 
 @pytest.mark.parametrize("line, message", [
-    ("typing_duration: -5", r"'typing_duration' takes a number of 0 or more, got -5"),
-    ("flash_opacity: 2", r"'flash_opacity' takes a number from 0 to 1, got 2"),
-    ("glide_duration: -1", r"'glide_duration' takes a number of 0 or more"),
-    ("caret_blink: -1", r"'caret_blink' takes a number of 0 or more"),
-    ("typing_duration: fast", r"'typing_duration' takes a number"),
+    ("Typing_Duration: -5", r"'typing_duration' takes a number of 0 or more, got -5"),
+    ("Flash_Opacity: 2", r"'flash_opacity' takes a number from 0 to 1, got 2"),
+    ("Glide_Duration: -1", r"'glide_duration' takes a number of 0 or more"),
+    ("Caret_Blink: -1", r"'caret_blink' takes a number of 0 or more"),
+    ("Typing_Duration: fast", r"'typing_duration' takes a number"),
 ])
 def test_a_setting_out_of_range_is_a_load_error_naming_it_and_where(tmp_path, line, message):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(field_view(f"    {line}\n"))
+    (tmp_path / "Views" / "Main_View.tdl").write_text(field_view(f"      {line}\n"))
     app = App(root=tmp_path)
     app.bind(VM)
     with pytest.raises(Exception, match=message) as raised:
         app.open_view("Main")
-    assert "Main_View.yaml:" in str(raised.value)  # the file and the line
+    assert "Main_View.tdl:" in str(raised.value)  # the file and the line
 
 
 def test_a_property_can_bound_a_number_and_a_view_param_can_too():

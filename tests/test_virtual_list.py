@@ -19,32 +19,42 @@ class VM(ViewModel):
         self.picked = Signal(-1)
 
 
-VIEW = """name: main
-widget: Container
-style: {flex_direction: vertical, width: 300, height: 200}
-children:
-  - widget: VirtualList
-    name: list
-    item_height: 40
-    scroll_offset: "{{ offset }}"
-    at_top: "{{ top }}"
-    at_end: "{{ end }}"
-    style: {width: 300, height: 200}
-    children:
-      - widget: Container
-        for: row in rows
-        key: row.id
-        name: row
-        style: {background: surface}
-        handlers: {on_click: "picked = row.id"}
-        children:
-          - {widget: Text, name: label, text: "{{ row.name }}", typography_role: body_large, style: {foreground: on_surface}}
+HEAD = """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Flex_Direction: vertical, Width: 300, Height: 200 }
+  Children {
+    VirtualList {
+      Name: list
+      Item_Height: 40
+      Scroll_Offset: <| offset |>
+      At_Top: <| top |>
+      At_End: <| end |>
+      Style { Width: 300, Height: 200 }
 """
+ROWS = """      Children {
+        For row In <| rows |> Key <| row.id |> {
+          Container {
+            Name: row
+            Style { Background: surface }
+            Handlers { On_Click { Set { Target: picked, Value: <| row.id |> } } }
+            Children {
+              Text { Name: label, Text: <| row.name |>, Typography_Role: body_large, Style { Foreground: on_surface } }
+            }
+          }
+        }
+      }
+"""
+TAIL = "    }\n  }\n}\n"
+VIEW = HEAD + ROWS + TAIL
 
 
 def opened(tmp_path, text=VIEW):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(text)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(text)
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")
@@ -139,19 +149,19 @@ def test_a_short_list_builds_all_its_rows(tmp_path):
 
 
 @pytest.mark.parametrize("children, message", [
-    ("    children:\n      - {widget: Container, name: a}\n", "one child, and it has a 'for:'"),
-    ("    children:\n      - {widget: Container, for: r in rows, name: a}\n", "a reactive 'for:' needs a 'key:'"),
-    ("    children:\n      - {widget: Container, for: r in rows, key: r.id, name: a}\n      - {widget: Container, for: r in rows, key: r.id, name: b}\n", "one child"),
+    ("      Children {\n        Container { Name: a }\n      }\n", "one child, and it has a 'for:'"),
+    ("      Children {\n        For r In <| rows |> Key <| None |> { Container { Name: a } }\n      }\n", "a reactive 'for:' needs a 'key:'"),
+    ("      Children {\n        For r In <| rows |> Key <| r.id |> { Container { Name: a } }\n        For r In <| rows |> Key <| r.id |> { Container { Name: b } }\n      }\n",
+     "one child"),
 ])
 def test_a_virtual_list_needs_one_looped_child_with_a_key(tmp_path, children, message):
-    text = VIEW[:VIEW.index("    children:")] + children
     with pytest.raises(LoadError, match=message):
-        opened(tmp_path, text)
+        opened(tmp_path, HEAD + children + TAIL)
 
 
 def test_item_height_is_required(tmp_path):
     with pytest.raises(LoadError, match="'item_height' is required"):
-        opened(tmp_path, VIEW.replace("    item_height: 40\n", ""))
+        opened(tmp_path, VIEW.replace("      Item_Height: 40\n", ""))
 
 
 def test_the_rows_built_are_those_in_view_and_the_overscan_each_side(tmp_path):
@@ -161,7 +171,7 @@ def test_the_rows_built_are_those_in_view_and_the_overscan_each_side(tmp_path):
 
 
 def test_the_overscan_is_a_property(tmp_path):
-    view, vm = opened(tmp_path, VIEW.replace("    item_height: 40\n", "    item_height: 40\n    overscan: 0\n"))
+    view, vm = opened(tmp_path, VIEW.replace("      Item_Height: 40\n", "      Item_Height: 40\n      Overscan: 0\n"))
     scroll_to(view, vm, 4000)
     assert built(view) == list(range(100, 106))
 
