@@ -203,14 +203,14 @@ def test_a_link_in_rich_text_calls_on_link_with_its_href():
     assert vm.heard == [("link", "docs")]
 
 
-def test_the_new_handlers_are_in_the_schema():
-    import json
+def test_the_new_handlers_are_in_the_reference():
+    """The TDL reference lists every event a node's `Handlers` takes (written from the handler schema the generator builds)."""
     from pathlib import Path
 
-    schema = json.loads((Path(__file__).parent.parent / "src/tess_ui/schema/tess-ui-yaml-schema.json").read_text())
-    names = set(schema["definitions"]["handlers"]["properties"])
-    assert {"on_tap", "on_long_press", "on_pan", "on_pinch", "on_touch_start", "on_touch_move", "on_touch_end",
-            "on_touch_cancel", "on_file_hover", "on_file_hover_cancel", "on_file_drop", "on_link"} <= names
+    page = (Path(__file__).parent.parent / "docs/api/tdl.md").read_text(encoding="utf-8")
+    assert all(f"| `{name}` |" in page for name in (
+        "On_Tap", "On_Long_Press", "On_Pan", "On_Pinch", "On_Touch_Start", "On_Touch_Move", "On_Touch_End",
+        "On_Touch_Cancel", "On_File_Hover", "On_File_Hover_Cancel", "On_File_Drop", "On_Link"))
 
 
 # -- spring ------------------------------------------------------------------------------------

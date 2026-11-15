@@ -1,7 +1,7 @@
 """0.3.4 (#83): the component and stylesheet pages are written by `tools/generate_component_docs.py`.
 
 The pages must be what the generator writes now, and every example on them
-must work: each YAML usage builds in a real view, and each Python one runs.
+must work: each TDL usage loads as a view, and each Python one runs.
 """
 
 import importlib.util
@@ -9,7 +9,9 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-import yaml
+import yaml  # the generator's own data file (tools/component_docs.yaml) is YAML: tooling data read by tools/ only
+
+pytest.importorskip("tess_dl", reason="the generators read the shipped .tdl files, which needs tess_dl (Python 3.14)")
 
 from tess_ui import App, View
 
@@ -39,14 +41,26 @@ def test_the_pages_are_what_the_generator_writes():
 
 def test_every_shipped_view_is_on_exactly_one_page():
     listed = sorted(name for entry in DATA["components"] for name in entry.get("views", []))
-    shipped = sorted(p.name.removesuffix("_View.yaml") for p in GENERATOR.VIEWS.glob("*_View.yaml"))
-    assert listed == shipped
+    assert listed == GENERATOR.shipped_views()
+
+
+def test_the_generators_read_the_tdl_files_and_no_yaml_twin():
+    assert GENERATOR.shipped_views() and all(p.suffix == ".tdl" for p in GENERATOR.VIEWS.glob("*_View.tdl"))
+    assert "yaml" not in GENERATOR.View("Button").path.suffix and GENERATOR.View("Button").sheet_path.suffix == ".tdl"
 
 
 def test_a_view_left_off_every_page_is_refused():
-    shipped = sorted(p.name.removesuffix("_View.yaml") for p in GENERATOR.VIEWS.glob("*_View.yaml"))
     with pytest.raises(SystemExit, match="not listed"):
-        GENERATOR.check_coverage(DATA, shipped + ["NoSuchView"])
+        GENERATOR.check_coverage(DATA, GENERATOR.shipped_views() + ["NoSuchView"])
+
+
+@pytest.mark.parametrize("entry", [p for p in ENTRIES if p.values[0].get("usage_view")])
+def test_a_tdl_usage_example_loads_as_a_view(entry):
+    """The example on a component page is a whole view in TDL (its metadata block is left off, as on every docs page) and it loads against the shipped views."""
+    from doc_blocks import load
+
+    kind, _ = load(entry["usage_view"])
+    assert kind == "view"
 
 
 class _Anything:

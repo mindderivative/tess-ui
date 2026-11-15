@@ -1,4 +1,4 @@
-# PeriodSelector_Stylesheet.yaml
+# PeriodSelector_Stylesheet.tdl
 
 The look of PeriodSelector: an outlined frame with 8 pixel corners. The halves' colours are in the view, because a rule cannot see the loop variable that says which half is which.
 
@@ -6,18 +6,25 @@ The look of [`PeriodSelector`](../../components/time-pickers.md) (in [Time picke
 
 ## The stylesheet
 
-```yaml
-tesserae: 0.6
+```tdl
+---
+TDL: 0.2
+Name: PeriodSelector
+Tesserae: "0.6"
+---
 # The look of PeriodSelector: an outlined frame with 8 pixel corners. The halves' colours are in the view, because a rule cannot see the loop variable that
 # says which half is which.
-styles:
-  - widget: PeriodSelector
-    style: {corner_radius: 8, border_width: 1, border_color: outline}
+Styles {
+  Rule {
+    Widget: PeriodSelector
+    Style { Corner_Radius: 8, Border_Width: 1, Border_Color: outline }
+  }
+}
 ```
 
 ## How it reaches the view
 
-Each rule names `widget: PeriodSelector` and may add the properties the view declares (a `variant`, a `size`, a `shape`), `classes`, a node `name`, a `part` (one of the view's named nodes) and a `state` (`hovered`, `focused`, `pressed`, `disabled`, `selected`, ...). A rule's values may be expressions over the view's parameters. The most specific rule wins: a `name`, then the number of properties matched (all the `classes` count as one more), then a `state`, then the widget alone; a later rule wins a tie. These rules are the lowest layer: your app's stylesheet goes over them, and a node's own `style:` beats every rule for the fields it sets.
+Each rule names `Widget: PeriodSelector` and may add the properties the view declares (a `Variant`, a `Size`, a `Shape`), `Classes`, a node `Name`, a `Part` (one of the view's named nodes) and a `State` (`hovered`, `focused`, `pressed`, `disabled`, `selected`, ...). A rule's values may be expressions over the view's parameters. The most specific rule wins: a `Name`, then the number of properties matched (all the `Classes` count as one more), then a `State`, then the widget alone; a later rule wins a tie. These rules are the lowest layer: your app's stylesheet goes over them, and a node's own `Style` beats every rule for the fields it sets.
 
 ## The rules
 
@@ -25,16 +32,19 @@ Each rule names `widget: PeriodSelector` and may add the properties the view dec
 
 | When | Field | Value | What it does |
 | --- | --- | --- | --- |
-| always | `corner_radius` | `8` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`top`, `right`, `bottom`, `left`) with the rest square. |
-| always | `border_width` | `1` | The width of its border, in pixels. |
-| always | `border_color` | `outline` | The colour of its border: a colour or a gradient. |
+| always | `Corner_Radius` | `8` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`Top`, `Right`, `Bottom`, `Left`) with the rest square. |
+| always | `Border_Width` | `1` | The width of its border, in pixels. |
+| always | `Border_Color` | `outline` | The colour of its border: a colour or a gradient. |
 
 ## Changing it
 
 Write a rule of your own; it goes over this file's, field by field:
 
-```yaml
-styles:
-  - widget: PeriodSelector
-    style: {corner_radius: tertiary}
+```tdl
+Styles {
+  Rule {
+    Widget: PeriodSelector
+    Style { Corner_Radius: tertiary }
+  }
+}
 ```

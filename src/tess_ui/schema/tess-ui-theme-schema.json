@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://mindderivative.github.io/tess-ui/schema/tess-ui-theme-schema.json",
   "title": "Tesserae theme or stylesheet",
-  "description": "A theme or stylesheet file: `styles:` rules, and for a theme also a `seed`, `dark`, `colors`, `typography` and `components`.",
+  "description": "A theme file as the TDL front end reads it (`<Name>_Theme.tdl`): `styles` rules, a `seed`, `dark`, `colors`, `typography` and `components`.",
   "definitions": {
     "parameter": {
       "type": "string",
@@ -2941,13 +2941,6 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "tesserae": {
-      "type": [
-        "number",
-        "string"
-      ],
-      "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
-    },
     "seed": {
       "$ref": "#/definitions/color",
       "description": "The colour the theme's palette is made from."

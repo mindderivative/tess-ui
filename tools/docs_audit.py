@@ -20,7 +20,7 @@ def venv_python(root):
 
 
 PY = venv_python(ROOT)
-GENERATORS = ["generate_api_docs", "generate_yaml_docs", "generate_component_docs", "generate_component_order", "generate_yaml_schema"]
+GENERATORS = ["generate_api_docs", "generate_tdl_docs", "generate_component_docs", "generate_component_order", "generate_schema"]
 
 
 def check_skills():

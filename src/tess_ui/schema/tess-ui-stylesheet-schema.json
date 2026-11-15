@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://mindderivative.github.io/tess-ui/schema/tess-ui-stylesheet-schema.json",
   "title": "Tesserae stylesheet of rules",
-  "description": "A stylesheet of rules: `<Name>_Stylesheet.yaml`, or the file `App(stylesheet=)` names. Each rule says which widgets it is for and the style it sets.",
+  "description": "A stylesheet of rules: `<Name>_Stylesheet.tdl`, or the file `App(stylesheet=)` names, as the TDL front end reads it. Each rule says which widgets it is for and the style it sets.",
   "definitions": {
     "color": {
       "anyOf": [
@@ -2674,13 +2674,6 @@
   ],
   "additionalProperties": false,
   "properties": {
-    "tesserae": {
-      "type": [
-        "number",
-        "string"
-      ],
-      "description": "The release series of Tesserae this file was written for (0.6). It must be the first line of the file."
-    },
     "styles": {
       "type": "array",
       "items": {

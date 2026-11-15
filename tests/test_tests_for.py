@@ -51,7 +51,7 @@ def test_a_core_module_picks_its_importers_only_when_asked():
 def test_a_changed_docs_page_picks_the_tests_that_read_the_docs():
     """Editing `docs/guide/layout.md` with a version number in it failed `test_docs_no_history` only in CI: nothing picked it locally."""
     picked_for_page = picked("docs/guide/layout.md")
-    assert {"tests/test_docs_no_history.py", "tests/test_api_docs.py", "tests/test_tutorials_current.py", "tests/test_yaml_schema.py"} <= picked_for_page
+    assert {"tests/test_docs_no_history.py", "tests/test_api_docs.py", "tests/test_tutorials_current.py", "tests/test_schema.py"} <= picked_for_page
 
 
 def test_a_changed_root_markdown_file_picks_no_tests():

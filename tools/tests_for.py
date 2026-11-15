@@ -14,7 +14,7 @@ The full suite takes about three minutes and is run only when the user calls for
   * a changed `src/tess_ui/**.py` module gives the tests that import it (read with `ast`: `import a.b`, `from a import b`,
     `from a.b import c`), and the tests whose file name matches the module's (`widgets/buttons.py` -> `test_button*.py`);
   * the tests that mention a public function, class or constant the module defines (compound names only, and not ones found in over a tenth of the tests);
-  * a changed view or component file (`views/Button_View.yaml`, `spec/components/*.yaml`) gives the tests whose name matches its stem
+  * a changed view, stylesheet or component file (`views/Button_View.tdl`, `spec/components/*.yaml`) gives the tests whose name matches its stem
     or that mention the file name;
   * a changed page under `docs/` gives the tests that read the docs (`DOC_TESTS`: the generated pages, the examples in them, no version history, the
     tutorials, the schemas);

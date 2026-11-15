@@ -38,7 +38,7 @@ def build(mode: str):
             self.user = Signal("Ada")
 
     app = App(title=f"Tasks ({mode})", root=PROJECT, custom_theme="Brand", stylesheet="Tasks", state=AppState())
-    app.load("Window")  # Views/Window_View.yaml: borderless, with its own title bar, a rail and the two screens
+    app.load("Window")  # Views/Window_View.tdl: borderless, with its own title bar, a rail and the two screens
     if mode == "native":
         app.borderless = False  # the OS draws the title bar and borders
     app.navigate_to("")

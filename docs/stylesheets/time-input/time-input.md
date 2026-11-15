@@ -1,4 +1,4 @@
-# TimeInput_Stylesheet.yaml
+# TimeInput_Stylesheet.tdl
 
 The look of TimeInput: the colon in on_surface, centred on the fields.
 
@@ -6,16 +6,21 @@ The look of [`TimeInput`](../../components/time-input.md) (in [Time input](../..
 
 ## The stylesheet
 
-```yaml
-tesserae: 0.6
+```tdl
+---
+TDL: 0.2
+Name: TimeInput
+Tesserae: "0.6"
+---
 # The look of TimeInput: the colon in on_surface, centred on the fields.
-styles:
-  - {widget: TimeInput, part: colon, style: {foreground: on_surface}}
+Styles {
+  Rule { Widget: TimeInput, Part: colon, Style { Foreground: on_surface } }
+}
 ```
 
 ## How it reaches the view
 
-Each rule names `widget: TimeInput` and may add the properties the view declares (a `variant`, a `size`, a `shape`), `classes`, a node `name`, a `part` (one of the view's named nodes) and a `state` (`hovered`, `focused`, `pressed`, `disabled`, `selected`, ...). A rule's values may be expressions over the view's parameters. The most specific rule wins: a `name`, then the number of properties matched (all the `classes` count as one more), then a `state`, then the widget alone; a later rule wins a tie. These rules are the lowest layer: your app's stylesheet goes over them, and a node's own `style:` beats every rule for the fields it sets.
+Each rule names `Widget: TimeInput` and may add the properties the view declares (a `Variant`, a `Size`, a `Shape`), `Classes`, a node `Name`, a `Part` (one of the view's named nodes) and a `State` (`hovered`, `focused`, `pressed`, `disabled`, `selected`, ...). A rule's values may be expressions over the view's parameters. The most specific rule wins: a `Name`, then the number of properties matched (all the `Classes` count as one more), then a `State`, then the widget alone; a later rule wins a tie. These rules are the lowest layer: your app's stylesheet goes over them, and a node's own `Style` beats every rule for the fields it sets.
 
 ## The rules
 
@@ -23,15 +28,18 @@ Each rule names `widget: TimeInput` and may add the properties the view declares
 
 | When | Field | Value | What it does |
 | --- | --- | --- | --- |
-| always | `foreground` | `on_surface` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
+| always | `Foreground` | `on_surface` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
 
 ## Changing it
 
 Write a rule of your own; it goes over this file's, field by field:
 
-```yaml
-styles:
-  - widget: TimeInput
-    part: colon
-    style: {foreground: tertiary}
+```tdl
+Styles {
+  Rule {
+    Widget: TimeInput
+    Part: colon
+    Style { Foreground: tertiary }
+  }
+}
 ```

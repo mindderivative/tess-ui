@@ -1,24 +1,20 @@
 #!/usr/bin/env python3
-"""Writes Tesserae's YAML schemas (0.3.2, #79) for Red Hat's YAML language server.
+"""Writes Tesserae's JSON schemas of the data the TDL front ends read (0.3.2, #79; for TDL since the YAML loaders went).
 
-Four JSON Schema draft-07 files, each for one kind of file Tesserae reads:
+Three JSON Schema draft-07 files, each for one kind of file Tesserae reads. They describe the *data* a `.tdl` file loads to (the front ends in
+`tess_ui.spec.tdl*` return plain dicts with lower snake_case keys, which is what the loaders and `tests/test_widget_schema.py` validate):
 
-- `tess-ui-yaml-schema.json`       a view, `*_View.yaml`
-- `tess-ui-theme-schema.json`      a theme or a stylesheet
-- `tess-ui-component-schema.json`  a component fragment, `*_Component.yaml`
-- `tess-ui-style-schema.json`      one node's style, `*_Style.yaml`
+- `tess-ui-widget-schema.json`      a view, `*_View.tdl`: a tree of `widget` nodes, with a branch for each built-in widget and each shipped view
+- `tess-ui-stylesheet-schema.json`  a stylesheet of rules, `*_Stylesheet.tdl`
+- `tess-ui-theme-schema.json`       a theme, `*_Theme.tdl`
 
-They are built from Tesserae's own code, so a new kind, style field or
-token can't be left out by accident: the kinds, node keys, style fields, the
-colour, type and shape tokens, the icons, the accessibility roles, the
-handlers, and every built-in fragment's name and parameters. The layout
-enums (`flex_direction`, `align_items`, ...) are asked of `tess_re`, whose error
-for a bad value lists the good ones. `tests/test_yaml_schema.py` checks every
-YAML file in the repository against them and that the committed files match
-what this writes.
+They are built from Tesserae's own code, so a new widget, style field or token can't be left out by accident: the widgets and their properties, style
+fields, the colour, type and shape tokens, the icons, the accessibility roles and the handlers. The layout enums (`flex_direction`, `align_items`, ...)
+are asked of `tess_re`, whose error for a bad value lists the good ones. `tests/test_schema.py` and `tests/test_widget_schema.py` check every `.tdl`
+file of the repository against them and that the committed files match what this writes. `tools/generate_tdl_docs.py` writes the reference page from them.
 
-    python tools/generate_yaml_schema.py          # write src/tess_ui/schema and docs/schema
-    python tools/generate_yaml_schema.py --check  # exit 1 if they are out of date
+    python tools/generate_schema.py          # write src/tess_ui/schema and docs/schema
+    python tools/generate_schema.py --check  # exit 1 if they are out of date
 """
 
 from __future__ import annotations
@@ -29,8 +25,6 @@ import re
 import sys
 from pathlib import Path
 from typing import Any
-
-import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIRS = (ROOT / "src" / "tess_ui" / "schema", ROOT / "docs" / "schema")
@@ -57,34 +51,14 @@ def _tre_values(prop: str) -> list[str]:
     raise SystemExit(f"tess_re did not list the values of `{prop}`: has its error message changed?")
 
 
-def _fragments() -> dict[str, dict[str, Any]]:
-    """Every built-in fragment's name and its parameters, each with its default if it has one: an entry
-    of `params:` is a name (required) or a one-key `{name: default}` (optional)."""
-    from tess_ui.spec import expand
-
-    folder = Path(expand.__file__).parent / "components"
-    out: dict[str, dict[str, Any]] = {}
-    for path in sorted(folder.glob("*_Component.yaml")):
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
-        params: dict[str, Any] = {}
-        for entry in data.get("params") or []:
-            if isinstance(entry, str):
-                params[entry] = {}
-            else:
-                name, default = next(iter(entry.items()))
-                params[name] = {} if default is None else {"default": default}
-        out[path.name.removesuffix("_Component.yaml")] = params
-    return out
-
-
 # -- the building blocks ---------------------------------------------------------------------
 
 def _definitions(fragment: bool) -> dict[str, Any]:
     """The shared definitions. A fragment's numbers and names can be `{{ parameter }}`s, filled in
     when the fragment is used, so there they may also be that."""
-    from tess_ui import a11y, icons, tokens
+    from tess_ui import a11y, tokens
     from tess_ui import view as view_module
-    from tess_ui.spec import build, cascade, expand, layout, placement, title_bar
+    from tess_ui.spec import cascade, layout, placement
 
     roles = sorted(tokens.color_scheme((0x67, 0x50, 0xA4, 0xFF)))
     param = {"type": "string", "pattern": r"^\s*\{\{.*\}\}\s*$",
@@ -248,49 +222,6 @@ def _definitions(fragment: bool) -> dict[str, Any]:
                             for name, (schema, text) in sorted(style_fields.items())},
              "additionalProperties": False}
 
-    text = {"type": "object", "description": "What a Text, Link or TextField says, and in what type.",
-            "properties": {
-                "content": {"type": "string", "description": "The text."},
-                "typography_role": loose({"enum": sorted(tokens.TYPE_SCALE),
-                                          "description": "A Material 3 type style: it sets the font, size, weight and line height."}),
-                "font_family": {"type": "string", "description": "A font family, such as `Roboto`."},
-                "font_size": loose({"type": "number", "exclusiveMinimum": 0, "description": "Pixels."}),
-                "font_weight": loose({"type": "number", "minimum": 1, "maximum": 1000,
-                                      "description": "1 to 1000; 400 is regular, 700 bold."}),
-                "line_height": loose({"type": "number", "exclusiveMinimum": 0, "description": "A multiple of the size."}),
-                "text_align": loose({"enum": ["start", "center", "end"],
-                                     "description": "Where the text sits in its node's width; a `center` or `end` Text with no width fills its parent's. Not for a TextField."}),
-                "wrap": loose({"enum": ["word", "none"],
-                               "description": "`word` (the default) breaks a line that is too long for its node onto the next; "
-                                              "`none` keeps one line. Not for a TextField."}),
-                "selectable": loose({"type": "boolean",
-                                     "description": "A Text only: the user can select it with the pointer and copy it (Ctrl+C)."}),
-                "runs": {"type": "array", "minItems": 1,
-                         "description": "A Text only: the text as styled pieces, instead of `content`. A piece is a string, or "
-                                        "`{text, color, weight, italic, underline, strikethrough, font_size, font_family, link}`. "
-                                        "A piece with a `link` is `primary` and underlined, and a click on it calls `on_link` "
-                                        "with `event.href`.",
-                         "items": {"anyOf": [{"type": "string"}, {"type": "object", "required": ["text"], "additionalProperties": False,
-                                  "properties": {
-                                      "text": {"type": "string", "description": "This piece's words."},
-                                      "color": {"$ref": "#/definitions/color", "description": "Its colour: a theme role or a CSS colour."},
-                                      "weight": {"type": "number", "minimum": 1, "maximum": 1000, "description": "Its font weight."},
-                                      "italic": {"type": "boolean", "description": "Italic."},
-                                      "underline": {"type": "boolean", "description": "Underlined."},
-                                      "strikethrough": {"type": "boolean", "description": "Struck through."},
-                                      "font_size": {"type": "number", "exclusiveMinimum": 0, "description": "Its size in pixels."},
-                                      "font_family": {"type": "string", "description": "Its font family."},
-                                      "link": {"type": "string", "description": "Makes it a link: what `on_link` hears as `event.href`."}}}]}},
-                "overflow": loose({"enum": ["clip", "ellipsis"],
-                                   "description": "What happens to a line that doesn't fit its node: `clip` (the default) cuts it off, "
-                                                  "`ellipsis` ends it with an ellipsis. Not for a TextField."}),
-                "max_lines": loose({"type": "integer", "minimum": 1,
-                                    "description": "The most lines shown; a longer text is cut there (with `overflow: ellipsis`, the last line ends with "
-                                                   "an ellipsis). A Text with a width and no height is as tall as these lines. Not for a TextField."}),
-                "letter_spacing": loose({"type": "number",
-                                         "description": "Extra space between letters, in pixels (tracking); negative tightens. Not for a TextField."}),
-            },
-            "additionalProperties": False}
     window_actions = ", ".join("`window." + action + "`" for action in view_module.WINDOW_ACTIONS)
     window_actions += ", " + ", ".join("`surface." + action + "`" for action in view_module.SURFACE_ACTIONS)
     window_actions += ", `navigate.<Screen>`, " + ", ".join("`navigate." + t + "`" for t in view_module.NAVIGATE_TARGETS)
@@ -327,226 +258,6 @@ def _definitions(fragment: bool) -> dict[str, Any]:
                                   "value_text": {"anyOf": [{"type": "string"}, {"type": "null"}], "description": "How a range's value is said."},
                                   "busy": {"anyOf": [{"type": "boolean"}, {"type": "null"}, {"type": "string"}], "description": "The node is updating."}},
                    "additionalProperties": False}
-    style_file = {"type": "string", "pattern": r"_Style\.yaml$", "description": "A `*_Style.yaml` file next to this one."}
-    maybe_bool = {"anyOf": [{"type": "boolean"}, {"type": "string"}]}
-    maybe_number = {"anyOf": [number, {"type": "string"}]}
-    node_props: dict[str, dict[str, Any]] = {
-        "id": {"type": "string", "description": "A name for this node, unique in the view. Handlers, bindings and `view.node(id)` use it."},
-        "kind": {"enum": sorted(build._KINDS), "description": "What this node is."},
-        "classes": {"type": "array", "items": {"type": "string"}, "description": "Style classes a theme or stylesheet rule can match."},
-        "style": {"$ref": "#/definitions/style"} if fragment else {"anyOf": [{"$ref": "#/definitions/style"}, style_file],
-                                                                   "description": "How a node looks: a mapping, or the name of a `*_Style.yaml` file."},
-        "text": {"$ref": "#/definitions/text"},
-        "checked": {**maybe_bool, "description": "A Checkbox's state."},
-        "selected": {**maybe_bool, "description": "A Switch's or RadioButton's state."},
-        "value": {**maybe_number, "description": "A Slider's or SpinBox's value."},
-        "hour": {**maybe_number, "description": "A TimePickerDial's hour."},
-        "minute": {**maybe_number, "description": "A TimePickerDial's minute."},
-        "min": {**maybe_number, "description": "The least a Slider or SpinBox takes."},
-        "max": {**maybe_number, "description": "The most a Slider or SpinBox takes."},
-        "step": {**maybe_number, "description": "How far a Slider or SpinBox moves."},
-        "track": {"anyOf": [{"type": "string"}, {"type": "null"}], "description": "The colour role of the track behind a progress indicator."},
-        "ticks": {**maybe_bool, "description": "Whether a Slider marks each step."},
-        "value_indicator": {**maybe_bool, "description": "Whether a Slider shows a bubble with its value over the handle."},
-        "wavy": {**maybe_bool, "description": "Whether a LinearProgress or CircularProgress is drawn as a wave."},
-        "contained": {**maybe_bool, "description": "Whether a LoadingIndicator sits in a circle of its container colour."},
-        "two_bar": {**maybe_bool, "description": "Whether a LinearProgress waits as two sweeping bars."},
-        "thickness": {**maybe_number, "description": "A progress indicator's width in pixels."},
-        "low": {**maybe_number, "description": "A RangeSlider's least value."},
-        "high": {**maybe_number, "description": "A RangeSlider's most value."},
-        "vertical": {**maybe_bool, "description": "Whether a Slider is stood up (the bottom is its minimum)."},
-        "size": {"anyOf": [{"enum": ["xs", "s", "m", "l", "xl"]}, {"type": "null"}], "description": "A Slider's MD3 Expressive size."},
-        "icons": {**maybe_bool, "description": "Whether a Switch shows a check or a cross on its handle."},
-        "error": {**maybe_bool, "description": "Whether a Checkbox or RadioButton is drawn in the error colours."},
-        "buffer": {**maybe_number, "description": "A LinearProgress's loaded share, 0 to 1."},
-        "stop_indicator": {**maybe_bool, "description": "Whether a LinearProgress shows a dot at the end of its track."},
-        "image": {"type": "object", "description": "An Image's source and fit.",
-                  "properties": {"src": {"type": "string", "description": "An image file, relative to this one."},
-                                 "fit": {"type": "string", "description": "How it fills its box: `cover` (the default), `contain`, ..."}},
-                  "additionalProperties": True},
-        "svg": {"type": "object", "description": "An Svg's document: a file, or its text.",
-                "properties": {"src": {"type": "string", "description": "An SVG file (`.svg` or `.svgz`), relative to this view. "
-                                                                          "The pictures it refers to are decoded and found next to it."},
-                               "content": {"type": "string", "description": "The SVG document itself, as text."}},
-                "additionalProperties": False},
-        "canvas": {"type": "object", "description": "A Canvas's drawing commands.",
-                   "properties": {"draw": {"type": "array", "description": "Commands painted in order: `rect: [x, y, w, h]`, `circle: [cx, cy, r]` "
-                                                                              "or `path: [points]` (with `width`), each with a `color`."}},
-                   "additionalProperties": False},
-        "scroll": {"type": "object", "description": "A ScrollView's position.",
-                   "properties": {"offset": {"type": "number", "minimum": 0, "description": "How far it is scrolled, in pixels."}},
-                   "additionalProperties": False},
-        "virtual": {"type": "object", "description": "A VirtualList's length: how many rows there are, and how tall each is.",
-                    "properties": {"count": {"type": "integer", "minimum": 0, "description": "How many rows the list has."},
-                                   "extent": {"type": "number", "exclusiveMinimum": 0, "description": "How tall each row is, in pixels."}},
-                    "additionalProperties": False},
-        "overlay": {"type": "object", "description": "An Overlay's shape.",
-                    "properties": {"modal": {"type": "boolean", "description": "Whether the layer is a scrim over the whole window."}},
-                    "additionalProperties": False},
-        "icon": {"type": "object", "description": "An Icon's glyph.",
-                 "properties": {"name": {**loose({"enum": sorted(icons.ICONS)}), "description": "An icon in Tesserae's set."},
-                                "path": {"type": "string", "description": "SVG path data, instead of a name."},
-                                "view_box": {"type": "array", "items": {"type": "number"}, "minItems": 4, "maxItems": 4,
-                                             "description": "[min_x, min_y, width, height] the path is drawn in (default 0 -960 960 960)."}},
-                 "additionalProperties": False},
-        "bindings": {"type": "object", "description": "Properties kept live from the ViewModel: `{{ expression }}`.",
-                     "additionalProperties": {"type": "string"}},
-        "handlers": {"$ref": "#/definitions/handlers"},
-        "two_way": {"type": "string", "description": "The one bound property whose user edits write back to the ViewModel."},
-        "interaction": {"anyOf": [{"type": "boolean"},
-                                  {"type": "object", "properties": {"color": {"$ref": "#/definitions/color"}},
-                                   "additionalProperties": False}],
-                        "description": "A Rect or Container's hover, press and focus feedback: `true`, `false`, or `{color: ...}`."},
-        "a11y": {"$ref": "#/definitions/a11y"},
-        "group": {"type": "string", "description": "A RadioButton's group: the ones with one name exclude each other."},
-        "component_of": {"type": "string", "description": "The fragment this node is the root of."},
-        "disabled": {**maybe_bool, "description": "Whether the node ignores input and fades."},
-        "visible": {**maybe_bool, "description": "Whether the node is shown. False hides it and takes it out of layout; it stays in the tree. "
-                                                 "Only a node that says it is touched."},
-        "window_region": {"enum": ["drag", "none"],
-                          "description": "`drag`: a press here moves the window (a title bar); `none`: it does not."},
-        "label": {"type": "string", "description": "A GraphNode's title."},
-        "x": {**maybe_number, "description": "A GraphNode's place."},
-        "y": {**maybe_number, "description": "A GraphNode's place."},
-        "edges": {"type": "array", "description": "A NodeGraph's edges."},
-    }
-    if fragment:
-        for key in ("style", "text", "bindings", "handlers", "a11y", "interaction"):
-            node_props[key] = {"anyOf": [node_props[key], {"$ref": "#/definitions/conditional"}]}
-    uncovered = build._NODE_KEYS - set(node_props) - {"children", "embed", "window", "dock", "dock_panel", "split_handle", "tooltip", "spin", "dial", "colour", "hue", "files", "mind", "graph", "a11y_literal"}  # what `view:`, `Window`, `Dock` and `DockPanel` become, not keys a file has; a title bar button's `tooltip` is a generated node's
-    if uncovered:
-        raise SystemExit(f"the node keys changed: add {sorted(uncovered)} in {__file__}")
-    node_props["children"] = {"type": "array", "items": {"$ref": "#/definitions/node"},
-                              "description": "The nodes inside this one."}
-    widget_props = dict(node_props)
-    if fragment:
-        widget_props["params"] = {
-            "type": "array", "description": "The parameters this fragment takes: each `{{ name }}` is filled from `with:`. "
-                                            "A name is required; `{name: default}` is optional.",
-            "items": {"anyOf": [{"type": "string"}, {"type": "object", "minProperties": 1, "maxProperties": 1}]}}
-        widget_props["when"] = {"description": "Keeps this child only when the value is true."}
-    widget = {"type": "object", "required": ["id", "kind"], "properties": widget_props, "additionalProperties": False}
-
-    title_bar_node = {
-        "type": "object", "required": ["id", "kind"],
-        "properties": {
-            "id": node_props["id"], "kind": {"const": "TitleBar"},
-            "title": {"type": "string", "description": "The window's title."},
-            "icon": {"enum": sorted(icons.ICONS), "description": "An icon name, shown before the title."},
-            "buttons": {"type": "array", "uniqueItems": True, "items": {"enum": [*title_bar.BUTTONS, *title_bar.SURFACE_BUTTONS]},
-                        "description": "Which window buttons, in order: minimize, maximize, close (all by default); or just "
-                                       "`dismiss`, a button that closes the dialog or sheet the bar is in."},
-            "children": node_props["children"], "style": node_props["style"], "classes": node_props["classes"],
-            "a11y": node_props["a11y"],
-        },
-        "additionalProperties": False,
-        "description": "A window title bar: an icon, a title, your own content and the window's buttons. "
-                       "Needs `App(borderless=True)`, or `borderless: true` on a Window.",
-    }
-    if set(title_bar_node["properties"]) != set(title_bar._KEYS):
-        raise SystemExit(f"a TitleBar's keys changed: they are now {sorted(title_bar._KEYS)}; update {__file__}")
-
-    components = _fragments()
-    call_props = {key: node_props[key] for key in expand._CALL_KEYS}
-    call_props.update({
-        "id": node_props["id"],
-        "component": {"anyOf": [{"enum": sorted(components)}, {"type": "string"}],
-                      "description": "A fragment: one of Tesserae's, or one of your own `<Name>_Component.yaml`."},
-        "with": {"type": "object", "description": "The fragment's parameters."},
-        "repeat": {"type": "array", "items": {"type": "object"}, "description": "One call per entry, each merged over `with:`."}})
-    if fragment:
-        call_props["when"] = widget_props["when"]
-        call_props["repeat"] = {"anyOf": [call_props["repeat"], {"$ref": "#/definitions/parameter"}],
-                                "description": call_props["repeat"]["description"]}
-    per_component = []
-    for name, params in sorted(components.items()):
-        props = dict(params)
-        per_component.append({
-            "if": {"properties": {"component": {"const": name}}, "required": ["component"]},
-            "then": {"properties": {
-                "with": {"type": "object", "properties": props, "additionalProperties": False},
-                "repeat": loose({"type": "array", "items": {"type": "object", "properties": props,
-                                                              "additionalProperties": False}})}},
-        })
-    component_call = {"type": "object", "required": ["component"], "properties": call_props, "additionalProperties": False,
-                      "description": "A fragment used in place: `component: Name` and its `with:` parameters.",
-                      "allOf": per_component}
-    include_node = {"type": "object", "required": ["include"], "description": "A file's contents, put in place.",
-                    "properties": {"include": {"type": "string", "description": "A YAML file, relative to this one."}},
-                    "additionalProperties": True}
-    view_node = {"type": "object", "required": ["view"], "additionalProperties": False,
-                 "description": "Another view shown here: `view: Left_View.yaml` (or a name found in the project). It is a view of its own, "
-                                "with its own ids and its own ViewModel if it has one (`Left_ViewModel.py`); one with none is static.",
-                 "properties": {
-                     "id": node_props["id"],
-                     "view": {"type": "string", "description": "The view to show: a `*_View.yaml` next to this file, or a name found in the project."},
-                     "with": {"type": "object", "description": "What the embedded view's ViewModel is given, as keyword arguments to its constructor."},
-                     "route": {"type": "string", "description": "In the window view, makes the view a screen of the app: its route, "
-                                                                "such as `\"\"`, `settings` or `notes/{id}`. A view can be routed once."},
-                     "style": node_props["style"], "classes": node_props["classes"], "a11y": node_props["a11y"],
-                     "group": node_props["group"], "window_region": node_props["window_region"]}}
-    bar_props = {k: v for k, v in title_bar_node["properties"].items() if k != "kind"}
-    window_node = {
-        "type": "object", "required": ["kind"], "additionalProperties": False,
-        "description": "The OS window: the root of a view (there is one per app). Its `title_bar:` is the window's title bar, "
-                       "its `children` are the window's content, and `style:`'s `width` and `height` are the window's size.",
-        "properties": {
-            "id": node_props["id"], "kind": {"const": "Window"},
-            "title": {"type": "string", "description": "The window's title."},
-            "borderless": {"type": "boolean", "description": "The OS window has no title bar or borders of its own: the "
-                                                             "`title_bar:` is the window's."},
-            "min_width": {"type": "number", "minimum": 0, "description": "The narrowest the user can resize the window to."},
-            "min_height": {"type": "number", "minimum": 0, "description": "The shortest the user can resize the window to."},
-            "title_bar": {"anyOf": [{"type": "boolean"}, {"type": "object", "additionalProperties": False, "properties": bar_props}],
-                          "description": "The window's title bar, a `TitleBar`'s keys: its `title` is the window's by default, and "
-                                         "it has the window buttons when the window is `borderless`."},
-            "style": node_props["style"], "classes": node_props["classes"], "a11y": node_props["a11y"],
-            "children": node_props["children"]}}
-    dock_node = {
-        "type": "object", "required": ["kind"], "additionalProperties": False,
-        "description": "Panels docked in zones around the middle: its children are `DockPanel`s, each in the zone its `style: {zone: ...}` "
-                       "names. There is one Dock per window.",
-        "properties": {"id": node_props["id"], "kind": {"const": "Dock"}, "style": node_props["style"], "classes": node_props["classes"],
-                       "a11y": node_props["a11y"], "children": node_props["children"]}}
-    dock_panel_node = {
-        "type": "object", "required": ["kind"], "additionalProperties": False,
-        "description": "A panel in a Dock, in the zone its `style: {zone: ...}` says (left, right, top, bottom or center); panels in "
-                       "one zone are its tabs. Inside another DockPanel it is a split of it. It holds content or splits, not both.",
-        "properties": {"id": node_props["id"], "kind": {"const": "DockPanel"},
-                       "title": {"type": "string", "description": "The panel's tab (its id by default)."},
-                       "style": node_props["style"], "classes": node_props["classes"], "a11y": node_props["a11y"],
-                       "children": node_props["children"]}}
-    # Declared here as well as in the branches below, so an editor can suggest them before `kind:`
-    # (or `component:`, or `include:`) is typed: the branches only apply once it is.
-    suggestible = {**widget_props, **call_props, "include": include_node["properties"]["include"],
-                   "view": view_node["properties"]["view"], "title_bar": window_node["properties"]["title_bar"],
-                   "borderless": window_node["properties"]["borderless"], "min_width": window_node["properties"]["min_width"],
-                   "min_height": window_node["properties"]["min_height"],
-                   "title": title_bar_node["properties"]["title"], "buttons": title_bar_node["properties"]["buttons"]}
-    suggestible["kind"] = {"enum": sorted([*build._KINDS, "TitleBar", "Window", "Dock", "DockPanel"]), "description": "What this node is."}
-    suggestible["title"] = {"type": "string", "description": "A TitleBar's title, or a Window's."}
-    # `icon` means an object on an Icon node and a plain name on a TitleBar.
-    suggestible["icon"] = {"anyOf": [widget_props["icon"], title_bar_node["properties"]["icon"]],
-                           "description": "An Icon's glyph (`{name: ...}`), or a TitleBar's icon name."}
-    node = {"type": "object",
-            "description": "A node: a widget (`kind:`), a fragment used in place (`component:`), a file put in place (`include:`), or another view (`view:`).",
-            "properties": dict(sorted(suggestible.items())),
-            "anyOf": [{"required": ["kind"]}, {"required": ["component"]}, {"required": ["include"]}, {"required": ["view"]}],
-            "allOf": [
-                {"if": {"required": ["component"]}, "then": {"$ref": "#/definitions/component_call"}},
-                {"if": {"required": ["include"]}, "then": {"$ref": "#/definitions/include"}},
-                {"if": {"required": ["view"]}, "then": {"$ref": "#/definitions/view_node"}},
-                {"if": {"required": ["kind"], "properties": {"kind": {"const": "TitleBar"}}},
-                 "then": {"$ref": "#/definitions/title_bar"}},
-                {"if": {"required": ["kind"], "properties": {"kind": {"const": "Window"}}},
-                 "then": {"$ref": "#/definitions/window_node"}},
-                {"if": {"required": ["kind"], "properties": {"kind": {"const": "Dock"}}},
-                 "then": {"$ref": "#/definitions/dock_node"}},
-                {"if": {"required": ["kind"], "properties": {"kind": {"const": "DockPanel"}}},
-                 "then": {"$ref": "#/definitions/dock_panel_node"}},
-                {"if": {"required": ["kind"], "properties": {"kind": {"not": {"enum": ["TitleBar", "Window", "Dock", "DockPanel"]}}}},
-                 "then": {"$ref": "#/definitions/widget"}},
-            ]}
     color = {"anyOf": [{"enum": roles}, {"type": "string"}],
              "description": "A theme role (such as `surface` or `on_primary`), `#RGB`, `#RRGGBB`, `#RRGGBBAA`, `transparent`, "
                             "a CSS colour name, or a CSS function such as `rgb(...)` or `oklch(...)`. End any of them with `@N%` to scale its alpha: "
@@ -565,10 +276,7 @@ def _definitions(fragment: bool) -> dict[str, Any]:
     fill = {"anyOf": [{"$ref": "#/definitions/color"}, gradient],
             "description": "A colour (a theme role, a hex or a CSS colour) or a gradient."}
     extra = {"parameter": param, "conditional": conditional} if fragment else {}
-    return {**extra, "color": color, "fill": fill, "style": style, "text": text, "handlers": handlers, "a11y": a11y_schema,
-            "widget": widget, "title_bar": title_bar_node, "component_call": component_call, "include": include_node,
-            "view_node": view_node, "window_node": window_node, "dock_node": dock_node, "dock_panel_node": dock_panel_node,
-            "node": node}
+    return {**extra, "color": color, "fill": fill, "style": style, "handlers": handlers, "a11y": a11y_schema}
 
 
 def _only(definitions: dict[str, Any], *names: str) -> dict[str, Any]:
@@ -589,28 +297,15 @@ def _root(filename: str, title: str, description: str, definitions: dict[str, An
             "definitions": definitions, **body}
 
 
-# -- the four files --------------------------------------------------------------------------
-
-def _view() -> dict[str, Any]:
-    defs = _only(_definitions(fragment=False), "node")
-    return _root("tess-ui-yaml-schema.json", "Tesserae view",
-                 "A Tesserae view: `*_View.yaml`. One node, with its children inside it.",
-                 defs, {"type": "object", "allOf": [{"$ref": "#/definitions/node"}]})
-
-
-def _component() -> dict[str, Any]:
-    defs = _only(_definitions(fragment=True), "node")
-    return _root("tess-ui-component-schema.json", "Tesserae component fragment",
-                 "A Tesserae component fragment: `*_Component.yaml`. One node, with `params:` naming the `{{ }}` it fills in.",
-                 defs, {"type": "object", "allOf": [{"$ref": "#/definitions/node"}]})
+# -- the files --------------------------------------------------------------------------
 
 
 def _theme() -> dict[str, Any]:
     from tess_ui import tokens
-    from tess_ui.spec import build, marker
+    from tess_ui.spec import build
 
-    # A component's stylesheet (`<Name>_Stylesheet.yaml`, 0.3.4) is a stylesheet whose values may be the
-    # component's `{{ parameters }}`, so a stylesheet's styles are as loose as a fragment's.
+    # The rules of a theme's own `Styles` (and of a built-in fragment's stylesheet, which may use the fragment's `{{ parameters }}`) are as loose as a
+    # fragment's styles.
     defs = _only(_definitions(fragment=True), "style", "color", "fill")
     defs["rule"] = {
         "type": "object",
@@ -638,24 +333,13 @@ def _theme() -> dict[str, Any]:
                              for role in sorted(tokens.color_scheme((0x67, 0x50, 0xA4, 0xFF)))},
               "additionalProperties": False}
     return _root("tess-ui-theme-schema.json", "Tesserae theme or stylesheet",
-                 "A theme or stylesheet file: `styles:` rules, and for a theme also a `seed`, `dark`, `colors`, `typography` and `components`.",
+                 "A theme file as the TDL front end reads it (`<Name>_Theme.tdl`): `styles` rules, a `seed`, `dark`, `colors`, `typography` and `components`.",
                  defs, {"type": "object", "additionalProperties": False, "properties": {
-                     marker.KEY: marker.SCHEMA,
                      "seed": {"$ref": "#/definitions/color", "description": "The colour the theme's palette is made from."},
                      "dark": {"type": "boolean", "description": "Whether it is the dark scheme."},
                      "colors": colors, "typography": typography,
                      "components": {"type": "object", "description": "Per-component shape and elevation."},
                      "styles": {"type": "array", "items": {"$ref": "#/definitions/rule"}, "description": "Style rules, in order."}}})
-
-
-def _style_file() -> dict[str, Any]:
-    defs = _only(_definitions(fragment=False), "style", "color", "fill")
-    return _root("tess-ui-style-schema.json", "Tesserae style file",
-                 "A style file, `*_Style.yaml`: one node's style, shared by the views and rules that name it "
-                 "(`style: row_Style.yaml`).",
-                 defs, {"type": "object", "required": ["style"], "additionalProperties": False, "properties": {
-                     "id": {"type": "string", "description": "A name for the style, such as `row_style`. It is for the reader."},
-                     "style": {"$ref": "#/definitions/style", "description": "The style fields, as in a node's `style:`."}}})
 
 
 def _style_definitions() -> dict[str, Any]:
@@ -689,14 +373,13 @@ def _widget() -> dict[str, Any]:
     views = {name: library.decl(name) for name in shipped_views()}
     out = json_schema(views, _style_definitions())
     return {"$schema": DRAFT, "$id": SITE + "tess-ui-widget-schema.json",
-            "description": "A view of the current language: `*_View.yaml`. A tree of `widget:` nodes, with a branch for each built-in widget and each view "
-                           "Tesserae ships; `tesserae schema --project` adds the project's own.",
+            "description": "A view of the current language, as the TDL front end reads it from `*_View.tdl`: a tree of `widget` nodes, with a branch for each "
+                           "built-in widget and each view Tesserae ships; `tesserae schema --project` adds the project's own.",
             **{k: v for k, v in out.items() if k != "$schema"}}
 
 
 def _stylesheet() -> dict[str, Any]:
-    """A stylesheet of rules (`*_Stylesheet.yaml`): `widget:`, `variant:`, `part:`, `state:` and a `style:` of fields."""
-    from tess_ui.spec import marker
+    """A stylesheet of rules (`*_Stylesheet.tdl`), as the front end reads it: `widget`, `variant`, `part`, `state` and a `style` of fields."""
     from tess_ui.spec.rules import STATES
 
     defs = _style_definitions()
@@ -716,16 +399,14 @@ def _stylesheet() -> dict[str, Any]:
             "style": {"$ref": "#/definitions/style", "description": "The style fields the rule sets."}},
         "additionalProperties": False}
     return _root("tess-ui-stylesheet-schema.json", "Tesserae stylesheet of rules",
-                 "A stylesheet of rules: `<Name>_Stylesheet.yaml`, or the file `App(stylesheet=)` names. Each rule says which widgets it is for and the style it sets.",
+                 "A stylesheet of rules: `<Name>_Stylesheet.tdl`, or the file `App(stylesheet=)` names, as the TDL front end reads it. Each rule says which "
+                 "widgets it is for and the style it sets.",
                  defs, {"type": "object", "required": ["styles"], "additionalProperties": False, "properties": {
-                     marker.KEY: marker.SCHEMA,
                      "styles": {"type": "array", "items": rule, "description": "The rules, in order: a later rule wins a tie."}}})
 
 
 def schemas() -> dict[str, dict[str, Any]]:
-    return {"tess-ui-yaml-schema.json": _view(), "tess-ui-widget-schema.json": _widget(), "tess-ui-stylesheet-schema.json": _stylesheet(),
-            "tess-ui-theme-schema.json": _theme(), "tess-ui-component-schema.json": _component(),
-            "tess-ui-style-schema.json": _style_file()}
+    return {"tess-ui-widget-schema.json": _widget(), "tess-ui-stylesheet-schema.json": _stylesheet(), "tess-ui-theme-schema.json": _theme()}
 
 
 def render(schema: dict[str, Any]) -> str:
@@ -748,7 +429,7 @@ def main(argv: list[str] | None = None) -> int:
                 folder.mkdir(parents=True, exist_ok=True)
                 path.write_text(text, encoding="utf-8")
     if args.check and stale:
-        print("out of date: " + ", ".join(stale) + " -- run tools/generate_yaml_schema.py", file=sys.stderr)
+        print("out of date: " + ", ".join(stale) + " -- run tools/generate_schema.py", file=sys.stderr)
         return 1
     return 0
 
