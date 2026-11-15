@@ -149,18 +149,24 @@ class VM(ViewModel):
         self.log.append(self.ref.get())
 
 
-CALL = '{widget: TokenButton, name: tb, tokens: "{{ tokens }}", value: "{{ ref }}", open: "{{ pop }}", on_pick: picked%s}'
+CALL = "TokenButton { Name: tb, Tokens: <| tokens |>, Value: <| ref |>, Open: <| pop |>, On_Pick: picked%s }"
 
 
 def opened(tmp_path, call=CALL, options="", ref=None, size=(560, 700), dark=False):
     (tmp_path / "Views").mkdir(parents=True, exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""tesserae: 0.6
-name: main
-widget: Container
-style: {{flex_direction: vertical, gap: 16, padding: 16, width: {size[0]}, height: {size[1]}}}
-children:
-  - {call % options}
-  - {{widget: Rect, name: elsewhere, style: {{width: 80, height: 40, background: surface_variant}}}}
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Gap: 16, Padding: 16, Width: {size[0]}, Height: {size[1]} }}
+  Children {{
+    {call % options}
+    Rect {{ Name: elsewhere, Style {{ Width: 80, Height: 40, Background: surface_variant }} }}
+  }}
+}}
 """)
     app = App(root=tmp_path, width=size[0], height=size[1], theme_seed=(0x67, 0x50, 0xA4, 0xFF), dark=dark)
     app.bind(VM)
@@ -314,7 +320,7 @@ def test_a_press_on_a_row_writes_its_ref_calls_on_pick_and_closes(tmp_path):
 
 
 def test_close_on_pick_false_keeps_the_list_open(tmp_path):
-    view, vm = opened(tmp_path, options=", close_on_pick: false")
+    view, vm = opened(tmp_path, options=", Close_On_Pick: false")
     open_it(view)
     press(view, row(view, "$space.md"))
     assert vm.ref.get() == "$space.md" and vm.pop.get() is True and view._shown_layers
@@ -368,7 +374,7 @@ def test_up_down_and_enter_in_the_search_field_move_the_cursor_and_pick(tmp_path
 
 
 def test_the_list_has_the_arrows_pages_home_end_enter_and_space(tmp_path):
-    view, vm = opened(tmp_path, options=", rows: 3")
+    view, vm = opened(tmp_path, options=", Rows: 3")
     open_it(view)
     key_in_list(view, "end")
     assert ctl(view).cursor_ref.get() == "$font.body" and ctl(view).scroll.get() == 3 * 56
@@ -386,7 +392,7 @@ def test_the_list_has_the_arrows_pages_home_end_enter_and_space(tmp_path):
 
 
 def test_the_list_opens_scrolled_so_that_the_value_shows_with_the_cursor_on_it(tmp_path):
-    view, vm = opened(tmp_path, options=", rows: 3", ref="$font.body")
+    view, vm = opened(tmp_path, options=", Rows: 3", ref="$font.body")
     open_it(view)
     assert ctl(view).cursor_ref.get() == "$font.body" and ctl(view).scroll.get() == 3 * 56
 
@@ -403,7 +409,9 @@ def test_many_tokens_build_only_the_rows_in_view(tmp_path):
 
 
 def test_groups_and_preferred_names_reach_the_list(tmp_path):
-    view, vm = opened(tmp_path, call='{widget: TokenButton, name: tb, tokens: "{{ tokens }}", groups: [{name: Motion, tokens: [{name: motion.fast, ref: "$motion.fast", value: 100, doc: Short}]}], preferred: ["$font.body"], value: "{{ ref }}", open: "{{ pop }}"%s}')
+    view, vm = opened(tmp_path, call=("TokenButton { Name: tb, Tokens: <| tokens |>, "
+                                 'Groups { Item { Name: Motion, Tokens { Item { Name: "motion.fast", Ref: "$motion.fast", Value: 100, Doc: Short } } } }, '
+                                 'Preferred: ["$font.body"], Value: <| ref |>, Open: <| pop |>%s }'))
     open_it(view)
     assert shown(view)[:2] == ["$font.body", "$color.primary"] and shown(view)[-1] == "$motion.fast"
     assert row_part(view, "$motion.fast", "row_detail").get("text") == "Motion · Short"
@@ -428,7 +436,7 @@ def test_a_ref_set_by_the_app_while_the_list_is_open_moves_the_selection_and_the
 
 
 def test_the_list_is_empty_when_no_tokens_are_given_and_says_so(tmp_path):
-    view, vm = opened(tmp_path, call='{widget: TokenButton, name: tb, value: "{{ ref }}", open: "{{ pop }}"%s}')
+    view, vm = opened(tmp_path, call="TokenButton { Name: tb, Value: <| ref |>, Open: <| pop |>%s }")
     open_it(view)
     assert ctl(view).count.get() == 0 and nodes(view, "layer.surface.empty").get("text") == "No token matches"
 
@@ -500,7 +508,7 @@ def test_a_press_outside_closes_the_list_and_the_button_closes_it_too(tmp_path):
 
 
 def test_a_disabled_button_does_not_open_and_the_list_can_be_opened_from_the_viewmodel(tmp_path):
-    view, vm = opened(tmp_path / "a", options=", disabled: true")
+    view, vm = opened(tmp_path / "a", options=", Disabled: true")
     press(view, trigger(view))
     key = view.window.simulate
     trigger(view).focus()
@@ -517,7 +525,7 @@ def test_a_disabled_button_does_not_open_and_the_list_can_be_opened_from_the_vie
 
 
 def test_the_names_a_screen_reader_hears(tmp_path):
-    view, vm = opened(tmp_path, options=", label: Accent")
+    view, vm = opened(tmp_path, options=", Label: Accent")
     assert trigger(view).get("role") == "button" and trigger(view).get("label") == "Accent: $color.primary" and trigger(view).get("expanded") is False
     assert trigger(view).get("focusable")
     open_it(view)
@@ -530,7 +538,7 @@ def test_the_names_a_screen_reader_hears(tmp_path):
 
 def test_an_unknown_property_of_the_button_is_named(tmp_path):
     with pytest.raises(LoadError, match="colour"):
-        opened(tmp_path, call="{widget: TokenButton, name: tb, colour: red%s}")
+        opened(tmp_path, call="TokenButton { Name: tb, Colour: red%s }")
 
 
 def test_the_search_is_empty_each_time_the_list_opens(tmp_path):

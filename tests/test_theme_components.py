@@ -6,8 +6,9 @@ then the component's), over the fragment's own. A FAB's entry follows its
 size (`fab.small`), which its fragments name themselves.
 """
 
+import json
+
 import pytest
-import yaml
 from helpers import elevation
 from tess_re import Window
 
@@ -37,7 +38,7 @@ def test_component_key(fragment, key):
 
 
 def _view(component, with_, **theme):
-    spec = expand_components_to_spec(yaml.safe_dump({"id": "w", "component": component, "with": with_}))
+    spec = expand_components_to_spec(json.dumps({"id": "w", "component": component, "with": with_}))
     view = View(spec, theme_seed=SEED, **theme)
     view.window.advance(16)
     return view
@@ -47,7 +48,7 @@ CARD = ("CardElevated", {"width": 200, "height": 100})
 
 
 def test_the_expander_tags_a_fragment_root_only():
-    spec = expand_components_to_spec(yaml.safe_dump({"id": "w", "component": "Dialog", "with": {
+    spec = expand_components_to_spec(json.dumps({"id": "w", "component": "Dialog", "with": {
         "headline": "H", "text": "S", "width": 300, "height": 200, "scrim_width": 800, "scrim_height": 600}}))
     assert spec["component_of"] == "Dialog"
     assert all("component_of" not in child for child in spec.get("children") or [])

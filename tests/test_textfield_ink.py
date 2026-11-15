@@ -1,24 +1,17 @@
 """#93: a TextField's text is the theme's `on_surface`, so it is light in a dark scheme and dark in a light one."""
 
-import yaml
+import copy
 
 from tess_ui import App, View
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
-SPEC = """
-id: root
-kind: Container
-style: {width: 300, height: 120, background: surface}
-children:
-  - id: name
-    kind: TextField
-    text: {content: "Hello", typography_role: body_large}
-    style: {width: 240, height: 48, background: surface_container_highest, corner_radius: 4}
-"""
+SPEC = {"id": "root", "kind": "Container", "style": {"width": 300, "height": 120, "background": "surface"}, "children": [
+    {"id": "name", "kind": "TextField", "text": {"content": "Hello", "typography_role": "body_large"},
+     "style": {"width": 240, "height": 48, "background": "surface_container_highest", "corner_radius": 4}}]}
 
 
 def _view(dark, extra=None):
-    spec = yaml.safe_load(SPEC)
+    spec = copy.deepcopy(SPEC)
     if extra:
         spec["children"][0]["style"].update(extra)
     app = App(width=300, height=120, theme_seed=SEED, dark=dark)

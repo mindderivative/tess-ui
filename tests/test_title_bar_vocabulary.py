@@ -1,4 +1,4 @@
-"""0.3.0 M3 Phase 1 (#49): a title bar's vocabulary in YAML views.
+"""0.3.0 M3 Phase 1 (#49): a title bar's vocabulary in views.
 `window_region: drag | none` on any node, and the handler names
 `window.minimize`, `window.maximize`, `window.restore`,
 `window.toggle_maximized` and `window.close`, which call the app's
@@ -6,64 +6,74 @@ window actions without a ViewModel method.
 """
 
 import pytest
-import yaml
 
 from tess_ui import App, View, ViewModel
 from tess_ui.spec.build import SpecBuildError
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 
+#: the older spec form, for the tests that hand a spec to `View` / `reconcile` directly
 BAR = {"id": "root", "kind": "Container", "style": {"width": 400, "height": 300, "flex_direction": "vertical"},
        "children": [{"id": "bar", "kind": "Rect", "window_region": "drag",
                      "style": {"width": 400, "height": 40, "background": "#6750A4"}},
                     {"id": "body", "kind": "Rect", "style": {"width": 400, "height": 200, "background": "#FFFFFF"}}]}
 
 
-def _file(tmp_path, spec, name="Home_View.yaml"):
-    path = tmp_path / name
-    path.write_text(yaml.safe_dump(spec), encoding="utf-8")
-    return path
+def _text(children, name="Home"):
+    """A view file (TDL) named `name` whose root holds `children`."""
+    return (f"---\nTDL: 0.2\nName: {name}\n---\nContainer {{\n  Name: {name.lower()}\n"
+            f"  Style {{ Width: 400, Height: 300, Flex_Direction: vertical }}\n  Children {{\n{children}  }}\n}}\n")
 
 
-def _shown(app, path, name):
-    """A view in the window (a built view isn't, until it's shown), so
-    presses and clicks reach it."""
-    view = app.build_view(path)
-    app.register(name, view, None)
-    app.show(name)
+BAR_TDL = ("    Rect { Name: bar, Window_Region: drag, Style { Width: 400, Height: 40, Background: \"#6750A4\" } }\n"
+           "    Rect { Name: body, Style { Width: 400, Height: 200, Background: \"#FFFFFF\" } }\n")
+
+
+def _opened(tmp_path, app, children, name="Home"):
+    """The view `name` written to the project, opened and shown on `app` (a view isn't on the window until it is shown, so presses and clicks reach it)."""
+    (tmp_path / "Views").mkdir(exist_ok=True)
+    (tmp_path / "Views" / f"{name}_View.tdl").write_text(_text(children, name), encoding="utf-8")
+    view = app.open_view(name)
+    app.show(name.lower())
     return view
 
 
+def _app(tmp_path, **kwargs):
+    app = App(root=tmp_path, **kwargs)
+    app.bind(ViewModel, views=["home", "other", "minimize", "maximize", "restore", "close"])
+    return app
+
+
 def test_window_region_reaches_tre(tmp_path):
-    app = App()
-    view = app.build_view(_file(tmp_path, BAR))
-    assert view.node("bar").get("window_region") == "drag" and view.node("body").get("window_region") is None
-    none = {**BAR, "children": [{**BAR["children"][0], "window_region": "none"}]}
-    assert app.build_view(_file(tmp_path, none, "Other_View.yaml")).node("bar").get("window_region") == "none"
+    app = _app(tmp_path)
+    view = _opened(tmp_path, app, BAR_TDL)
+    assert view.node("root.bar").get("window_region") == "drag" and view.node("root.body").get("window_region") is None
+    other = _opened(tmp_path, app, BAR_TDL.replace("drag", "none"), "Other")
+    assert other.node("root.bar").get("window_region") == "none"
 
 
 def test_a_press_on_the_bar_moves_the_window(tmp_path):
     """`tess_re` takes a primary press on a drag region: the pressed node gets
     `pointer_cancel`, not `pointer_up` or a click."""
-    app = App()
-    view = _shown(app, _file(tmp_path, BAR), "Home")
+    app = _app(tmp_path)
+    view = _opened(tmp_path, app, BAR_TDL)
     seen = []
     for event in ("pointer_up", "pointer_cancel"):
-        view.node("bar").on(event, lambda e, event=event: seen.append(event))
+        view.node("root.bar").on(event, lambda e, event=event: seen.append(event))
     app.window.advance(0)
-    app.window.simulate("pointer_down", node=view.node("bar"))
-    app.window.simulate("pointer_up", node=view.node("bar"))
+    app.window.simulate("pointer_down", node=view.node("root.bar"))
+    app.window.simulate("pointer_up", node=view.node("root.bar"))
     assert seen == ["pointer_cancel"]
 
 
 def test_a_wrong_window_region_is_one_line(tmp_path):
-    bad = {**BAR, "children": [{**BAR["children"][0], "window_region": "title"}]}
-    with pytest.raises((SpecBuildError, ValueError), match='widget "bar": window_region is "drag" or "none", got '):
-        App().build_view(_file(tmp_path, bad))
+    app = _app(tmp_path)
+    with pytest.raises((SpecBuildError, ValueError), match="'window_region:' is one of drag, none, got 'title'"):
+        _opened(tmp_path, app, BAR_TDL.replace("drag", "title"))
 
 
-def test_reconcile_follows_window_region(tmp_path):
-    view = App().build_view(_file(tmp_path, BAR))
+def test_reconcile_follows_window_region():
+    view = View(BAR)
     dropped = {**BAR, "children": [{k: v for k, v in BAR["children"][0].items() if k != "window_region"},
                                    BAR["children"][1]]}
     view.reconcile(spec=dropped)
@@ -73,47 +83,50 @@ def test_reconcile_follows_window_region(tmp_path):
 
 
 def test_a_component_call_can_be_the_title_bar(tmp_path):
-    spec = {"id": "root", "kind": "Container", "style": {"width": 400, "height": 300},
-            "children": [{"id": "top", "component": "TopAppBar", "with": {"title": "Notes", "width": 400},
-                          "window_region": "drag"}]}
-    view = App(theme_seed=SEED).build_view(_file(tmp_path, spec))  # TopAppBar's colours are theme roles
-    assert view.node("top").get("window_region") == "drag"
+    app = _app(tmp_path, theme_seed=SEED)  # TopAppBar's colours are theme roles
+    view = _opened(tmp_path, app, "    TopAppBar { Name: top, Title: Notes, Window_Region: drag, Style { Width: 400 } }\n")
+    assert view.node("root.top").get("window_region") == "drag"
 
 
 # -- the window.* handlers ----------------------------------------------------------
 
 def _button(action):
+    return ("    Rect {\n      Name: button\n      Handlers { On_Click { Call { Action: window." + action + " } } }\n"
+            "      Style { Width: 40, Height: 40, Background: \"#6750A4\" }\n    }\n")
+
+
+def test_the_handlers_call_the_apps_actions(tmp_path, monkeypatch):
+    app = _app(tmp_path)
+    view = _opened(tmp_path, app, _button("toggle_maximized"))
+    app.window.simulate("click", node=view.node("root.button"))
+    assert app.maximized.get() is True  # before run(): how the window opens
+    app.window.simulate("click", node=view.node("root.button"))
+    assert app.maximized.get() is False
+    called = []
+    for action in ("minimize", "maximize", "restore", "close"):
+        monkeypatch.setattr(app, action, lambda action=action: called.append(action))
+        other = _opened(tmp_path, app, _button(action), action.title())
+        app.window.simulate("click", node=other.node("root.button"))
+    assert called == ["minimize", "maximize", "restore", "close"]
+
+
+def _button_spec(action):
+    """The older spec form of the same button, for a `View` built from a spec: only that path checks a window action's name when a ViewModel attaches
+    (a composed view's `window.<name>` is looked up when it runs)."""
     return {"id": "root", "kind": "Container", "style": {"width": 400, "height": 300},
             "children": [{"id": "button", "kind": "Rect", "handlers": {"on_click": f"window.{action}"},
                           "style": {"width": 40, "height": 40, "background": "#6750A4"}}]}
 
 
-def test_the_handlers_call_the_apps_actions(tmp_path, monkeypatch):
-    app = App()
-    view = _shown(app, _file(tmp_path, _button("toggle_maximized")), "Home")
-    ViewModel(view)  # handlers are wired with the ViewModel; this one has no method for them
-    app.window.simulate("click", node=view.node("button"))
-    assert app.maximized.get() is True  # before run(): how the window opens
-    app.window.simulate("click", node=view.node("button"))
-    assert app.maximized.get() is False
-    called = []
-    for action in ("minimize", "maximize", "restore", "close"):
-        monkeypatch.setattr(app, action, lambda action=action: called.append(action))
-        other = _shown(app, _file(tmp_path, _button(action), f"{action.title()}_View.yaml"), action)
-        ViewModel(other)
-        app.window.simulate("click", node=other.node("button"))
-    assert called == ["minimize", "maximize", "restore", "close"]
-
-
-def test_an_unknown_window_action_is_one_line(tmp_path):
-    view = App().build_view(_file(tmp_path, _button("fullscreen")))
+def test_an_unknown_window_action_is_one_line():
+    view = View(_button_spec("fullscreen"))
     with pytest.raises(ValueError, match='widget "button": handler "on_click" names "window.fullscreen", which '
                                          "isn't a window action \\(window.minimize, "):
         ViewModel(view)
 
 
 def test_a_window_action_needs_an_apps_window():
-    view = View(_button("close"))  # a window of its own, no App
+    view = View(_button_spec("close"))  # a window of its own, no App
     with pytest.raises(ValueError, match="but this view isn't on an App's window"):
         ViewModel(view)
 

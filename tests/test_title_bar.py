@@ -6,9 +6,8 @@ which call the app's actions and follow `app.maximized`.
 import sys
 
 import pytest
-import yaml
 
-from tess_ui import App, ViewModel
+from tess_ui import App, View, ViewModel
 from tess_ui.icons import icon_path
 from tess_ui.spec.title_bar import BUTTONS, TitleBarError, expand_title_bars
 
@@ -21,22 +20,31 @@ def _page(bar):
                                "style": {"width": 600, "height": 300, "background": "surface"}}]}
 
 
-def _app_with(tmp_path, bar, **app_kwargs):
-    path = tmp_path / "Home_View.yaml"
-    path.write_text(yaml.safe_dump(_page(bar)), encoding="utf-8")
-    app = App(width=600, height=400, theme_seed=SEED, borderless=True, **app_kwargs)
+TDL = "---\nTDL: 0.2\nName: Home\n---\n"
+
+
+def _file_text(bar_tdl):
+    """The view file: a TitleBar block (`bar_tdl`, TDL) over a body."""
+    return (TDL + "Container {\n  Name: home\n  Style { Width: 600, Height: 400, Flex_Direction: vertical }\n  Children {\n" + bar_tdl
+            + "    Rect { Name: body, Style { Width: 600, Height: 300, Background: surface } }\n  }\n}\n")
+
+
+def _app_with(tmp_path, bar_tdl, **app_kwargs):
+    (tmp_path / "Views").mkdir(exist_ok=True)
+    (tmp_path / "Views" / "Home_View.tdl").write_text(_file_text(bar_tdl), encoding="utf-8")
+    app = App(root=tmp_path, width=600, height=400, theme_seed=SEED, borderless=True, **app_kwargs)
     # The bar as Windows and Linux show it, with its own buttons: on macOS
     # the OS's traffic lights show instead and they hide (test_title_bar_macos).
     app._native_controls.set(False)
-    view = app.build_view(path)
-    app.register("Home", view, None)
-    app.show("Home")
-    ViewModel(view)
+    app.bind(ViewModel, views=["home"])
+    view = app.open_view("Home")
+    app.show("home")
     app.window.advance(16)
     return app, view
 
 
 BAR = {"id": "bar", "kind": "TitleBar", "title": "Notes", "icon": "home", "style": {"width": 600}}
+BAR_TDL = "    TitleBar { Name: bar, Title: Notes, Icon: home, Style { Width: 600 } }\n"
 
 
 def test_the_expansion():
@@ -60,20 +68,20 @@ def test_the_window_glyphs_are_in_the_icon_set():
 
 
 def test_it_lays_out_as_a_desktop_title_bar(tmp_path):
-    app, view = _app_with(tmp_path, BAR)
-    x = {i: view.node(i).get("layout_x") for i in ("bar.icon", "bar.title", "bar.content", "bar.minimize",
-                                                     "bar.maximize", "bar.close")}
-    assert x["bar.icon"] < x["bar.title"] < x["bar.content"] < x["bar.minimize"]
-    assert x["bar.maximize"] - x["bar.minimize"] == x["bar.close"] - x["bar.maximize"] == 46  # flush
-    assert x["bar.close"] + 46 == 600  # at the right edge
-    assert view.node("bar").get("layout_height") == 40.0 and view.node("bar").get("window_region") == "drag"
+    app, view = _app_with(tmp_path, BAR_TDL)
+    x = {i: view.node(i).get("layout_x") for i in ("root.bar.icon", "root.bar.title", "root.bar.content", "root.bar.minimize",
+                                                     "root.bar.maximize", "root.bar.close")}
+    assert x["root.bar.icon"] < x["root.bar.title"] < x["root.bar.content"] < x["root.bar.minimize"]
+    assert x["root.bar.maximize"] - x["root.bar.minimize"] == x["root.bar.close"] - x["root.bar.maximize"] == 46  # flush
+    assert x["root.bar.close"] + 46 == 600  # at the right edge
+    assert view.node("root.bar").get("layout_height") == 40.0 and view.node("root.bar").get("window_region") == "drag"
 
 
 def test_the_buttons_act_and_maximize_follows_the_window(tmp_path, monkeypatch):
-    app, view = _app_with(tmp_path, BAR)
-    glyph = lambda name: view.node(f"bar.maximize.{name}").get("opacity")  # noqa: E731
+    app, view = _app_with(tmp_path, BAR_TDL)
+    glyph = lambda name: view.node(f"root.bar.maximize.{name}").get("opacity")  # noqa: E731
     assert (glyph("window_maximize"), glyph("window_restore")) == (1.0, 0.0)
-    app.window.simulate("click", node=view.node("bar.maximize"))
+    app.window.simulate("click", node=view.node("root.bar.maximize"))
     assert app.maximized.get() is True  # before run(): how it opens
     assert (glyph("window_maximize"), glyph("window_restore")) == (0.0, 1.0)
     app.window.simulate("maximized", maximized=False)  # as the OS would report a restore
@@ -81,8 +89,8 @@ def test_the_buttons_act_and_maximize_follows_the_window(tmp_path, monkeypatch):
     called = []
     monkeypatch.setattr(app, "minimize", lambda: called.append("minimize"))
     monkeypatch.setattr(app, "close", lambda: called.append("close"))
-    app.window.simulate("click", node=view.node("bar.minimize"))
-    app.window.simulate("click", node=view.node("bar.close"))
+    app.window.simulate("click", node=view.node("root.bar.minimize"))
+    app.window.simulate("click", node=view.node("root.bar.close"))
     assert called == ["minimize", "close"]
 
 
@@ -90,9 +98,9 @@ def test_the_bar_drags_and_the_buttons_dont(tmp_path):
     """A press where the title is moves the window (the bar, the drag
     region, gets `pointer_cancel`); a button has a click handler, so a
     press on it is pressed and released as usual."""
-    app, view = _app_with(tmp_path, BAR)
+    app, view = _app_with(tmp_path, BAR_TDL)
     seen = []
-    for node_id in ("bar", "bar.close"):  # Tesserae's shared listeners: `node.on` would replace its own
+    for node_id in ("root.bar", "root.bar.close"):  # Tesserae's shared listeners: `node.on` would replace its own
         for event in ("pointer_up", "pointer_cancel"):
             view._events.listen(view.node(node_id), event, lambda e, n=node_id, ev=event: seen.append((n, ev)))
 
@@ -104,21 +112,21 @@ def test_the_bar_drags_and_the_buttons_dont(tmp_path):
         app.window.simulate("pointer_up", x=x, y=y)
 
     app.window.advance(0)
-    press("bar.title")
-    assert seen == [("bar", "pointer_cancel")]
+    press("root.bar.title")
+    assert seen == [("root.bar", "pointer_cancel")]
     seen.clear()
     app.window.advance(1000)  # not a double-click
-    press("bar.close")
-    assert ("bar.close", "pointer_up") in seen and ("bar", "pointer_cancel") not in seen
+    press("root.bar.close")
+    assert ("root.bar.close", "pointer_up") in seen and ("root.bar", "pointer_cancel") not in seen
 
 
 def test_its_children_are_the_content(tmp_path):
-    bar = {**BAR, "children": [{"id": "search", "kind": "Rect",
-                                "style": {"width": 120, "height": 24, "background": "surface_container"}}]}
+    bar = ("    TitleBar {\n      Name: bar, Title: Notes, Icon: home, Style { Width: 600 }\n      Children {\n"
+           "        Rect { Name: search, Style { Width: 120, Height: 24, Background: surface_container } }\n      }\n    }\n")
     app, view = _app_with(tmp_path, bar)
-    search = view.node("search")
-    assert search.get("layout_x") >= view.node("bar.content").get("layout_x")
-    assert search.get("layout_x") + 120 <= view.node("bar.minimize").get("layout_x")
+    search = view.node("root.bar.search")
+    assert search.get("layout_x") >= view.node("root.bar.content").get("layout_x")
+    assert search.get("layout_x") + 120 <= view.node("root.bar.minimize").get("layout_x")
 
 
 def test_fewer_buttons_and_no_icon_or_title():
@@ -141,8 +149,8 @@ def test_a_title_bar_written_wrongly_is_one_line(bar, message):
         expand_title_bars(_page(bar))
 
 
-def test_reconcile_and_the_stylesheet_classes(tmp_path):
-    app, view = _app_with(tmp_path, BAR)
+def test_reconcile_and_the_stylesheet_classes():
+    view = View(_page(BAR), theme_seed=SEED)  # the older spec form: `reconcile` takes the spec a view was built from
     view.reconcile(_page({**BAR, "title": "Notes, edited"}))
     assert view.node("bar.title").get("text") == "Notes, edited"
     assert expand_title_bars(_page({**BAR, "classes": ["mine"]}))["children"][0]["classes"] == ["title_bar", "mine"]
@@ -150,14 +158,14 @@ def test_reconcile_and_the_stylesheet_classes(tmp_path):
 
 @pytest.mark.parametrize("height", [32, 56])
 def test_any_height_and_every_part_follows(tmp_path, height):
-    app, view = _app_with(tmp_path, {**BAR, "style": {"width": 600, "height": height}})
+    app, view = _app_with(tmp_path, f"    TitleBar {{ Name: bar, Title: Notes, Icon: home, Style {{ Width: 600, Height: {height} }} }}\n")
     g = lambda i, k: view.node(i).get(k)  # noqa: E731
-    assert g("bar", "layout_height") == height
-    for part in ("bar.inset", "bar.content", "bar.buttons", "bar.minimize", "bar.maximize", "bar.close"):
+    assert g("root.bar", "layout_height") == height
+    for part in ("root.bar.inset", "root.bar.content", "root.bar.buttons", "root.bar.minimize", "root.bar.maximize", "root.bar.close"):
         assert g(part, "layout_height") == height, part
-    for glyph in ("bar.minimize.window_minimize", "bar.close.close", "bar.maximize.window_maximize",
-                  "bar.maximize.window_restore"):  # centred at any height
-        assert g(glyph, "layout_y") - g("bar", "layout_y") == (height - 16) / 2, glyph
+    for glyph in ("root.bar.minimize.window_minimize", "root.bar.close.close", "root.bar.maximize.window_maximize",
+                  "root.bar.maximize.window_restore"):  # centred at any height
+        assert g(glyph, "layout_y") - g("root.bar", "layout_y") == (height - 16) / 2, glyph
 
 
 def test_the_example_builds(monkeypatch):

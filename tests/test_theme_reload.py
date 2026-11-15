@@ -22,7 +22,8 @@ import tess_ui.fonts as fonts
 from tess_ui import App, tokens
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
-RECT = 'id: box\nkind: Rect\nstyle: {width: 10, height: 10, background: "#112233"}\n'
+RECT = '---\nTDL: 0.2\nName: {name}\n---\nRect {{ Name: {name}, Style {{ Width: 10, Height: 10, Background: "#112233" }} }}\n'
+HEAD = "---\nTDL: 0.2\nName: Brand\n---\n"
 
 
 @pytest.fixture(autouse=True)
@@ -45,10 +46,11 @@ def _write(path: Path, text: str) -> Path:
 
 
 def _pair(tmp_path: Path, prefix: str):
-    view = _write(tmp_path / f"{prefix}_View.yaml", RECT)
+    """The view `prefix` (one Rect, its root: node `root`) written to the project, and the ViewModel that serves it."""
+    view = _write(tmp_path / "Views" / f"{prefix}_View.tdl", RECT.format(name=prefix.lower()))
     vm_path = _write(
         tmp_path / f"{prefix}_ViewModel.py",
-        f"from tess_ui import ViewModel\n\n\nclass {prefix}ViewModel(ViewModel):\n    pass\n",
+        f"from tess_ui import ViewModel\n\n\nclass {prefix}ViewModel(ViewModel):\n    views = {prefix.lower()!r}\n",
     )
     spec = importlib.util.spec_from_file_location(vm_path.stem, vm_path)
     module = importlib.util.module_from_spec(spec)
@@ -57,13 +59,20 @@ def _pair(tmp_path: Path, prefix: str):
     return view, getattr(module, f"{prefix}ViewModel")
 
 
+def _open(app: App, tmp_path: Path, prefix: str):
+    """The view `prefix`, opened on `app`."""
+    _, vm = _pair(tmp_path, prefix)
+    app.bind(vm)
+    return app.open_view(prefix)
+
+
 def _theme(elevation: int, primary: str | None = None, seed: str | None = None) -> str:
-    text = f"styles:\n  - kind: Rect\n    style: {{elevation: {elevation}}}\n"
-    if primary is not None:
-        text += f'colors: {{primary: "{primary}"}}\n'
+    text = HEAD + "Theme {\n"
     if seed is not None:
-        text += f'seed: "{seed}"\n'
-    return text
+        text += f'  Seed: "{seed}"\n'
+    if primary is not None:
+        text += f'  Colors {{ Primary: "{primary}" }}\n'
+    return text + f"  Styles {{ Item {{ Kind: Rect, Style {{ Elevation: {elevation} }} }} }}\n}}\n"
 
 
 def _edit_until_queued(handle: FakeHandle, path: Path, text: str, attempts: int = 40):
@@ -96,9 +105,9 @@ def watching():
 def test_the_window_is_never_themed(tmp_path: Path):
     """Since M42 nothing `tess_re` draws reads the window's theme, so `App`
     no longer sets it (`tess_re` 0.3.5 removes `Window.set_theme`)."""
-    app = App(theme_seed=SEED, custom_theme_spec={"colors": {"primary": "#0000FF"}})
-    app.load(*_pair(tmp_path, "Home"))
-    window = app.show("Home")
+    app = App(root=tmp_path, theme_seed=SEED, custom_theme_spec={"colors": {"primary": "#0000FF"}})
+    _open(app, tmp_path, "Home")
+    window = app.show("home")
     app.set_theme_specs(None, {"colors": {"primary": "#00FF00"}})
     app.set_dark(False)
     assert window_unthemed(window)
@@ -106,23 +115,23 @@ def test_the_window_is_never_themed(tmp_path: Path):
 
 
 def test_an_app_with_no_seed_has_no_scheme(tmp_path: Path):
-    app = App()
-    app.load(*_pair(tmp_path, "Home"))
+    app = App(root=tmp_path)
+    _open(app, tmp_path, "Home")
     assert app.theme.role("primary") is None
 
 
 def test_the_app_theme_follows_the_views_seed_precedence(tmp_path: Path):
     """A `View` prefers `theme_seed` to the custom theme's `seed:`."""
-    theme = _write(tmp_path / "brand.yaml", _theme(1, seed="#FF0000"))
-    explicit = App(theme_seed=SEED, custom_theme=theme)
-    from_file = App(custom_theme=theme)
+    theme = _write(tmp_path / "Brand_Theme.tdl", _theme(1, seed="#FF0000"))
+    explicit = App(root=tmp_path, theme_seed=SEED, custom_theme=theme)
+    from_file = App(root=tmp_path, custom_theme=theme)
     assert explicit.theme.role("primary") == tokens.color_scheme(SEED, True)["primary"]
     assert from_file.theme.role("primary") == tokens.color_scheme((0xFF, 0, 0, 0xFF), True)["primary"]
 
 
 def test_a_default_themes_colors_reach_the_app_theme(tmp_path: Path):
-    base = _write(tmp_path / "base.yaml", _theme(1, primary="#00FF00"))
-    app = App(theme_seed=SEED, default_theme=base)
+    base = _write(tmp_path / "Base_Theme.tdl", _theme(1, primary="#00FF00"))
+    app = App(root=tmp_path, theme_seed=SEED, default_theme=base)
     assert app.theme.role("primary") == (0, 255, 0, 255)
 
 
@@ -130,92 +139,93 @@ def test_a_default_themes_colors_reach_the_app_theme(tmp_path: Path):
 
 
 def test_set_theme_specs_rethemes_every_screen(tmp_path: Path):
-    app = App(theme_seed=SEED, custom_theme_spec={"styles": [{"kind": "Rect", "style": {"elevation": 1}}]})
-    home, _ = app.load(*_pair(tmp_path, "Home"))
-    settings, _ = app.load(*_pair(tmp_path, "Settings"))
-    app.show("Home")
+    app = App(root=tmp_path, theme_seed=SEED, custom_theme_spec={"styles": [{"kind": "Rect", "style": {"elevation": 1}}]})
+    home = _open(app, tmp_path, "Home")
+    settings = _open(app, tmp_path, "Settings")
+    app.show("home")
 
     app.set_theme_specs(None, {"styles": [{"kind": "Rect", "style": {"elevation": 4}}], "colors": {"primary": "#0000FF"}})
 
-    assert elevation(home.node("box")) == elevation(settings.node("box")) == 4.0
+    assert elevation(home.node("root")) == elevation(settings.node("root")) == 4.0
     assert app.theme.role("primary") == (0, 0, 255, 255)
 
 
 def test_a_rejected_theme_leaves_the_app_as_it_was(tmp_path: Path):
-    app = App(theme_seed=SEED, custom_theme_spec={"styles": [{"kind": "Rect", "style": {"elevation": 1}}]})
-    home, _ = app.load(*_pair(tmp_path, "Home"))
+    app = App(root=tmp_path, theme_seed=SEED, custom_theme_spec={"styles": [{"kind": "Rect", "style": {"elevation": 1}}]})
+    home = _open(app, tmp_path, "Home")
     with pytest.raises(Exception):
         app.set_theme_specs(None, {"styles": "not a list"})
-    assert elevation(home.node("box")) == 1.0
+    assert elevation(home.node("root")) == 1.0
     app.set_theme_specs(None, {"styles": [{"kind": "Rect", "style": {"elevation": 2}}]})  # still usable
-    assert elevation(home.node("box")) == 2.0
+    assert elevation(home.node("root")) == 2.0
 
 
 def test_later_screens_are_built_with_the_new_theme(tmp_path: Path):
-    app = App(theme_seed=SEED)
-    app.load(*_pair(tmp_path, "Home"))
+    app = App(root=tmp_path, theme_seed=SEED)
+    _open(app, tmp_path, "Home")
     app.set_theme_specs(None, {"styles": [{"kind": "Rect", "style": {"elevation": 5}}]})
-    later, _ = app.load(*_pair(tmp_path, "Later"))
-    assert elevation(later.node("box")) == 5.0
+    later = _open(app, tmp_path, "Later")
+    assert elevation(later.node("root")) == 5.0
 
 
 # -- hot reload of theme files ---------------------------------------
 
 
 def test_editing_the_custom_theme_file_rethemes_the_running_app(tmp_path: Path, watching):
-    theme = _write(tmp_path / "brand.yaml", _theme(1))
-    app = App(theme_seed=SEED, custom_theme=theme)
-    home, _ = app.load(*_pair(tmp_path, "Home"))
-    settings, _ = app.load(*_pair(tmp_path, "Settings"))
-    app.show("Home")
+    theme = _write(tmp_path / "Brand_Theme.tdl", _theme(1))
+    app = App(root=tmp_path, theme_seed=SEED, custom_theme=theme)
+    home = _open(app, tmp_path, "Home")
+    settings = _open(app, tmp_path, "Settings")
+    app.show("home")
     handle = watching(app)
 
     reload = _edit_until_queued(handle, theme, _theme(4, primary="#0000FF"))
-    assert elevation(home.node("box")) == 1.0  # nothing applied until the loop runs it
+    assert elevation(home.node("root")) == 1.0  # nothing applied until the loop runs it
     reload()
 
-    assert elevation(home.node("box")) == elevation(settings.node("box")) == 4.0
+    assert elevation(home.node("root")) == elevation(settings.node("root")) == 4.0
     assert app.theme.role("primary") == (0, 0, 255, 255)
 
 
 def test_editing_the_default_theme_file_keeps_the_custom_theme(tmp_path: Path, watching):
-    base = _write(tmp_path / "base.yaml", "styles:\n  - kind: Rect\n    style: {corner_radius: 2}\n")
+    base = _write(tmp_path / "Base_Theme.tdl", HEAD + "Theme { Styles { Item { Kind: Rect, Style { Corner_Radius: 2 } } } }\n")
     app = App(
+        root=tmp_path,
         theme_seed=SEED,
         default_theme=base,
         custom_theme_spec={"styles": [{"kind": "Rect", "style": {"elevation": 3}}]},
     )
-    home, _ = app.load(*_pair(tmp_path, "Home"))
+    home = _open(app, tmp_path, "Home")
     handle = watching(app)
 
-    _edit_until_queued(handle, base, "styles:\n  - kind: Rect\n    style: {corner_radius: 7}\n")()
+    _edit_until_queued(handle, base, HEAD + "Theme { Styles { Item { Kind: Rect, Style { Corner_Radius: 7 } } } }\n")()
 
-    assert home.node("box").get("corner_radius") == 7.0
-    assert elevation(home.node("box")) == 3.0
+    assert home.node("root").get("corner_radius") == 7.0
+    assert elevation(home.node("root")) == 3.0
 
 
 def test_a_broken_theme_edit_is_logged_and_the_watcher_carries_on(tmp_path: Path, watching, logs):
-    theme = _write(tmp_path / "brand.yaml", _theme(1))
-    app = App(theme_seed=SEED, custom_theme=theme)
-    home, _ = app.load(*_pair(tmp_path, "Home"))
+    theme = _write(tmp_path / "Brand_Theme.tdl", _theme(1))
+    app = App(root=tmp_path, theme_seed=SEED, custom_theme=theme)
+    home = _open(app, tmp_path, "Home")
     handle = watching(app)
 
-    message = logs.edit_until(theme, "styles: [unclosed\n", "ERROR", "invalid YAML")
+    message = logs.edit_until(theme, HEAD + "Theme { Styles {\n", "ERROR", "This block is never closed")
     assert str(theme) in message
     assert handle.queued.empty()
-    assert elevation(home.node("box")) == 1.0
+    assert elevation(home.node("root")) == 1.0
 
     _edit_until_queued(handle, theme, _theme(2))()
-    assert elevation(home.node("box")) == 2.0
+    assert elevation(home.node("root")) == 2.0
     assert f"re-themed the app from {theme}" in logs.messages("INFO")
 
 
 def test_theme_specs_are_not_watched(tmp_path: Path, watching):
-    app = App(theme_seed=SEED, custom_theme_spec={"styles": []})
-    app.load(*_pair(tmp_path, "Home"))
+    app = App(root=tmp_path, theme_seed=SEED, custom_theme_spec={"styles": []})
+    _open(app, tmp_path, "Home")
     watchers = app._start_watchers(FakeHandle())
     try:
-        assert [type(w).__name__ for w in watchers] == ["ViewWatcher"]
+        assert [type(w).__name__ for w in watchers] == ["ComposedWatcher"]
     finally:
         for w in watchers:
             w.stop()

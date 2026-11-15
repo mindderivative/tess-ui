@@ -23,17 +23,24 @@ class VM(ViewModel):
 
 def opened(tmp_path, props="", hour=14, minute=35, show=True):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    lines = "\n    ".join(props.split(", ")) if props else ""
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{width: 600, height: 700}}
-children:
-  - widget: TimePicker
-    name: tp
-    open: "{{{{ open }}}}"
-    hour: "{{{{ h }}}}"
-    minute: "{{{{ m }}}}"
-    {lines}
+    lines = "\n      ".join(props.split(", ")) if props else ""
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Width: 600, Height: 700 }}
+  Children {{
+    TimePicker {{
+      Name: tp
+      Open: <| open |>
+      Hour: <| h |>
+      Minute: <| m |>
+      {lines}
+    }}
+  }}
+}}
 """)
     VM.start = (hour, minute)
     app = App(root=tmp_path, width=600, height=700)
@@ -146,7 +153,7 @@ def test_the_time_is_not_changed_until_ok_is_pressed(tmp_path):
 
 
 def test_ok_calls_on_ok_after_it_has_set_the_time(tmp_path):
-    view, vm = opened(tmp_path, "on_ok: confirmed")
+    view, vm = opened(tmp_path, "On_Ok: confirmed")
     press_key_on_dial(view, "arrow_up")
     view.window.simulate("click", node=p(view, "footer.ok"))
     settle(view, 6)
@@ -227,7 +234,7 @@ def test_a_time_changed_on_the_dial_is_what_the_typed_fields_start_from(tmp_path
 
 
 def test_twenty_four_hour_time_opens_on_the_fields_with_no_dial_and_no_keyboard_button(tmp_path):
-    view, vm = opened(tmp_path, "twelve: false")
+    view, vm = opened(tmp_path, "Twelve: false")
     assert "root.tp.panel.dial" not in view._built.specs and "root.tp.panel.header" not in view._built.specs
     assert "root.tp.panel.footer.mode_button" not in view._built.specs
     hour = view.node("root.tp.panel.fields.hour_field.box.body.input")

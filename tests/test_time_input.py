@@ -18,16 +18,23 @@ class VM(ViewModel):
 
 def opened(tmp_path, props="", hour=14, minute=5):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    lines = "\n    ".join(props.split(", ")) if props else ""
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{width: 500, height: 200, align_content: top_left}}
-children:
-  - widget: TimeInput
-    name: ti
-    hour: "{{{{ h }}}}"
-    minute: "{{{{ m }}}}"
-    {lines}
+    lines = "\n      ".join(props.split(", ")) if props else ""
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Width: 500, Height: 200, Align_Content: top_left }}
+  Children {{
+    TimeInput {{
+      Name: ti
+      Hour: <| h |>
+      Minute: <| m |>
+      {lines}
+    }}
+  }}
+}}
 """)
     VM.start = (hour, minute)
     app = App(root=tmp_path)
@@ -120,7 +127,7 @@ def test_choosing_pm_or_am_moves_the_hour_by_twelve(tmp_path):
 
 
 def test_twenty_four_hour_time_has_no_period_and_takes_zero_to_twenty_three(tmp_path):
-    view, vm = opened(tmp_path, "twelve: false")
+    view, vm = opened(tmp_path, "Twelve: false")
     assert field(view, "hour").get("text") == "14" and "root.ti.period_selector" not in view._built.specs
     type_into(view, "hour", "23")
     assert vm.h.get() == 23
@@ -139,7 +146,7 @@ def test_the_fields_are_labelled_and_the_colon_sits_between_them(tmp_path):
 
 
 def test_a_disabled_input_cannot_be_edited(tmp_path):
-    view, vm = opened(tmp_path, "disabled: true")
+    view, vm = opened(tmp_path, "Disabled: true")
     assert field(view, "hour").get("disabled") is True
     view.window.simulate("click", node=view.node("root.ti.period_selector.half[AM]"))
     for _ in range(6):

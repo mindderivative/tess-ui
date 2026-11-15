@@ -1,4 +1,4 @@
-"""#211: `max_lines`, `letter_spacing` and `selectable` on text, in both syntaxes."""
+"""#211: `max_lines`, `letter_spacing` and `selectable` on text."""
 
 import pytest
 
@@ -68,22 +68,25 @@ def test_a_dropped_key_goes_back_to_the_default_when_the_view_reloads():
     assert (node.get("max_lines"), node.get("letter_spacing")) == (None, 0.0)
 
 
+TDL = "---\nTDL: 0.2\nName: T\n---\n"
+
+
 def view_of(source):
-    return open_composed(parse_view(source, "T_View.yaml"), Bindings(), theme_seed=SEED)
+    return open_composed(parse_view(TDL + source, "T_View.tdl"), Bindings(), theme_seed=SEED)
 
 
 def test_the_new_syntax_takes_them_as_properties_of_text_and_link():
-    node = view_of("widget: Text\ntext: " + LONG + "\ntypography_role: body_large\nmax_lines: 2\nletter_spacing: 0.5\nselectable: true\n"
-                   "style: {foreground: '#000000', width: 120}\n").node("root")
+    node = view_of("Text {\n  Text: " + LONG + "\n  Typography_Role: body_large\n  Max_Lines: 2\n  Letter_Spacing: 0.5\n  Selectable: true\n"
+                   "  Style { Foreground: \"#000000\", Width: 120 }\n}\n").node("root")
     assert (node.get("max_lines"), node.get("letter_spacing"), node.get("selectable")) == (2, 0.5, True)
-    link = view_of("widget: Link\ntext: Go\ntypography_role: body_large\nmax_lines: 1\nstyle: {foreground: '#000000'}\n")
+    link = view_of("Link { Text: Go, Typography_Role: body_large, Max_Lines: 1, Style { Foreground: \"#000000\" } }\n")
     assert link._built.nodes["root"].get("max_lines") == 1
 
 
 def test_a_link_cannot_be_selectable_and_a_bad_value_is_an_error():
     with pytest.raises(LoadError, match="Link: no property 'selectable'"):
-        parse_view("widget: Link\ntext: x\nselectable: true\n", "T_View.yaml")
+        parse_view(TDL + "Link { Text: x, Selectable: true }\n", "T_View.tdl")
     with pytest.raises(LoadError, match="Text: 'max_lines' takes a whole number"):
-        parse_view("widget: Text\nmax_lines: 1.5\n", "T_View.yaml")
+        parse_view(TDL + "Text { Max_Lines: 1.5 }\n", "T_View.tdl")
     with pytest.raises(SpecBuildError, match="text.max_lines is a whole number from 1"):
-        view_of("widget: Text\ntext: x\ntypography_role: body_large\nmax_lines: 0\nstyle: {foreground: '#000000'}\n")
+        view_of("Text { Text: x, Typography_Role: body_large, Max_Lines: 0, Style { Foreground: \"#000000\" } }\n")
