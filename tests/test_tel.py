@@ -379,7 +379,7 @@ def where(error):
     return error.file, error.line, error.column, error.end_column
 
 
-ORIGIN_OLD, ORIGIN_NEW = expr.Origin("Main_View.yaml", 12, 8), tel.Origin("Main_View.yaml", 12, 8)
+ORIGIN_OLD, ORIGIN_NEW = expr.Origin("Main_View.tdl", 12, 8), tel.Origin("Main_View.tdl", 12, 8)
 
 
 @pytest.mark.parametrize("source", [
@@ -392,7 +392,7 @@ def test_an_error_names_the_file_line_and_column_as_expr_did(source):
         expr.compile_expr(source, origin=ORIGIN_OLD).evaluate(scope)
     with pytest.raises(tel.ExprError) as new:
         tel.compile_expr(source, origin=ORIGIN_NEW).evaluate(scope)
-    assert new.value.file == "Main_View.yaml" and str(new.value).startswith(f"Main_View.yaml:{new.value.line}:{new.value.column + 1}: ")
+    assert new.value.file == "Main_View.tdl" and str(new.value).startswith(f"Main_View.tdl:{new.value.line}:{new.value.column + 1}: ")
     assert new.value.code and where(new.value)[:2] == where(old.value)[:2]
     if source != "1 +":  # at the end of the input Python's own offset is one on from TEL's
         # the span's end is not compared: TEL gives one for a syntax error and for a whole call that is refused, expr.py did not
@@ -401,9 +401,9 @@ def test_an_error_names_the_file_line_and_column_as_expr_did(source):
 
 def test_an_error_has_a_hint_and_draws_a_caret():
     with pytest.raises(tel.ExprError) as error:
-        tel.compile_expr("cnt + 1", origin=tel.Origin("v.yaml", 3, 4)).evaluate(expr.MapScope({"count": 1}))
+        tel.compile_expr("cnt + 1", origin=tel.Origin("v.tdl", 3, 4)).evaluate(expr.MapScope({"count": 1}))
     assert error.value.hint == "did you mean 'count'" and error.value.code == "unknown-name"
-    assert str(error.value) == "v.yaml:3:5: 'cnt' is not defined (did you mean 'count')"
+    assert str(error.value) == "v.tdl:3:5: 'cnt' is not defined (did you mean 'count')"
     assert error.value.render().splitlines()[1:] == ["    cnt + 1", "    ^^^"]
 
 
@@ -415,7 +415,7 @@ def test_the_origin_moves_past_leading_space_and_lines_as_expr_does():
         with pytest.raises(tel.ExprError) as new:
             tel.compile_expr(source, origin=ORIGIN_NEW).evaluate(scope)
         assert where(old.value)[:3] == where(new.value)[:3], (source, where(old.value), where(new.value))
-    assert tel.compile_expr(" \n  a", origin=ORIGIN_NEW).origin == tel.Origin("Main_View.yaml", 13, 2)
+    assert tel.compile_expr(" \n  a", origin=ORIGIN_NEW).origin == tel.Origin("Main_View.tdl", 13, 2)
 
 
 def test_without_an_origin_the_position_is_in_the_text_and_has_no_file():
@@ -447,7 +447,7 @@ def test_a_template_that_does_not_read_is_an_error_at_the_part(text):
         expr.compile_template(text, origin=ORIGIN_OLD)
     with pytest.raises(tel.ExprError) as new:
         tel.compile_template(text, origin=ORIGIN_NEW)
-    assert new.value.file == "Main_View.yaml" and new.value.line == 12
+    assert new.value.file == "Main_View.tdl" and new.value.line == 12
 
 
 def test_a_limit_is_an_error_with_its_code():
@@ -470,8 +470,8 @@ def test_a_source_that_is_not_text_is_an_error_and_the_origin_may_be_any_object_
         with pytest.raises(tel.ExprError, match="an expression is text"):
             tel.compile_expr(bad)
     with pytest.raises(tel.ExprError) as error:
-        tel.compile_expr("zork", origin=expr.Origin("w.yaml", 2, 6)).evaluate(expr.MapScope())
-    assert where(error.value) == ("w.yaml", 2, 6, 10)
+        tel.compile_expr("zork", origin=expr.Origin("w.tdl", 2, 6)).evaluate(expr.MapScope())
+    assert where(error.value) == ("w.tdl", 2, 6, 10)
     assert isinstance(error.value, ValueError)
 
 

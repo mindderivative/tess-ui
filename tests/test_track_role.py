@@ -5,7 +5,7 @@ import pytest
 
 from tess_ui import App, ViewModel, controls
 
-HEAD = "name: main\nwidget: Container\nstyle: {width: 300, height: 200, flex_direction: vertical}\nchildren:\n"
+HEAD = "---\nTDL: 0.2\nName: main\n---\nContainer {\n  Name: main\n  Style { Width: 300, Height: 200, Flex_Direction: vertical }\n  Children {\n"
 
 
 class VM(ViewModel):
@@ -14,7 +14,7 @@ class VM(ViewModel):
 
 def open_with(tmp_path, widget, track):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(HEAD + f"  - {{widget: {widget}, name: bar, value: 0.5, track: {track}}}\n")
+    (tmp_path / "Views" / "Main_View.tdl").write_text(HEAD + f"    {widget} {{ Name: bar, Value: 0.5, Track: {track} }}\n  }}\n}}\n")
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")

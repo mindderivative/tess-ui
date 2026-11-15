@@ -1,11 +1,21 @@
 """#165: the Material 3 top app bar -- small, centre, medium and large; icons with labels, collapsing and the scrolled colour."""
 
+import textwrap
+
 import pytest
 
 from tess_ui import App, Signal, ViewModel, tokens
 from tess_ui.shipped import shipped_views
 
-ACTIONS = "[{value: search, icon: magnify, label: Search}, {value: more, icon: dots_vertical, label: More}]"
+
+
+def _list(name, rows):
+    """A TDL block `name` that holds one `Item` per row (a dict of property -> value)."""
+    items = "".join(f"  Item {{ {', '.join(f'{k.title()}: {v}' for k, v in row.items())} }}\n" for row in rows)
+    return f"{name} {{\n{items}}}"
+
+
+ACTIONS = _list("Actions", [{"value": "search", "icon": "magnify", "label": "Search"}, {"value": "more", "icon": "dots_vertical", "label": "More"}])
 
 
 class VM(ViewModel):
@@ -24,19 +34,26 @@ class VM(ViewModel):
 
 def opened(tmp_path, props="", actions=ACTIONS, leading="menu"):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    lines = "\n    ".join(props.split(", ")) if props else ""
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{flex_direction: vertical, align_content: top_left, width: 500, height: 400}}
-children:
-  - widget: TopAppBar
-    name: bar
-    title: Inbox
-    leading_icon: '{leading}'
-    on_leading: nav
-    actions: {actions}
-    chosen: "{{{{ chosen }}}}"
-    {lines}
+    lines = textwrap.indent("\n".join(props.split(", ")), "      ") if props else ""
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Align_Content: top_left, Width: 500, Height: 400 }}
+  Children {{
+    TopAppBar {{
+      Name: bar
+      Title: Inbox
+      Leading_Icon: "{leading}"
+      On_Leading: nav
+{textwrap.indent(actions, "      ")}
+      Chosen: <| chosen |>
+{lines}
+    }}
+  }}
+}}
 """)
     app = App(root=tmp_path, width=500, height=400)
     app.bind(VM)
@@ -68,7 +85,7 @@ def test_the_four_sizes(tmp_path):
     heights = {}
     for i, variant in enumerate(("small", "center", "medium", "large")):
         (tmp_path / str(i)).mkdir()
-        view, _ = opened(tmp_path / str(i), f"variant: {variant}")
+        view, _ = opened(tmp_path / str(i), f"Variant: {variant}")
         heights[variant] = bar(view).get("layout_height")
     assert heights == {"small": 64.0, "center": 64.0, "medium": 112.0, "large": 152.0}
 
@@ -84,22 +101,22 @@ def test_a_small_bar_has_the_navigation_icon_the_title_in_title_large_and_the_ac
 
 
 def test_a_centre_aligned_bar_puts_the_title_in_the_middle(tmp_path):
-    view, _ = opened(tmp_path, "variant: center")
+    view, _ = opened(tmp_path, "Variant: center")
     title = view.node("root.bar.row.title")
     assert abs((title.get("layout_x") + title.get("layout_width") / 2) - 250) <= 70  # between the icon and the actions, not against the icon
 
 
 def test_a_medium_bar_has_a_headline_small_title_under_the_icons_and_a_large_one_a_headline_medium(tmp_path):
-    view, _ = opened(tmp_path, "variant: medium")
+    view, _ = opened(tmp_path, "Variant: medium")
     big = view.node("root.bar.big_title")
     assert big.get("font_size") == 24.0 and big.get("layout_y") >= view.node("root.bar.row").get("layout_y") + 64 and "root.bar.row.title" not in view._built.specs
     (tmp_path / "l").mkdir()
-    large, _ = opened(tmp_path / "l", "variant: large")
+    large, _ = opened(tmp_path / "l", "Variant: large")
     assert large.node("root.bar.big_title").get("font_size") == 28.0
 
 
 def test_collapsing_a_medium_bar_shrinks_it_to_a_small_one_with_the_title_beside_the_icon(tmp_path):
-    view, vm = opened(tmp_path, 'variant: large, collapsed: "{{ collapsed }}"')
+    view, vm = opened(tmp_path, "Variant: large, Collapsed: <| collapsed |>")
     assert bar(view).get("layout_height") == 152.0
     vm.collapsed.set(True)
     for _ in range(4):
@@ -110,7 +127,7 @@ def test_collapsing_a_medium_bar_shrinks_it_to_a_small_one_with_the_title_beside
 
 
 def test_the_colour_is_surface_and_becomes_surface_container_once_content_is_under_it(tmp_path):
-    view, vm = opened(tmp_path, 'scrolled: "{{ scrolled }}"')
+    view, vm = opened(tmp_path, "Scrolled: <| scrolled |>")
     assert bar(view).get("fill") == role(view, "surface")
     vm.scrolled.set(True)
     settle(view)
@@ -132,7 +149,7 @@ def test_every_icon_is_a_button_with_a_label_that_is_its_name(tmp_path):
 
 
 def test_at_most_three_actions_show(tmp_path):
-    many = "[" + ", ".join("{value: a%d, icon: home, label: A%d}" % (n, n) for n in range(5)) + "]"
+    many = _list("Actions", [{"value": f"a{n}", "icon": "home", "label": f"A{n}"} for n in range(5)])
     view, _ = opened(tmp_path, actions=many)
     assert [k for k in view._built.specs if k.startswith("root.bar.row.action[") and k.count(".") == 3] == [f"root.bar.row.action[a{n}]" for n in range(3)]
 

@@ -8,11 +8,10 @@ input keeps its own font even with a `typography_role`. This differs from
 
 import importlib.util
 import sys
-from pathlib import Path
 
 import pytest
 
-from tess_ui import App, View, instantiate
+from tess_ui import App, View
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 MONO = "Hack Nerd Font Mono"
@@ -68,33 +67,31 @@ def test_re_theming_applies_and_removes_overrides():
 
 
 def test_a_component_follows_its_hosts_theme_typography(tmp_path):
-    card = tmp_path / "Card_View.yaml"
-    card.write_text('id: card\nkind: Text\ntext: {content: hi, typography_role: body_large}\nstyle: {foreground: "#000000"}\n')
-    vm_file = tmp_path / "Card_ViewModel.py"
-    vm_file.write_text("from tess_ui import ViewModel\n\n\nclass CardViewModel(ViewModel):\n    pass\n")
-    spec = importlib.util.spec_from_file_location(vm_file.stem, vm_file)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    host = View(_spec({"id": "slot", "kind": "Container"}), theme_seed=SEED, custom_theme_spec=THEME)
-    component, _ = instantiate(host, card, module.CardViewModel, host.node("slot"))
-    assert _font(component.node("card")) == (MONO, 20.0, 700.0)
+    (tmp_path / "Views").mkdir()
+    (tmp_path / "Views" / "Card_View.tdl").write_text(
+        '---\nTDL: 0.2\nName: Card\n---\nText { Name: card, Text: hi, Typography_Role: body_large, Style { Foreground: "#000000" } }\n')
+    (tmp_path / "Views" / "Host_View.tdl").write_text("---\nTDL: 0.2\nName: host\n---\nContainer {\n  Name: host\n  Children {\n    Card { Name: slot }\n  }\n}\n")
+    app = App(root=tmp_path, theme_seed=SEED, custom_theme_spec=THEME)
+    view = app.open_view("Host")
+    assert _font(view.node("root.slot")) == (MONO, 20.0, 700.0)
 
 
 def test_an_apps_theme_typography_reaches_its_screens(tmp_path):
-    view_file = tmp_path / "Home_View.yaml"
-    view_file.write_text('id: root\nkind: Container\nchildren:\n  - {id: t, kind: Text, text: {content: x, typography_role: body_large}, style: {foreground: "#000000"}}\n')
+    (tmp_path / "Views").mkdir()
+    view_file = tmp_path / "Views" / "Home_View.tdl"
+    view_file.write_text('---\nTDL: 0.2\nName: home\n---\nContainer {\n  Name: home\n  Children {\n    Text { Name: t, Text: x, Typography_Role: body_large, Style { Foreground: "#000000" } }\n  }\n}\n')
     vm_file = tmp_path / "Home_ViewModel.py"
-    vm_file.write_text("from tess_ui import ViewModel\n\n\nclass HomeViewModel(ViewModel):\n    pass\n")
+    vm_file.write_text("from tess_ui import ViewModel\n\n\nclass HomeViewModel(ViewModel):\n    views = 'home'\n")
     spec = importlib.util.spec_from_file_location(vm_file.stem, vm_file)
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
-    app = App(theme_seed=SEED, custom_theme_spec=THEME)
-    view, _ = app.load(view_file, module.HomeViewModel)
-    assert view.node("t").get("font_size") == 20.0
+    app = App(root=tmp_path, theme_seed=SEED, custom_theme_spec=THEME)
+    app.bind(module.HomeViewModel)
+    view = app.open_view("Home")
+    assert view.node("root.t").get("font_size") == 20.0
     app.set_theme_specs(None, {"typography": {"body_large": {"font_size": 12}}})
-    assert view.node("t").get("font_size") == 12.0
+    assert view.node("root.t").get("font_size") == 12.0
 
 
 def test_a_malformed_typography_entry_is_an_error():

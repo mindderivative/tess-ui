@@ -148,6 +148,9 @@ def test_a_links_transform_is_on_its_box_not_its_text():
     assert view.node("n").get("scale") == 1.5 and view._built.nodes["n"].get("scale") == 1.0
 
 
+TDL = "---\nTDL: 0.2\nName: T\n---\n"
+
+
 # -- in the new syntax -------------------------------------------------------------------------------------------------------
 
 
@@ -155,7 +158,7 @@ def test_a_rule_can_carry_the_transition_and_a_state_change_eases():
     sheet = RuleSheet.of({"styles": [
         {"widget": "Rect", "style": {"background": "#FF0000", "transition": {"background": 200}}},
         {"widget": "Rect", "state": "hovered", "style": {"background": "#0000FF"}}]})
-    view = open_composed(parse_view("widget: Rect\nstyle: {width: 100, height: 60}\n", "T_View.yaml"), Bindings(), rules=[sheet], theme_seed=SEED)
+    view = open_composed(parse_view(TDL + "Rect { Style { Width: 100, Height: 60 } }\n", "T_View.tdl"), Bindings(), rules=[sheet], theme_seed=SEED)
     view.window.advance(16)
     node = view.node("root")
     assert node.get("fill") == RED
@@ -168,8 +171,8 @@ def test_a_rule_can_carry_the_transition_and_a_state_change_eases():
 
 
 def test_the_loader_takes_transform_and_transition_as_style_fields_and_names_a_bad_one():
-    node = parse_view("widget: Rect\nstyle: {scale: 1.1, transition: {opacity: 100}}\n", "T_View.yaml").root
+    node = parse_view(TDL + "Rect { Style { Scale: 1.1, Transition { Opacity: 100 } } }\n", "T_View.tdl").root
     assert node.style["scale"] == 1.1 and node.style["transition"] == {"opacity": 100}
     RuleSheet.of({"styles": [{"widget": "Rect", "style": {"translate_y": 4, "transition": {"all": 100}}}]})
     with pytest.raises(SpecBuildError, match="style.transition"):
-        open_composed(parse_view("widget: Rect\nstyle: {width: 10, height: 10, background: '#112233', transition: {cursor: 100}}\n", "T_View.yaml"), Bindings(), theme_seed=SEED)
+        open_composed(parse_view(TDL + 'Rect { Style { Width: 10, Height: 10, Background: "#112233", Transition { Cursor: 100 } } }\n', "T_View.tdl"), Bindings(), theme_seed=SEED)

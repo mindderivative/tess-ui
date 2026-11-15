@@ -4,7 +4,6 @@ static view's `window.*` and `surface.*` handlers, which need no ViewModel."""
 import sys
 
 import pytest
-import yaml
 
 from tess_ui import App, View
 from tess_ui.overlays import Dialog, ViewDialog, dismiss_surface
@@ -154,12 +153,8 @@ def test_dismiss_surface_closes_the_nearest_overlay_and_says_if_there_was_none()
 
 def test_a_static_views_surface_handler_works_with_no_viewmodel():
     app = _app()
-    spec = yaml.safe_load("""
-id: root
-kind: Container
-children:
-  - {id: x, kind: Rect, style: {width: 20, height: 20, background: primary}, handlers: {on_click: surface.dismiss}}
-""")
+    spec = {"id": "root", "kind": "Container", "children": [
+        {"id": "x", "kind": "Rect", "style": {"width": 20, "height": 20, "background": "primary"}, "handlers": {"on_click": "surface.dismiss"}}]}
     view = View(spec, window=app.window)
     assert view.viewmodel is None and view._wiring  # wired without one
 
@@ -168,12 +163,8 @@ def test_a_static_views_window_button_works_with_no_viewmodel(monkeypatch):
     app = _app()
     closed = []
     monkeypatch.setattr(app, "close", lambda: closed.append(True))
-    spec = yaml.safe_load("""
-id: root
-kind: Container
-children:
-  - {id: x, kind: Rect, style: {width: 20, height: 20, background: primary}, handlers: {on_click: window.close}}
-""")
+    spec = {"id": "root", "kind": "Container", "children": [
+        {"id": "x", "kind": "Rect", "style": {"width": 20, "height": 20, "background": "primary"}, "handlers": {"on_click": "window.close"}}]}
     view = View(spec, window=app.window)
     app.window.root.add_child(view.root)
     app.window.advance(16)
@@ -184,11 +175,7 @@ children:
 def test_an_unknown_surface_action_is_one_line_when_a_viewmodel_attaches():
     from tess_ui import ViewModel
 
-    view = View(yaml.safe_load("""
-id: root
-kind: Container
-children:
-  - {id: x, kind: Rect, style: {width: 20, height: 20, background: primary}, handlers: {on_click: surface.explode}}
-"""))
+    view = View({"id": "root", "kind": "Container", "children": [
+        {"id": "x", "kind": "Rect", "style": {"width": 20, "height": 20, "background": "primary"}, "handlers": {"on_click": "surface.explode"}}]})
     with pytest.raises(ValueError, match=r'widget "x": handler "on_click" names "surface.explode", which isn\'t a surface action'):
         ViewModel(view)

@@ -6,20 +6,36 @@ from tess_ui import App, ViewModel
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 
-WINDOW = """name: main
-widget: Window
-title: Notes
-borderless: true
-style: {width: 700, height: 300, flex_direction: vertical}
-children:
-  - widget: TitleBar
-    name: bar
-    title: Notes
-    icon: home
-    children:
-      - {widget: Tabs, name: tabs, selected: one, tab_width: 90, tabs: [{value: one, label: One}, {value: two, label: Two}]}
-      - {widget: IconButton, name: gear, icon: settings, label: Settings, size: xs}
-  - {widget: Container, name: page, style: {height: 200, width: 700}}
+WINDOW = """---
+TDL: 0.2
+Name: main
+---
+Window {
+  Name: main
+  Title: Notes
+  Borderless: true
+  Style { Width: 700, Height: 300, Flex_Direction: vertical }
+  Children {
+    TitleBar {
+      Name: bar
+      Title: Notes
+      Icon: home
+      Children {
+        Tabs {
+          Name: tabs
+          Selected: one
+          Tab_Width: 90
+          Tabs {
+            Item { Value: one, Label: One }
+            Item { Value: two, Label: Two }
+          }
+        }
+        IconButton { Name: gear, Icon: settings, Label: Settings, Size: xs }
+      }
+    }
+    Container { Name: page, Style { Height: 200, Width: 700 } }
+  }
+}
 """
 
 
@@ -29,7 +45,7 @@ class VM(ViewModel):
 
 def opened(tmp_path, text=WINDOW, native_controls=False):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(text)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(text)
     app = App(root=tmp_path, width=700, height=300, theme_seed=SEED, borderless=True)
     app._native_controls.set(native_controls)
     app.bind(VM)

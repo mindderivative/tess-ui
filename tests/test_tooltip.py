@@ -15,23 +15,31 @@ class VM(ViewModel):
         self.clicks = Signal(0)
 
 
-def view_text(tooltip="Delete", extra=""):
-    return f"""name: main
-widget: Container
-style: {{flex_direction: vertical, width: 300, height: 200}}
-children:
-  - widget: Container
-    name: b
-    style: {{width: 80, height: 40, background: primary}}
-    handlers: {{on_click: "clicks += 1"}}
-    tooltip: {tooltip}
-{extra}  - {{widget: Container, name: other, style: {{width: 80, height: 40, background: secondary}}, handlers: {{on_click: "clicks += 1"}}}}
+TDL = "---\nTDL: 0.2\nName: main\n---\n"
+CLICK = "Handlers { On_Click { Set { Target: clicks, Value: <| clicks + 1 |> } } }"
+
+
+def view_text(tooltip="Tooltip: Delete", extra=""):
+    """The view's text; `tooltip` is the TDL of the `b` node's tooltip (a property or a block), `extra` more TDL lines in `b`."""
+    return TDL + f"""Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Width: 300, Height: 200 }}
+  Children {{
+    Container {{
+      Name: b
+      Style {{ Width: 80, Height: 40, Background: primary }}
+      {CLICK}
+      {tooltip}
+{extra}    }}
+    Container {{ Name: other, Style {{ Width: 80, Height: 40, Background: secondary }}, {CLICK} }}
+  }}
+}}
 """
 
 
-def opened(tmp_path, tooltip='"Delete"', extra=""):
+def opened(tmp_path, tooltip="Tooltip: Delete", extra=""):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(view_text(tooltip, extra))
+    (tmp_path / "Views" / "Main_View.tdl").write_text(view_text(tooltip, extra))
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")
@@ -124,7 +132,7 @@ def test_escape_hides_it(tmp_path):
 
 
 def test_a_rich_tooltip_has_a_title_and_a_surface(tmp_path):
-    view, _ = opened(tmp_path, "{text: Removes the file for good, title: Delete}")
+    view, _ = opened(tmp_path, "Tooltip { Text: Removes the file for good, Title: Delete }")
     hover(view)
     run(view, 800)
     layer = next(iter(view._tips.values()))[0]
@@ -141,14 +149,14 @@ def test_a_plain_one_is_the_inverse_surface(tmp_path):
 
 
 def test_the_delay_is_a_property(tmp_path):
-    view, _ = opened(tmp_path, "{text: Quick, delay: 100}")
+    view, _ = opened(tmp_path, "Tooltip { Text: Quick, Delay: 100 }")
     hover(view)
     run(view, 160)
     assert texts(view) == ["Quick"]
 
 
 def test_the_text_can_be_an_expression_read_when_it_shows(tmp_path):
-    view, vm = opened(tmp_path, '"{{ hint }}"')
+    view, vm = opened(tmp_path, "Tooltip: <| hint |>")
     vm.hint.set("Remove")
     hover(view)
     run(view, 800)
@@ -172,7 +180,7 @@ def test_the_text_is_the_nodes_description_where_it_has_none(tmp_path, monkeypat
 def test_an_a11y_description_of_its_own_is_kept(tmp_path, monkeypatch):
     seen = []
     monkeypatch.setattr(a11y, "apply_extras", lambda node, props: seen.append(props))
-    opened(tmp_path, '"Delete"', '    a11y: {description: Mine}\n'.replace("    a11y", "    a11y"))
+    opened(tmp_path, "Tooltip: Delete", "      A11y { Description: Mine }\n")
     assert {"description": "Delete"} not in seen
 
 
@@ -185,19 +193,20 @@ def test_closing_the_view_takes_a_showing_tooltip_with_it(tmp_path):
 
 
 @pytest.mark.parametrize("value, message", [
-    ("3", "takes text, or a mapping"), ("{title: Hi}", "needs text"), ("{text: Hi, size: 3}", "no tooltip field 'size'"),
-    ("{text: 3}", "tooltip text is text"), ("{text: Hi, delay: -1}", "delay is milliseconds"), ("{text: Hi, delay: soon}", "delay is milliseconds"),
+    ("Tooltip: 3", "takes text, or a mapping"), ("Tooltip { Title: Hi }", "needs text"), ("Tooltip { Text: Hi, Size: 3 }", "no tooltip field 'size'"),
+    ("Tooltip { Text: 3 }", "tooltip text is text"), ("Tooltip { Text: Hi, Delay: -1 }", "delay is milliseconds"),
+    ("Tooltip { Text: Hi, Delay: soon }", "delay is milliseconds"),
 ])
 def test_a_wrong_tooltip_is_a_load_error(value, message):
     with pytest.raises(LoadError, match=message):
-        parse_view(f"widget: Container\ntooltip: {value}\n", "T_View.yaml")
+        parse_view(TDL + f"Container {{ {value} }}\n", "T_View.tdl")
 
 
 def test_a_view_call_can_carry_a_tooltip_to_the_root_of_the_view(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Chip_View.yaml").write_text("widget: Container\nstyle: {width: 60, height: 30, background: primary}\n")
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {width: 300, height: 200}\nchildren:\n  - {widget: Chip, name: c, tooltip: Hello}\n")
+    (tmp_path / "Views" / "Chip_View.tdl").write_text(TDL.replace("main", "Chip") + "Container { Style { Width: 60, Height: 30, Background: primary } }\n")
+    (tmp_path / "Views" / "Main_View.tdl").write_text(
+        TDL + "Container {\n  Name: main\n  Style { Width: 300, Height: 200 }\n  Children {\n    Chip { Name: c, Tooltip: Hello }\n  }\n}\n")
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")
@@ -243,9 +252,9 @@ def test_a_node_that_leaves_the_view_takes_its_tooltip_with_it(tmp_path):
             self.here = Signal(True)
 
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {width: 300, height: 200}\nchildren:\n"
-        "  - {widget: Container, name: b, if: here, style: {width: 80, height: 40, background: primary}, tooltip: Hi}\n")
+    (tmp_path / "Views" / "Main_View.tdl").write_text(
+        TDL + "Container {\n  Name: main\n  Style { Width: 300, Height: 200 }\n  Children {\n"
+        "    If <| here |> {\n      Container { Name: b, Style { Width: 80, Height: 40, Background: primary }, Tooltip: Hi }\n    }\n  }\n}\n")
     app = App(root=tmp_path)
     app.bind(Gone)
     view = app.open_view("Main")
@@ -261,7 +270,14 @@ def test_a_node_that_leaves_the_view_takes_its_tooltip_with_it(tmp_path):
 
 # -- rich tooltips (#147): actions, placement, a card the pointer can enter ---------------------------------------------------
 
-RICH = '{text: "Removes it for good", title: Delete, actions: [{label: Undo, on_click: "clicks += 10"}, {label: Close, on_click: "hint = \'closed\'"}]}'
+RICH = """Tooltip {
+        Text: "Removes it for good"
+        Title: Delete
+        Actions {
+          Item { Label: Undo, On_Click { Set { Target: clicks, Value: <| clicks + 10 |> } } }
+          Item { Label: Close, On_Click { Set { Target: hint, Value: <| 'closed' |> } } }
+        }
+      }"""
 
 
 def layer_of(view):
@@ -336,7 +352,7 @@ def test_a_rich_tooltip_goes_if_the_pointer_neither_returns_nor_arrives(tmp_path
 
 
 def test_it_can_sit_above_the_node(tmp_path):
-    view, _ = opened(tmp_path, '{text: Hi, placement: above}', extra="")
+    view, _ = opened(tmp_path, "Tooltip { Text: Hi, Placement: above }")
     view.node("root.b").set(position="absolute", x=100.0, y=100.0)
     view.window.advance(16)
     hover(view)
@@ -345,15 +361,15 @@ def test_it_can_sit_above_the_node(tmp_path):
 
 
 @pytest.mark.parametrize("tooltip, message", [
-    ('{text: x, placement: left}', "placement is one of below, above, start, end"),
-    ('{text: x, actions: []}', "one or two"),
-    ('{text: x, actions: [{label: A, on_click: a}, {label: B, on_click: b}, {label: C, on_click: c}]}', "one or two"),
-    ('{text: x, actions: [{label: A}]}', "{label: ..., on_click: ...}"),
-    ('{text: x, action: []}', "no tooltip field 'action'"),
+    ("Tooltip { Text: x, Placement: left }", "placement is one of below, above, start, end"),
+    ("Tooltip { Text: x, Actions { } }", "one or two"),
+    ("Tooltip { Text: x, Actions { Item { Label: A, On_Click: a } Item { Label: B, On_Click: b } Item { Label: C, On_Click: c } } }", "one or two"),
+    ("Tooltip { Text: x, Actions { Item { Label: A } } }", "{label: ..., on_click: ...}"),
+    ("Tooltip { Text: x, Action: [] }", "no tooltip field 'action'"),
 ])
 def test_these_are_refused_at_load(tooltip, message):
     with pytest.raises(LoadError, match=message.replace("{", r"\{").replace("}", r"\}").replace(".", r"\.")):
-        parse_view(view_text(tooltip), "Main_View.yaml")
+        parse_view(view_text(tooltip), "Main_View.tdl")
 
 
 

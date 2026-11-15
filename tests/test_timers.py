@@ -6,6 +6,8 @@ from tess_ui import App, Signal, ViewModel
 from tess_ui.spec.nodes import LoadError, parse_view
 from tess_ui.timers import Timers
 
+TDL = "---\nTDL: 0.2\nName: main\n---\n"
+
 
 def window():
     import tess_re
@@ -126,8 +128,8 @@ class VM(ViewModel):
 
 def opened(tmp_path, body):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {flex_direction: vertical, width: 200, height: 100}\nchildren:\n" + body)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(
+        TDL + "Container {\n  Name: main\n  Style { Flex_Direction: vertical, Width: 200, Height: 100 }\n  Children {\n" + body + "  }\n}\n")
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")
@@ -141,7 +143,7 @@ def click(view, name):
 
 
 def test_a_handler_can_start_a_timer_that_sets_a_signal(tmp_path):
-    view, vm = opened(tmp_path, "  - {widget: Container, name: b, handlers: {on_click: \"shown = True; after(100, 'shown = False')\"}}\n")
+    view, vm = opened(tmp_path, "    Container { Name: b, Handlers { On_Click { Set { Target: shown, Value: <| True |> } Call { Action: after, Args: [<| 100 |>, <| 'shown = False' |>] } } } }\n")
     click(view, "root.b")
     assert vm.shown.get() is True
     run(view.window, 60)
@@ -151,8 +153,8 @@ def test_a_handler_can_start_a_timer_that_sets_a_signal(tmp_path):
 
 
 def test_every_calls_a_viewmodel_method_and_cancel_stops_it(tmp_path):
-    view, vm = opened(tmp_path, "  - {widget: Container, name: go, handlers: {on_click: \"every(40, 'bump', 'ticker')\"}}\n"
-                                "  - {widget: Container, name: stop, handlers: {on_click: \"cancel('ticker')\"}}\n")
+    view, vm = opened(tmp_path, "    Container { Name: go, Handlers { On_Click { Call { Action: every, Args: [<| 40 |>, <| 'bump' |>, <| 'ticker' |>] } } } }\n"
+                                "    Container { Name: stop, Handlers { On_Click { Call { Action: cancel, Args: [<| 'ticker' |>] } } } }\n")
     click(view, "root.go")
     run(view.window, 200)
     seen = vm.count.get()
@@ -163,10 +165,11 @@ def test_every_calls_a_viewmodel_method_and_cancel_stops_it(tmp_path):
 
 
 def test_a_name_is_the_scopes_as_a_local_name_is(tmp_path):
-    view, vm = opened(tmp_path, "  - {widget: Container, name: a, handlers: {on_click: \"after(100, 'bump', 't')\"}}\n"
-                                "  - {widget: Container, name: b, handlers: {on_click: \"after(100, 'bump', 't')\"}}\n"
-                                "  - widget: Container\n    for: n in [1, 2]\n    key: n\n    name: item\n"
-                                "    handlers: {on_click: \"after(100, 'bump', 't')\"}\n")
+    view, vm = opened(tmp_path, "    Container { Name: a, Handlers { On_Click { Call { Action: after, Args: [<| 100 |>, <| 'bump' |>, <| 't' |>] } } } }\n"
+                                "    Container { Name: b, Handlers { On_Click { Call { Action: after, Args: [<| 100 |>, <| 'bump' |>, <| 't' |>] } } } }\n"
+                                "    For n In <| [1, 2] |> Key <| n |> {\n"
+                                "      Container { Name: item, Handlers { On_Click { Call { Action: after, Args: [<| 100 |>, <| 'bump' |>, <| 't' |>] } } } }\n"
+                                "    }\n")
     click(view, "root.a")
     click(view, "root.b")  # the same view, the same name: one timer, restarted
     run(view.window, 200)
@@ -181,7 +184,7 @@ def test_a_name_is_the_scopes_as_a_local_name_is(tmp_path):
 
 
 def test_timers_stop_when_the_view_closes(tmp_path):
-    view, vm = opened(tmp_path, "  - {widget: Container, name: go, handlers: {on_click: \"every(40, 'bump')\"}}\n")
+    view, vm = opened(tmp_path, "    Container { Name: go, Handlers { On_Click { Call { Action: every, Args: [<| 40 |>, <| 'bump' |>] } } } }\n")
     click(view, "root.go")
     run(view.window, 100)
     view.close()
@@ -191,7 +194,9 @@ def test_timers_stop_when_the_view_closes(tmp_path):
 
 
 def test_a_timer_does_not_run_for_a_widget_that_has_gone(tmp_path):
-    view, vm = opened(tmp_path, "  - {widget: Container, name: go, if: count < 1, handlers: {on_click: \"after(100, 'bump'); count += 1\"}}\n")
+    view, vm = opened(tmp_path, "    If <| count < 1 |> {\n"
+                                "      Container { Name: go, Handlers { On_Click { Call { Action: after, Args: [<| 100 |>, <| 'bump' |>] } Set { Target: count, Value: <| count + 1 |> } } } }\n"
+                                "    }\n")
     click(view, "root.go")
     view.window.advance(16)
     run(view.window, 300)
@@ -200,12 +205,12 @@ def test_a_timer_does_not_run_for_a_widget_that_has_gone(tmp_path):
 
 def test_a_mistake_in_a_literal_action_is_found_when_the_view_loads():
     with pytest.raises(LoadError, match="not available in a handler"):
-        parse_view("widget: Rect\nhandlers:\n  on_click: \"after(100, 'if x: pass')\"\n", "T_View.yaml")
-    parse_view("widget: Rect\nhandlers:\n  on_click: \"after(100, 'a = 1')\"\n", "T_View.yaml")
+        parse_view(TDL + "Rect { Handlers { On_Click { Call { Action: after, Args: [<| 100 |>, <| 'if x: pass' |>] } } } }\n", "T_View.tdl")
+    parse_view(TDL + "Rect { Handlers { On_Click { Call { Action: after, Args: [<| 100 |>, <| 'a = 1' |>] } } } }\n", "T_View.tdl")
 
 
 def test_closing_the_view_cancels_timers_started_from_python(tmp_path):
-    view, _ = opened(tmp_path, "  - {widget: Container, name: c}\n")
+    view, _ = opened(tmp_path, "    Container { Name: c }\n")
     log = []
     view.timers.every(20, lambda: log.append(1))
     run(view.window, 100)
@@ -216,11 +221,16 @@ def test_closing_the_view_cancels_timers_started_from_python(tmp_path):
     assert len(log) == seen
 
 
-@pytest.mark.parametrize("call", ["after(100)", "after(100, 'a = 1', 'n')", "every(100, 'a = 1')", "cancel('n')"])
+@pytest.mark.parametrize("call", [
+    "Call { Action: after, Args: [<| 100 |>] }",
+    "Call { Action: after, Args: [<| 100 |>, <| 'a = 1' |>, <| 'n' |>] }",
+    "Call { Action: every, Args: [<| 100 |>, <| 'a = 1' |>] }",
+    "Call { Action: cancel, Args: [<| 'n' |>] }",
+])
 def test_calls_the_loader_can_read_are_accepted(call):
-    parse_view(f"widget: Rect\nhandlers:\n  on_click: \"{call}\"\n", "T_View.yaml")
+    parse_view(TDL + f"Rect {{ Handlers {{ On_Click {{ {call} }} }} }}\n", "T_View.tdl")
 
 
 def test_a_mistake_in_every_is_found_at_load_too():
     with pytest.raises(LoadError, match="not available in a handler"):
-        parse_view("widget: Rect\nhandlers:\n  on_click: \"every(100, 'if x: pass')\"\n", "T_View.yaml")
+        parse_view(TDL + "Rect { Handlers { On_Click { Call { Action: every, Args: [<| 100 |>, <| 'if x: pass' |>] } } } }\n", "T_View.tdl")
