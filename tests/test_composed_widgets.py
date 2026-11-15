@@ -584,7 +584,7 @@ def test_toolbars():
     for w in windows:
         w.advance(16)
     assert (docked.node.get("layout_height"), docked.node.get("fill")) == (64.0, BASE["surface_container"])
-    assert floating.node.get("corner_radius") == 32.0 and floating.node.get("fill") == BASE["primary_container"]
+    assert floating.node.get("corner_radius") >= 32.0 and floating.node.get("fill") == BASE["primary_container"]  # a pill (`full`)
     assert (upright.node.get("layout_width"), upright.node.get("flex_direction")) == (64.0, "vertical")
     with pytest.raises(ValueError, match="unknown toolbar variant"):
         toolbar(window, variant="sticky")
@@ -599,7 +599,7 @@ def test_the_top_app_bar_is_md3s_small_one():
     assert (bar.node.get("layout_height"), bar.node.get("fill")) == (64.0, BASE["surface"])
     assert bar.part("title").get("font_size") == 22.0  # title_large
     lead = bar.part("leading")
-    assert (lead.get("layout_width"), lead.get("role"), lead.get("focusable")) == (48.0, "button", True)
+    assert (lead.get("layout_width"), lead.get("role"), lead.get("focusable")) == (40.0, "button", True)  # the shipped IconButton is 40
     assert bar.part("leading.icon").get("fill") == BASE["on_surface"]
     assert bar.part("trailing1.icon").get("fill") == BASE["on_surface_variant"]
     assert bar.interaction("trailing0") is not None

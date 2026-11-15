@@ -13,7 +13,8 @@ from tess_ui.follow import app_of
 from tess_ui.reactive import Effect, Signal, ViewModel
 from tess_ui.theme import Theme
 from tess_ui.widgets._composed import Widget
-from tess_ui.widgets.buttons import _borders, _variant
+from tess_ui.widgets._views import Call
+from tess_ui.widgets.buttons import _border, _borders, _variant
 from tess_ui import motion
 
 if TYPE_CHECKING:
@@ -419,26 +420,17 @@ def toolbar(
     buttons: add them to `.node`. `docked` spans its width, 64 px tall;
     `floating` is a pill with elevation, horizontal or vertical. Standard
     `surface_container`, or `vibrant` `primary_container`."""
-    fragment_name = _variant("toolbar", variant, {"docked": "ToolbarDocked", "floating": "ToolbarFloating"})
+    shipped = _variant("toolbar", variant, {"docked": "docked", "floating": "floating"})
     if orientation not in (None, "horizontal", "vertical"):
         raise ValueError(f"a toolbar's orientation is 'horizontal' or 'vertical', got {orientation!r}")
-    background = "primary_container" if vibrant else "surface_container"
     vertical = orientation == "vertical"
-    params: dict[str, Any] = {"background": background, "width": width if width is not None else (64 if vertical else 360)}
-    if variant == "floating":
-        params["corner_radius"] = 32
-    border = _borders([None], border_color, border_width)
-
-    def edit(spec: dict[str, Any]) -> None:
-        if vertical:
-            spec["style"].update(flex_direction="vertical", height=height if height is not None else 360, width=64)
-        elif height is not None:
-            spec["style"]["height"] = height
-        if border is not None:
-            border(spec)
-
-    widget = Widget(window, fragment_name, params, theme=theme, x=x, y=y, edit=edit, name="toolbar")
-    a11y.describe(widget.node, role="group")
+    style: dict[str, Any] = {"width": width if width is not None else (64 if vertical else 360), "height": height,
+                             **_border(border_color, border_width)}
+    if vertical:
+        style.update(flex_direction="vertical", width=64, height=height if height is not None else 360)
+    call = Call("Toolbar", props={"variant": shipped, "orientation": "vertical" if vertical else "horizontal", "vibrant": vibrant, "bare": True,
+                                  "label": "Toolbar"}, style=style)
+    widget = Widget(window, call=call, components={None: f"toolbar.{variant}"}, theme=theme, x=x, y=y, name="toolbar")
     widget.vibrant = vibrant
     return widget
 
@@ -455,6 +447,18 @@ def _styled(edit: Any, style: dict[str, Any] | None) -> Any:
         spec["style"] = {**spec["style"], **style}
 
     return run
+
+
+def _top_bar_spec(name: str, title: str, width: float) -> dict[str, Any]:
+    """The small top app bar as a hand-built spec: for a bar the shipped `TopAppBar` cannot be (the window's title bar, with window buttons that are
+    nodes of this view; more than three trailing icons; a bar slimmer than 64 px)."""
+    return {"id": name, "kind": "Container", "component_of": "top_app_bar",
+            "style": {"width": width, "height": 64, "background": "surface", "align_content": "left",
+                      "padding": {"left": 4, "right": 4, "top": 0, "bottom": 0}},
+            "children": [{"id": f"{name}.title", "kind": "Text",
+                          "text": {"content": title, "typography_role": "title_large", "wrap": "none", "overflow": "ellipsis"},
+                          "style": {"foreground": "on_surface", "flex": "expand_horizontal",
+                                    "margin": {"left": 16, "right": 0, "top": 0, "bottom": 0}, "min_width": 0}}]}
 
 
 def top_app_bar(
@@ -527,8 +531,18 @@ def top_app_bar(
         if border is not None:
             border(spec)
 
+    slim = isinstance(height, (int, float)) and not isinstance(height, bool) and height < 64
+    if not (window_controls or len(trailing) > 3 or slim):
+        actions = [{"value": f"trailing{i}", "icon": glyph, "label": glyph} for i, glyph in enumerate(trailing)]
+        call = Call("TopAppBar", props={"title": title, "leading_icon": leading_icon, "leading_label": leading_icon, "actions": actions},
+                    style={"width": width if width is not None else 360, **(style or {}), **_border(border_color, border_width)})
+        parts = {"title": "row.title", "leading": "row.leading", "leading.icon": "row.leading.icon"}
+        for i in range(len(trailing)):
+            parts[f"trailing{i}"] = f"row.action[trailing{i}]"
+            parts[f"trailing{i}.icon"] = f"row.action[trailing{i}].icon"
+        return Widget(window, call=call, components={None: "top_app_bar"}, parts=parts, theme=theme, x=x, y=y, name=name)
     parts = (["leading"] if leading_icon else []) + [f"trailing{i}" for i in range(len(trailing))]
-    widget = Widget(window, "TopAppBar", {"title": title, "width": width if width is not None else 360},
+    widget = Widget(window, spec=_top_bar_spec(name, title, width if width is not None else 360),
                     theme=theme, x=x, y=y, interactive={p: None for p in parts}, edit=_styled(edit, style), name=name)
     for part in parts:
         node = widget.part(part)
@@ -553,7 +567,8 @@ def status_bar(
     of `surface_container` with `label_small` text in
     `on_surface_variant`, announced politely when its text changes.
     `style` is laid over its own: `{height: 32}`, `background`, ..."""
-    widget = Widget(window, "StatusBar", {"text": text, "width": width if width is not None else 360},
-                    theme=theme, edit=_styled(_borders([None], border_color, border_width), style), name="status_bar")
-    a11y.describe(widget.node, live="polite")
+    state = Signal(text)
+    call = Call("StatusBar", props={"text": state}, style={"width": width if width is not None else 360, **(style or {}), **_border(border_color, border_width)})
+    widget = Widget(window, call=call, components={None: "status_bar"}, parts={"text": "section[start].note[0].note_text"}, theme=theme, name="status_bar")
+    widget.text = state  # the view's own `text`: setting it changes what the strip says
     return widget

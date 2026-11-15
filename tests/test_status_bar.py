@@ -76,7 +76,7 @@ def test_it_is_a_24_pixel_surface_container_strip_the_width_of_its_place(tmp_pat
 
 def test_the_items_sit_at_the_start_the_centre_and_the_end(tmp_path):
     view, _ = opened(tmp_path)
-    left, mid, right = text(view, "section[start].note[Ready].note_text"), text(view, "section[center].note[Saved].note_text"), text(view, "section[end].item[goto].text")
+    left, mid, right = text(view, "section[start].note[0].note_text"), text(view, "section[center].note[0].note_text"), text(view, "section[end].item[goto].text")
     assert left.get("layout_x") < 20
     assert abs((mid.get("layout_x") + mid.get("layout_width") / 2) - 250) < 3
     assert right.get("layout_x") + right.get("layout_width") <= 500 - 8 - 4 + 1 and right.get("layout_x") > 300
@@ -84,7 +84,7 @@ def test_the_items_sit_at_the_start_the_centre_and_the_end(tmp_path):
 
 def test_the_text_is_label_small_in_on_surface_variant(tmp_path):
     view, _ = opened(tmp_path)
-    t = text(view, "section[start].note[Ready].note_text")
+    t = text(view, "section[start].note[0].note_text")
     assert t.get("font_size") == 11.0 and t.get("fill") == role(view, "on_surface_variant")
 
 
@@ -102,7 +102,7 @@ def test_an_item_with_a_value_is_a_button_and_pressing_it_reports_it(tmp_path):
 
 def test_an_item_with_no_value_is_not_pressable(tmp_path):
     view, vm = opened(tmp_path)
-    note = text(view, "section[start].note[Ready]")
+    note = text(view, "section[start].note[0]")
     assert not note.get("focusable")
     view.window.simulate("click", node=note)
     view.window.advance(16)
@@ -144,11 +144,11 @@ Container {
     view = app.open_view("Main")
     app.show("main")
     view.window.advance(16)
-    assert text(view, "section[start].note[Ready].note_text").get("text") == "Ready"
+    assert text(view, "section[start].note[0].note_text").get("text") == "Ready"
     app.bindings.viewmodel_for("main").msg.set("Saving")
     for _ in range(4):
         view.window.advance(16)
-    assert text(view, "section[start].note[Saving].note_text").get("text") == "Saving"
+    assert text(view, "section[start].note[0].note_text").get("text") == "Saving"
 
 
 def test_a_progress_edge_shows_while_busy_or_given_a_value(tmp_path):
@@ -182,4 +182,4 @@ Container {
     view = app.open_view("Main")
     app.show("main")
     view.window.advance(16)
-    assert text(view, "section[start].note[Ready].note_text").get("text") == "Ready" and view.node("root.s").get("layout_width") == 300.0
+    assert text(view, "section[start].note[0].note_text").get("text") == "Ready" and view.node("root.s").get("layout_width") == 300.0

@@ -78,8 +78,8 @@ def test_a_decorated_apps_top_bar_is_as_it_was():
     app = _app()
     bar = _bar(app)
     assert bar.node.get("window_region") is None
-    assert [c["id"] for c in bar.spec["children"]] == ["top_app_bar.leading", "top_app_bar.title",
-                                                       "top_app_bar.trailing0"]
+    node = bar.view.node  # the shipped TopAppBar: its parts sit in its row
+    assert [node(f"top_app_bar.row.{p}").get("layout_width") is not None for p in ("leading", "title", "action[trailing0]")] == [True] * 3
 
 
 def test_window_controls_can_be_asked_for_or_refused():

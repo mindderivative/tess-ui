@@ -45,6 +45,7 @@ The Material 3 toolbar: a row (or, floating, a column) of icon buttons with an o
 | `Max_Length` | `any` |  | A floating toolbar's longest length in pixels, for `Fit`. |
 | `Hidden` | `bool` | `false` | Faded out of the way and out of the tab order. |
 | `Disabled` | `bool` | `false` | No button responds. |
+| `Bare` | `bool` | `false` | No items and no group: only the bar, for a Python widget that adds its own nodes straight into it. |
 
 Children go in the default slot.
 
