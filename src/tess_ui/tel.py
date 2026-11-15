@@ -1,27 +1,23 @@
-"""tess-ui's expressions on TEL, the Tesserae Expression Language (`tess_el`): an adapter beside `tess_ui.expr`, which it will replace.
-
-Nothing imports this module yet (piece 11a of `design/tdl-switch-plan.md`). It offers what the callers of `tess_ui.expr` use, with the same names and
-shapes, so that a later piece can move them one by one: change the import, nothing else.
+"""tess-ui's expressions and handlers on TEL, the Tesserae Expression Language (`tess_el`): what `binding.py`, `spec/nodes.py`, `spec/rules.py`, `spec/compose.py`
+and `viewmodel.py` compile and evaluate with.
 
     expr = compile_expr("count + 1 if ready else 0", origin=Origin("Main_View.tdl", 12, 8))
     expr.evaluate(scope)                        # `scope` is any tess-ui scope: `lookup(name)`, optionally `names()` and `is_reactive(name)`
 
-What the adapter adds to TEL, and nothing else:
+What tess-ui adds to TEL, and nothing else:
 
 - **A scope.** TEL asks a scope for plain values and never touches anything else; tess-ui's scopes hand out `Signal`s and `Computed`s. `adapt(scope)` is a
   scope that reads each one as its value, which is also what puts the read on `tess_ui.reactive`'s recording stack (`Signal.get` records it), so a
   `Computed` or `Effect` that evaluates an expression depends on exactly what the evaluation read. The order in which names resolve is the scope's own
-  (`spec.compose.Scope`: loop variables and local state, params, the ViewModel, `app`), unchanged; the one name the adapter itself adds is `event`.
-  A handler's `event` is an ordinary name to TEL, so it is put in front of the scope (`adapt(scope, event=...)`), as `expr.py` did.
-- **The functions.** `HOST_FUNCTIONS` are the built-ins `expr.py` had that TEL dropped (`format_number`, `pluralize`, the date functions, `current_date`),
-  registered with `functions=`. TEL's own built-ins and its method whitelist are the same as `expr.py`'s; `HOST_METHODS` adds only `get()`, the `Signal`'s
-  own read, which a view may call (`tests/test_tel.py` pins both facts).
-- **The errors.** A `TelError` becomes an `ExprError`: the one class callers catch, with `expr.py`'s fields (`message`, `hint`, `file`, `line` and a
-  0-based `column` in the file, `source`, `render()`), and the TEL `code` on top for tests and tools. The message is TEL's, which keeps the hint
-  ("did you mean ...") where TEL has one; a function that failed says why, as `expr.py` did.
-
-Where `expr.py` and TEL differ (the cases that are not a function or an error class), `tests/tel_parity_known.json` lists each expression of the
-repository's views, docs and tests that comes out differently, with the reason; `tests/test_tel_parity.py` keeps that list honest.
+  (`spec.compose.Scope`: loop variables and local state, params, the ViewModel, `app`); the one name the adapter itself adds is `event`, in a handler.
+- **The functions.** `HOST_FUNCTIONS` are the functions TEL leaves to its host (`format_number`, `pluralize`, the date functions, `current_date`), registered
+  with `functions=`; `HOST_METHODS` adds only `get()`, the `Signal`'s own read, which a view may call.
+- **The errors.** A `TelError` becomes an `ExprError`: the one class callers catch, with `message`, `hint`, `file`, `line` and a 0-based `column` in the file,
+  `source`, `render()` and TEL's `code`. The message is TEL's, which keeps the hint ("did you mean ...") where TEL has one; a function that failed says why.
+- **Handlers.** TEL has expressions and no statements. A handler is a list of steps, `Set(target, value)` and `Call(callee, args)` (`compile_statements`
+  splits the text the loaders hand over), each value a TEL expression, run in order and written with `scope.assign`, so each step sees the ones before it.
+  A call of an action the scope knows (a built-in family's member, a ViewModel method, a handler parameter) is made by the scope; `Set` may keep its result
+  (`ok = copy(text)`). Where the scope knows no such action the call is the expression it is (`str(n)`) or an error.
 """
 
 from __future__ import annotations
@@ -210,11 +206,13 @@ def _recorded(name: str, function: Callable[..., Any]) -> Callable[..., Any]:
 
 
 #: What an expression may call besides TEL's own built-ins (`len min max abs round sum str int float bool sorted reversed range enumerate zip any all
-#: list dict tuple set isinstance clamp`): the functions `expr.py` had and TEL left to its host. Their behaviour is `expr.py`'s.
+#: list dict tuple set isinstance clamp`): the functions TEL leaves to its host.
 HOST_FUNCTIONS: dict[str, Callable[..., Any]] = {
     "format_number": _format_number, "pluralize": _pluralize, "date_add_days": _date_add_days, "date_weekday": _date_weekday,
     "days_in_month": _days_in_month, "format_date": _format_date, "current_date": _today,
 }
+
+
 def _itself(value: Any) -> Any:
     return value
 
@@ -223,8 +221,8 @@ def _signal_get(signal: Any) -> Any:
     return signal.get()
 
 
-#: The methods registered on top of TEL's whitelist (`str`: `lower upper ... removesuffix`, `list` and `tuple`: `index count`, `dict`: `get keys values items`,
-#: which is `expr.py`'s): `get()`, because a view may say `count.get()` for a `Signal`'s own value. A scope's `Signal` is already read as its value, so on
+#: The methods registered on top of TEL's whitelist (`str`: `lower upper ... removesuffix`, `list` and `tuple`: `index count`, `dict`: `get keys values items`):
+#: `get()`, because a view may say `count.get()` for a `Signal`'s own value. A scope's `Signal` is already read as its value, so on
 #: a plain value `get()` is that value; on a `Signal` that reached the expression inside a list or a mapping it reads it. A `Signal` that holds a `dict` is the
 #: one case that stays different: `d.get()` is the dict's own `get`, which needs a key (write `d`).
 HOST_METHODS: dict[type, dict[str, Callable[..., Any]]] = {
@@ -234,7 +232,7 @@ HOST_METHODS: dict[type, dict[str, Callable[..., Any]]] = {
 _REGISTERED = {name: _recorded(name, function) for name, function in HOST_FUNCTIONS.items()}
 
 
-#: Every function an expression may call: TEL's built-ins and `HOST_FUNCTIONS` (what `expr.BUILTIN_FUNCTIONS` was the keys of).
+#: Every function an expression may call: TEL's built-ins and `HOST_FUNCTIONS`.
 BUILTIN_NAMES: frozenset[str] = frozenset(tess_el._whitelist.BUILTIN_NAMES) | frozenset(HOST_FUNCTIONS)  # noqa: SLF001 - TEL has no public list of them
 
 
@@ -252,7 +250,7 @@ _DENIED = (types.ModuleType, type, types.FunctionType, types.BuiltinFunctionType
 class _Host:
     """An object the application owns (the ViewModel's, `app`, a namespace of `Signal`s), as TEL carries it: an expression reads its attributes and does
     nothing else with it. TEL reads an attribute with `getattr` on what it holds, so this is where a `Signal` or `Computed` attribute (`app.state.user`)
-    reads as its value, as `expr.py` read every one it met, and where an attribute that is another such object is wrapped in turn."""
+    reads as its value, and where an attribute that is another such object is wrapped in turn."""
 
     __slots__ = ("_o",)
 
@@ -262,7 +260,7 @@ class _Host:
     def __getattr__(self, name: str) -> Any:
         if name == "__dict__":  # TEL lists the instance's attributes to offer the nearest name for a mistyped one
             return getattr(self._o, "__dict__", {})
-        exposed = getattr(type(self._o), "__expose__", None)  # a class may narrow what an expression can read of it, as in `expr.py`
+        exposed = getattr(type(self._o), "__expose__", None)  # a class may narrow what an expression can read of it
         if name.startswith("_") or (exposed is not None and name not in exposed):
             raise AttributeError(name)
         return _read(getattr(self._o, name))
