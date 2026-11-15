@@ -55,14 +55,14 @@ Some tests read tess_re's source: `TESS_RE_SOURCE_DIR=<path to the tess_re check
 After changing a view, a widget declaration, a component page entry or the expression language, regenerate and commit the results:
 
 ```bash
-for g in generate_component_docs generate_yaml_docs generate_api_docs generate_yaml_schema generate_widget_schema; do
+for g in generate_component_docs generate_tdl_docs generate_api_docs generate_schema; do
   .venv/bin/python tools/$g.py
 done
 ```
 
 `tools/component_docs.yaml` is the source of `docs/components/*.md`; do not edit those pages by hand.
 
-Every shipped YAML file, example and whole-file docs block starts with `tesserae: 0.6` (`src/tess_ui/spec/marker.py`: `LINE`, the first two parts of the version). A new series changes `LINE`, and `python3 tools/stamp_language.py --write` moves every one of those files; `tests/test_language_marker.py` fails while any lacks it.
+The generators read the shipped `.tdl` files through the TDL front ends (never the YAML twins that are left until the cutover). `tools/component_docs.yaml` stays YAML: it is the component-page generator's own data (prose and TDL usage examples), read by `tools/` only, so `pyyaml` stays a development dependency for it, for `tools/component_order.yaml` and for the skills check.
 
 ### Mutation checks
 
@@ -76,7 +76,7 @@ once**, run the test file with an isolated bytecode cache (`PYTHONPYCACHEPREFIX=
 - `src/tess_ui/composed.py` — the live view: wires handlers, overlays, timers, focus groups, frames, measures. `app.py` — the app; `appwindows.py` — more windows.
 - `design/yaml-language.md` — the language, and a log of why each component needed what it did. `design/component-order.md` — the build order of the 0.5.0 components.
 - `docs/` — the MkDocs site; `docs/changelog.md` and `CHANGELOG.md`; `LOG.md` and `PLAN.md` — the project log and plan.
-- Spec-generated node keys (`spin`, `dial`, `graph`, `tooltip`) must be added in three places: `build._NODE_KEYS`, `view._props_equal` and the exclusion set in `tools/generate_yaml_schema.py`.
+- Spec-generated node keys (`spin`, `dial`, `graph`, `tooltip`) must be added in two places: `build._NODE_KEYS` and `view._props_equal`.
 
 ## 5. Working rules (from `CLAUDE.md`)
 

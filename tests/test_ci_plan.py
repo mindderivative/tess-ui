@@ -101,7 +101,7 @@ def test_the_workflow_has_no_separate_steps_for_the_examples():
 
 def test_the_doc_tests_exist_and_are_found():
     found = plan.doc_tests()
-    assert "tests/test_api_docs.py" in found and "tests/test_tutorials_current.py" in found and "tests/test_yaml_schema.py" in found
+    assert "tests/test_api_docs.py" in found and "tests/test_tutorials_current.py" in found and "tests/test_schema.py" in found
     assert all((ROOT / t).exists() for t in found)
 
 
