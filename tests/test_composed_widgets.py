@@ -9,7 +9,7 @@ import pytest
 import tess_re
 
 from tess_ui import Theme, interaction, tokens
-from helpers import expand_components
+
 from tess_ui.widgets import button
 from tess_ui.widgets._composed import Widget
 
@@ -118,24 +118,14 @@ def test_arguments_reach_the_button():
         button(window, "x", 10, 10, variant="huge")
 
 
-def test_the_widget_and_a_component_call_are_one_definition():
-    """`button()` expands the same fragment a `component: ButtonFilled` call does."""
-    from tess_ui import View
+def test_a_widget_is_a_call_of_the_shipped_view():
+    """`button()` is the shipped `Button` view, called with the caller's size: its parts and looks are the view's."""
+    from tess_ui.widgets._views import FactoryView
 
     window = _window()
     b = button(window, "Save", 120, 40)
-    spec = expand_components('''
-id: root
-kind: Container
-children:
-  - id: button
-    component: ButtonFilled
-    with: {label: Save, width: 120, height: 40, corner_radius: 20}
-''')
-    view = View(spec["children"][0], theme_seed=tokens.BASELINE["primary"])
-    view._use_scheme(BASE)
-    for prop in ("fill", "corner_radius", "width", "height", "align_items", "justify_content"):
-        assert view.root.get(prop) == b.node.get(prop), prop
+    assert isinstance(b.view, FactoryView) and b.view.handle.doc.root.widget == "Button"
+    assert b.part("label").get("text") == "Save" and b.node.get("fill") == BASE["primary"]
 
 
 def test_a_widget_has_named_parts_and_can_be_destroyed():

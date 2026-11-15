@@ -1,6 +1,6 @@
-"""The composed MD3 widgets of `tess_ui.widgets`: each is built either from a call of a shipped view (`call=`, a `tess_ui.widgets._views.Call`: the
-button family so far, so `button(window, ...)` and a `Button` call in a view are one definition) or from its fragment in `spec/fragments.py`, expanded
-by `spec/expand.py`.
+"""The composed MD3 widgets of `tess_ui.widgets`: each is built either from a call of the views Tesserae ships (`call=`, a `tess_ui.widgets._views.Call`
+tree: `button(window, ...)` and a `Button` call in a view are one definition) or, for what no shipped view is, from a kind-tree `spec=` the factory
+builds.
 
 A factory returns a `Widget`: `.node` (its root, attached to the window's
 root), `.part(name)` for a named piece (`"label"`), `on_click(fn)` and
@@ -18,16 +18,9 @@ from tess_ui.spec.build import _INTERACTIVE_KINDS
 from tess_ui.widgets._views import FactoryView
 from tess_ui.follow import initial_theme, unfollow
 from tess_ui.listeners import handled
-from tess_ui.spec.expand import expand_components_to_spec
 from tess_ui.theme import Theme
 
-__all__ = ["Widget", "fragment"]
-
-
-def fragment(name: str, params: dict[str, Any], node_id: str) -> dict[str, Any]:
-    """The spec `name`'s fragment expands to with `params`, its root `node_id`
-    (its parts `node_id.part`): for widgets built from several fragments."""
-    return expand_components_to_spec({"id": node_id, "component": name, "with": params})
+__all__ = ["Widget"]
 
 
 def content_role(spec: dict[str, Any]) -> Optional[str]:
@@ -40,13 +33,12 @@ def content_role(spec: dict[str, Any]) -> Optional[str]:
 
 
 class Widget:
-    """A composed MD3 widget: its fragment, expanded with `params` (or a
-    `spec` a factory built from several), built into `window`.
-    `interactive` maps a part (`None` for the root) to the colour role of
-    its feedback, `None` meaning its content's colour. `edit(spec)`, when
-    given, adjusts the spec before it's built (a factory's extra arguments)."""
+    """A composed MD3 widget: a `call` of the shipped views, or a kind-tree `spec`, built into `window`.
+    `components` maps a part (`None` for the root) of a call to the theme `components:` key it is the root of, `parts` a part's name to its id under
+    `name` where the view names it otherwise. For a spec: `interactive` maps a part (`None` for the root) to the colour role of
+    its feedback, `None` meaning its content's colour, and `edit(spec)`, when given, adjusts the spec before it's built (a factory's extra arguments)."""
 
-    def __init__(self, window: Any, fragment_name: Optional[str] = None, params: Optional[dict[str, Any]] = None, *,
+    def __init__(self, window: Any, *,
                  spec: Optional[dict[str, Any]] = None, call: Optional[Any] = None, components: Optional[dict[Optional[str], str]] = None,
                  parts: Optional[dict[str, str]] = None, theme: Optional[Theme] = None,
                  label: Optional[str] = None, x: Optional[float] = None, y: Optional[float] = None,
@@ -66,8 +58,7 @@ class Widget:
                                           components={self._id(part): key for part, key in (components or {}).items()})
             self.spec = self.view.spec
         else:
-            if spec is None:
-                spec = fragment(fragment_name, params or {}, name)
+            assert spec is not None, "a widget is a `call=` or a `spec=`"
             if edit is not None:  # first, so the parts it adds can be interactive
                 edit(spec)
             for part, role in (interactive or {}).items():
@@ -75,7 +66,7 @@ class Widget:
                 role = role or content_role(node_spec) or "on_surface"
                 node_spec["interaction"] = {"color": role}
             self.spec = spec
-            self.view = View(spec, window=window, theme_seed=tokens.BASELINE["primary"], frames=frames)
+            self.view = View(spec, window=window, theme_seed=tokens.BASELINE["primary"], frames=frames)  # type: ignore[assignment]  # a hand-built widget's view is a plain `View`
         self.view._layers.components = dict(self.theme.components)  # its theme's shapes (M57)
         self.view._layers.typography = dict(self.theme.type_overrides)  # and its type scale (M64)
         self.view._use_scheme(self._scheme())

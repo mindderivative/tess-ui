@@ -322,7 +322,7 @@ def tree_node(
     call = Call("TreeNode", props={"label": title, "level": int(depth), "branch": None if leaf else True, "expanded": state},
                 style={"width": width, **_border(border_color, border_width)})
     widget = Widget(window, call=call, components={None: "tree_node"}, parts={"title": "label"}, theme=theme, x=x, y=y, name="tree_node")
-    if leaf:
+    if state is None:
         widget.expanded = None
         widget.node.set(focusable=True)
     else:

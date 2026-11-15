@@ -21,9 +21,13 @@ from pathlib import Path
 from typing import Any
 
 from tess_ui.images import decode_image
-from tess_ui.spec.expand import ComponentError
 
-__all__ = ["Frame", "check_frame", "extract_images"]
+__all__ = ["ComponentError", "Frame", "check_frame", "extract_images"]
+
+
+class ComponentError(ValueError):
+    """A picture a view or widget names that cannot be loaded (a file that cannot be read, a path that leaves the view's folder, a picture that is too large)."""
+
 
 #: `(node_id, rgba, pixel_width, pixel_height)` -- one decoded image,
 #: waiting to be pushed onto its node once `tess_re` has built the view.

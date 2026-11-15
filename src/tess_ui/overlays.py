@@ -222,7 +222,7 @@ class Menu(Overlay):
         call = Call("Container", style={"width": width, "flex_direction": "vertical", "background": "surface_container", "corner_radius": "extra_small",
                                         "elevation": "level_2", "padding": {"left": 0, "right": 0, "top": 8, "bottom": 8}}, children=children)
         widget = Widget(window, call=call, theme=theme, name=name, attach=False,
-                        components={None: "menu", **{f"item{i}": "menu_item" for i, e in enumerate(labels) if e is not None}})
+                        components={f"item{i}": "menu_item" for i, e in enumerate(labels) if e is not None})
         super().__init__(window, widget)
         a11y.describe(self.node, role="menu")
         self.items = []
@@ -394,7 +394,7 @@ class Popover(Overlay):
                 for i, (label, _) in enumerate(self.actions)]))
         call = Call("Container", style={"width": float(width), "background": "surface_container", "corner_radius": "medium", "elevation": "level_2",
                                         "flex_direction": "vertical", "gap": 4, "padding": self.PADDING}, children=children)
-        widget = Widget(window, call=call, components={None: "popover"}, theme=theme, name=name, attach=False,
+        widget = Widget(window, call=call, theme=theme, name=name, attach=False,
                         parts={**{f"action{i}": f"actions.action{i}" for i in range(len(self.actions))},
                                **{f"action{i}.label": f"actions.action{i}.label" for i in range(len(self.actions))}})
         super().__init__(window, widget)

@@ -536,11 +536,11 @@ def top_app_bar(
         actions = [{"value": f"trailing{i}", "icon": glyph, "label": glyph} for i, glyph in enumerate(trailing)]
         call = Call("TopAppBar", props={"title": title, "leading_icon": leading_icon, "leading_label": leading_icon, "actions": actions},
                     style={"width": width if width is not None else 360, **(style or {}), **_border(border_color, border_width)})
-        parts = {"title": "row.title", "leading": "row.leading", "leading.icon": "row.leading.icon"}
+        view_parts = {"title": "row.title", "leading": "row.leading", "leading.icon": "row.leading.icon"}
         for i in range(len(trailing)):
-            parts[f"trailing{i}"] = f"row.action[trailing{i}]"
-            parts[f"trailing{i}.icon"] = f"row.action[trailing{i}].icon"
-        return Widget(window, call=call, components={None: "top_app_bar"}, parts=parts, theme=theme, x=x, y=y, name=name)
+            view_parts[f"trailing{i}"] = f"row.action[trailing{i}]"
+            view_parts[f"trailing{i}.icon"] = f"row.action[trailing{i}].icon"
+        return Widget(window, call=call, components={None: "top_app_bar"}, parts=view_parts, theme=theme, x=x, y=y, name=name)
     parts = (["leading"] if leading_icon else []) + [f"trailing{i}" for i in range(len(trailing))]
     widget = Widget(window, spec=_top_bar_spec(name, title, width if width is not None else 360),
                     theme=theme, x=x, y=y, interactive={p: None for p in parts}, edit=_styled(edit, style), name=name)
@@ -570,5 +570,5 @@ def status_bar(
     state = Signal(text)
     call = Call("StatusBar", props={"text": state}, style={"width": width if width is not None else 360, **(style or {}), **_border(border_color, border_width)})
     widget = Widget(window, call=call, components={None: "status_bar"}, parts={"text": "section[start].note[0].note_text"}, theme=theme, name="status_bar")
-    widget.text = state  # the view's own `text`: setting it changes what the strip says
+    setattr(widget, "text", state)  # the view's own `text`: setting it changes what the strip says
     return widget

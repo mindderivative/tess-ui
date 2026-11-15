@@ -6,8 +6,8 @@ laid-out box, fill, border, corner radius, opacity, elevation (`tess_re`)
 against `shadows` (Tesserae), and text and font. They must be identical.
 
 The corpus:
-- every fragment of `spec/fragments.py` `tess_re` 0.3.4 can build, called with ordinary parameters (the 67 recorded at M43 stay as they were
-  recorded, the fragments only the old tests used included);
+- the built-in fragments `tess_re` 0.3.4 could build (the 67 recorded at M43 stay as they were recorded: the compiler is still compared with what the
+  engine built from them; they are no longer generated, the fragments having been replaced by the shipped views);
 - every view written inline in the test suite that `tess_re` itself accepts;
 - the example views, built from their files (includes and images), as they were recorded;
 - every `yaml` block in the docs and README that is a whole view.
@@ -33,18 +33,11 @@ import yaml
 
 import reference
 import treediff
-from tess_ui.spec.expand import expand_components_to_spec
-from tess_ui.spec.fragments import FRAGMENTS
+
 
 ROOT = Path(__file__).resolve().parent.parent
 FENCE = re.compile(r"^```ya?ml\n(.*?)^```", re.MULTILINE | re.DOTALL)
-VALUES = {
-    "background": "#6750A4", "checked": True, "corner_radius": 12, "day": "12", "fit": "cover",
-    "headline": "Title", "height": 40, "hour": 3, "icon": "add", "label": "Label", "left_padding": 16,
-    "minute": 30, "placeholder": "Search", "scrim_height": 300, "scrim_width": 400, "selected": True,
-    "size": 40, "text": "Body", "title": "Title", "value": 0.5, "width": 120, "src": "pixel.png",
-    "item_width": 120,
-}
+
 
 @pytest.fixture(autouse=True)
 def _the_engines_own_names(monkeypatch):
@@ -54,14 +47,6 @@ def _the_engines_own_names(monkeypatch):
     monkeypatch.setattr(layout, "LEGACY_ENGINE_NAMES", True)
 
 
-def _fragment_calls():
-    for name, entry in sorted(FRAGMENTS.items()):
-        params = entry["params"]
-        # a `{name: default}` param (M55) keeps its default
-        values = {k: VALUES[k] for k in params if not isinstance(k, dict)}
-        view = {"id": "root", "kind": "Container", "style": {"width": 500, "height": 400},
-                "children": [{"id": "w", "component": name, "with": values}]}
-        yield f"fragment:{name}", view
 
 
 def _inline_test_views():
@@ -84,7 +69,7 @@ def _accepted(key, text):
     """The expanded spec, or None if it doesn't expand or `tess_re` itself
     rejects it (the suite's deliberately broken views)."""
     try:
-        spec = expand_components_to_spec(yaml.safe_load(text) if isinstance(text, str) else text)
+        spec = yaml.safe_load(text) if isinstance(text, str) else text
     except Exception:
         return None
     if not isinstance(spec, dict) or "kind" not in spec or "id" not in spec:
@@ -109,7 +94,7 @@ def _corpus():
         case = before.get(f"test_tesserae_builds_the_same_tree_as_tre[{key}]#1")
         if case is not None:
             corpus[key] = ("recorded", case)
-    for key, text in [*_fragment_calls(), *_inline_test_views(), *_doc_views()]:
+    for key, text in [*_inline_test_views(), *_doc_views()]:
         if key in corpus:
             continue
         spec = _accepted(key, text)

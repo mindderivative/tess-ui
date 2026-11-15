@@ -72,7 +72,7 @@ def svg(
     from pathlib import Path as _Path
 
     from tess_ui import a11y
-    from tess_ui.spec.expand import ComponentError
+    from tess_ui.spec.images import ComponentError
     from tess_ui.spec.svg import load_svg
     from tess_ui.widgets._composed import Widget
 

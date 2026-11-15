@@ -248,7 +248,11 @@ def split_button(
     }
 
     def morph(hovered: bool) -> None:
-        batch(lambda: [radii[part].set(_corners(*(tightened if hovered else resting))) for part, (resting, tightened) in corners.items()])
+        def write() -> None:
+            for part, (resting, tightened) in corners.items():
+                radii[part].set(_corners(*(tightened if hovered else resting)))
+
+        batch(write)
 
     def follow() -> None:  # the feedback's clip takes the part's corners (the view eases the part itself)
         for part in corners:
@@ -324,12 +328,29 @@ def button_group(
         grown = {index: float(width) + GROUP_GROWTH}
         for n in neighbours:
             grown[n] = max(0.0, float(width) - GROUP_GROWTH / len(neighbours))
-        batch(lambda: ([widths[i].set(w) for i, w in grown.items()], radii[index].set(tight)))
+
+        def write() -> None:
+            for i, w in grown.items():
+                widths[i].set(w)
+            radii[index].set(tight)
+
+        batch(write)
+
+    def reset(index: int) -> None:
+        for i in range(count):
+            widths[i].set(float(width))
+        radii[index].set(rest)
+
+    def reset_one(index: int) -> Callable[[], None]:
+        def run() -> None:
+            reset(index)
+
+        return run
 
     def release() -> None:
         while pressed:
             index = pressed.pop()
-            batch(lambda index=index: ([widths[i].set(float(width)) for i in range(count)], radii[index].set(rest)))
+            batch(reset_one(index))
 
     for i in range(count):
         part = widget.part(f"b{i}")

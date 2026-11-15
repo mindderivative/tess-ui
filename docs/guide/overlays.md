@@ -2,8 +2,8 @@
 
 An overlay is a layer over the window: a dialog, a menu, a snackbar, a side sheet. There are two ways to make one.
 In a view, an `Overlay` shows its children while its `Open` is true. From Python, `tess_ui.overlays` has MD3's
-dialogs, menus, snackbars, tooltips, popovers, side sheets and modal navigation drawers, ready made, built from Tesserae's
-fragments and shown with `tess_re`'s layers.
+dialogs, menus, snackbars, tooltips, popovers, side sheets and modal navigation drawers, ready made, with the shipped `Button` and
+`MenuItem` views for their actions and rows, and shown with `tess_re`'s layers.
 
 ## An Overlay in a view
 

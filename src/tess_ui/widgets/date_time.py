@@ -102,7 +102,11 @@ def period_selector(
             for fn in list(changes):
                 fn(period.get())
 
-    counter = Effect(lambda: (period.get(), seen.__setitem__(0, seen[0] + 1)))
+    def count() -> None:
+        period.get()  # read, so the effect follows it
+        seen[0] += 1
+
+    counter = Effect(count)
     seen[1] = seen[0]
     call = Call("PeriodSelector", props={"period": period}, handlers={"on_change": tell},
                 style=_border(border_color, border_width))  # the frame is the shipped sheet's; a border of the caller's replaces it
