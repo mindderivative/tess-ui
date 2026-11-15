@@ -20,16 +20,22 @@ class VM(ViewModel):
 
 def opened(tmp_path, props=""):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    lines = "\n    ".join(props.split(", ")) if props else ""
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{width: 200, height: 100, align_content: top_left}}
-children:
-  - widget: DatePickerDay
-    name: d
-    day: '9'
-    {lines}
-    handlers: {{on_click: bump}}
+    lines = "".join(f"\n      {line}" for line in props.split(", ")) if props else ""
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Width: 200, Height: 100, Align_Content: top_left }}
+  Children {{
+    DatePickerDay {{
+      Name: d
+      Day: "9"{lines}
+      Handlers {{ On_Click: bump }}
+    }}
+  }}
+}}
 """)
     app = App(root=tmp_path)
     app.bind(VM)
@@ -61,21 +67,21 @@ def test_a_day_is_a_48_pixel_target_with_a_40_pixel_circle_and_the_number_in_bod
 
 
 def test_today_is_outlined_in_primary_with_primary_text(tmp_path):
-    view, _ = opened(tmp_path, "today: true")
+    view, _ = opened(tmp_path, "Today: true")
     circle = d(view, "circle")
     assert circle.get("stroke_width") == 1.0 and circle.get("stroke_color") == role(view, "primary") and d(view, "circle.number").get("fill") == role(view, "primary")
     assert d(view).get("current") == "date"
 
 
 def test_the_selected_day_is_a_primary_circle_with_on_primary_text_and_hides_the_today_outline(tmp_path):
-    view, _ = opened(tmp_path, "selected: true, today: true")
+    view, _ = opened(tmp_path, "Selected: true, Today: true")
     circle = d(view, "circle")
     assert circle.get("fill") == role(view, "primary") and circle.get("stroke_width") == 0.0 and d(view, "circle.number").get("fill") == role(view, "on_primary")
     assert d(view).get("selected") is True
 
 
 def test_a_day_outside_the_month_is_on_surface_variant(tmp_path):
-    view, _ = opened(tmp_path, "outside: true")
+    view, _ = opened(tmp_path, "Outside: true")
     assert d(view, "circle.number").get("fill") == role(view, "on_surface_variant")
 
 
@@ -84,18 +90,24 @@ def test_a_press_runs_the_handler_and_a_disabled_day_does_not_respond(tmp_path):
     view.window.simulate("click", node=d(view))
     assert vm.clicks.get() == 1 and d(view).get("role") == "button" and d(view).get("label") == "9"
     (tmp_path / "x").mkdir()
-    off, vm2 = opened(tmp_path / "x", "disabled: true")
+    off, vm2 = opened(tmp_path / "x", "Disabled: true")
     off.window.simulate("click", node=d(off))
     assert vm2.clicks.get() == 0 and d(off).get("opacity") < 0.5
 
 
 def test_one_view_goes_from_one_state_to_another(tmp_path):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text("""name: main
-widget: Container
-style: {width: 200, height: 100, align_content: top_left}
-children:
-  - {widget: DatePickerDay, name: d, day: '9', selected: "{{ on }}"}
+    (tmp_path / "Views" / "Main_View.tdl").write_text("""---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Width: 200, Height: 100, Align_Content: top_left }
+  Children {
+    DatePickerDay { Name: d, Day: "9", Selected: <| on |> }
+  }
+}
 """)
     app = App(root=tmp_path)
     app.bind(VM)

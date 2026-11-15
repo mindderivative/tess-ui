@@ -80,10 +80,19 @@ def test_a_view_and_a_stylesheet_rule_can_give_per_corner_radii(tmp_path):
         views = "main"
 
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {width: 100, height: 100}\nchildren:\n"
-        "  - {widget: Container, name: a, style: {width: 40, height: 40, background: '#336699', corner_radius: {left: 20}}}\n"
-        "  - {widget: Container, name: b, classes: [round], style: {width: 40, height: 40, background: '#336699'}}\n")
+    (tmp_path / "Views" / "Main_View.tdl").write_text("""---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Width: 100, Height: 100 }
+  Children {
+    Container { Name: a, Style { Width: 40, Height: 40, Background: "#336699", Corner_Radius { Left: 20 } } }
+    Container { Name: b, Classes: [round], Style { Width: 40, Height: 40, Background: "#336699" } }
+  }
+}
+""")
     app = App(root=tmp_path, stylesheet_spec={"styles": [{"classes": ["round"], "style": {"corner_radius": [1, 2, 3, 4]}}]})
     app.bind(VM)
     view = app.open_view("Main")

@@ -15,21 +15,37 @@ class VM(ViewModel):
         self.result = Signal("")
 
 
-def opened(tmp_path, props="", children="", actions="[{label: Cancel, value: cancel}, {label: Discard, value: discard}]"):
+def items(*pairs):
+    """An `Actions` list in TDL: each pair is the text of one `Item` block."""
+    return "Actions { " + " ".join(f"Item {{ {pair} }}" for pair in pairs) + " }"
+
+
+def opened(tmp_path, props="", children="", actions=None):
+    """The view with one Dialog; `props` are TDL lines (`Width: 900, Icon: home`), `children` the TDL blocks of its content."""
+    actions = actions or items("Label: Cancel, Value: cancel", "Label: Discard, Value: discard")
+    lines = "\n".join(f"    {line}" for line in props.split(", ")) if props else ""
+    content = f"    Children {{\n{children}    }}\n" if children else ""
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{flex_direction: vertical, width: 600, height: 500}}
-children:
-  - widget: Dialog
-    name: d
-    open: "{{{{ shown }}}}"
-    result: "{{{{ result }}}}"
-    headline: Discard draft?
-    text: This cannot be undone.
-    actions: {actions}
-    {props}
-{children}""")
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Width: 600, Height: 500 }}
+  Children {{
+    Dialog {{
+      Name: d
+      Open: <| shown |>
+      Result: <| result |>
+      Headline: Discard draft?
+      Text: This cannot be undone.
+      {actions}
+{lines}
+{content}    }}
+  }}
+}}
+""")
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")
@@ -85,11 +101,11 @@ def test_the_panel_is_a_dialog_named_by_its_headline(tmp_path):
 
 
 def test_the_width_stays_between_280_and_560(tmp_path):
-    view, vm = opened(tmp_path, "width: 900")
+    view, vm = opened(tmp_path, "Width: 900")
     show(view, vm)
     assert node(view, "panel").get("layout_width") == 560.0
     (tmp_path / "b").mkdir()
-    view2, vm2 = opened(tmp_path / "b", "width: 100")
+    view2, vm2 = opened(tmp_path / "b", "Width: 100")
     show(view2, vm2)
     assert node(view2, "panel").get("layout_width") == 280.0
 
@@ -125,7 +141,7 @@ def test_escape_and_a_press_on_the_scrim_dismiss_it_with_no_result(tmp_path):
 
 
 def test_a_dialog_that_is_not_dismissible_only_closes_with_an_action(tmp_path):
-    view, vm = opened(tmp_path, "dismissible: false")
+    view, vm = opened(tmp_path, "Dismissible: false")
     show(view, vm)
     assert node(view, "panel").get("role") == "dialog"
     view.window.simulate("key_down", key="escape")
@@ -138,7 +154,7 @@ def test_a_dialog_that_is_not_dismissible_only_closes_with_an_action(tmp_path):
 
 
 def test_an_icon_sits_above_the_headline_in_secondary(tmp_path):
-    view, vm = opened(tmp_path, "icon: home")
+    view, vm = opened(tmp_path, "Icon: home")
     show(view, vm)
     icon = node(view, "panel.icon")
     assert icon.get("fill") == role(view, "secondary") and (icon.get("layout_width"), icon.get("layout_height")) == (24.0, 24.0)
@@ -146,13 +162,13 @@ def test_an_icon_sits_above_the_headline_in_secondary(tmp_path):
 
 
 def test_children_are_the_content_after_the_text(tmp_path):
-    view, vm = opened(tmp_path, children="    children:\n      - {widget: Switch, name: remember, label: Remember}\n")
+    view, vm = opened(tmp_path, children="      Switch { Name: remember, Label: Remember }\n")
     show(view, vm)
     assert node(view, "remember").get("layout_y") > node(view, "panel.content.body").get("layout_y")
 
 
 def test_a_tall_content_scrolls_and_a_line_shows_above_the_actions_once_it_has(tmp_path):
-    view, vm = opened(tmp_path, "max_height: 60", children="    children:\n      - {widget: Container, name: tall, style: {width: 100, height: 400}}\n")
+    view, vm = opened(tmp_path, "Max_Height: 60", children="      Container { Name: tall, Style { Width: 100, Height: 400 } }\n")
     show(view, vm)
     content = view._built.outer["root.d.panel.content"]
     assert content.get("layout_height") == 60.0 and "root.d.panel.line" not in view._built.specs
@@ -163,7 +179,7 @@ def test_a_tall_content_scrolls_and_a_line_shows_above_the_actions_once_it_has(t
 
 
 def test_actions_stack_when_they_do_not_fit_on_one_row(tmp_path):
-    view, vm = opened(tmp_path, actions='[{label: "Keep editing the draft", value: a}, {label: "Discard the draft completely", value: b}]')
+    view, vm = opened(tmp_path, actions=items('Label: "Keep editing the draft", Value: a', 'Label: "Discard the draft completely", Value: b'))
     show(view, vm)
     a, b = node(view, "panel.actions.action[a]"), node(view, "panel.actions.action[b]")
     assert a.get("layout_y") < b.get("layout_y") and a.get("layout_x") >= node(view, "panel").get("layout_x")
@@ -173,7 +189,7 @@ def test_actions_stack_when_they_do_not_fit_on_one_row(tmp_path):
 
 
 def test_the_full_screen_form_fills_the_window_on_surface_with_square_corners(tmp_path):
-    view, vm = opened(tmp_path, "fullscreen: true")
+    view, vm = opened(tmp_path, "Fullscreen: true")
     show(view, vm)
     panel = node(view, "panel")
     win = view.window.root
@@ -182,7 +198,7 @@ def test_the_full_screen_form_fills_the_window_on_surface_with_square_corners(tm
 
 
 def test_the_full_screen_header_has_a_close_button_the_headline_and_the_actions_in_a_row(tmp_path):
-    view, vm = opened(tmp_path, "fullscreen: true", actions="[{label: Save, value: save, variant: filled}]")
+    view, vm = opened(tmp_path, "Fullscreen: true", actions=items("Label: Save, Value: save, Variant: filled"))
     show(view, vm)
     close, title, save = node(view, "panel.bar.close"), node(view, "panel.bar.bar_title"), node(view, "panel.bar.bar_action[save]")
     assert close.get("label") == "Close" and view._built.specs["root.d.panel.bar.bar_title"]["text"]["content"] == "Discard draft?"
@@ -192,7 +208,7 @@ def test_the_full_screen_header_has_a_close_button_the_headline_and_the_actions_
 
 
 def test_the_full_screen_close_button_closes_without_a_result_and_an_action_reports(tmp_path):
-    view, vm = opened(tmp_path, "fullscreen: true", actions="[{label: Save, value: save}]")
+    view, vm = opened(tmp_path, "Fullscreen: true", actions=items("Label: Save, Value: save"))
     show(view, vm)
     view.window.simulate("click", node=node(view, "panel.bar.close"))
     for _ in range(4):
@@ -206,8 +222,8 @@ def test_the_full_screen_close_button_closes_without_a_result_and_an_action_repo
 
 
 def test_the_full_screen_content_takes_the_rest_and_scrolls(tmp_path):
-    kids = "".join(f"    - {{widget: Text, name: t{i}, text: line {i}, typography_role: body_large, style: {{foreground: on_surface}}}}\n" for i in range(60))
-    view, vm = opened(tmp_path, "fullscreen: true", children="    children:\n" + kids.replace("    - ", "      - "))
+    kids = "".join(f"      Text {{ Name: t{i}, Text: line {i}, Typography_Role: body_large, Style {{ Foreground: on_surface }} }}\n" for i in range(60))
+    view, vm = opened(tmp_path, "Fullscreen: true", children=kids)
     show(view, vm)
     content, bar = view._built.outer["root.d.panel.content"], node(view, "panel.bar")  # the viewport; its own node holds the whole content
     assert content.get("layout_y") >= bar.get("layout_y") + 56 and content.get("layout_y") + content.get("layout_height") <= view.window.root.get("layout_height") + 0.5
@@ -215,8 +231,8 @@ def test_the_full_screen_content_takes_the_rest_and_scrolls(tmp_path):
 
 
 def test_a_line_shows_under_the_full_screen_header_once_the_content_has_scrolled(tmp_path):
-    kids = "".join(f"      - {{widget: Text, name: t{i}, text: line {i}, typography_role: body_large, style: {{foreground: on_surface}}}}\n" for i in range(60))
-    view, vm = opened(tmp_path, "fullscreen: true", children="    children:\n" + kids)
+    kids = "".join(f"      Text {{ Name: t{i}, Text: line {i}, Typography_Role: body_large, Style {{ Foreground: on_surface }} }}\n" for i in range(60))
+    view, vm = opened(tmp_path, "Fullscreen: true", children=kids)
     show(view, vm)
     assert "root.d.panel.bar_line" not in view._built.specs
     view.window.simulate("wheel", node=view._built.outer["root.d.panel.content"], delta_x=0.0, delta_y=60.0)

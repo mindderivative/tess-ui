@@ -9,7 +9,7 @@ from tess_ui.spec.widgets import decl_from_params
 from tess_ui.viewmodel import Bindings
 
 SEED = (103, 80, 164, 255)
-TEXT = "typography_role: body_large\n    style: {width: 100, height: 20, foreground: '#000000'}"
+TEXT = 'Typography_Role: body_large, Style { Width: 100, Height: 20, Foreground: "#000000" }'
 
 
 class DemoVM(ViewModel):
@@ -29,7 +29,7 @@ class DemoVM(ViewModel):
 
 
 def render(source, vmcls=DemoVM, views=None, **kw):
-    doc = parse_view(source, "Demo_View.yaml", resolver=(views or {}).get)
+    doc = parse_view(source, "Demo_View.tdl", resolver=(views or {}).get)
     bindings = Bindings()
     bindings.bind(vmcls)
     callee = kw.pop("callee", None)
@@ -37,27 +37,35 @@ def render(source, vmcls=DemoVM, views=None, **kw):
     return view, view.handle.viewmodel, bindings
 
 
-BASE = "name: demo\nwidget: Container\nstyle: {flex_direction: vertical, width: 300, height: 300}\nchildren:\n"
+def tdl(body, name="Demo"):
+    """A view file in TDL: the metadata block, then `body`, the root block."""
+    return f"---\nTDL: 0.2\nName: {name}\n---\n{body}\n"
+
+
+def page(*children):
+    """The demo view: a vertical Container (300 x 300) holding the TDL blocks `children`."""
+    return tdl("Container {\n  Name: demo\n  Style { Flex_Direction: vertical, Width: 300, Height: 300 }\n  Children {\n" + "".join(f"    {c}\n" for c in children) + "  }\n}")
 
 
 def test_a_bound_property_reaches_the_node_and_follows_its_signal():
-    view, vm, _ = render(BASE + "  - widget: Text\n    name: head\n    text: '{{ title }} {{ 1 + 1 }}'\n    " + TEXT + "\n")
+    view, vm, _ = render(page("Text { Name: head, Text: <| title |> <| 1 + 1 |>, " + TEXT + " }"))
     assert view.node("root.head").get("text") == "Hello 2"
     vm.title.set("Bye")
     assert view.node("root.head").get("text") == "Bye 2"
 
 
 def test_a_reactive_style_value_reaches_the_node():
-    view, vm, _ = render(BASE + "  - widget: Rect\n    name: r\n    style: {width: 40, height: 20, background: '{{ color }}'}\n")
+    view, vm, _ = render(page("Rect { Name: r, Style { Width: 40, Height: 20, Background: <| color |> } }"))
     before = view.node("root.r").get("fill")
     vm.color.set("#B3261E")
     assert view.node("root.r").get("fill") != before
 
 
 def test_a_click_runs_the_handler_in_the_scope_it_was_written():
-    view, vm, _ = render(BASE + "  - widget: Rect\n    name: a\n    style: {width: 40, height: 20, background: '#6750A4'}\n    handlers: {on_click: bump}\n"
-                         "  - widget: Rect\n    name: b\n    state: {n: 0}\n    style: {width: 40, height: 20, background: '#6750A4'}\n    handlers: {on_click: 'n += 1'}\n"
-                         "  - widget: Text\n    name: t\n    text: 'x'\n    " + TEXT + "\n")
+    view, vm, _ = render(page('Rect { Name: a, Style { Width: 40, Height: 20, Background: "#6750A4" }, Handlers { On_Click: bump } }',
+                       'Rect { Name: b, State { N: 0 }, Style { Width: 40, Height: 20, Background: "#6750A4" }, '
+                       'Handlers { On_Click { Set { Target: n, Value: <| n + 1 |> } } } }',
+                       'Text { Name: t, Text: "x", ' + TEXT + " }"))
     view.window.advance(16)
     view.window.simulate("click", node=view.node("root.a"))
     assert vm.log == ["bump"]
@@ -67,7 +75,7 @@ def test_a_click_runs_the_handler_in_the_scope_it_was_written():
 
 
 def test_for_adds_and_removes_real_nodes_and_keeps_the_ones_that_stay():
-    view, vm, _ = render(BASE + "  - for: r in rows\n    key: r.id\n    widget: Text\n    name: row\n    text: '{{ r.t }}'\n    " + TEXT + "\n")
+    view, vm, _ = render(page("For r In <| rows |> Key <| r.id |> { Text { Name: row, Text: <| r.t |>, " + TEXT + " } }"))
     first = view.node("root.row[1]")
     vm.rows.set([{"id": 1, "t": "a"}, {"id": 2, "t": "b"}])
     assert view.node("root.row[2]").get("text") == "b" and view.node("root.row[1]") == first
@@ -78,8 +86,7 @@ def test_for_adds_and_removes_real_nodes_and_keeps_the_ones_that_stay():
 
 
 def test_if_builds_and_removes_a_real_node_and_a_handler_on_it_stays_wired():
-    view, vm, _ = render(BASE + "  - widget: Rect\n    name: extra\n    if: show_extra\n    style: {width: 40, height: 20, background: '#6750A4'}\n"
-                         "    handlers: {on_click: bump}\n")
+    view, vm, _ = render(page('If <| show_extra |> { Rect { Name: extra, Style { Width: 40, Height: 20, Background: "#6750A4" }, Handlers { On_Click: bump } } }'))
     with pytest.raises(ValueError, match="no widget"):
         view.node("root.extra")
     vm.show_extra.set(True)
@@ -92,7 +99,7 @@ def test_if_builds_and_removes_a_real_node_and_a_handler_on_it_stays_wired():
 
 
 def test_a_checkbox_follows_the_signal_and_the_users_click_writes_it_back():
-    view, vm, _ = render(BASE + "  - widget: Checkbox\n    name: c\n    checked: '{{ done }}'\n    style: {width: 24, height: 24, background: '#6750A4'}\n")
+    view, vm, _ = render(page('Checkbox { Name: c, Checked: <| done |>, Style { Width: 24, Height: 24, Background: "#6750A4" } }'))
     control = view.control("root.c")
     assert control.checked.get() is False
     vm.done.set(True)
@@ -103,10 +110,10 @@ def test_a_checkbox_follows_the_signal_and_the_users_click_writes_it_back():
 
 
 def test_a_model_parameter_given_a_bare_signal_passes_the_signal_through_a_view():
-    check = "params:\n  on: {type: bool, model: true}\nwidget: Checkbox\nchecked: '{{ on }}'\nstyle: {width: 24, height: 24, background: '#6750A4'}\n"
+    check = tdl('Checkbox { Params { On { Type: bool, Model: true } }, Checked: <| on |>, Style { Width: 24, Height: 24, Background: "#6750A4" } }', "Check")
     decls = {"Check": decl_from_params("Check", {"on": {"type": "bool", "model": True}})}
-    docs = {"Check": parse_view(check, "Check_View.yaml", resolver=decls.get, view_name="Check")}
-    view, vm, _ = render(BASE + "  - {widget: Check, name: c, on: '{{ done }}'}\n", views=decls, callee=docs.get)
+    docs = {"Check": parse_view(check, "Check_View.tdl", resolver=decls.get, view_name="Check")}
+    view, vm, _ = render(page("Check { Name: c, On: <| done |> }"), views=decls, callee=docs.get)
     control = view.control("root.c")
     vm.done.set(True)
     assert control.checked.get() is True
@@ -116,11 +123,12 @@ def test_a_model_parameter_given_a_bare_signal_passes_the_signal_through_a_view(
 
 
 def test_a_view_call_with_slot_content_renders_in_one_tree_and_a_handler_at_the_call_runs_in_the_callers_scope():
-    card = "params: [title]\nwidget: Container\nstyle: {flex_direction: vertical, width: 200, height: 100}\nchildren:\n  - widget: Text\n    name: head\n    text: '{{ title }}'\n    " + TEXT + "\n  - widget: Slot\n"
+    card = tdl("Container { Params: [title], Style { Flex_Direction: vertical, Width: 200, Height: 100 }, Children { "
+               "Text { Name: head, Text: <| title |>, " + TEXT + " } Slot { } } }", "Card")
     decls = {"Card": decl_from_params("Card", ["title"])}
-    docs = {"Card": parse_view(card, "Card_View.yaml", resolver=decls.get, view_name="Card")}
-    view, vm, _ = render(BASE + "  - widget: Card\n    name: c\n    title: '{{ title }}!'\n    handlers: {on_click: bump}\n    children:\n"
-                         "      - {widget: Text, name: inside, text: slotted, " + TEXT.replace("\n    ", ", ") + "}\n", views=decls, callee=docs.get)
+    docs = {"Card": parse_view(card, "Card_View.tdl", resolver=decls.get, view_name="Card")}
+    view, vm, _ = render(page("Card { Name: c, Title: <| title |>!, Handlers { On_Click: bump }, "
+                       "Children { Text { Name: inside, Text: slotted, " + TEXT + " } } }"), views=decls, callee=docs.get)
     assert view.node("root.c.head").get("text") == "Hello!" and view.node("root.c.inside").get("text") == "slotted"
     vm.title.set("Yo")
     assert view.node("root.c.head").get("text") == "Yo!"
@@ -130,7 +138,7 @@ def test_a_view_call_with_slot_content_renders_in_one_tree_and_a_handler_at_the_
 
 
 def test_hiding_a_view_hides_its_root_and_close_stops_it_following_anything():
-    view, vm, _ = render(BASE + "  - widget: Text\n    name: head\n    text: '{{ title }}'\n    " + TEXT + "\n")
+    view, vm, _ = render(page("Text { Name: head, Text: <| title |>, " + TEXT + " }"))
     assert view.root.get("visible") is True
     view.handle.hide()
     assert view.root.get("visible") is False
@@ -152,9 +160,9 @@ def test_two_views_of_one_viewmodel_are_rendered_at_once_and_both_follow_one_sig
 
     bindings = Bindings()
     bindings.bind(Pair)
-    pie = open_composed(parse_view("name: pie\nwidget: Text\ntext: '{{ len(rows) }} slices'\ntypography_role: body_large\nstyle: {width: 100, height: 20, foreground: '#000000'}\n", "Pie_View.yaml"), bindings, theme_seed=SEED)
-    lst = open_composed(parse_view("name: list\nwidget: Container\nstyle: {flex_direction: vertical, width: 100, height: 100}\nchildren:\n"
-                                   "  - for: r in rows\n    key: r\n    widget: Text\n    name: row\n    text: '{{ r }}'\n    " + TEXT, "List_View.yaml"),
+    pie = open_composed(parse_view(tdl("Text { Name: pie, Text: <| len(rows) |> slices, " + TEXT + " }", "Pie"), "Pie_View.tdl"), bindings, theme_seed=SEED)
+    lst = open_composed(parse_view(tdl("Container { Name: list, Style { Flex_Direction: vertical, Width: 100, Height: 100 }, Children { "
+                                       "For r In <| rows |> Key <| r |> { Text { Name: row, Text: <| r |>, " + TEXT + " } } } }", "List"), "List_View.tdl"),
                         bindings, theme_seed=SEED)
     vm = pie.handle.viewmodel
     assert vm is lst.handle.viewmodel and pie.root.get("text") == "2 slices"
@@ -165,7 +173,7 @@ def test_two_views_of_one_viewmodel_are_rendered_at_once_and_both_follow_one_sig
 
 def test_an_image_frame_that_is_not_a_frame_is_named_not_dropped():
     with pytest.raises(ValueError, match="a frame is .rgba bytes, width, height."):
-        render(BASE + "  - {widget: Image, name: i, frame: '{{ title }}', style: {width: 10, height: 10}}\n")
+        render(page("Image { Name: i, Frame: <| title |>, Style { Width: 10, Height: 10 } }"))
 
 
 # -- the App ---------------------------------------------------------------------------------------------------------------
@@ -173,12 +181,16 @@ def test_an_image_frame_that_is_not_a_frame_is_named_not_dropped():
 
 def project(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {flex_direction: vertical, width: 300, height: 200}\nchildren:\n"
-        "  - widget: Banner\n    name: banner\n    text: '{{ title }}'\n"
-        "  - {widget: Rect, name: go, style: {width: 40, height: 20, background: '#6750A4'}, handlers: {on_click: bump}}\n")
-    (tmp_path / "Views" / "Banner_View.yaml").write_text(
-        "params: [text]\nwidget: Text\ntext: '{{ text }}'\ntypography_role: body_large\nstyle: {width: 100, height: 20, foreground: '#000000'}\n")
+    (tmp_path / "Views" / "Main_View.tdl").write_text(tdl("""Container {
+  Name: main
+  Style { Flex_Direction: vertical, Width: 300, Height: 200 }
+  Children {
+    Banner { Name: banner, Text: <| title |> }
+    Rect { Name: go, Style { Width: 40, Height: 20, Background: "#6750A4" }, Handlers { On_Click: bump } }
+  }
+}""", "Main"))
+    (tmp_path / "Views" / "Banner_View.tdl").write_text(tdl(
+        "Text { Params: [text], Text: <| text |>, " + TEXT + " }", "Banner"))
     return tmp_path
 
 
@@ -204,8 +216,8 @@ def test_the_app_binds_opens_shows_and_checks_a_view_written_in_the_new_syntax(t
 
 def test_the_app_reports_a_view_that_needs_a_name_its_viewmodel_lacks(tmp_path):
     root = project(tmp_path)
-    (root / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Rect\nstyle: {width: 10, height: 10, background: '#6750A4'}\nhandlers: {on_click: nope_missing}\n")
+    (root / "Views" / "Main_View.tdl").write_text(tdl(
+        'Rect { Name: main, Style { Width: 10, Height: 10, Background: "#6750A4" }, Handlers { On_Click: nope_missing } }', "Main"))
 
     class Small(ViewModel):
         views = "main"
@@ -214,7 +226,7 @@ def test_the_app_reports_a_view_that_needs_a_name_its_viewmodel_lacks(tmp_path):
     app.bind(Small)
     app.open_view("Main")
     problems = app.check()
-    assert len(problems) == 1 and "'nope_missing' is not a method of Small" in problems[0] and "Main_View.yaml:1:1" in problems[0].replace(str(root) + "/Views/", "")
+    assert len(problems) == 1 and "'nope_missing' is not a method of Small" in problems[0] and "Main_View.tdl:5:1" in problems[0].replace(str(root) + "/Views/", "")
 
 
 def test_a_name_no_view_or_binding_serves_is_still_an_error_at_open(tmp_path):
@@ -228,8 +240,8 @@ def test_a_name_no_view_or_binding_serves_is_still_an_error_at_open(tmp_path):
 
 
 def test_a_disabled_nodes_handlers_do_not_run():
-    view, vm, _ = render(BASE + "  - widget: TextInput\n    name: f\n    disabled: '{{ not show_extra }}'\n    typography_role: body_large\n"
-                         "    style: {width: 100, height: 30, background: '#FFFFFF'}\n    handlers: {on_click: bump}\n")
+    view, vm, _ = render(page('TextInput { Name: f, Disabled: <| not show_extra |>, Typography_Role: body_large, '
+                       'Style { Width: 100, Height: 30, Background: "#FFFFFF" }, Handlers { On_Click: bump } }'))
     view.window.advance(16)
     view.window.simulate("click", node=view.node("root.f"))
     assert vm.log == []
@@ -243,9 +255,9 @@ def test_a_click_on_a_child_is_handled_there_and_does_not_also_run_the_parents_h
         def log_outer(self):
             self.log.append("outer")
 
-    view, vm, _ = render(BASE + "  - widget: Rect\n    name: outer\n    style: {width: 80, height: 40, background: '#6750A4'}\n    handlers: {on_click: 'log_outer()'}\n"
-                         "    children:\n      - {widget: Rect, name: inner, style: {width: 30, height: 20, background: '#B3261E'}, handlers: {on_click: bump}}\n",
-                         vmcls=Outer)
+    view, vm, _ = render(page('Rect { Name: outer, Style { Width: 80, Height: 40, Background: "#6750A4" }, Handlers { On_Click { Call { Action: log_outer } } }, '
+                       'Children { Rect { Name: inner, Style { Width: 30, Height: 20, Background: "#B3261E" }, Handlers { On_Click: bump } } } }'),
+                       vmcls=Outer)
     view.window.advance(16)
     view.window.simulate("click", node=view.node("root.outer.inner"))
     assert vm.log == ["bump"]
@@ -259,8 +271,8 @@ def test_a_loop_variable_given_to_a_model_property_is_not_two_way():
             super().__init__()
             self.flags = Signal([True, False])
 
-    view, vm, _ = render(BASE + "  - for: f in flags\n    key: f\n    widget: Checkbox\n    name: c\n    checked: '{{ f }}'\n"
-                         "    style: {width: 24, height: 24, background: '#6750A4'}\n", vmcls=Flags)
+    view, vm, _ = render(page('For f In <| flags |> Key <| f |> { Checkbox { Name: c, Checked: <| f |>, Style { Width: 24, Height: 24, Background: "#6750A4" } } }'),
+                       vmcls=Flags)
     assert view.handle.node("c").models == {}
     view.window.advance(16)
     view.window.simulate("click", node=view.node("root.c[True]"))  # the control toggles; nothing is written back and nothing fails
@@ -268,15 +280,15 @@ def test_a_loop_variable_given_to_a_model_property_is_not_two_way():
 
 
 def test_the_built_in_actions_exist_without_an_app_and_do_nothing_there():
-    view, vm, _ = render(BASE + "  - {widget: Rect, name: w, style: {width: 40, height: 20, background: '#6750A4'}, handlers: {on_click: window.close}}\n"
-                         "  - {widget: Rect, name: n, style: {width: 40, height: 20, background: '#6750A4'}, handlers: {on_click: navigate.back}}\n")
+    view, vm, _ = render(page('Rect { Name: w, Style { Width: 40, Height: 20, Background: "#6750A4" }, Handlers { On_Click: window.close } }',
+                       'Rect { Name: n, Style { Width: 40, Height: 20, Background: "#6750A4" }, Handlers { On_Click: navigate.back } }'))
     view.window.advance(16)
     view.window.simulate("click", node=view.node("root.w"))
     view.window.simulate("click", node=view.node("root.n"))
 
 
 def test_after_close_showing_and_hiding_the_view_no_longer_changes_its_nodes():
-    view, vm, _ = render(BASE + "  - widget: Text\n    name: head\n    text: x\n    " + TEXT + "\n")
+    view, vm, _ = render(page("Text { Name: head, Text: x, " + TEXT + " }"))
     view.close()
     view.handle.hide()
     assert view.root.get("visible") is True

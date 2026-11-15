@@ -4,33 +4,44 @@ import pytest
 
 from tess_ui import App, Signal, ViewModel
 
-WINDOW = """name: main
-widget: Window
-title: Notes
-borderless: true
-style: {width: 700, height: 500, flex_direction: vertical}
-children:
-  - widget: Dock
-    name: dock
-    closed: "{{ shut }}"
-    children:
-      - widget: DockPanel
-        name: files
-        title: Files
-        closable: true
-        style: {zone: left, width: 200}
-        children: [{widget: Text, name: ft, text: Files, typography_role: body_large, style: {foreground: on_surface}}]
-      - widget: DockPanel
-        name: outline
-        title: Outline
-        closable: true
-        style: {zone: left}
-        children: [{widget: Text, name: ot, text: Outline, typography_role: body_large, style: {foreground: on_surface}}]
-      - widget: DockPanel
-        name: editor
-        title: Editor
-        style: {zone: center}
-        children: [{widget: Text, name: et, text: Editor, typography_role: body_large, style: {foreground: on_surface}}]
+WINDOW = """---
+TDL: 0.2
+Name: main
+---
+Window {
+  Name: main
+  Title: Notes
+  Borderless: true
+  Style { Width: 700, Height: 500, Flex_Direction: vertical }
+  Children {
+    Dock {
+      Name: dock
+      Closed: <| shut |>
+      Children {
+        DockPanel {
+          Name: files
+          Title: Files
+          Closable: true
+          Style { Zone: left, Width: 200 }
+          Children { Text { Name: ft, Text: Files, Typography_Role: body_large, Style { Foreground: on_surface } } }
+        }
+        DockPanel {
+          Name: outline
+          Title: Outline
+          Closable: true
+          Style { Zone: left }
+          Children { Text { Name: ot, Text: Outline, Typography_Role: body_large, Style { Foreground: on_surface } } }
+        }
+        DockPanel {
+          Name: editor
+          Title: Editor
+          Style { Zone: center }
+          Children { Text { Name: et, Text: Editor, Typography_Role: body_large, Style { Foreground: on_surface } } }
+        }
+      }
+    }
+  }
+}
 """
 
 
@@ -45,7 +56,7 @@ class VM(ViewModel):
 
 def opened(tmp_path, start=()):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(WINDOW)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(WINDOW)
     VM.start = list(start)
     app = App(root=tmp_path, width=700, height=500, theme_seed=(0x67, 0x50, 0xA4, 0xFF), borderless=True)
     app.bind(VM)
