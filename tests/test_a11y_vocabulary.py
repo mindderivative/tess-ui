@@ -135,20 +135,37 @@ class VM(ViewModel):
         self.error = Signal("")
 
 
-VIEW = """name: main
-widget: Container
-style: {width: 200, height: 100}
-children:
-  - {widget: Container, name: toggle, style: {width: 40, height: 40, background: primary},
-     a11y: {pressed: true, controls: panel, describedby: hint, description: "{{ error }}", invalid: "{{ error != '' }}"}}
-  - {widget: Container, name: panel, style: {width: 40, height: 40, background: secondary}}
-  - {widget: Text, name: hint, text: Press to open, typography_role: body_small, style: {foreground: on_surface}}
+VIEW = """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Width: 200, Height: 100 }
+  Children {
+    Container {
+      Name: toggle
+      Style { Width: 40, Height: 40, Background: primary }
+      A11y { Pressed: true, Controls: panel, Describedby: hint, Description: <| error |>, Invalid: <| error != '' |> }
+    }
+    Container {
+      Name: panel
+      Style { Width: 40, Height: 40, Background: secondary }
+    }
+    Text {
+      Name: hint
+      Text: "Press to open"
+      Typography_Role: body_small
+      Style { Foreground: on_surface }
+    }
+  }
+}
 """
 
 
 def opened(tmp_path, text=VIEW):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(text)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(text)
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")
@@ -175,10 +192,10 @@ def test_the_view_language_sends_resolved_relations_and_bound_values(tmp_path, m
 
 def test_the_view_language_names_a_missing_relation(tmp_path):
     with pytest.raises(ValueError, match="names 'nowhere', which is no node by that name"):
-        opened(tmp_path, VIEW.replace("controls: panel", "controls: nowhere"))
+        opened(tmp_path, VIEW.replace("Controls: panel", "Controls: nowhere"))
 
 
 def test_the_view_language_checks_values_at_load():
     with pytest.raises(LoadError, match="pressed"):
-        parse_view("widget: Container\na11y: {pressed: maybe}\n", "T_View.yaml")
-    parse_view("widget: Container\na11y: {pressed: mixed, current: page, busy: true}\n", "T_View.yaml")
+        parse_view("---\nTDL: 0.2\nName: T\n---\nContainer { A11y { Pressed: maybe } }\n", "T_View.tdl")
+    parse_view("---\nTDL: 0.2\nName: T\n---\nContainer { A11y { Pressed: mixed, Current: page, Busy: true } }\n", "T_View.tdl")

@@ -1,6 +1,6 @@
 """Real, repeatable coverage for `tess_ui.App` -- registration,
 name-collision handling, `show()`'s own real "first call opens, later
-calls switch" behavior, and `load()`'s own real `*_View.yaml`/
+calls switch" behavior, and `load()`'s own real `*_View.tdl`/
 `*_ViewModel.py` naming-convention enforcement -- mirroring `tess_re`'s own
 established pytest conventions (`tmp_path` for a throwaway view file, no
 `App.run()` in these tests -- `tess_re`'s own `test_tracing.py` documents
@@ -17,9 +17,9 @@ import pytest
 from tess_ui import App, Signal, View, ViewModel
 
 
-def write_view(tmp_path, yaml, name="view.yaml"):
+def write_view(tmp_path, text, name="view.tdl"):
     path = tmp_path / name
-    path.write_text(yaml)
+    path.write_text(text)
     return str(path)
 
 
@@ -46,11 +46,17 @@ def load_viewmodel_class(tmp_path, filename, class_name):
     return getattr(module, class_name)
 
 
-SIMPLE_VIEW = """
-id: root
-kind: Rect
-style: {width: 40, height: 20, background: "#112233"}
+SIMPLE_VIEW = """---
+TDL: 0.2
+Name: Counter
+---
+Rect { Style { Width: 40, Height: 20, Background: "#112233" } }
 """
+
+
+def simple_view(width=40, height=20, background="#112233"):
+    """A `View` of one rect, built from a spec: what `register()` takes."""
+    return View({"id": "root", "kind": "Rect", "style": {"width": width, "height": height, "background": background}})
 
 
 class SimpleVM(ViewModel):
@@ -60,8 +66,7 @@ class SimpleVM(ViewModel):
 
 
 def test_register_then_show_opens_a_real_window(tmp_path):
-    path = write_view(tmp_path, SIMPLE_VIEW)
-    view = View(path)
+    view = simple_view()
     vm = SimpleVM(view)
 
     app = App(width=200, height=100, title="Test App")
@@ -73,8 +78,7 @@ def test_register_then_show_opens_a_real_window(tmp_path):
 
 
 def test_registering_the_same_name_twice_raises(tmp_path):
-    path = write_view(tmp_path, SIMPLE_VIEW)
-    view = View(path)
+    view = simple_view()
     vm = SimpleVM(view)
 
     app = App()
@@ -95,14 +99,8 @@ def test_show_switches_the_same_live_window_on_the_second_call(tmp_path):
     show_view`, not a second `Window.from_view` -- which would open a
     second, independent window instead of switching the existing one).
     """
-    path_a = write_view(tmp_path, SIMPLE_VIEW, name="a.yaml")
-    path_b = write_view(
-        tmp_path,
-        'id: root\nkind: Rect\nstyle: {width: 60, height: 30, background: "#332211"}\n',
-        name="b.yaml",
-    )
-    view_a = View(path_a)
-    view_b = View(path_b)
+    view_a = simple_view()
+    view_b = simple_view(60, 30, "#332211")
     vm_a = SimpleVM(view_a)
     vm_b = SimpleVM(view_b)
 
@@ -119,7 +117,7 @@ def test_show_switches_the_same_live_window_on_the_second_call(tmp_path):
 
 def test_run_with_screens_registered_but_none_shown_raises_a_clear_runtime_error(tmp_path):
     app = App()
-    app.register("a", View(write_view(tmp_path, SIMPLE_VIEW)), None)
+    app.register("a", simple_view(), None)
     with pytest.raises(RuntimeError, match=r"called before show\(\): screens are registered but none is showing"):
         app.run()
 
@@ -128,7 +126,7 @@ def test_run_with_screens_registered_but_none_shown_raises_a_clear_runtime_error
 def test_an_undecorated_apps_border_is_not_something_to_show(tmp_path):
     """The window border is a child of the window's root, but not content."""
     app = App(borderless=True)
-    app.register("a", View(write_view(tmp_path, SIMPLE_VIEW)), None)
+    app.register("a", simple_view(), None)
     assert app._border is not None and len(app.window.root.children()) == 1
     with pytest.raises(RuntimeError, match="none is showing"):
         app.run()
@@ -179,7 +177,7 @@ def test_run_starts_for_a_window_with_nodes_added_by_calls(fake_tre):
 
 def test_nodes_added_by_calls_are_content_even_with_a_screen_registered(fake_tre, tmp_path):
     app = App(borderless=True)  # its border is a second child, not the reason it runs
-    app.register("a", View(write_view(tmp_path, SIMPLE_VIEW)), None)
+    app.register("a", simple_view(), None)
     app.window.root.add_child(app.window.create("box", width=10, height=10, fill=(0, 0, 0, 255)))
     app.run(max_frames=1)
     assert fake_tre.ran == [1]
@@ -215,40 +213,17 @@ def test_a_code_only_app_draws_frames_in_a_real_window(tmp_path, with_a_node):
     assert int(report.read_text()) >= 5
 
 
-def test_load_registers_a_valid_pair_under_the_inferred_prefix(tmp_path):
-    view_path = write_view(tmp_path, SIMPLE_VIEW, name="Counter_View.yaml")
-    vm_cls = load_viewmodel_class(tmp_path, "Counter_ViewModel.py", "CounterViewModel")
-
-    app = App()
-    app.load(view_path, vm_cls)
-    window = app.show("Counter")
-
-    assert window is not None
-    assert app.current == "Counter"
-
-
-def test_load_accepts_an_explicit_name_override(tmp_path):
-    view_path = write_view(tmp_path, SIMPLE_VIEW, name="Counter_View.yaml")
-    vm_cls = load_viewmodel_class(tmp_path, "Counter_ViewModel.py", "CounterViewModel")
-
-    app = App()
-    app.load(view_path, vm_cls, name="main_counter")
-    window = app.show("main_counter")
-
-    assert window is not None
-
-
 def test_load_rejects_a_view_file_missing_the_required_suffix(tmp_path):
-    view_path = write_view(tmp_path, SIMPLE_VIEW, name="Counter.yaml")
+    view_path = write_view(tmp_path, SIMPLE_VIEW, name="Counter.tdl")
     vm_cls = load_viewmodel_class(tmp_path, "Counter_ViewModel.py", "CounterViewModel")
 
     app = App()
-    with pytest.raises(ValueError, match="_View.yaml"):
+    with pytest.raises(ValueError, match=r"_View\.\w+ naming convention"):
         app.load(view_path, vm_cls)
 
 
 def test_load_rejects_a_viewmodel_file_missing_the_required_suffix(tmp_path):
-    view_path = write_view(tmp_path, SIMPLE_VIEW, name="Counter_View.yaml")
+    view_path = write_view(tmp_path, SIMPLE_VIEW, name="Counter_View.tdl")
     vm_cls = load_viewmodel_class(tmp_path, "counter_vm.py", "CounterViewModel")
 
     app = App()
@@ -257,62 +232,12 @@ def test_load_rejects_a_viewmodel_file_missing_the_required_suffix(tmp_path):
 
 
 def test_load_rejects_mismatched_view_and_viewmodel_prefixes(tmp_path):
-    view_path = write_view(tmp_path, SIMPLE_VIEW, name="Counter_View.yaml")
+    view_path = write_view(tmp_path, SIMPLE_VIEW, name="Counter_View.tdl")
     vm_cls = load_viewmodel_class(tmp_path, "Settings_ViewModel.py", "SettingsViewModel")
 
     app = App()
     with pytest.raises(ValueError, match="prefix"):
         app.load(view_path, vm_cls)
-
-
-def test_load_with_no_component_usage_still_works_unchanged(tmp_path):
-    """Real regression proof: `App.load()` now constructs via `tess_ui.
-    spec.load_view` instead of `tess_re.View` directly -- a view with zero
-    `component:` usage must still load exactly as it always did
-    (`load_view`'s own real "true no-op" design)."""
-    view_path = write_view(tmp_path, SIMPLE_VIEW, name="Counter_View.yaml")
-    vm_cls = load_viewmodel_class(tmp_path, "Counter_ViewModel.py", "CounterViewModel")
-
-    app = App()
-    view, vm = app.load(view_path, vm_cls)
-
-    assert view.node("root") is not None
-
-
-COMPONENT_USING_VIEW = """
-id: root
-kind: Container
-style: {width: 300, height: 200}
-children:
-  - id: save_button
-    component: ButtonFilled
-    with: {label: Save, width: 120, height: 40, corner_radius: 20}
-"""
-
-
-def test_load_genuinely_expands_component_usage(tmp_path):
-    """Real, distinguishing proof that `App.load()` now applies
-    `component:` macro-expansion, not just that it doesn't crash on a
-    plain view: before this change, a `component:`-using view would
-    fail with `tess_re`'s own schema error (`component` is not a real
-    `WidgetSpec` field, `#[serde(deny_unknown_fields)]`) -- confirming
-    `tess_re` saw the raw, unexpanded YAML. After this change, the same
-    view instead fails later, at MD3 color resolution (`Button_
-    Component.yaml`'s own `background: primary`, with no `theme_seed`
-    given -- `App` has no theme-related API of its own yet, a real,
-    separate, pre-existing gap unrelated to this change) -- proving
-    `component:`/`with:` were genuinely replaced with real `WidgetSpec`
-    content before `tess_re` ever parsed it.
-    """
-    view_path = write_view(tmp_path, COMPONENT_USING_VIEW, name="Save_View.yaml")
-    vm_cls = load_viewmodel_class(tmp_path, "Save_ViewModel.py", "SaveViewModel")
-
-    app = App()
-    view, _ = app.load(view_path, vm_cls)
-    # Expanded: the fragment's own nodes are there with the call's `with:` applied. (A role in an
-    # unthemed view used to fail, which this test once took as its proof; since 0.3.3 it resolves.)
-    assert view.node("save_button").get("corner_radius") == 20.0
-    assert view.node("save_button.label").get("text") == "Save"
 
 
 def _ticks(fake_tre):

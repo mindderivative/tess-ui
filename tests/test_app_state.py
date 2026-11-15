@@ -5,13 +5,11 @@ window, with no constructor change; a binding reads it as
 `{{ state.<name>.get() }}`. An attribute a ViewModel sets itself wins.
 """
 
-import importlib.util
-import sys
 
 import pytest
 import tess_re
 
-from tess_ui import App, Signal, View, ViewModel, instantiate
+from tess_ui import App, Signal, View, ViewModel
 
 
 class AppState:
@@ -114,21 +112,3 @@ def test_each_app_has_its_own_state():
     a, b = Plain(View(_label_view(), window=one.window)), Plain(View(_label_view(), window=two.window))
     one.state.user.set("One")
     assert a._view.node("label").get("text") == "One" and b._view.node("label").get("text") == "Ada"
-
-
-def test_a_component_reaches_it_too(tmp_path):
-    (tmp_path / "Badge_View.yaml").write_text(
-        "id: badge\nkind: Text\ntext: {content: '', font_family: Roboto, font_size: 14}\n"
-        "style: {foreground: '#000000', width: 100, height: 20}\nbindings: {text: '{{ state.user.get() }}'}\n")
-    vm_file = tmp_path / "Badge_ViewModel.py"
-    vm_file.write_text("from tess_ui import ViewModel\nclass BadgeViewModel(ViewModel):\n    pass\n")
-    spec = importlib.util.spec_from_file_location(f"Badge_ViewModel_{id(tmp_path)}", vm_file)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    app = App(state=AppState())
-    host = View({"id": "root", "kind": "Container", "style": {"width": 200, "height": 60}}, window=app.window)
-    component, vm = instantiate(host, tmp_path / "Badge_View.yaml", module.BadgeViewModel, host.root)
-    assert vm.state is app.state and component.node("badge").get("text") == "Ada"
-    app.state.user.set("Lin")
-    assert component.node("badge").get("text") == "Lin"

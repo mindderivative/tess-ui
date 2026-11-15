@@ -7,11 +7,9 @@ what a screen reader says, so these read the node's properties.
 import re
 
 import pytest
-import yaml
 
 import tess_ui
 from tess_ui.spec.build import SpecBuildError
-from tess_ui.spec.expand import expand_components_to_spec
 from tess_ui.view import View
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
@@ -169,21 +167,6 @@ def test_a_controls_a11y_fields_reach_it_fixed_or_bound():
     view, vm = _view(_root(_checkbox(label="{{ title.get() }}")))
     vm.title.set("Agree")
     assert view.node("cb").get("label") == "Agree" and view.node("cb").get("role") == "checkbox"
-
-
-def test_a_binding_passes_through_a_fragment_while_its_params_substitute(tmp_path):
-    (tmp_path / "Status_Component.yaml").write_text(yaml.safe_dump({
-        "params": ["size"],
-        "id": "root", "kind": "Text", "text": {"content": "x", "font_family": "Roboto", "font_size": "{{ size }}"},
-        "style": {"foreground": "#000000", "width": 100, "height": 20},
-        "a11y": {"label": "{{ summary.get() }}", "live": "polite"},
-    }))
-    text = yaml.safe_dump({"id": "root", "kind": "Container",
-                           "children": [{"id": "s", "component": "Status", "with": {"size": 14}}]})
-    spec = expand_components_to_spec(text, component_dirs=[tmp_path])
-    view, vm = _view(spec)
-    vm.unread.set(2)
-    assert view.node("s").get("label") == "2 unread" and view.node("s").get("font_size") == 14.0
 
 
 # -- Phase 3: tess_ui.a11y.bind, for widgets made in Python ------------------

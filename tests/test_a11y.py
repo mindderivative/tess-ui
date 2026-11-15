@@ -1,4 +1,4 @@
-"""M39 Phase 3: MD3's focus ring on keyboard focus, YAML's `a11y:` field,
+"""M39 Phase 3: MD3's focus ring on keyboard focus, the view's `a11y:` field,
 and `tess_ui.a11y` for Tesserae's widgets (M40).
 """
 
@@ -118,9 +118,9 @@ def test_a_clickable_nodes_children_are_no_longer_clipped():
     assert circle.parent() == ripple_host  # the ripple is still clipped, inside the clip box
 
 
-# -- YAML's a11y: field ------------------------------------------------------------
+# -- the a11y: field ------------------------------------------------------------
 
-def test_a11y_labels_and_roles_from_yaml():
+def test_a11y_labels_and_roles_from_the_field():
     view, _ = _built(
         _rect("save", handlers={"on_click": "go"}, a11y={"label": "Save"}),
         _rect("tab", handlers={"on_click": "go"}, a11y={"role": "tab", "label": "Inbox"}),
