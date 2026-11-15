@@ -1,6 +1,6 @@
 # Tesserae
 
-**Write desktop apps in Python and YAML.** A Tesserae app is **YAML views** (what the screen looks like), each paired with a Python
+**Write desktop apps in Python and TDL.** A Tesserae app is **TDL views** (what the screen looks like), each paired with a Python
 **ViewModel** (what it does), drawn by the [Tesserae Render Engine](https://github.com/mindderivative/tess-re) (`tess_re`): a Rust/Python hybrid
 for rendering, layout, animation and accessibility.
 
@@ -10,7 +10,7 @@ app authors write views, not Python widget-class trees, and a plain `Signal`-dri
 **Status: pre-alpha.** The [documentation](https://mindderivative.github.io/tess-ui/) is the reference, and the
 [changelog](https://mindderivative.github.io/tess-ui/changelog/) says what each release changed.
 
-```text
+```tdl
 ---
 TDL: 0.2
 Name: Counter
@@ -161,7 +161,7 @@ def apply_discount():
 batch(apply_discount)  # total recomputes once, not twice
 ```
 
-A `{{ }}` binding in a view can read a `Signal` or a `Computed` directly. See
+A `<| |>` binding in a view can read a `Signal` or a `Computed` directly. See
 [Reactivity](https://mindderivative.github.io/tess-ui/guide/reactivity/).
 
 ## Starting an app

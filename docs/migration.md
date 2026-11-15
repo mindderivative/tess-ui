@@ -3,6 +3,47 @@
 What to change in an existing app when you upgrade. Each section is the release you are moving to; the
 [changelog](changelog.md) has everything else that changed.
 
+## To 0.6.0.1
+
+**Views, stylesheets and themes are written in TDL.** A view is a `<Name>_View.tdl`, a stylesheet a `<Name>_Stylesheet.tdl` and a theme a `<Name>_Theme.tdl`; Tesserae no longer reads the YAML files of those kinds. The language is the same
+one (the same nodes, properties, styles, handlers, expressions, rules and themes), written in TDL's syntax, so nothing about how an app behaves changes. [The View Language](guide/view-language.md) is the whole of it.
+
+**What you do:**
+
+1. **Use Python 3.14 or newer.** TDL is read by `tess_dl` (`tesserae-dl`), which Tesserae installs and which needs 3.14.
+2. **Run the converter in your project**, and read its report:
+
+   ```bash
+   tesserae migrate-tdl                      # lists what it would convert; writes nothing
+   tesserae migrate-tdl --write              # writes Name_View.tdl beside each Name_View.yaml (and the stylesheets and themes)
+   tesserae migrate-tdl --write --remove-source   # and deletes each YAML file it wrote or found already converted
+   ```
+
+   Every result is read back through the TDL loader and compared with the YAML before it is written; a file it cannot write exactly is reported with its line and what to write, and left alone. Comments, blank lines and the order of keys are kept. Running it again changes nothing.
+   [The `tesserae` command](guide/cli.md#write-views-and-stylesheets-as-tdl) has the details.
+3. **Look at what it reports.** An augmented assignment in a handler (`x += 1`) is written as a `Set` with the operation spelled out (`Value: <| x + 1 |>`). A handler the converter cannot turn into steps (an `if`, `a[0] = 1`, `go(*args)`), a text with a `{{ }}` and a comma, a brace or ` #`
+   around it (make the whole value one expression), a YAML date and an anchor are refused; the report names the line.
+4. **A file in the older syntax (`kind:`, `id:`, `component:`) is moved with `tesserae migrate-yaml` first**; `*_Component.yaml` fragments are not converted.
+5. **Rename what refers to files.** `app.open_view(HERE / "Main_View.yaml")` is `Main_View.tdl`; a test or a script that reads a view file by its name needs the new one.
+
+**What the same thing looks like:**
+
+| In YAML | In TDL |
+| --- | --- |
+| `Counter_View.yaml` | `Counter_View.tdl` |
+| `tesserae: 0.6` on the first line | `Tesserae: "0.6"` in the metadata block between `---` lines, with `TDL: 0.2` and the view's `Name` ([the metadata block](guide/naming-convention.md#the-metadata-block)) |
+| `widget: Text` and its keys | `Text { ... }`, a block headed by the widget |
+| `style: {flex_direction: vertical}` | `Style { Flex_Direction: vertical }` (every key is `Title_Case`) |
+| `children:` | `Children { ... }` |
+| `text: "Count: {{ count }}"` | `Text: Count: <| count |>` |
+| `if: loading` on a node | `If <| loading |> { node }` around it |
+| `for: row in rows` with `key: row.id` | `For row In <| rows |> Key <| row.id |> { node }` around it |
+| `handlers: {on_click: "open = not open; on_toggle()"}` | `Handlers { On_Click { Set { Target: open, Value: <| not open |> } Call { Action: on_toggle } } }` (a bare action name stays `On_Click: save`) |
+| `styles:` with `- widget: Card` rules | `Styles { Rule { Widget: Card, Style { ... } } }` |
+| a theme's `seed:`, `colors:`, `components: {card.elevated: ...}` | `Theme { Seed: ..., Colors { ... }, Components { Card { Elevated { ... } } } }` |
+
+A node under `If` or `For` has the same id, path and name as before, so a ViewModel, a stylesheet rule or a hot reload sees the same tree. A `.tdl` file that says `TDL: 0.1` (its slots are `{{ }}`) or writes a slot as `{{ }}` is refused with the line.
+
 ## To 0.6.0
 
 **Two Python packages change name: Tesserae's is `tess_ui` (it was `tesserae`) and the engine's is `tess_re` (it was `tre`).** The name `tesserae` is also an unrelated project on PyPI, and the Tesserae packages share the
@@ -25,13 +66,11 @@ command (`tesserae new`, `tesserae add screen`; `python -m tess_ui` is the same)
   after the value, Windows line ends and a byte order mark stay), and nothing in the view language changed between the two lines. A file with no first line loads as before, and the shipped files and what `tesserae new`
   and `tesserae add screen` write say `0.6`.
 
-## The first line of a file
+## The metadata of a file
 
-Nothing has to change in a file that has none. A view, stylesheet or theme may start with `tesserae: 0.6` (the release series), and the files Tesserae ships and writes do: `tesserae new`,
-`tesserae add screen` and `tesserae migrate-yaml`. A file without it loads and is noted once in the log (info level); a later series will ask for it, and a file written for an older series is refused until
-`tesserae migrate-yaml --write` moves its first line ([To 0.6.0](#to-060)). To add it to your
-own files, put it on the first line, above the comments: [the first line](guide/naming-convention.md#the-first-line) says what is checked. A schema modeline
-(`# yaml-language-server: $schema=...`) cannot sit under it; use the `yaml.schemas` setting of [Editor Support](guide/editor-support.md).
+Nothing has to change in a file that has no `Tesserae` entry. A view, stylesheet or theme may say which release series it was written for in its metadata block (`Tesserae: "0.6"`), and the files Tesserae ships and writes do: `tesserae new`,
+`tesserae add screen` and `tesserae migrate-tdl`. A file without it loads and is noted once in the log (info level); a later series will ask for it, and a file written for an older series is refused with the series it names. To add it to your
+own files, write it in the metadata block: [the metadata block](guide/naming-convention.md#the-metadata-block) says what is checked. Before 0.6.0.1 the series was the first line of a YAML file, `tesserae: 0.6` ([To 0.6.0](#to-060)).
 
 ## To 0.5.1
 
@@ -133,6 +172,7 @@ view below is the new form of one or more old names:
 | `Video` | `widget: VideoPlayer` |
 | `Tooltip` | the `tooltip:` key on any node |
 
+<!-- old-syntax: the 0.5.0 YAML form; the same view in TDL is written as in The View Language -->
 ```yaml
 name: examples
 widget: Container

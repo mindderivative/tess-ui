@@ -9,28 +9,36 @@ part, and ends with the complete API.
 
 | Thing | Scope | Lives in | Set with |
 | --- | --- | --- | --- |
-| **Theme** | the whole app | `*_Theme.yaml` | `App(custom_theme=)` |
-| **Stylesheet** | every view of the app | `*_Stylesheet.yaml` | `App(stylesheet=)` |
-| **Shipped rules** | one view Tesserae ships | `<Name>_Stylesheet.yaml` in the package | a rule of your own goes over them: [Component Stylesheets](../stylesheets/index.md) |
-| **Style** | one node | `style:` | the node |
+| **Theme** | the whole app | `*_Theme.tdl` | `App(custom_theme=)` |
+| **Stylesheet** | every view of the app | `*_Stylesheet.tdl` | `App(stylesheet=)` |
+| **Shipped rules** | one view Tesserae ships | `<Name>_Stylesheet.tdl` in the package | a rule of your own goes over them: [Component Stylesheets](../stylesheets/index.md) |
+| **Style** | one node | `Style` | the node |
 
 A theme file holds the palette, the type and the shapes. Every key is optional:
 
-```yaml
-# Brand_Theme.yaml
-seed: "#0B6B58"              # the colour the whole palette is made from
-dark: false                  # whether the theme is the dark scheme (the app decides: see below)
-colors:                      # roles to replace, after the palette is made
-  tertiary: "#C2410C"
-typography:                  # changes to MD3's type styles
-  body_large: {font_family: Inter, font_size: 17}
-components:                  # the shape and elevation of widgets made in Python
-  card.elevated: {corner_radius: 8, elevation: level_2}
+```tdl
+# Brand_Theme.tdl
+Theme {
+  Seed: "#0B6B58"              # the colour the whole palette is made from
+  Dark: false                  # whether the theme is the dark scheme (the app decides: see below)
+  Colors {                     # roles to replace, after the palette is made
+    Tertiary: "#C2410C"
+  }
+  Typography {                 # changes to MD3's type styles
+    Body_Large { Font_Family: Inter, Font_Size: 17 }
+  }
+  Components {                 # the shape and elevation of widgets made in Python
+    Card {
+      Elevated { Corner_Radius: 8, Elevation: level_2 }
+    }
+  }
+}
 ```
 
-A stylesheet has only `styles:` (another key, such as a `seed:`, is ignored). The keys are listed in the [YAML reference](../api/yaml.md#theme-and-stylesheet).
-Rules are written in a stylesheet, not a theme: a theme's own `styles:` list is read in the older rule shape (`kind`,
-`classes`, `id`) and is not how a view in the current language is styled.
+A theme is a root `Theme` block, and a colour is a quoted string (`"#0B6B58"`; a bare `#` starts a comment). A stylesheet is a root `Styles` block holding `Rule` blocks (a key a stylesheet does not have, such as a `Seed`, is an error). The keys are listed in the [TDL reference](../api/tdl.md#theme-and-stylesheet).
+A component with a dot in its name (`card.elevated`) is a block inside its component: `Card { Elevated { ... } }`.
+Rules are written in a stylesheet, not a theme: a theme's own `Styles` list is read in the older rule shape (`Kind`,
+`Classes`, `Id`) and is not how a view is styled now.
 
 ## How a node gets its style
 
@@ -38,40 +46,29 @@ A node's style is built from layers, lowest first. A later layer changes only th
 
 1. the **shipped rules** of the view or widget (Tesserae's own look for a `Button`, a `Card`, and so on);
 2. the app's **stylesheet**;
-3. the node's own **`style:`**.
+3. the node's own **`Style`**.
 
-A stylesheet is a list of rules. A rule names a `widget` (a built-in or a view, yours or Tesserae's) and may narrow it:
+A stylesheet is a list of rules. A rule names a `Widget` (a built-in or a view, yours or Tesserae's) and may narrow it:
 
-```yaml
-# Notes_Stylesheet.yaml
-styles:
-  - widget: Container
-    style: {padding: 12}                              # every Container
-  - widget: Container
-    classes: [panel]
-    style: {background: surface_container_high}       # a Container with the class `panel`
-  - widget: Text
-    name: title
-    style: {foreground: primary}                      # the node named `title`
-  - widget: Button
-    variant: filled
-    style: {background: tertiary}                     # a property the widget declares
-  - widget: Button
-    variant: filled
-    part: label
-    style: {foreground: on_tertiary}                  # a named node inside the widget
-  - widget: Button
-    state: hovered
-    style: {elevation: 2}                             # while the pointer is over it
+```tdl
+# Notes_Stylesheet.tdl
+Styles {
+  Rule { Widget: Container, Style { Padding: 12 } }                                   # every Container
+  Rule { Widget: Container, Classes: [panel], Style { Background: surface_container_high } }   # a Container with the class `panel`
+  Rule { Widget: Text, Name: title, Style { Foreground: primary } }                   # the node named `title`
+  Rule { Widget: Button, Variant: filled, Style { Background: tertiary } }            # a property the widget declares
+  Rule { Widget: Button, Variant: filled, Part: label, Style { Foreground: on_tertiary } }   # a named node inside the widget
+  Rule { Widget: Button, State: hovered, Style { Elevation: 2 } }                     # while the pointer is over it
+}
 ```
 
-A rule may narrow by `variant`, `size` and `shape` (properties the widget declares), `classes`, `name`, a `part` (a node of the
-widget's own view, named in its stylesheet page) and a `state` (`hovered`, `focused`, `focus_visible`, `pressed`, `disabled`, `selected`, `checked`,
-`expanded`, `error`, `read_only`, `visited`). The most specific rule wins: a `name`, then how many of `variant`, `size`, `shape` and
-`classes` it names, then a `state`, then the widget alone; a later rule wins a tie. A node's own `style:` beats every rule, for the
-fields it sets and no others, and a value in a rule may be an expression over the widget's properties (`"{{ height / 2 }}"`).
+A rule may narrow by `Variant`, `Size` and `Shape` (properties the widget declares), `Classes`, `Name`, a `Part` (a node of the
+widget's own view, named in its stylesheet page) and a `State` (`hovered`, `focused`, `focus_visible`, `pressed`, `disabled`, `selected`, `checked`,
+`expanded`, `error`, `read_only`, `visited`). The most specific rule wins: a `Name`, then how many of `Variant`, `Size`, `Shape` and
+`Classes` it names, then a `State`, then the widget alone; a later rule wins a tie. A node's own `Style` beats every rule, for the
+fields it sets and no others, and a value in a rule may be an expression over the widget's properties (`<| height / 2 |>`).
 
-A built-in view's look is its shipped rules, so restyling a part everywhere is a rule of your own with the same `widget` and `part`
+A built-in view's look is its shipped rules, so restyling a part everywhere is a rule of your own with the same `Widget` and `Part`
 in the app's stylesheet. See [Component Stylesheets](../stylesheets/index.md) for each widget's parts, and
 [The View Language](../guide/view-language.md#style) for the rest.
 
@@ -85,16 +82,16 @@ A theme's colours are made from one colour, the **seed**, by Material Design
 light and once for dark. The seed is the first of these that is set:
 
 1. `App(theme_seed=(r, g, b, a))`;
-2. the custom theme's `seed:`;
-3. the default theme's `seed:`.
+2. the custom theme's `Seed`;
+3. the default theme's `Seed`.
 
-Then `colors:` replaces roles: the default theme's, then the custom theme's.
+Then `Colors` replaces roles: the default theme's, then the custom theme's.
 
 ```python
-app = App(theme_seed=(0x0B, 0x6B, 0x58, 0xFF), custom_theme="themes/Brand_Theme.yaml")
+app = App(theme_seed=(0x0B, 0x6B, 0x58, 0xFF), custom_theme="themes/Brand_Theme.tdl")
 ```
 
-Anywhere a view takes a colour, the role's name works: `background: surface`.
+Anywhere a view takes a colour, the role's name works: `Background: surface`.
 
 ### With no theme
 
@@ -114,26 +111,28 @@ Anywhere a view, stylesheet or theme takes a colour, it takes a string:
 - CSS Color 4's `oklch()`, `oklab()`, `lch()`, `lab()`, `hwb()`, and `color()` in `srgb`,
   `srgb-linear`, `display-p3`, `a98-rgb`, `prophoto-rgb`, `rec2020`, `xyz`, `xyz-d50` or `xyz-d65`.
 
-```yaml
-style:
-  background: "oklch(62.8% 0.2577 29.23)"   # sRGB red
-  foreground: "color(display-p3 0.2 0.3 0.1)"
+```text
+Style {
+  Background: "oklch(62.8% 0.2577 29.23)"   # sRGB red
+  Foreground: "color(display-p3 0.2 0.3 0.1)"
+}
 ```
 
 Any of these, and any theme role, may end in `@N%` to scale its alpha: `primary@12%` is the primary colour at 12% (a state layer's
 tint), `on_surface@38%` is disabled content, `"#6750A4@50%"` half of a hex colour, and a colour that already has alpha keeps that fraction
 of it. The percentage is 0 to 100.
 
-```yaml
-style:
-  background: primary@12%
-  border_color: on_surface@38%
+```text
+Style {
+  Background: "primary@12%"
+  Border_Color: "on_surface@38%"
+}
 ```
 
 Tesserae renders in sRGB, so a colour outside it is clipped channel by channel. A colour's own
-alpha renders (`"#FFFFFF80"` is half-transparent white), and `opacity:` fades a node and everything
+alpha renders (`"#FFFFFF80"` is half-transparent white), and `Opacity` fades a node and everything
 in it as one layer; to dim a background without dimming what sits on it, put the transparency in the
-colour. The built-in `Dialog` and `SideSheetModal` scrims do this, so a theme's `colors: {scrim: ...}`
+colour. The built-in `Dialog` and `SideSheetModal` scrims do this, so a theme's `Colors { Scrim: ... }`
 doesn't reach them.
 
 ## Light and dark
@@ -172,27 +171,31 @@ instead of the solid one.
 
 ## Shape and elevation
 
-A view's shape and elevation are style: `corner_radius` and `elevation` in a rule or a node's `style:`, a number or one of MD3's
+A view's shape and elevation are style: `Corner_Radius` and `Elevation` in a rule or a node's `Style`, a number or one of MD3's
 tokens. To change a widget's everywhere, write a rule for it in the app's stylesheet:
 
-```yaml
-styles:
-  - {widget: Card, variant: elevated, style: {corner_radius: 4, elevation: 5}}
-  - {widget: Dialog, style: {corner_radius: small}}
-  - {widget: Fab, variant: surface, style: {corner_radius: 8}}
+```tdl
+Styles {
+  Rule { Widget: Card, Variant: elevated, Style { Corner_Radius: 4, Elevation: 5 } }
+  Rule { Widget: Dialog, Style { Corner_Radius: small } }
+  Rule { Widget: Fab, Variant: surface, Style { Corner_Radius: 8 } }
+}
 ```
 
 Shapes are `none`, `extra_small`, `small`, `medium`, `large`, `extra_large` and `full` (a pill or a circle: half the node's
 shorter side), or a number; an elevation is a level from 0 to 5.
 
-A theme's `components:` sets the corner radius and elevation of a widget made in Python with `tess_ui.widgets`,
-by MD3 component and variant. It is not read by a view written in YAML, which takes its shape from its rules.
+A theme's `Components` sets the corner radius and elevation of a widget made in Python with `tess_ui.widgets`,
+by MD3 component and variant. It is not read by a view, which takes its shape from its rules.
 
-```yaml
-components:
-  card.elevated: {corner_radius: 4, elevation: level_5}
-  dialog: {corner_radius: small}
-  fab.small: {corner_radius: 8}
+```tdl
+Theme {
+  Components {
+    Card { Elevated { Corner_Radius: 4, Elevation: level_5 } }
+    Dialog { Corner_Radius: small }
+    Fab { Small { Corner_Radius: 8 } }
+  }
+}
 ```
 
 ```python
@@ -206,16 +209,19 @@ variant is its size (`fab.small`, `fab.default`, `fab.large`). A custom theme's 
 
 ## Type
 
-A theme's `typography:` overrides fields of MD3's 15 type roles
+A theme's `Typography` overrides fields of MD3's 15 type roles
 (`display_large` to `label_small`):
 
-```yaml
-typography:
-  body_large: {font_family: Inter, font_size: 17}
-  title_medium: {font_weight: 600}
+```tdl
+Theme {
+  Typography {
+    Body_Large { Font_Family: Inter, Font_Size: 17 }
+    Title_Medium { Font_Weight: 600 }
+  }
+}
 ```
 
-A `Text` or `Link` with `typography_role: body_large` takes the theme's `body_large`; fields the node
+A `Text` or `Link` with `Typography_Role: body_large` takes the theme's `body_large`; fields the node
 sets itself still win. A custom theme's entry for a role replaces the default's, rather than merging
 with it. Widgets follow it too. Text inputs don't: a `TextInput` keeps its own font, so typed text isn't
 restyled by the theme.
@@ -233,7 +239,7 @@ import tess_ui
 tess_ui.register_font("fonts/Inter-Regular.ttf")  # -> ["Inter"]
 ```
 
-The return value is the family name to use as `font_family`. Naming a family that is neither bundled nor
+The return value is the family name to use as `Font_Family`. Naming a family that is neither bundled nor
 registered draws a bundled face in its place, and Tesserae warns, naming the file and the family
 (`tess_ui.fonts.FontFallbackWarning`; turn it into an error with `warnings.filterwarnings("error", ...)`).
 
@@ -241,14 +247,14 @@ registered draws a bundled face in its place, and Tesserae warns, naming the fil
 
 | To change... | Do this |
 | --- | --- |
-| the app's colours | `App(theme_seed=...)`, or `seed:` in a theme |
-| one colour role | `colors:` in a theme |
+| the app's colours | `App(theme_seed=...)`, or `Seed` in a theme |
+| one colour role | `Colors` in a theme |
 | every view's look | `App(stylesheet=...)`: rules |
-| one kind of widget, a variant of it, or a part of it | a rule for the `widget`, with `variant`, `part` or `state`, in the stylesheet |
-| one view or a few nodes | `classes:` on the nodes and a rule for them; or a rule for the view's name |
-| a widget's shape or shadow | `corner_radius` and `elevation` in a rule (`components:` in a theme is for widgets made in Python) |
-| the type | `typography:` in a theme, and [fonts](#fonts) |
-| one node | its `style:` |
+| one kind of widget, a variant of it, or a part of it | a rule for the `Widget`, with `Variant`, `Part` or `State`, in the stylesheet |
+| one view or a few nodes | `Classes` on the nodes and a rule for them; or a rule for the view's name |
+| a widget's shape or shadow | `Corner_Radius` and `Elevation` in a rule (`Components` in a theme is for widgets made in Python) |
+| the type | `Typography` in a theme, and [fonts](#fonts) |
+| one node | its `Style` |
 
 An app has one stylesheet, and every view it opens uses it.
 
@@ -263,7 +269,7 @@ and a sheet that is wrong leaves every view as it was. With `run(hot_reload=True
 ```python
 from tess_ui.spec import load_theme
 
-app.set_theme_specs(None, load_theme("themes/Dark_Theme.yaml"))
+app.set_theme_specs(None, load_theme("themes/Dark_Theme.tdl"))
 ```
 
 ### Reading the theme from code
@@ -273,20 +279,20 @@ theme = app.theme                      # a tess_ui.Theme
 theme.role("primary")                  # (r, g, b, a)
 theme.shape("card", "elevated")        # components: card.elevated, then card
 theme.elevation("dialog")              # an MD3 elevation level, or None
-theme.typography("body_large")         # the type role, with typography: overrides
+theme.typography("body_large")         # the type role, with Typography overrides
 theme.easing("emphasized_decelerate")  # (x1, y1, x2, y2), for node.animate(easing=...)
 theme.duration("medium2")              # 300 (ms)
 ```
 
-`shape` and `elevation` return `None` when the theme's `components:` doesn't mention the component, and
+`shape` and `elevation` return `None` when the theme's `Components` doesn't mention the component, and
 the widget uses its own MD3 default. MD3's easing and duration tokens are all there; `emphasized` is MD3's
 single-curve form, `(0.2, 0, 0, 1)`.
 
 ### Style files
 
 A `*_Style.yaml` file holds one node's `style:` (its fields under a `style:` key, and an optional `id:`), and a node of a view in
-the older syntax can name it (`style: row_Style.yaml`) so several nodes share it. A view in the current language refuses one, naming the
-line: write the fields in `style:`, or in a rule that several nodes match through a class or a widget name. `tesserae migrate-yaml` writes a
+the older syntax can name it (`style: row_Style.yaml`) so several nodes share it. A TDL view refuses one, naming the
+line: write the fields in `Style`, or in a rule that several nodes match through a class or a widget name. `tesserae migrate-yaml` writes a
 style file's fields into each node that named it.
 
 ### Files and checking
@@ -294,7 +300,7 @@ style file's fields into each node that named it.
 `load_theme` and `load_stylesheet` read a file into the dict the app takes; `App(custom_theme=)` and `App(stylesheet=)` do it for you,
 and each also has a `*_spec=` form that takes a dict directly (`custom_theme_spec={"colors": {"primary": "#00FF00"}}`). Give one
 form or the other. An unknown key in a theme file is found when the file is read, and the error names it:
-`ValueError: themes/Brand_Theme.yaml: unknown field `colours`, expected one of `seed`, `dark`, `colors`, `styles`, `components`, `typography``. A theme given as a dict names the argument instead (`custom_theme_spec=: unknown field ...`).
+`ValueError: themes/Brand_Theme.tdl:6:3: error: unknown field `colours`, expected one of `seed`, `dark`, `colors`, `styles`, `components`, `typography` (did you mean 'colors')`. A theme given as a dict names the argument instead (`custom_theme_spec=: unknown field ...`).
 
 ## How it is implemented
 
@@ -308,7 +314,7 @@ form or the other. An unknown key in a theme file is found when the file is read
   without a `theme=`. When the app's theme or appearance changes (including the OS switching) it re-themes
   them with the app's views.
 - **Files.** Tesserae reads theme and stylesheet files itself and hands the engine only data, as for views
-  and images. `*_Theme.yaml` and `*_Stylesheet.yaml` say what a file is, and a file named
+  and images. `*_Theme.tdl` and `*_Stylesheet.tdl` say what a file is, and a file named
   for one kind is refused by the loader of another.
 
 ## The complete API

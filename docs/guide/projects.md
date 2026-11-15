@@ -1,7 +1,7 @@
 # Projects
 
 A project is a folder with a place for each kind of file. Tesserae finds a file by its name, so
-`app.open_view("Main")` is enough and a view says `widget: Stat` without a path. `tesserae new` makes one:
+`app.open_view("Main")` is enough and a view calls `Stat { }` without a path. `tesserae new` makes one:
 
 ```bash
 tesserae new notes
@@ -21,8 +21,8 @@ notes/
   Styles/             Name_Stylesheet.tdl
 ```
 
-The files `tesserae new` writes are in the current view language; [`tesserae migrate-yaml`](cli.md#move-a-project-to-the-current-syntax) moves a project written in the older syntax, and the
-[project tutorial](../tutorial-project.md) shows the app written in the current one.
+The files `tesserae new` writes are TDL, the current view language; [`tesserae migrate-tdl`](cli.md#write-views-and-stylesheets-as-tdl) moves a project written in YAML, and the
+[project tutorial](../tutorial-project.md) shows the app written in TDL.
 
 The [project tutorial](../tutorial-project.md) builds an app in one, step by step, beside the
 [flat-folder tutorial](../tutorial.md).
@@ -34,19 +34,19 @@ install Tesserae). [The `tesserae` command](cli.md) has the rest.
 
 | You write | Tesserae opens |
 | --- | --- |
-| `app.open_view("Main")` | `Views/Main_View.tdl` (or `Main_View.yaml`: a name finds either, and the `.tdl` wins when both are in one folder) |
+| `app.open_view("Main")` | `Views/Main_View.tdl` |
 | `app.bind(app.project.viewmodel("Main"))` | `ViewModels/Main_ViewModel.py`, the class `MainViewModel`, imported for you |
-| `app.open_view("Window")` | `Views/Window_View.tdl`, the window (a `widget: Window` view) |
-| `widget: Side` in a view | the view `Side`: `Views/Side_View.tdl`, or one of the views Tesserae ships; a name of yours wins |
-| `App(custom_theme="Brand")` | `Themes/Brand_Theme.yaml` |
-| `App(stylesheet="Page")` | `Styles/Page_Stylesheet.yaml` |
-| a view `Stat` that a view calls | `Stat_Stylesheet.yaml` beside `Stat_View.yaml`, or in `Styles/`: its look, read only while the app uses `Stat` |
+| `app.open_view("Window")` | `Views/Window_View.tdl`, the window (a `Window` view) |
+| `Side { }` in a view | the view `Side`: `Views/Side_View.tdl`, or one of the views Tesserae ships; a name of yours wins |
+| `App(custom_theme="Brand")` | `Themes/Brand_Theme.tdl` |
+| `App(stylesheet="Page")` | `Styles/Page_Stylesheet.tdl` |
+| a view `Stat` that a view calls | `Stat_Stylesheet.tdl` beside `Stat_View.tdl`, or in `Styles/`: its look, read only while the app uses `Stat` |
 
-A **path** works wherever a name does: `app.open_view(HERE / "Views" / "Main_View.yaml")`. A string with a `/` or a `.` is a
+A **path** works wherever a name does: `app.open_view(HERE / "Views" / "Main_View.tdl")`. A string with a `/` or a `.` is a
 path too, read from the folder you run in, so build it from `HERE` (the script's folder) and it works from anywhere. A name has
 no `/` and no `.`. The older syntax finds more by name: `app.load("Main")` pairs a view
 with its ViewModel, `component: Stat` finds `Components/Stat_Component.yaml`, and `Repeater(view, items, "Row", into=node)` and
-`instantiate(view, "Row", into=node)` find `Views/Row_View.yaml` and its ViewModel.
+`instantiate(view, "Row", into=node)` find `Views/Row_View.tdl` and its ViewModel.
 
 The project's root is `App(root=...)`, which defaults to the folder of the script that runs (`app.py`).
 `tesserae new` passes `root=HERE` so it doesn't depend on where you start it from.
@@ -76,13 +76,13 @@ app = App(root=HERE, recursive=True)
 If two folders have a file with the same name, Tesserae stops and says so, rather than choose:
 
 ```text
-ProjectError: Main_View.yaml is in two places, Views/Main_View.yaml and shared/Main_View.yaml: keep one, or name them differently
+ProjectError: Main_View.tdl is in two places, Views/Main_View.tdl and shared/Main_View.tdl: keep one, or name them differently
 ```
 
 A name that is nowhere says where it looked:
 
 ```text
-ProjectError: no view called 'Nope' (Nope_View.yaml) in Views under /home/you/notes: add the folder to App(search=[...]) or pass the file's path
+ProjectError: no view called 'Nope' (Nope_View.tdl) in Views under /home/you/notes: add the folder to App(search=[...]) or pass the file's path
 ```
 
 ## A name in the wrong place
@@ -90,16 +90,16 @@ ProjectError: no view called 'Nope' (Nope_View.yaml) in Views under /home/you/no
 A file that exists, but where Tesserae does not look, is named in the same error:
 
 ```text
-ProjectError: no view called 'Extra' (Extra_View.yaml) in Views under /home/you/notes: add the folder to App(search=[...]) or pass the file's path; found Themes/Extra_View.yaml: views are read from Views/ (or add Themes to App(search=[...]))
+ProjectError: no view called 'Extra' (Extra_View.tdl) in Views under /home/you/notes: add the folder to App(search=[...]) or pass the file's path; found Themes/Extra_View.tdl: views are read from Views/ (or add Themes to App(search=[...]))
 ```
 
-A file of another kind with the same name is named for what it is: `found Views/Brand_View.yaml, a view, not a theme`.
+A file of another kind with the same name is named for what it is: `found Views/Brand_View.tdl, a view, not a theme`.
 
 ## Adding to a project
 
-`tesserae add screen Settings` writes `Views/Settings_View.yaml` and `ViewModels/Settings_ViewModel.py` and adds
-its `bind`, `open_view` and route to `app.py` ([the command](cli.md#add-a-screen)). In a project written in the current
-syntax a screen is a view in `Views/` with a `name:`, a ViewModel in `ViewModels/` that serves it, and a `bind` and an
+`tesserae add screen Settings` writes `Views/Settings_View.tdl` and `ViewModels/Settings_ViewModel.py` and adds
+its `bind`, `open_view` and route to `app.py` ([the command](cli.md#add-a-screen)). In a project written in TDL a
+screen is a view in `Views/` whose root has a `Name`, a ViewModel in `ViewModels/` that serves it, and a `bind` and an
 `open_view` in `app.py`; a view you call is a file in `Views/`; a theme or a stylesheet is a file in `Themes/` or `Styles/`.
 Nothing else needs registering.
 

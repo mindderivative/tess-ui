@@ -50,11 +50,11 @@ batch(apply_discount)  # total recomputes once, not twice
   making the enclosing `Computed`/`Effect` depend on it.
 
 `Computed`/`Effect` duck-type against `Signal`'s own subscribe shape,
-so a `{{ }}` expression in a `*_View.yaml` can point straight at a
-`Computed` with no special handling. A Signal or Computed reads as its value in a view, so `{{ total }}` and `{{ total.get() }}` are the same:
+so a `<| |>` expression in a `*_View.tdl` can point straight at a
+`Computed` with no special handling. A Signal or Computed reads as its value in a view, so `<| total |>` and `<| total.get() |>` are the same:
 
-```yaml
-text: "{{ total }}"
+```text
+Text: <| total |>
 ```
 
 A ViewModel is a class whose attributes are the names a view reads. It serves the views that name it, and
@@ -76,9 +76,9 @@ class CartViewModel(ViewModel):
         self.quantity.update(lambda q: q + 1)
 ```
 
-The view that names it starts `name: Cart`, which must match `views` exactly.
+The view that names it has `Name: Cart` on its root node, which must match `views` exactly.
 
-See [Binding Expressions](bindings.md) for what a `{{ }}` expression can contain.
+See [Binding Expressions](bindings.md) for what a `<| |>` expression can contain.
 
 ## Details worth knowing
 
@@ -96,7 +96,7 @@ See [Binding Expressions](bindings.md) for what a `{{ }}` expression can contain
   each other: a signal from another library read inside a
   `tess_ui.Computed` isn't recorded.
 - **Bindings use them.** A bound node updates when a `Signal` or
-  `Computed` its `{{ }}` expression reads changes. See
+  `Computed` its `<| |>` expression reads changes. See
   [Binding Expressions](bindings.md).
-- **A list in a Signal is replaced, not changed in place.** A `for:` and a binding notice `tasks.set([...])` or
+- **A list in a Signal is replaced, not changed in place.** A `For` and a binding notice `tasks.set([...])` or
   `tasks.update(lambda ts: [*ts, new])`; `tasks.get().append(new)` changes the list without a notification, and nothing updates.

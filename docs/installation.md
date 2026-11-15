@@ -79,10 +79,10 @@ The last command opens a window with a `Count: 0` label and a button that counts
   that reads a font file from `tess_re`'s source tree needs `TESS_RE_SOURCE_DIR` set to
   that checkout.
 - **Documentation.** `pip install mkdocs mkdocs-material`, then `mkdocs serve`. The Python and
-  YAML references and the component and stylesheet pages are written from the code
+  TDL references and the component and stylesheet pages are written from the code
   (`tools/generate_api_docs.py`, `tools/generate_yaml_docs.py`,
   `tools/generate_component_docs.py`) and tests fail if they are out of date.
-- **Editor support.** `tools/generate_yaml_schema.py` writes the YAML schemas (`tools/generate_widget_schema.py` runs it); see [Editor Support](guide/editor-support.md).
+- **Editor support.** `tools/generate_yaml_schema.py` writes the JSON schemas of the language (`tools/generate_widget_schema.py` runs it); see [Editor Support](guide/editor-support.md).
 - **Everything else.** [`DEVELOPING.md`](https://github.com/mindderivative/tess-ui/blob/main/DEVELOPING.md) takes a
   clean machine to a working checkout (Fedora, Debian and Ubuntu, Arch and CachyOS), and says how to run
   the whole check, `tools/fullcheck.sh`.

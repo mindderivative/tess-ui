@@ -18,16 +18,19 @@
 
 ## In a window view
 
-A view whose root is a `widget: Window` sets `transparent`, `blur_behind`, `click_through`, `fullscreen`, `maximized`, `borderless`, `min_width`, `min_height` and `remember` itself, as properties of the window; see [Windows, Docks & Embedded Views](windows-and-docks.md).
+A view whose root is a `Window` sets `Transparent`, `Blur_Behind`, `Click_Through`, `Fullscreen`, `Maximized`, `Borderless`, `Min_Width`, `Min_Height` and `Remember` itself, as properties of the window; see [Windows, Docks & Embedded Views](windows-and-docks.md).
 
-```yaml
-widget: Window
-title: Notes
-transparent: true
-blur_behind: true
-children:
-  - widget: Container
-    style: {width: 320, height: 200, background: "surface@72%", corner_radius: 24}
+```tdl
+Window {
+  Title: Notes
+  Transparent: true
+  Blur_Behind: true
+  Children {
+    Container {
+      Style { Width: 320, Height: 200, Background: "surface@72%", Corner_Radius: 24 }
+    }
+  }
+}
 ```
 
 ## Less motion, more contrast
