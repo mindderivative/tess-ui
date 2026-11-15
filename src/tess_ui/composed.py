@@ -25,7 +25,7 @@ from tess_ui.fonts import check_font_families
 from tess_ui.follow import app_of
 from tess_ui.listeners import handled, listen_window
 from tess_ui.reactive import Computed, Effect, Signal, untrack
-from tess_ui.expr import compile_statements, is_action_name
+from tess_ui.tel import compile_statements, is_action_name
 from tess_ui.spec.compose import Composer, Instance
 from tess_ui.timers import Timers
 from tess_ui.typing_effects import OPTIONS, TypingEffects

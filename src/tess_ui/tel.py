@@ -30,8 +30,12 @@ import contextvars
 import datetime
 import decimal
 import enum
+import ast
+import difflib
 import functools
+import re
 import types
+import warnings
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, Callable, Optional
@@ -41,8 +45,9 @@ import tess_el
 from tess_ui.reactive import Computed, Signal
 
 __all__ = [
-    "BUILTIN_NAMES", "DEFAULT_LIMITS", "HOST_FUNCTIONS", "HOST_METHODS", "LANGUAGE", "ExprError", "Limits", "Origin", "Expr", "NestedTemplate",
-    "TelScope", "Template", "adapt", "compile_expr", "compile_template"]
+    "BUILTIN_NAMES", "DEFAULT_LIMITS", "HOST_FUNCTIONS", "HOST_METHODS", "LANGUAGE", "TIMER_CALLS", "Call", "Expr", "ExprError", "Limits", "NestedTemplate",
+    "Origin", "Set", "Statements", "TelScope", "Template", "adapt", "check_handler_actions", "check_handler_calls", "check_handler_targets",
+    "compile_expr", "compile_statements", "compile_template", "is_action_name", "timer_handlers"]
 
 #: The language version tess-ui declares to TEL.
 LANGUAGE = "0.1"
@@ -159,9 +164,13 @@ def _days_in_month(year: Any, month: Any) -> int:
     return calendar.monthrange(int(year), int(month))[1]
 
 
+def _local_today() -> datetime.date:
+    return datetime.date.today()
+
+
 def _today() -> str:
-    """Today's date, as `year-month-day`. It reads the clock, so an expression with it is not a function of its names alone."""
-    return datetime.date.today().isoformat()
+    """Today's date, as `year-month-day`. It reads the clock, so an expression with it is not a function of its names alone (a test sets `_local_today`)."""
+    return _local_today().isoformat()
 
 
 _WEEKDAYS = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
@@ -505,3 +514,326 @@ class NestedTemplate:
 
         return work(self.value)
 
+
+
+# -- handlers: steps ----------------------------------------------------------------------------------------------------
+#
+# TEL has expressions and no statements. A handler is a list of steps: `Set(target, value)` and `Call(callee, args)`, each value a `tess_ui.tel.Expr`, run in
+# order against the scope, a `Set` written with `scope.assign` so the next step reads it (`n = n + 1; cmd = str(n)`). The loader hands over a handler as text
+# (`open = not open; on_toggle()`, what the TDL front end writes from `Set` and `Call` blocks and what the Python widget fragments hold), and
+# `compile_statements` splits that text, with Python's `ast`, into the steps: an assignment, an augmented assignment (`n += 1` is `Set n = n + 1`) or a call.
+# Everything inside a step is TEL's. Each step's budget is TEL's.
+
+_NAME_PATH = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$")
+_AUG_SYMBOLS = {ast.Add: "+", ast.Sub: "-", ast.Mult: "*", ast.Div: "/", ast.FloorDiv: "//", ast.Mod: "%", ast.Pow: "**"}
+#: The calls whose second argument is a handler of its own, run later: `after(ms, "statements")`, `every(ms, "statements")`.
+TIMER_CALLS = frozenset({"after", "every"})
+
+
+def is_action_name(text: str) -> bool:
+    """Whether a handler's text is just a (dotted) name, such as `save` or `navigate.back`, rather than statements."""
+    return bool(_NAME_PATH.match(text.strip()))
+
+
+def _did_you_mean(name: str, known: Any) -> Optional[str]:
+    close = difflib.get_close_matches(name, [str(k) for k in known], n=3)
+    return ("did you mean " + " or ".join(f"'{c}'" for c in close)) if close else None
+
+
+class _Text:
+    """The text of a handler, with the positions of its syntax tree turned into characters (`ast` counts UTF-8 bytes) and into places in the file."""
+
+    def __init__(self, text: str, origin: Optional[Origin]) -> None:
+        self.text, self.origin = text, origin
+        self.lines = text.split("\n")
+        self.starts = [0]
+        for line in self.lines:
+            self.starts.append(self.starts[-1] + len(line) + 1)
+
+    def col(self, line: int, column: int) -> int:
+        return len(self.lines[line - 1].encode()[:column].decode(errors="ignore"))
+
+    def start(self, node: ast.AST) -> int:
+        line = node.lineno  # type: ignore[attr-defined]
+        return self.starts[line - 1] + self.col(line, node.col_offset)  # type: ignore[attr-defined]
+
+    def end(self, node: ast.AST) -> int:
+        line = node.end_lineno  # type: ignore[attr-defined]
+        return self.starts[line - 1] + self.col(line, node.end_col_offset)  # type: ignore[attr-defined]
+
+    def origin_at(self, offset: int) -> Optional[Origin]:
+        """Where the text at `offset` starts in the file."""
+        if self.origin is None:
+            return None
+        line = max(i for i, start in enumerate(self.starts) if start <= offset)
+        column = offset - self.starts[line]
+        return Origin(self.origin.file, self.origin.line + line, self.origin.column + column if line == 0 else column)
+
+    def error(self, node: ast.AST, message: str, hint: Optional[str] = None) -> ExprError:
+        line = node.lineno  # type: ignore[attr-defined]
+        column = self.col(line, node.col_offset)  # type: ignore[attr-defined]
+        end = self.col(line, node.end_col_offset) if node.end_lineno == line else None  # type: ignore[attr-defined]
+        return ExprError(message, source=self.text, line=line, column=column, end_column=end, origin=self.origin, hint=hint)
+
+    def expression(self, start: int, end: int, limits: Any, *, origin_offset: Optional[int] = None) -> Expr:
+        """The text between two offsets as an `Expr`, positioned in the file (written in parentheses when it spans lines, which `ast` leaves out)."""
+        segment = self.text[start:end]
+        if "\n" in segment:
+            segment = "(" + segment + ")"
+        return compile_expr(segment, origin=self.origin_at(start if origin_offset is None else origin_offset), limits=limits)
+
+
+class Set:
+    """`target = value`: the value is worked out, then written with the scope's `assign`. A value that is one call (`ok = copy(text)`) may be a call of an
+    action the scope knows, which TEL cannot express: `call` is that (and `value` the expression it is where the scope does not know the callee)."""
+
+    __slots__ = ("target", "value", "call", "node")
+
+    def __init__(self, target: str, value: Optional[Expr], node: tuple[ast.AST, _Text], call: Optional["Call"] = None) -> None:
+        self.target, self.value, self.call, self.node = target, value, call, node
+
+    def __repr__(self) -> str:
+        return f"Set({self.target} = {self.value.source if self.value is not None else self.call})"
+
+    def run(self, scope: Any, adapted: TelScope) -> None:
+        if self.call is not None:
+            value = self.call.run(scope, adapted)
+        else:
+            assert self.value is not None
+            value = self.value.evaluate(adapted)
+        assign = getattr(scope, "assign", None)
+        node, text = self.node
+        if assign is None:
+            raise text.error(node, f"'{self.target}' is not writable")
+        try:
+            assign(self.target, value)
+        except KeyError:
+            raise text.error(node, f"'{self.target}' is not writable", "assign only local state and Signals") from None
+        except ExprError:
+            raise
+        except Exception as exc:  # noqa: BLE001 - the scope's own failure
+            raise text.error(node, f"assigning '{self.target}' failed: {type(exc).__name__}: {exc}") from None
+
+
+class Call:
+    """`callee(args)` as a step: a call of an action the scope knows (a built-in family's member, a method of the ViewModel, a handler parameter), the
+    arguments `Expr`s. Where the scope does not know the callee, the call is worked out as the expression it is (a built-in function or a method of text,
+    a list or a dict): `expression` is that, or `error` says why it is not one."""
+
+    __slots__ = ("callee", "args", "kwargs", "expression", "error", "node", "timer")
+
+    def __init__(self, callee: Optional[str], args: tuple[tuple[Expr, bool], ...], kwargs: tuple[tuple[str, Expr], ...], expression: Optional[Expr],
+                 error: Optional[ExprError], node: tuple[ast.AST, _Text], timer: Optional[str] = None) -> None:
+        self.callee, self.args, self.kwargs, self.expression, self.error, self.node, self.timer = callee, args, kwargs, expression, error, node, timer
+
+    def __repr__(self) -> str:
+        return f"Call({self.callee}(...))"
+
+    def is_action(self, scope: Any) -> bool:
+        is_action = getattr(scope, "is_action", None)
+        return self.callee is not None and is_action is not None and bool(is_action(self.callee))
+
+    def run(self, scope: Any, adapted: TelScope) -> Any:
+        """The call's result (a `Set` may keep it)."""
+        if not self.is_action(scope):
+            if self.expression is None:
+                assert self.error is not None
+                raise self.error
+            return self.expression.evaluate(adapted)
+        args: list[Any] = []
+        for expr, starred in self.args:
+            value = expr.evaluate(adapted)
+            if starred:
+                if not isinstance(value, (list, tuple, set, frozenset, range, str)):
+                    raise ExprError(f"cannot unpack a {type(value).__name__} into arguments", source=expr.source, origin=expr.origin)
+                args.extend(value)
+            else:
+                args.append(value)
+        kwargs = {name: expr.evaluate(adapted) for name, expr in self.kwargs}
+        node, text = self.node
+        try:
+            return scope.call_action(self.callee, args, kwargs)
+        except ExprError:
+            raise
+        except Exception as exc:  # noqa: BLE001 - a handler's own failure
+            raise text.error(node, f"{self.callee}() failed: {type(exc).__name__}: {exc}") from None
+
+
+class Statements:
+    """A compiled handler: its `steps`. `names` are the names the steps read, assign and call the family of; `targets` the steps that assign (`Set`),
+    `calls` the calls of a bare name, which only the scope can judge (`check_handler_calls`)."""
+
+    def __init__(self, source: str, steps: list[Any], origin: Optional[Origin], text: _Text) -> None:
+        self.source, self.steps, self.origin, self.text = source, steps, origin, text
+        names: set[str] = set()
+        called: list[Call] = []
+        for step in steps:
+            if isinstance(step, Set):
+                names.add(step.target)
+                if step.value is not None:
+                    names |= step.value.names
+                if step.call is not None:
+                    called.append(step.call)
+            else:
+                called.append(step)
+        for call in called:
+            for expr, _ in call.args:
+                names |= expr.names
+            for _, expr in call.kwargs:
+                names |= expr.names
+            if call.callee is not None and "." in call.callee:
+                names.add(call.callee.split(".")[0])
+                if call.expression is not None:
+                    names |= call.expression.names
+        self.names: frozenset[str] = frozenset(names)
+        self.targets: tuple[Set, ...] = tuple(s for s in steps if isinstance(s, Set))
+        self.called: tuple[Call, ...] = tuple(called)  # every call, a step of its own or the whole value of a `Set`
+
+    def run(self, scope: Any, *, event: Any = None) -> None:
+        """Runs the steps in order against `scope` (a `Set` through `scope.assign`, a `Call` through the scope's actions and TEL's functions); `event` is
+        readable as `event`. Each step sees what the ones before it wrote."""
+        adapted = adapt(scope, event=event)
+        for step in self.steps:
+            step.run(scope, adapted)
+
+
+def _dotted(node: ast.AST) -> Optional[str]:
+    parts: list[str] = []
+    while isinstance(node, ast.Attribute):
+        parts.append(node.attr)
+        node = node.value
+    if isinstance(node, ast.Name):
+        parts.append(node.id)
+        return ".".join(reversed(parts))
+    return None
+
+
+def _statement_name(statement: ast.stmt) -> str:
+    return {ast.If: "if", ast.For: "for", ast.While: "while", ast.Delete: "del", ast.Return: "return", ast.Import: "import",
+            ast.ImportFrom: "import", ast.FunctionDef: "def", ast.ClassDef: "class", ast.With: "with", ast.Try: "try",
+            ast.Raise: "raise", ast.Assert: "assert", ast.Global: "global", ast.Nonlocal: "nonlocal", ast.AnnAssign: "an annotated assignment",
+            ast.Pass: "pass", ast.Break: "break", ast.Continue: "continue", ast.Expr: "an expression statement"}.get(type(statement), type(statement).__name__)
+
+
+def compile_statements(source: str, *, origin: Optional[Origin] = None, limits: Any = DEFAULT_LIMITS) -> Statements:
+    """Splits a handler's text into steps and compiles each value. Raises `ExprError`."""
+    _as_text(source, origin)
+    text = source.strip()
+    origin = _strip(source, origin)
+    if not text:
+        raise ExprError("the handler is empty", source=text, origin=origin)
+    if len(text) > limits.max_source:
+        raise ExprError(f"the handler is {len(text)} characters; the limit is {limits.max_source}", source=text[:80], origin=origin, code="limit-source")
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", SyntaxWarning)
+            tree = ast.parse(text, mode="exec")
+    except SyntaxError as exc:
+        raise ExprError(f"syntax error: {exc.msg}", source=text, line=exc.lineno or 1, column=max((exc.offset or 1) - 1, 0), origin=origin) from None
+    except (RecursionError, MemoryError, ValueError):
+        raise ExprError("cannot parse the handler: too deeply nested or malformed", source=text[:80], origin=origin) from None
+    where = _Text(text, origin)
+    steps: list[Any] = []
+    for statement in tree.body:
+        if isinstance(statement, ast.Assign):
+            target = statement.targets[0] if len(statement.targets) == 1 else None
+            if not isinstance(target, ast.Name):
+                raise where.error(statement, "assign to one name: `name = expression`")
+            if target.id.startswith("_"):
+                raise where.error(target, f"the name '{target.id}' is private")
+            after = text.index("=", where.end(target))
+            steps.append(_set_step(target, statement, after + 1, where, limits))
+        elif isinstance(statement, ast.AugAssign):
+            target = statement.target  # type: ignore[assignment]
+            if not isinstance(target, ast.Name):
+                raise where.error(statement, "assign to a name: `name += expression`")
+            symbol = _AUG_SYMBOLS.get(type(statement.op))
+            if symbol is None:
+                raise where.error(statement, f"{type(statement.op).__name__} is not allowed here (use + - * / // % **)")
+            if target.id.startswith("_"):
+                raise where.error(target, f"the name '{target.id}' is private")
+            # `n += 1` is `Set n = n + 1`: the text is written as `n +( 1)` with the `=` turned into `(`, so every column stays where the file has it
+            begin, finish = where.start(target), where.end(statement)
+            equals = text.index("=", where.end(target))
+            combined = text[begin:equals] + "(" + text[equals + 1:finish] + ")"
+            steps.append(Set(target.id, compile_expr(combined, origin=where.origin_at(begin), limits=limits), (target, where)))
+        elif isinstance(statement, ast.Expr) and isinstance(statement.value, ast.Call):
+            steps.append(_call_step(statement.value, where, limits))
+        else:
+            raise where.error(statement, f"'{_statement_name(statement)}' is not available in a handler (an assignment or a call only)",
+                              "if, for, del, return and the rest are reserved")
+    return Statements(text, steps, origin, where)
+
+
+def _set_step(target: ast.Name, statement: ast.Assign, start: int, where: _Text, limits: Any) -> Set:
+    """`target = value`; when the value is one call, it is also kept as a `Call`, for a callee that is an action the scope knows."""
+    node = (target, where)
+    value = statement.value
+    call = _call_step(value, where, limits) if isinstance(value, ast.Call) else None
+    if call is not None:
+        return Set(target.id, call.expression, node, call)
+    return Set(target.id, where.expression(start, where.end(statement), limits), node)
+
+
+def _call_step(call: ast.Call, where: _Text, limits: Any) -> Call:
+    callee = _dotted(call.func)
+    args = tuple((where.expression(where.start(a.value if isinstance(a, ast.Starred) else a), where.end(a.value if isinstance(a, ast.Starred) else a), limits),
+                  isinstance(a, ast.Starred)) for a in call.args)
+    kwargs = tuple((k.arg, where.expression(where.start(k.value), where.end(k.value), limits)) for k in call.keywords if k.arg is not None)
+    expression: Optional[Expr] = None
+    error: Optional[ExprError] = None
+    try:
+        expression = where.expression(where.start(call), where.end(call), limits)
+    except ExprError as exc:  # a call of an action is not an expression: only a callee the scope does not know needs this to be one
+        error = exc
+    timer = None
+    if (callee in TIMER_CALLS and len(call.args) >= 2 and isinstance(call.args[1], ast.Constant) and isinstance(call.args[1].value, str)):
+        timer = call.args[1].value
+    return Call(callee, args, kwargs, expression, error, (call.func, where), timer)
+
+
+def check_handler_calls(statements: Statements, scope: Any) -> None:
+    """Raises `ExprError` for a name a handler calls that is neither a built-in function nor a call its `scope` knows (a built-in action, a method of the
+    ViewModel, a handler parameter), so a mistake shows when the view loads, not when the handler is pressed (#251). A scope that does not know its
+    actions (`knows_actions` false: no app to ask) cannot judge, so nothing is raised. (A call of a dotted name is judged when it runs: the resolver of the
+    built-in actions needs the view, which does not exist while it is composed.)"""
+    if not getattr(scope, "knows_actions", False):
+        return
+    for step in statements.called:
+        if step.callee is None or "." in step.callee or step.callee in BUILTIN_NAMES or scope.is_known_call(step.callee):
+            continue
+        near = _did_you_mean(step.callee, [*BUILTIN_NAMES, *getattr(scope, "callable_names", lambda: [])()])
+        node, text = step.node
+        raise text.error(node, f"'{step.callee}' is not a function or an action you can call here", near)
+
+
+def check_handler_actions(statements: Statements, scope: Any) -> None:
+    """Raises `ExprError` for a call of a built-in action family's member that is not one (`window.fullscreen()`, `surface.explode()`), when its
+    `scope` can say (`action_problem`), so the mistake shows when the view loads."""
+    problem = getattr(scope, "action_problem", None)
+    if problem is None:
+        return
+    for step in statements.called:
+        if step.callee is not None and "." in step.callee:
+            found = problem(step.callee)
+            if found is not None:
+                node, text = step.node
+                raise text.error(node, found[0], found[1])
+
+
+def check_handler_targets(statements: Statements, scope: Any) -> None:
+    """Raises `ExprError` for a name a handler assigns that its `scope` cannot write (a param, a loop variable, a Computed, a plain attribute of the
+    ViewModel, or no name at all), so the mistake shows when the view loads, not when the handler is pressed."""
+    writable = getattr(scope, "is_writable", None)
+    if writable is None:
+        return
+    for step in statements.targets:
+        if not writable(step.target):
+            near = _did_you_mean(step.target, getattr(scope, "writable_names", lambda: [])())
+            node, text = step.node
+            raise text.error(node, f"'{step.target}' is not writable here", near or "assign only local state, a model param and the ViewModel's Signals")
+
+
+def timer_handlers(statements: Statements) -> list[str]:
+    """The handler texts written as literals in the statements' calls to `after` and `every`, so a mistake in one is found when the view loads."""
+    return [call.timer for call in statements.called if call.timer is not None]
