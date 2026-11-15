@@ -26,7 +26,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Collection, Iterable, Optional
 
-from tess_ui.expr import ExprError, Origin, compile_template
+from tess_ui.tel import ExprError, Origin, compile_template
 from tess_ui.spec import marker, placement, sizes, widgets as registry
 from tess_ui.spec.nodes import LoadError
 from tess_ui.spec.widgets import style_fields_of

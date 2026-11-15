@@ -2,7 +2,7 @@
 
 import pytest
 
-from tess_ui.expr import Template
+from tess_ui.tel import Template
 from tess_ui.spec import widgets as W
 from tess_ui.spec.nodes import EVENTS, LoadError, parse_view
 from tess_ui.spec.widgets import Property, WidgetDecl

@@ -1,7 +1,7 @@
 """The node model: a view file in the 0.5.0 syntax, read into validated `Node`s (spec sections 2, 3, 5 and 14; phase 3 of #209).
 
 `parse_view(text, file)` reads one `*_View.tdl` (read into mappings with positions kept), checks every key of every node against the spec, checks each
-property against its widget's declaration, compiles every `{{ }}` expression and handler through `tess_ui.expr`, and gives every node a
+property against its widget's declaration, compiles every `{{ }}` expression and handler through `tess_ui.tel`, and gives every node a
 stable id (its path from the root: the node's `name`, else `children[2]`). The first problem is a `LoadError` that names the file, line and
 column, says what is wrong and, where it can, what to write instead.
 
@@ -19,7 +19,8 @@ from typing import Any, Callable, Iterator, Optional
 
 from tess_ui import a11y as a11y_module
 from tess_ui.spec import placement, sizes
-from tess_ui.expr import Expr, ExprError, NestedTemplate, Origin, Statements, compile_expr, compile_statements, compile_template, is_action_name, timer_handlers
+from tess_ui.tel import (Expr, ExprError, NestedTemplate, Origin, Statements, compile_expr, compile_statements, compile_template, is_action_name,
+                         timer_handlers)
 from tess_ui.spec import widgets as registry
 from tess_ui.spec.widgets import Property, PropertyError, WidgetDecl, decl_from_params, is_expression, style_fields_of
 from tess_ui.project import looks_like, tdl_wrong_kind, yaml_refused
