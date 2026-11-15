@@ -116,18 +116,24 @@ class VM(ViewModel):
         self.log.append(self.chord.get())
 
 
-CALL = '{widget: KeyChordField, name: kc, value: "{{ chord }}", on_change: changed%s}'
+CALL = "KeyChordField { Name: kc, Value: <| chord |>, On_Change: changed%s }"
 
 
 def opened(tmp_path, call=CALL, options="", chord=None, dark=False, size=(560, 200)):
     (tmp_path / "Views").mkdir(parents=True, exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""tesserae: 0.6
-name: main
-widget: Container
-style: {{flex_direction: vertical, gap: 16, padding: 16, width: {size[0]}, height: {size[1]}}}
-children:
-  - {call % options}
-  - {{widget: Rect, name: elsewhere, style: {{width: 80, height: 40, background: surface_variant}}}}
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Gap: 16, Padding: 16, Width: {size[0]}, Height: {size[1]} }}
+  Children {{
+    {call % options}
+    Rect {{ Name: elsewhere, Style {{ Width: 80, Height: 40, Background: surface_variant }} }}
+  }}
+}}
 """)
     app = App(root=tmp_path, width=size[0], height=size[1], theme_seed=(0x67, 0x50, 0xA4, 0xFF), dark=dark)
     app.bind(VM)
@@ -336,7 +342,7 @@ def test_leaving_the_button_ends_the_recording(tmp_path):
 
 
 def test_the_app_can_start_and_stop_a_recording_through_recording(tmp_path):
-    view, vm = opened(tmp_path, call='{widget: KeyChordField, name: kc, value: "{{ chord }}", recording: "{{ rec }}", on_change: changed%s}')
+    view, vm = opened(tmp_path, call="KeyChordField { Name: kc, Value: <| chord |>, Recording: <| rec |>, On_Change: changed%s }")
     vm.rec.set(True)
     settle(view, 6)
     assert ctl(view).recording.get() is True and view.node("root.kc.record.record_text").get("text") == "Press keys"
@@ -392,7 +398,7 @@ def test_a_typed_chord_that_only_differs_in_form_is_rewritten_once(tmp_path):
 
 
 def test_disabled_it_records_and_reads_nothing(tmp_path):
-    view, vm = opened(tmp_path, options=", disabled: true")
+    view, vm = opened(tmp_path, options=", Disabled: true")
     assert ctl(view).disabled.get()
     view.window.simulate("pointer_down", node=record_button(view))
     view.window.simulate("pointer_up", node=record_button(view))
@@ -404,7 +410,7 @@ def test_disabled_it_records_and_reads_nothing(tmp_path):
 
 
 def test_the_names_a_screen_reader_hears_and_the_tab_order(tmp_path):
-    view, vm = opened(tmp_path, options=", label: Reveal key")
+    view, vm = opened(tmp_path, options=", Label: \"Reveal key\"")
     assert view.node("root.kc").get("role") == "group" and view.node("root.kc").get("label") == "Reveal key"
     assert record_button(view).get("role") == "button" and record_button(view).get("label") == "Record Reveal key" and record_button(view).get("pressed") is False
     assert view._built.nodes["root.kc.field.box.body.input"].get("label") == "Reveal key"
@@ -415,4 +421,4 @@ def test_the_names_a_screen_reader_hears_and_the_tab_order(tmp_path):
 
 def test_an_unknown_property_of_the_field_is_named(tmp_path):
     with pytest.raises(LoadError, match="colour"):
-        opened(tmp_path, call="{widget: KeyChordField, name: kc, colour: red%s}")
+        opened(tmp_path, call="KeyChordField { Name: kc, Colour: red%s }")

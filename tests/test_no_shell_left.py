@@ -24,7 +24,7 @@ TESS_RE_LINES = re.compile(r"Window\(width=width, height=height, title=title, de
 def test_nothing_of_the_old_shell_or_decorations_is_left_in_src():
     left = []
     for path in sorted((ROOT / "src" / "tess_ui").rglob("*")):
-        if path.suffix not in (".py", ".yaml", ".tmpl", ".json") or "__pycache__" in path.parts:
+        if path.suffix not in (".py", ".tdl", ".tmpl", ".json") or "__pycache__" in path.parts:
             continue
         for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             if GONE.search(line) and not (path.name == "app.py" and TESS_RE_LINES.search(line)):
@@ -37,9 +37,9 @@ def test_nothing_of_the_old_shell_or_decorations_is_left_in_src():
 def test_the_repository_has_no_shell_file_example_tool_or_workflow_left():
     for folder in ("examples", "tools", ".github"):
         for path in (ROOT / folder).rglob("*"):
-            if path.is_file() and path.suffix in (".py", ".yaml", ".yml", ".tmpl") and "__pycache__" not in path.parts:
+            if path.is_file() and path.suffix in (".py", ".tdl", ".yaml", ".yml", ".tmpl") and "__pycache__" not in path.parts:
                 text = path.read_text(encoding="utf-8")
-                assert not re.search(r"load_shell|use_shell|AppShell|_Shell\.yaml|new \S+ --shell|app_shell", text), path
+                assert not re.search(r"load_shell|use_shell|AppShell|_Shell\.tdl|new \S+ --shell|app_shell", text), path
     assert not [p for d in (ROOT / "examples").glob("app_shell*") for p in d.rglob("*") if p.is_file() and p.suffix != ".pyc"]
 
 
@@ -61,8 +61,8 @@ def test_an_old_name_fails_as_any_unknown_name_does(tmp_path):
 
 
 def test_loading_a_shell_file_is_an_ordinary_load_error(tmp_path):
-    path = tmp_path / "Studio_Shell.yaml"
-    path.write_text("top_bar: {title: Studio}\n", encoding="utf-8")
+    path = tmp_path / "Studio_Shell.tdl"
+    path.write_text("---\nTDL: 0.2\nName: Studio\n---\nTop_Bar { Title: Studio }\n", encoding="utf-8")
     with pytest.raises(Exception) as raised:
-        App(width=300, height=200).load(path)
+        App(width=300, height=200).open_view(path)
     assert "removed" not in str(raised.value).lower()

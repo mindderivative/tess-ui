@@ -8,12 +8,18 @@ from tess_ui.icons import ICONS, MDI_VIEW_BOX, icon_view_box
 
 def opened(tmp_path, extra=""):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{flex_direction: vertical, align_content: top_left, width: 400, height: 400}}
-children:
-  - {{widget: IconButton, name: b, icon: add, selected_icon: remove, toggle: true, label: Play}}
-{extra}""")
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Align_Content: top_left, Width: 400, Height: 400 }}
+  Children {{
+    IconButton {{ Name: b, Icon: add, Selected_Icon: remove, Toggle: true, Label: Play }}
+{extra}  }}
+}}
+""")
     app = App(root=tmp_path)
     view = app.open_view("Main")
     app.show("main")
@@ -59,8 +65,9 @@ def test_the_glyph_comes_back_when_toggled_again(tmp_path):
 
 def test_a_reduced_motion_app_swaps_at_once(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {width: 300, height: 300}\nchildren:\n  - {widget: IconButton, name: b, icon: add, selected_icon: remove, toggle: true, label: Play}\n")
+    (tmp_path / "Views" / "Main_View.tdl").write_text(
+        "---\nTDL: 0.2\nName: main\n---\nContainer {\n  Name: main\n  Style { Width: 300, Height: 300 }\n  Children {\n"
+        "    IconButton { Name: b, Icon: add, Selected_Icon: remove, Toggle: true, Label: Play }\n  }\n}\n")
     app = App(root=tmp_path, reduced_motion=True)
     view = app.open_view("Main")
     app.show("main")
@@ -77,10 +84,11 @@ MDI = next(n for n in ICONS if icon_view_box(n) == MDI_VIEW_BOX)
 
 def test_a_different_set_of_glyphs_cannot_morph_so_it_swaps(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {width: 300, height: 300}\nstate: {on: false}\nchildren:\n"
-        f"  - {{widget: Icon, name: i, icon: \"{{{{ 'home' if not on else '{MDI}' }}}}\", style: {{foreground: on_surface, transition: {{icon: 300}}}}}}\n"
-        "  - {widget: Rect, name: go, style: {width: 20, height: 20, background: primary}, handlers: {on_click: 'on = True'}}\n")
+    (tmp_path / "Views" / "Main_View.tdl").write_text(
+        "---\nTDL: 0.2\nName: main\n---\nContainer {\n  Name: main\n  Style { Width: 300, Height: 300 }\n  State { On: false }\n  Children {\n"
+        f"    Icon {{ Name: i, Icon: <| 'home' if not on else '{MDI}' |>, Style {{ Foreground: on_surface, Transition {{ Icon: 300 }} }} }}\n"
+        "    Rect {\n      Name: go\n      Style { Width: 20, Height: 20, Background: primary }\n"
+        "      Handlers { On_Click { Set { Target: on, Value: <| True |> } } }\n    }\n  }\n}\n")
     assert icon_view_box("home") != icon_view_box(MDI)
     app = App(root=tmp_path)
     view = app.open_view("Main")

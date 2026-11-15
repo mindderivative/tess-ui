@@ -11,20 +11,28 @@ class VM(ViewModel):
 
 def opened(tmp_path, props="", nodes=None):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    lines = "\n    ".join(props.split(", ")) if props else ""
+    lines = "\n      ".join(props.split(", ")) if props else ""
     nodes = nodes or [("a", 40, 40), ("b", 300, 120)]
-    kids = "\n".join(f"      - {{widget: GraphNode, name: {n}, label: {n.upper()}, x: {x}, y: {y}, style: {{width: 120, height: 80}}}}" for n, x, y in nodes)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{width: 600, height: 500, align_content: top_left}}
-children:
-  - widget: NodeGraph
-    name: g
-    edges: [{{from: root.g.a, to: root.g.b}}]
-    {lines}
-    style: {{width: 500, height: 300}}
-    children:
+    kids = "\n".join(f"        GraphNode {{ Name: {n}, Label: {n.upper()}, X: {x}, Y: {y}, Style {{ Width: 120, Height: 80 }} }}" for n, x, y in nodes)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Width: 600, Height: 500, Align_Content: top_left }}
+  Children {{
+    NodeGraph {{
+      Name: g
+      Edges {{ Item {{ From: root.g.a, To: root.g.b }} }}
+      {lines}
+      Style {{ Width: 500, Height: 300 }}
+      Children {{
 {kids}
+      }}
+    }}
+  }}
+}}
 """)
     app = App(root=tmp_path, width=600, height=500)
     app.bind(VM)
@@ -48,7 +56,7 @@ def role(view, name):
 
 
 def test_a_node_the_user_moves_lands_on_the_grid(tmp_path):
-    view = opened(tmp_path, "snap: 20")
+    view = opened(tmp_path, "Snap: 20")
     assert graph(view).snap.get() == 20.0
     a = gnode(view, "a")
     a.node.focus()
@@ -71,13 +79,13 @@ def test_arrows_add_an_arrowhead_to_each_edge(tmp_path):
     plain = graph(view).edges[0][2].get("data")
     assert "L" not in plain
     (tmp_path / "w").mkdir()
-    arrowed = opened(tmp_path / "w", "arrows: true")
+    arrowed = opened(tmp_path / "w", "Arrows: true")
     data = graph(arrowed).edges[0][2].get("data")
     assert data.count("M") == 2 and " L" in data
 
 
 def test_fit_pans_and_zooms_so_every_node_shows(tmp_path):
-    view = opened(tmp_path, "fit: true", nodes=[("a", 0, 0), ("b", 1400, 900)])
+    view = opened(tmp_path, "Fit: true", nodes=[("a", 0, 0), ("b", 1400, 900)])
     for _ in range(4):
         view.window.advance(16)
     g = graph(view)
@@ -90,7 +98,7 @@ def test_fit_pans_and_zooms_so_every_node_shows(tmp_path):
 
 
 def test_fit_never_zooms_in_past_actual_size(tmp_path):
-    view = opened(tmp_path, "fit: true")
+    view = opened(tmp_path, "Fit: true")
     for _ in range(4):
         view.window.advance(16)
     assert graph(view).zoom.get() == 1.0
@@ -114,7 +122,7 @@ def test_pressing_a_node_chooses_it_with_a_primary_border_and_pressing_the_backg
 
 
 def test_a_node_dragged_to_a_place_between_grid_lines_lands_on_the_nearest_one(tmp_path):
-    view = opened(tmp_path, "snap: 20")
+    view = opened(tmp_path, "Snap: 20")
     a = gnode(view, "a")
     x, y = a.node.get("layout_x") + 20, a.node.get("layout_y") + 40
     view.window.simulate("pointer_down", x=x, y=y)

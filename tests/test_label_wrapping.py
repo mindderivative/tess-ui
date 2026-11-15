@@ -6,16 +6,14 @@ auto-width label could be a fraction of a pixel too narrow for its own text and 
 parent has a width an over-long one ends in an ellipsis. The few texts that are meant to wrap are named here.
 """
 
-from pathlib import Path
+import json
 
 import pytest
-import yaml
 
 from tess_ui import App, View
-from fragment_reader import FRAGMENTS as FRAGMENT_DIR, Fragment
-from tess_ui.spec import expand_components_to_spec
+from tess_ui.shipped import shipped_views
+from tess_ui.spec.tdl import load_marked_tdl
 
-ROOT = Path(__file__).resolve().parent.parent
 SHORT = ["OK", "Save", "Add a task", "Sign in", "Continue", "Cancel", "Remove item", "Notifications"]
 LONG = "A label that is far too long to fit in any of these components at once"
 #: Texts that wrap by design: a dialog's words and a snackbar's message.
@@ -24,46 +22,48 @@ WRAPS = {("Dialog", "headline"), ("Dialog", "body"), ("Snackbar", "text"), ("Tex
 WORDS = ("label", "title", "text", "headline")
 
 
-def _fragments():
-    return {name: Fragment(name) for name in sorted(p.name.removesuffix("_Component.yaml") for p in FRAGMENT_DIR.glob("*_Component.yaml"))}
+def _params_of(name):
+    path = shipped_views()[name]
+    return load_marked_tdl(path.read_text(encoding="utf-8"), str(path)).get("params") or {}
 
 
-FRAGMENTS = _fragments()
-LABELLED = {n: f for n, f in FRAGMENTS.items() if any(w in {p for p, _, _ in f.params} for w in WORDS)
-            or n in ("DatePickerDay", "PeriodSelectorAM", "NavigationRail", "NavigationDrawer", "Menu", "Tabs", "ButtonGroup")}
+#: The shipped views that have words of their own (or hold items that do), by name.
+LABELLED = sorted(n for n in shipped_views() if any(w in _params_of(n) for w in WORDS)
+                  or n in ("DatePickerDay", "NavigationRail", "NavigationDrawer", "Menu", "Tabs", "ButtonGroup"))
 
 
-def _text_nodes(view, spec, found=None):
+def _text_nodes(spec, found=None):
     found = [] if found is None else found
     if spec.get("kind") in ("Text", "Link"):
         found.append(spec["id"])
     for child in spec.get("children") or []:
-        _text_nodes(view, child, found)
+        _text_nodes(child, found)
     return found
 
 
-def _params(fragment, words):
-    params = dict(fragment.sample())
-    for name in WORDS:
-        if name in params:
-            params[name] = words
-    if "day" in params:
-        params["day"] = "7"  # the content of a Text is a string
+def _call(name, words):
+    """The TDL call of the view `name` with `words` in every parameter that carries words (and a handler, an icon, items where it needs them)."""
+    params = _params_of(name)
+    props = [f"{key.title()}: {json.dumps(words)}" for key in params if key in WORDS]
+    props += [f"{key.title()}: noop" for key, decl in params.items() if key.startswith("on_") and "default" not in decl]
+    if "icon" in params:
+        props.append("Icon: home")
     if "items" in params:
-        params["items"] = [{**item, "label": words} for item in params["items"]]
-    return params
+        props.append(f"Items: <| [{{'label': {words!r}, 'text': {words!r}, 'icon': 'home', 'value': 'a', 'screen': 'a'}}] |>")
+    return f"{name} {{ Name: x, {', '.join(props)} }}"
 
 
-@pytest.mark.parametrize("name", sorted(LABELLED))
-def test_a_label_stays_on_one_line(name):
-    fragment = FRAGMENTS[name]
-    app = App(width=600, height=400)
+@pytest.mark.parametrize("name", LABELLED)
+def test_a_label_stays_on_one_line(name, tmp_path):
+    (tmp_path / "Views").mkdir()
     for words in [*SHORT, LONG]:
-        spec = expand_components_to_spec(yaml.safe_dump({"id": "x", "component": name, "with": _params(fragment, words)}))
-        view = View(spec, window=app.window, theme_seed=(0x67, 0x50, 0xA4, 0xFF))
-        app.window.root.add_child(view.root)
+        (tmp_path / "Views" / "Main_View.tdl").write_text(
+            f"---\nTDL: 0.2\nName: Main\n---\nContainer {{\n  Name: main\n  Children {{\n    {_call(name, words)}\n  }}\n}}\n")
+        app = App(root=tmp_path, width=600, height=400)
+        view = app.open_view("Main")
+        app.show("main")
         app.window.advance(16)
-        for node_id in _text_nodes(view, spec):
+        for node_id in _text_nodes(view._spec):
             part = node_id.rsplit(".", 1)[-1] if node_id != "x" else "root"
             if (name, part) in WRAPS:
                 continue
@@ -74,7 +74,14 @@ def test_a_label_stays_on_one_line(name):
                 line = 14 * 1.5
             assert node.get("layout_height") <= line * 1.5, \
                 f"{name}.{part} wraps {words!r}: {node.get('layout_height')} high, a line is {line:.0f}"
-        view.root.destroy()
+
+
+def test_the_sweep_finds_the_text_of_a_button(tmp_path):
+    (tmp_path / "Views").mkdir()
+    (tmp_path / "Views" / "Main_View.tdl").write_text(
+        f"---\nTDL: 0.2\nName: Main\n---\nContainer {{\n  Name: main\n  Children {{\n    {_call('Button', 'Save')}\n  }}\n}}\n")
+    view = App(root=tmp_path, width=600, height=400).open_view("Main")
+    assert any(node_id.endswith(".label") for node_id in _text_nodes(view._spec))
 
 
 def test_text_takes_wrap_and_overflow():

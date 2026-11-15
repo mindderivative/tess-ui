@@ -5,8 +5,14 @@ import pytest
 from tess_ui import App, Signal, ViewModel, tokens
 from tess_ui.shipped import shipped_views
 
-ITEMS = """[{value: cut, label: Cut, shortcut: Ctrl+X}, {value: copy, label: Copy, icon: content_copy}, {divider: true}, {heading: Share},
-          {value: paste, label: Paste, disabled: true}, {value: share, label: Share, submenu: [{value: mail, label: Mail}, {value: link, label: Link}]}]"""
+ITEMS = """Items {
+      Item { Value: cut, Label: Cut, Shortcut: "Ctrl+X" }
+      Item { Value: copy, Label: Copy, Icon: content_copy }
+      Item { Divider: true }
+      Item { Heading: Share }
+      Item { Value: paste, Label: Paste, Disabled: true }
+      Item { Value: share, Label: Share, Submenu { Item { Value: mail, Label: Mail } Item { Value: link, Label: Link } } }
+    }"""
 
 
 class VM(ViewModel):
@@ -27,18 +33,29 @@ class VM(ViewModel):
 def opened(tmp_path, props="", items=ITEMS, show=True):
     (tmp_path / "Views").mkdir(exist_ok=True)
     lines = "\n    ".join(props.split(", ")) if props else ""
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{width: 600, height: 500}}
-children:
-  - {{widget: Button, name: btn, label: Open, handlers: {{on_click: "open = True"}}}}
-  - widget: Menu
-    name: m
-    open: "{{{{ open }}}}"
-    anchor: btn
-    chosen: "{{{{ chosen }}}}"
-    items: {items}
-    {lines}
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Width: 600, Height: 500 }}
+  Children {{
+    Button {{
+      Name: btn
+      Label: Open
+      Handlers {{ On_Click {{ Set {{ Target: open, Value: <| True |> }} }} }}
+    }}
+    Menu {{
+      Name: m
+      Open: <| open |>
+      Anchor: btn
+      Chosen: <| chosen |>
+      {items}
+      {lines}
+    }}
+  }}
+}}
 """)
     app = App(root=tmp_path, width=600, height=500)
     app.bind(VM)
@@ -131,7 +148,7 @@ def test_escape_and_a_press_outside_close_it_without_choosing(tmp_path):
 
 
 def test_on_pick_runs_after_an_item_is_chosen(tmp_path):
-    view, vm = opened(tmp_path, "on_pick: noted")
+    view, vm = opened(tmp_path, "On_Pick: noted")
     view.window.simulate("click", node=row(view, 0))
     settle(view, 6)
     assert vm.log == ["picked"]
@@ -157,8 +174,8 @@ def test_enter_on_a_focused_item_chooses_it(tmp_path):
 
 
 def test_check_mode_flips_the_checks_and_shows_them(tmp_path):
-    items = "[{value: bold, label: Bold}, {value: italic, label: Italic}]"
-    view, vm = opened(tmp_path, 'mode: check, checks: "{{ checks }}"', items)
+    items = "Items { Item { Value: bold, Label: Bold } Item { Value: italic, Label: Italic } }"
+    view, vm = opened(tmp_path, "Mode: check, Checks: <| checks |>", items)
     assert row(view, 0).get("checked") is True and row(view, 1).get("checked") is False
     view.window.simulate("click", node=row(view, 1))
     settle(view, 6)
@@ -172,8 +189,8 @@ def test_check_mode_flips_the_checks_and_shows_them(tmp_path):
 
 
 def test_radio_mode_keeps_one_checked(tmp_path):
-    items = "[{value: a, label: A}, {value: b, label: B}, {value: c, label: C}]"
-    view, vm = opened(tmp_path, 'mode: radio, selected: "{{ picked }}"', items)
+    items = "Items { Item { Value: a, Label: A } Item { Value: b, Label: B } Item { Value: c, Label: C } }"
+    view, vm = opened(tmp_path, "Mode: radio, Selected: <| picked |>", items)
     assert [row(view, i).get("checked") for i in range(3)] == [False, True, False]
     view.window.simulate("click", node=row(view, 2))
     settle(view, 6)
@@ -223,8 +240,8 @@ def test_escape_closes_the_submenu_first(tmp_path):
 
 
 def test_the_width_is_held_between_112_and_280(tmp_path):
-    view, _ = opened(tmp_path, "width: 900")
+    view, _ = opened(tmp_path, "Width: 900")
     assert surface(view).get("layout_width") == 280.0
     (tmp_path / "n").mkdir()
-    narrow, _ = opened(tmp_path / "n", "width: 10")
+    narrow, _ = opened(tmp_path / "n", "Width: 10")
     assert surface(narrow).get("layout_width") == 112.0

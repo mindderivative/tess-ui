@@ -9,12 +9,13 @@ import pytest
 from tess_ui import Signal, ViewModel
 from tess_ui.composed import open_composed
 from tess_ui.spec.lower import lower
-from tess_ui.spec.nodes import parse_view
+from tess_ui.spec.nodes import parse_data
+from tess_ui.spec.tdl import load_marked_tdl
 from tess_ui.view import View
 from tess_ui.viewmodel import Bindings
 
 SEED = (103, 80, 164, 255)
-TEXT = "typography_role: body_large\n    style: {width: 100, height: 20, foreground: '#000000'}"
+TEXT = "Typography_Role: body_large, Style { Width: 100, Height: 20, Foreground: \"#000000\" }"
 
 
 class VM(ViewModel):
@@ -29,18 +30,18 @@ class VM(ViewModel):
         self.label = Signal("a label")
 
 
-SOURCE = ("name: demo\nwidget: Container\nstyle: {flex_direction: vertical, width: 300, height: 400}\nchildren:\n"
-          "  - widget: Text\n    name: head\n    text: '{{ title }}'\n    a11y: {label: '{{ label }}'}\n    " + TEXT + "\n"
-          "  - widget: Rect\n    name: swatch\n    style: {width: 40, height: 20, background: '{{ color }}'}\n"
-          "  - widget: Container\n    name: list\n    style: {flex_direction: vertical, width: 200, height: 200}\n    children:\n"
-          "      - for: r in rows\n        key: r.id\n        widget: Text\n        name: row\n        text: '{{ r.t }}'\n        " + TEXT.replace("\n    ", "\n        ") + "\n"
-          "  - if: show\n    widget: Text\n    name: extra\n    text: 'extra'\n    " + TEXT + "\n"
-          "  - widget: Container\n    name: still\n    style: {width: 50, height: 50}\n    children:\n"
-          "      - {widget: Text, name: s1, text: fixed, typography_role: body_large, style: {width: 40, height: 10, foreground: '#000000'}}\n")
+SOURCE = ("---\nTDL: 0.2\nName: demo\n---\nContainer {\n  Name: demo\n  Style { Flex_Direction: vertical, Width: 300, Height: 400 }\n  Children {\n"
+          f"    Text {{ Name: head, Text: <| title |>, A11y {{ Label: <| label |> }}, {TEXT} }}\n"
+          "    Rect { Name: swatch, Style { Width: 40, Height: 20, Background: <| color |> } }\n"
+          "    Container {\n      Name: list\n      Style { Flex_Direction: vertical, Width: 200, Height: 200 }\n      Children {\n"
+          f"        For r In <| rows |> Key <| r.id |> {{\n          Text {{ Name: row, Text: <| r.t |>, {TEXT} }}\n        }}\n      }}\n    }}\n"
+          f"    If <| show |> {{\n      Text {{ Name: extra, Text: extra, {TEXT} }}\n    }}\n"
+          "    Container {\n      Name: still\n      Style { Width: 50, Height: 50 }\n      Children {\n"
+          "        Text { Name: s1, Text: fixed, Typography_Role: body_large, Style { Width: 40, Height: 10, Foreground: \"#000000\" } }\n      }\n    }\n  }\n}\n")
 
 
 def render():
-    doc = parse_view(SOURCE, "Demo_View.yaml")
+    doc = parse_data(load_marked_tdl(SOURCE, "Demo_View.tdl"), SOURCE, "Demo_View.tdl")
     bindings = Bindings()
     bindings.bind(VM)
     view = open_composed(doc, bindings, None, theme_seed=SEED)

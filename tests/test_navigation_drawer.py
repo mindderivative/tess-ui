@@ -5,8 +5,14 @@ import pytest
 from tess_ui import App, Signal, ViewModel, tokens
 from tess_ui.shipped import shipped_views
 
-ITEMS = """[{value: inbox, label: Inbox, icon: home, badge: 24}, {value: sent, label: Sent, icon: send}, {divider: true}, {heading: Labels},
-          {value: work, label: Work, icon: tag}, {value: off, label: Archive, icon: folder, disabled: true}]"""
+ITEMS = """Items {
+      Item { Value: inbox, Label: Inbox, Icon: home, Badge: 24 }
+      Item { Value: sent, Label: Sent, Icon: send }
+      Item { Divider: true }
+      Item { Heading: Labels }
+      Item { Value: work, Label: Work, Icon: tag }
+      Item { Value: off, Label: Archive, Icon: folder, Disabled: true }
+    }"""
 
 
 class VM(ViewModel):
@@ -20,19 +26,26 @@ class VM(ViewModel):
 
 def opened(tmp_path, props="", children="", widget="NavigationDrawer", items=ITEMS, open_=True):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    lines = "\n    ".join(props.split(", ")) if props else ""
-    kids = f"\n    children:\n{children}" if children else ""
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{flex_direction: horizontal, align_content: top_left, width: 800, height: 500}}
-children:
-  - widget: {widget}
-    name: d
-    open: "{{{{ open }}}}"
-    items: {items}
-    selected: "{{{{ page }}}}"
-    {lines}{kids}
-  - {{widget: Container, name: main, style: {{flex: fill, height: 100%, background: surface_container}}}}
+    lines = "\n      ".join(props.split(", ")) if props else ""
+    kids = f"\n      Children {{\n{children}      }}" if children else ""
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: horizontal, Align_Content: top_left, Width: 800, Height: 500 }}
+  Children {{
+    {widget} {{
+      Name: d
+      Open: <| open |>
+      {items}
+      Selected: <| page |>
+      {lines}{kids}
+    }}
+    Container {{ Name: main, Style {{ Flex: fill, Height: 100%, Background: surface_container }} }}
+  }}
+}}
 """)
     app = App(root=tmp_path, width=800, height=500)
     app.bind(VM)
@@ -130,7 +143,8 @@ def test_one_tab_stop_and_the_arrows_move_and_choose(tmp_path):
 
 
 def test_header_and_footer_hold_your_own_content(tmp_path):
-    children = "      - {widget: Container, name: brand, slot: header, style: {width: 100, height: 40, background: primary}}\n      - {widget: Container, name: foot, slot: footer, style: {width: 100, height: 30, background: secondary}}\n"
+    children = ("        Container { Name: brand, Slot: header, Style { Width: 100, Height: 40, Background: primary } }\n"
+                "        Container { Name: foot, Slot: footer, Style { Width: 100, Height: 30, Background: secondary } }\n")
     view, _ = opened(tmp_path, children=children)
     assert view.node("root.d.brand").get("layout_y") < item(view, 0).get("layout_y") < view.node("root.d.foot").get("layout_y")
 
@@ -149,15 +163,15 @@ def test_closing_a_standard_drawer_gives_the_content_its_room_back_and_the_width
 
 
 def test_the_width_is_held_between_256_and_360(tmp_path):
-    view, _ = opened(tmp_path, "width: 900")
+    view, _ = opened(tmp_path, "Width: 900")
     assert view.node("root.d").get("layout_width") == 360.0
     (tmp_path / "n").mkdir()
-    narrow, _ = opened(tmp_path / "n", "width: 100")
+    narrow, _ = opened(tmp_path / "n", "Width: 100")
     assert narrow.node("root.d").get("layout_width") == 256.0
 
 
 def test_a_long_list_scrolls(tmp_path):
-    many = "[" + ", ".join("{value: v%d, label: Item %d, icon: home}" % (i, i) for i in range(20)) + "]"
+    many = "Items {\n" + "\n".join("      Item { Value: v%d, Label: \"Item %d\", Icon: home }" % (i, i) for i in range(20)) + "\n    }"
     view, _ = opened(tmp_path, items=many)
     scroller = view._built.outer["root.d.panel.list"]
     assert scroller.get("layout_height") == 500.0 - 24
@@ -220,13 +234,25 @@ class B(ViewModel):
 def test_the_screens_drawer_selects_the_screen_showing_and_navigates_when_pressed(tmp_path):
     (tmp_path / "Views").mkdir()
     for name in ("a", "b"):
-        (tmp_path / "Views" / f"{name.upper()}_View.yaml").write_text(f"""name: {name}
-widget: Container
-style: {{flex_direction: horizontal, width: 600, height: 400}}
-children:
-  - widget: NavigationDrawerScreens
-    name: d
-    items: [{{screen: a, label: Home, icon: home}}, {{divider: true}}, {{heading: More}}, {{screen: b, label: Settings, icon: search, badge: 3}}]
+        (tmp_path / "Views" / f"{name.upper()}_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: {name}
+---
+Container {{
+  Name: {name}
+  Style {{ Flex_Direction: horizontal, Width: 600, Height: 400 }}
+  Children {{
+    NavigationDrawerScreens {{
+      Name: d
+      Items {{
+        Item {{ Screen: a, Label: Home, Icon: home }}
+        Item {{ Divider: true }}
+        Item {{ Heading: More }}
+        Item {{ Screen: b, Label: Settings, Icon: search, Badge: 3 }}
+      }}
+    }}
+  }}
+}}
 """)
     app = App(root=tmp_path, width=600, height=400)
     app.bind(A)
