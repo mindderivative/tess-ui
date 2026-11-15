@@ -3541,3 +3541,8 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 - **Cost.** Mixed set (button, icon button, FAB, chip, card, divider, badge, text, list item, tree node, search bar, toolbar, an open dialog; headless, lavapipe): 9.8-10.5 ms per widget after, 10.0-10.1 before.
 - **Verified.** Full suite 8463 passed, 21 skipped (`-n 4`, lavapipe); `tools/docs_audit.py`, `tools/check.py`, mypy ratchet (baseline 352 -> 336).
 - **NOT verified.** CI (Windows, macOS), the real running shell, the hand-built `top_app_bar` with window controls on a real borderless window.
+
+## 2026-11-15 Release 0.6.1: the TDL cutover
+
+- Version 0.6.1 (was 0.6.0.1, which is on PyPI). What it holds is the `## 0.6.1` section of `docs/changelog.md`: YAML is no longer read, the converter is in `tesserae-ui<0.6.1`, the Python widget factories call the shipped views, expressions and handlers run on `tesserae-el`, engine 0.6.8, Python 3.14 minimum. Checked: docs audit, `tools/check.py` (types, schema, docs), and the full suite on main in CI (Linux, macOS, Windows) at the merge of #311.
+- Not verified: a real running shell, real GPUs other than lavapipe in CI.
