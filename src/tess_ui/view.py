@@ -118,7 +118,7 @@ def _props_equal(a: dict[str, Any], b: dict[str, Any]) -> bool:
 
 
 class View:
-    """A built view. `spec` is an expanded view spec (a mapping of nodes, as `expand_components_to_spec` makes one);
+    """A built view. `spec` is a view spec (a mapping of nodes: what a composed view is lowered to, or what a hand-built widget gives);
     `frames` maps an Image's id to its decoded `(rgba, width, height)`.
     The theme and stylesheet arguments are `tess_re`'s `View`'s: the seed and
     dark flag, and the three `*_spec` dicts.

@@ -1,7 +1,7 @@
 """Tesserae's MD3 widget catalog -- one Python function per widget,
 imperatively callable, each taking the window first. Since M40-M42 every
-one is built by Tesserae from `tess_re`'s building blocks (most from the
-same fragments a `component:` in a view uses) and returns a Tesserae
+one is built by Tesserae from `tess_re`'s building blocks (most as calls of
+the views Tesserae ships, `Button`, `Chip`, ...) and returns a Tesserae
 object -- a control, a `Widget` (`.node`, `.part(name)`) or an overlay --
 never a bare `tess_re` node; none delegates to `tess_re`'s `Window.add_*`.
 """

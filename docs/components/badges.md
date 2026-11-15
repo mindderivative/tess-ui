@@ -32,10 +32,11 @@ The Material 3 badge: a 6 dp dot (no value) or a 16 dp pill holding a count or s
 | `Limit` | `int` | `999` | A number over this shows as the limit and a plus. |
 | `Show` | `bool` | `true` | Whether the badge shows. |
 | `Anchored` | `bool` | `false` | The children are the host, and the mark sits on its top right corner. |
+| `Flat` | `bool` | `false` | The root is the mark itself, with no wrapper: for a badge a Python widget places and styles. Not with `Anchored`; `Show` is not read. |
 
 Children go in the default slot.
 
-Its parts, by name (a stylesheet rule's `Part` or `Name` addresses one): `host` (Container), `mark` (Container), `label` (Text).
+Its parts, by name (a stylesheet rule's `Part` or `Name` addresses one): `flat_label` (Text), `host` (Container), `mark` (Container), `label` (Text).
 
 Its look is in [`Badge_Stylesheet.tdl`](../stylesheets/badges/badge.md).
 
@@ -87,8 +88,8 @@ To restyle it in your whole app, write rules for it in your app's stylesheet, or
 Styles {
   Rule {
     Widget: Badge
-    Part: mark
-    Style { Background: tertiary }
+    Part: flat_label
+    Style { Foreground: tertiary }
   }
 }
 ```

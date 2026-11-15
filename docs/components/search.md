@@ -40,11 +40,12 @@ The Material 3 search bar: a 56 pixel `surface_container_high` pill with a leadi
 | `On_Leading` | `handler` |  | What the leading icon does when it is not a search glass (open a drawer). |
 | `Trailing_Icon` | `str` |  | An icon at the end, such as a microphone. |
 | `On_Trailing` | `handler` |  | What the trailing icon does. |
+| `Trailing_Icons` | `list` | `[]` | More icons at the end, each an icon name (a Python widget wires each one itself). They show while nothing is typed, after `Trailing_Icon`. |
 | `Avatar_Text` | `str` |  | Letters in a circle at the end. |
 | `On_Search` | `handler` |  | Called when Enter is pressed. |
 | `Disabled` | `bool` | `false` | Dimmed and not editable. |
 
-Its parts, by name (a stylesheet rule's `Part` or `Name` addresses one): `back` (Container), `back_icon` (Icon), `leading` (Container), `leading_glyph` (Icon), `input` (TextInput), `clear` (Container), `clear_icon` (Icon), `trailing` (Container), `trailing_glyph` (Icon), `avatar` (Container), `avatar_text` (Text).
+Its parts, by name (a stylesheet rule's `Part` or `Name` addresses one): `back` (Container), `back_icon` (Icon), `leading` (Container), `leading_glyph` (Icon), `input` (TextInput), `clear` (Container), `clear_icon` (Icon), `trailing` (Container), `trailing_glyph` (Icon), `trailing_item` (Container), `trailing_item_glyph` (Icon), `avatar` (Container), `avatar_text` (Text).
 
 Its look is in [`SearchBar_Stylesheet.tdl`](../stylesheets/search/search-bar.md).
 

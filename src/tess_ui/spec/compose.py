@@ -781,12 +781,13 @@ class Composer:
 
     # public
 
-    def compose(self, doc: ViewDoc) -> Composition:
+    def compose(self, doc: ViewDoc, root_id: str = "root") -> Composition:
+        """Composes `doc`. The root instance is called `root_id` and every id under it starts with it (a Python factory names its widget's root)."""
         ctx = _Ctx(doc, 0, (doc.name or doc.file,))
         self._windowed = doc.root.widget == "Window"
         self._check_root(doc.root, ctx)
         scope = Scope(None, {}, root=self.viewmodel, actions=self.actions)
-        return Composition(self._instance(doc.root, "root", scope, ctx, forced_id="root"), self)
+        return Composition(self._instance(doc.root, "root", scope, ctx, forced_id=root_id), self)
 
     # errors and lookup
 

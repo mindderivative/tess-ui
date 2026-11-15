@@ -3,8 +3,6 @@
 from collections.abc import Callable, Iterable, Mapping
 from typing import Any, Optional
 
-import yaml
-
 from tess_ui import tokens
 from tess_ui.reactive import Signal
 
@@ -35,15 +33,8 @@ def elevation(node) -> float:
     raise AssertionError(f"shadows {shadows!r} aren't an MD3 elevation level")
 
 
-def expand_components(yaml_text: str) -> dict:
-    """The kind-tree a test's YAML node (`id`, `component`, `with`, `children`) expands to: tests write their input as YAML text, the package itself reads none."""
-    from tess_ui.spec import expand_components_to_spec
-
-    return expand_components_to_spec(yaml.safe_load(yaml_text))
-
-
 def view_from(spec, **kwargs):
-    """A Tesserae `View` built from an expanded kind-tree (what `expand_components` returns: the internal form the Python widget factories build from), or from
+    """A Tesserae `View` built from a kind-tree (the form the Python widget factories' hand-built widgets use), or from
     a view's TDL text (it starts with the `---` metadata block)."""
     from tess_ui import View
 

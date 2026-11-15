@@ -9,7 +9,7 @@ restyle or reconcile never undoes it. A control keeps its own `disabled`.
 import pytest
 
 from tess_ui import App, Signal, View, ViewModel
-from tess_ui.spec import expand_components_to_spec
+
 
 DISABLED_OPACITY = 0.38  # MD3's disabled content opacity
 
@@ -124,18 +124,6 @@ def test_a_plain_node_and_a_text_field():
     vm.off.set(False)
     assert view.node("f").get("focusable") is True and view.node("f").get("disabled") is False
 
-
-def test_a_fragment_button_binds_it_through_its_call():  # with M69
-    spec = expand_components_to_spec(_spec({
-        "id": "b", "component": "ButtonFilled", "with": {"label": "Back", "width": 96, "height": 40, "corner_radius": 20},
-        "handlers": {"on_click": "go"}, "bindings": {"disabled": "{{ off.get() }}"}}))
-    view = View(spec, theme_seed=SEED)
-    vm = VM(view)
-    view.click(view.node("b"))
-    assert _state(view) == OFF and vm.clicks == []
-    vm.off.set(False)
-    view.click(view.node("b"))
-    assert vm.clicks == [1]
 
 
 def test_a_back_button_follows_can_go_back():  # the case M66 found

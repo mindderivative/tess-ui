@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from tess_ui.reactive import Signal
 from tess_ui.widgets._composed import Widget
-from tess_ui.widgets.buttons import _borders
+from tess_ui.widgets._views import Call
+from tess_ui.widgets.buttons import _border
 
 if TYPE_CHECKING:
     from tess_ui.overlays import SearchView
@@ -35,52 +36,23 @@ def search_bar(
     (`on_surface_variant`). `.query` is a `Signal` of what's typed;
     `.on_query(fn)` hears each change. Parts: `field` (the `text_input`),
     `leading`, `trailing0`, ..."""
-    name = "search_bar"
-    trailing = list(trailing_icons or [])
-
-    def icon(node_id: str, glyph: str, ink: str, button: bool) -> dict[str, Any]:
-        size = 48 if button else 24
-        return {"id": node_id, "kind": "Rect",
-                "style": {"width": size, "height": size, "corner_radius": size / 2, "background": "transparent",
-                          "align_content": "center"},
-                "children": [{"id": f"{node_id}.icon", "kind": "Icon", "icon": {"name": glyph},
-                              "style": {"width": 24, "height": 24, "foreground": ink}}]}
-
-    border = _borders([None], border_color, border_width)
-
-    def edit(spec: dict[str, Any]) -> None:
-        field = spec["children"][0]
-        field["text"]["content"] = ""  # the placeholder is hint text, not the field's text (tess_re's filled it in)
-        field["style"]["height"] = 48
-        spec["style"].update(gap=16, padding={"left": 16 if leading_icon else 4, "right": 4, "top": 0, "bottom": 0})
-        if leading_icon is not None:
-            spec["children"].insert(0, icon(f"{name}.leading", leading_icon, "on_surface", button=False))
-        for i, glyph in enumerate(trailing):
-            spec["children"].append(icon(f"{name}.trailing{i}", glyph, "on_surface_variant", button=True))
-        if border is not None:
-            border(spec)
-
-    widget = Widget(window, "SearchBar", {"placeholder": placeholder, "width": width, "corner_radius": 28},
-                    theme=theme, x=x, y=y, edit=edit, name=name,
-                    interactive={f"trailing{i}": None for i in range(len(trailing))})
+    query = Signal("")
+    call = Call("SearchBar", props={"placeholder": placeholder, "query": query, "leading_icon": leading_icon or "",
+                                    "trailing_icons": list(trailing_icons or [])},
+                style={"width": width, **_border(border_color, border_width)})
+    parts = {"field": "input", "leading.icon": "leading.leading_glyph"}
+    for i in range(len(trailing_icons or [])):
+        parts[f"trailing{i}"] = f"trailing_item[{i}]"
+        parts[f"trailing{i}.icon"] = f"trailing_item[{i}].trailing_item_glyph"
+    widget = Widget(window, call=call, components={None: "search_bar"}, parts=parts, theme=theme, x=x, y=y, name="search_bar")
+    for i in range(len(trailing_icons or [])):
+        widget.part(f"trailing{i}").set(focusable=True, cursor="pointer")
+    widget.query = query  # the view's own `query`: what is typed in the field
     field = widget.part("field")
-
-    def paint() -> None:
-        field.set(placeholder=placeholder, placeholder_fill=widget.color("on_surface_variant"),
-                  fill=widget.color("on_surface"), caret_color=widget.color("primary"),
-                  font_size=16.0, label=placeholder)
-
-    paint()
-    widget.after_theme(paint)
-    for i, glyph in enumerate(trailing):
-        node = widget.part(f"trailing{i}")
-        node.set(focusable=True, role="button", cursor="pointer", label=glyph)
-    widget.query = Signal("")
     queries: list[Callable[[str], Any]] = []
 
     def typed(event: Any) -> None:
         text = field.get("text") or ""
-        widget.query.set(text)
         for fn in list(queries):
             fn(text)
 

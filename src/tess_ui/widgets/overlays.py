@@ -11,7 +11,8 @@ from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from tess_ui import overlays
 from tess_ui.widgets._composed import Widget
-from tess_ui.widgets.buttons import _borders
+from tess_ui.widgets._views import Call
+from tess_ui.widgets.buttons import _border, _borders
 
 if TYPE_CHECKING:
     from tess_ui.theme import Theme
@@ -81,8 +82,9 @@ def side_sheet(
     the layout. Put content in `.panel`/`.node`."""
     if modal:
         return overlays.SideSheet(window, width=width, theme=theme)
-    widget = Widget(window, "SideSheetStandard", {"width": width, "height": height if height is not None else 400},
-                    theme=theme, x=x, y=y, edit=_borders([None], border_color, border_width), name="side_sheet")
+    call = Call("Container", style={"width": width, "height": height if height is not None else 400, "background": "surface", "corner_radius": "large",
+                                    **_border(border_color, border_width)})
+    widget = Widget(window, call=call, components={None: "side_sheet"}, theme=theme, x=x, y=y, name="side_sheet")
     widget.panel = widget.node
     return widget
 
@@ -113,23 +115,9 @@ def menu_item(
     `menu(...)`: a `label_large` label, an optional 24 px leading `icon`,
     and a trailing chevron when `submenu`. `on_click` runs when it's
     chosen (the menu closes)."""
-    name = "menu_item"
-
-    def edit(spec: dict[str, Any]) -> None:
-        spec["style"].update(height=48, gap=12, padding={"left": 12, "right": 12, "top": 0, "bottom": 0})
-        spec["children"][0].setdefault("style", {})["flex"] = "expand_horizontal"
-        glyph = lambda node_id, n: {"id": node_id, "kind": "Icon", "icon": {"name": n},
-                                    "style": {"width": 24, "height": 24, "foreground": "on_surface_variant"}}
-        if icon is not None:
-            spec["children"].insert(0, glyph(f"{name}.icon", icon))
-        if submenu:
-            spec["children"].append(glyph(f"{name}.submenu", "chevron_right"))
-        border = _borders([None], border_color, border_width)
-        if border is not None:
-            border(spec)
-
-    widget = Widget(window, "MenuItem", {"label": label, "width": width}, theme=theme, x=x, y=y, edit=edit,
-                    interactive={None: "on_surface"}, name=name)
+    call = Call("MenuItem", props={"label": label, "icon": icon, "submenu": submenu or None},
+                style={"width": width, "height": 48, "padding": {"left": 12, "right": 12, "top": 0, "bottom": 0}, **_border(border_color, border_width)})
+    widget = Widget(window, call=call, components={None: "menu_item"}, parts={"icon": "lead", "submenu": "chevron"}, theme=theme, x=x, y=y, name="menu_item")
     widget._menu_action = on_click
     return widget
 

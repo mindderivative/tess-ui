@@ -1,18 +1,13 @@
-"""M57 (#10): a theme's `components:` reach fragments, in views and in
-`tess_ui.widgets` alike. The expander tags each fragment's root with the
-fragment it came from (`component_of`); the cascade gives that root the
-corner radius and elevation of its `components:` entry (the variant's,
-then the component's), over the fragment's own. A FAB's entry follows its
-size (`fab.small`), which its fragments name themselves.
+"""M57 (#10): a theme's `components:` reach the Python widget factories. A factory names the component its root is (`component_of`: `card.elevated`,
+`fab.small`, `dialog`); the cascade gives that node the corner radius and elevation of its `components:` entry (the variant's, then the component's), over
+the shipped view's own. A node that names no component, an app's own view included, is untouched.
 """
-
 
 import pytest
 from helpers import elevation
 from tess_re import Window
 
 from tess_ui import Theme, View
-from tess_ui.spec import expand_components_to_spec
 from tess_ui.spec.cascade import component_key
 from tess_ui.widgets import card, fab
 
@@ -22,59 +17,35 @@ CUSTOM = {"components": {"card.elevated": {"corner_radius": 4, "elevation": "lev
                          "fab.small": {"corner_radius": 2}}}
 
 
-@pytest.mark.parametrize("fragment, key", [
-    ("CardElevated", ("card", "elevated")), ("CardOutlined", ("card", "outlined")),
-    ("ButtonFilledTonal", ("button", "filled_tonal")), ("IconButtonOutlined", ("icon_button", "outlined")),
-    ("ChipFilterSelected", ("chip", "filter")), ("ChipAssist", ("chip", "assist")), ("BadgeDot", ("badge", "dot")),
-    ("SideSheetModal", ("side_sheet", "modal")), ("SideSheetStandard", ("side_sheet", None)),
-    ("ExtendedFabPrimary", ("extended_fab", None)), ("DatePickerDayToday", ("date_picker_day", None)),
-    ("ButtonGroup", ("button_group", None)), ("Dialog", ("dialog", None)), ("TopAppBar", ("top_app_bar", None)),
-    ("NavigationDrawerItem", ("navigation_drawer_item", None)), ("fab.small", ("fab", "small")),
-    ("Card", ("card", None)),  # an app fragment named just the family: no empty variant
+@pytest.mark.parametrize("key, parts", [
+    ("card.elevated", ("card", "elevated")), ("button.filled_tonal", ("button", "filled_tonal")), ("fab.small", ("fab", "small")),
+    ("dialog", ("dialog", None)), ("top_app_bar", ("top_app_bar", None)), ("extended_fab", ("extended_fab", None)),
 ])
-def test_component_key(fragment, key):
-    assert component_key(fragment) == key
+def test_component_key(key, parts):
+    assert component_key(key) == parts
 
 
-def _view(component, with_, **theme):
-    spec = expand_components_to_spec({"id": "w", "component": component, "with": with_})
-    view = View(spec, theme_seed=SEED, **theme)
+def _view(key, **theme):
+    view = View({"id": "w", "kind": "Rect", "component_of": key, "style": {"width": 200, "height": 100, "corner_radius": 12, "background": "primary"}},
+                theme_seed=SEED, **theme)
     view.window.advance(16)
     return view
 
 
-CARD = ("CardElevated", {"width": 200, "height": 100})
-
-
-def test_the_expander_tags_a_fragment_root_only():
-    spec = expand_components_to_spec({"id": "w", "component": "Dialog", "with": {
-        "headline": "H", "text": "S", "width": 300, "height": 200, "scrim_width": 800, "scrim_height": 600}})
-    assert spec["component_of"] == "Dialog"
-    assert all("component_of" not in child for child in spec.get("children") or [])
-
-
-def test_a_custom_themes_entry_shapes_a_fragment_in_a_view():
-    plain, themed = _view(*CARD), _view(*CARD, custom_theme_spec=CUSTOM)
+def test_a_custom_themes_entry_shapes_a_node_that_names_its_component():
+    plain, themed = _view("card.elevated"), _view("card.elevated", custom_theme_spec=CUSTOM)
     assert themed.root.get("corner_radius") == 4.0 and elevation(themed.root) == 5
-    assert plain.root.get("corner_radius") != 4.0 and elevation(plain.root) != 5  # the default theme's own
+    assert plain.root.get("corner_radius") == 12.0  # the node's own
 
 
 def test_the_variant_entry_wins_then_the_component_entry():
     theme = {"components": {"card": {"corner_radius": 20}, "card.elevated": {"corner_radius": 6}}}
-    assert _view(*CARD, custom_theme_spec=theme).root.get("corner_radius") == 6.0
-    outlined = _view("CardOutlined", {"width": 200, "height": 100}, custom_theme_spec=theme)
-    assert outlined.root.get("corner_radius") == 20.0  # no card.outlined entry: card's
-
-
-def test_a_fab_follows_its_size_entry():
-    small = {"icon": "add", "size": 40, "corner_radius": 12, "fab_size": "small"}
-    assert _view("FabPrimary", small, custom_theme_spec=CUSTOM).root.get("corner_radius") == 2.0
-    default = {"icon": "add", "size": 56, "corner_radius": 16}
-    assert _view("FabPrimary", default, custom_theme_spec=CUSTOM).root.get("corner_radius") == 16.0
+    assert _view("card.elevated", custom_theme_spec=theme).root.get("corner_radius") == 6.0
+    assert _view("card.outlined", custom_theme_spec=theme).root.get("corner_radius") == 20.0  # no card.outlined entry: card's
 
 
 def test_a_theme_change_reapplies_it():
-    view = _view(*CARD)
+    view = _view("card.elevated")
     view.set_theme(theme_seed=SEED, custom_theme_spec=CUSTOM)
     assert view.root.get("corner_radius") == 4.0 and elevation(view.root) == 5
     view.set_theme(theme_seed=SEED)

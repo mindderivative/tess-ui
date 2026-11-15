@@ -36,43 +36,18 @@ def date_picker_day(
     `on_surface_variant`. `.selected`, `.today` and `.outside_month` are
     `Signal`s the app sets; a click or Enter calls `on_click(day)` (the
     grid's selection is the app's). `role="button"`, named by the day."""
-    from tess_ui import a11y
-    from tess_ui.reactive import Effect, Signal
+    from tess_ui.reactive import Signal
     from tess_ui.widgets._composed import Widget
-    from tess_ui.widgets.buttons import _borders
+    from tess_ui.widgets._views import Call
+    from tess_ui.widgets.buttons import _border
 
-    name = "date_picker_day"
-    border = _borders([None], border_color, border_width)
-
-    def edit(spec: dict[str, Any]) -> None:
-        label = spec["children"][0]
-        spec["children"] = [{"id": f"{name}.indicator", "kind": "Rect",
-                             "style": {"width": 40, "height": 40, "corner_radius": 20, "background": "transparent",
-                                       "align_content": "center"},
-                             "children": [label]}]
-        if border is not None:
-            border(spec)
-
-    widget = Widget(window, "DatePickerDay", {"day": str(day)}, theme=theme, x=x, y=y, edit=edit, name=name,
-                    interactive={"indicator": "on_surface"})
+    state = Signal(bool(selected)), Signal(bool(today)), Signal(bool(outside_month))
+    call = Call("DatePickerDay", props={"day": str(day), "selected": state[0], "today": state[1], "outside": state[2]},
+                style=_border(border_color, border_width))
+    widget = Widget(window, call=call, components={None: "date_picker_day"}, parts={"indicator": "circle", "label": "circle.number"},
+                    theme=theme, x=x, y=y, name="date_picker_day")
     widget.day = int(day)
-    widget.selected, widget.today, widget.outside_month = Signal(bool(selected)), Signal(bool(today)), Signal(
-        bool(outside_month))
-    a11y.describe(widget.node, label=str(day))
-    indicator, label = widget.part("indicator"), widget.part("label")
-
-    def paint() -> None:
-        on, now, outside = widget.selected.get(), widget.today.get(), widget.outside_month.get()
-        widget.node.set(selected=on)
-        indicator.set(fill=widget.color("primary") if on else (0, 0, 0, 0),
-                      stroke_color=widget.color("primary") if (now and not on) else (0, 0, 0, 0),
-                      stroke_width=1.0 if (now and not on) else 0.0)
-        ink = ("on_primary" if on else "primary" if now else "on_surface_variant" if outside else "on_surface")
-        label.set(fill=widget.color(ink))
-
-    effect = Effect(paint)
-    widget._undo.append(effect.dispose)
-    widget.after_theme(paint)
+    widget.selected, widget.today, widget.outside_month = state  # the view's own params: it shows them
     widget.on_click(lambda: on_click(widget.day) if on_click else None)
     return widget
 
@@ -110,59 +85,37 @@ def period_selector(
     `on_surface_variant`. `.period` (`"AM"`/`"PM"`) is a `Signal`; a click,
     Enter or the arrow keys switch it; `.on_change(fn)` hears the user's
     switches. Parts `am`, `pm`."""
-    from tess_ui import a11y
     from tess_ui.reactive import Effect, Signal
     from tess_ui.widgets._composed import Widget
+    from tess_ui.widgets._views import Call
+    from tess_ui.widgets.buttons import _border
 
     if selected not in ("AM", "PM"):
         raise ValueError(f"a period selector's selected is 'AM' or 'PM', got {selected!r}")
-    name = "period_selector"
-
-    def edit(spec: dict[str, Any]) -> None:
-        spec["style"].update(height=80, corner_radius="small", border_color="outline",
-                             border_width=float(border_width) if border_width is not None else 1.0)
-        for half in spec["children"]:
-            half["style"].update(height=40, corner_radius=0)
-        if border_color is not None:
-            spec["style"]["border_color"] = "#" + "".join(f"{c:02X}" for c in border_color)
-
-    widget = Widget(window, "PeriodSelectorAM", {}, theme=theme, x=x, y=y, edit=edit, name=name,
-                    interactive={"am": "on_surface", "pm": "on_surface"})
-    widget.node.set(clip_children=True)
-    widget.period = Signal(selected)
+    period = Signal(selected)
     changes: list[Any] = []
-    widget.on_change = lambda fn: (changes.append(fn), lambda: changes.remove(fn) if fn in changes else None)[1]
-    a11y.describe(widget.node, role="tablist", label="Period")  # its halves are tabs
+    seen = [0, 0]  # the changes of `period` so far, and how many have been told to `on_change`: the view also calls its handler when the focus comes to a half that is already chosen
 
-    def choose(period: str) -> None:
-        if widget.period.get() != period:
-            widget.period.set(period)
+    def tell() -> None:
+        if seen[0] != seen[1]:
+            seen[1] = seen[0]
             for fn in list(changes):
-                fn(period)
+                fn(period.get())
 
-    def paint() -> None:
-        chosen = widget.period.get()
-        for period in ("am", "pm"):
-            on = chosen == period.upper()
-            half = widget.part(period)
-            half.set(fill=widget.color("tertiary_container") if on else (0, 0, 0, 0), selected=on,
-                     focusable=on)
-            widget.part(f"{period}_label").set(fill=widget.color("on_tertiary_container" if on else
-                                                                 "on_surface_variant"))
+    def count() -> None:
+        period.get()  # read, so the effect follows it
+        seen[0] += 1
 
-    effect = Effect(paint)
-    widget._undo.append(effect.dispose)
-    widget.after_theme(paint)
-    for period in ("am", "pm"):
-        widget.on_click(lambda p=period.upper(): choose(p), part=period, role="tab")
-        other = "PM" if period == "am" else "AM"
-
-        def on_key(event: Any, other: str = other) -> None:
-            if event.key in ("arrow_up", "arrow_down", "arrow_left", "arrow_right"):
-                choose(other)
-                widget.part(other.lower()).focus()
-        widget._undo.append(widget.view._listen(widget.part(period), "key_down", on_key))
-    paint()
+    counter = Effect(count)
+    seen[1] = seen[0]
+    call = Call("PeriodSelector", props={"period": period}, handlers={"on_change": tell},
+                style=_border(border_color, border_width))  # the frame is the shipped sheet's; a border of the caller's replaces it
+    widget = Widget(window, call=call, components={None: "period_selector"},
+                    parts={"am": "half[AM]", "pm": "half[PM]", "am_label": "half[AM].label", "pm_label": "half[PM].label"},
+                    theme=theme, x=x, y=y, name="period_selector")
+    widget.period = period  # the view's own `period`: a click or the arrow keys set it
+    widget.on_change = lambda fn: (changes.append(fn), lambda: changes.remove(fn) if fn in changes else None)[1]
+    widget._undo.append(counter.dispose)
     return widget
 
 

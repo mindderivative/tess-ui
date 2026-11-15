@@ -38,6 +38,7 @@ Container {
             Name: leading
             Icon: <| leading_icon |>
             Label: <| leading_label |>
+            Tint: on_surface
             Handlers {
               On_Click { Call { Action: "on_leading" } }
             }

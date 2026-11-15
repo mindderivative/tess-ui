@@ -3532,3 +3532,12 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 ## 2026-11-15 Engine 0.6.8
 
 - `tesserae-engine==0.6.8` (PyPI, verified by the maintainer) replaces 0.6.7 in pyproject, both CI checkouts (`ref: v0.6.8`), release.yml, README and DEVELOPING. Full suite on a fresh venv with 0.6.8 under the lavapipe pin: 8696 passed, 23 skipped (the TEL parity tests skip there: `tesserae-el` is not in that venv; piece 11b adds it).
+
+## 2026-11-15 The Python widget factories are calls of the shipped views
+
+- **Done.** Every factory of `tess_ui.widgets` and the panels of `tess_ui.overlays` build from `Call` trees (`widgets/_views.py`) composed against the shipped views (`Button`, `IconButton`, `Fab`, `Card`, `ListItem`, `Chip`, `Badge`, `Divider`, `Accordion`, `TreeNode`, `DatePickerDay`, `PeriodSelector`, `SearchBar`, `Toolbar`, `TopAppBar`, `StatusBar`, `MenuItem`) or builtin nodes. Deleted: `spec/fragments.py`, `spec/expand.py`, `fragment()`, the `component_key` name tables, nine fragment-pinned test files (`test_fragments_*`, `test_fragment_conditionals`, `test_spec_expand`, `test_component_call_keys`, `test_component_stylesheet`); `ComponentError` moved to `spec/images.py`. Design and deviations: `design/factories-on-tdl-views.md`.
+- **Shipped views changed.** `Card.Bare`, `Toolbar.Bare`, `Badge.Flat`, `SearchBar.Trailing_Icons`, `StatusBar` notes keyed by position, `TopAppBar` leading `Tint: on_surface`; component docs, schema and API docs regenerated.
+- **Decision.** `lower()` does not tag view-call roots with `component_of` (it would change every app view); the factory names its root.
+- **Cost.** Mixed set (button, icon button, FAB, chip, card, divider, badge, text, list item, tree node, search bar, toolbar, an open dialog; headless, lavapipe): 9.8-10.5 ms per widget after, 10.0-10.1 before.
+- **Verified.** Full suite 8463 passed, 21 skipped (`-n 4`, lavapipe); `tools/docs_audit.py`, `tools/check.py`, mypy ratchet (baseline 352 -> 336).
+- **NOT verified.** CI (Windows, macOS), the real running shell, the hand-built `top_app_bar` with window controls on a real borderless window.

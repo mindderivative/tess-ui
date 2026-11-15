@@ -1,5 +1,5 @@
-"""Tesserae's spec compiler: builds an expanded view spec
-(a `WidgetSpec`-shaped dict, from `tess_ui.spec.expand`) into `tess_re`
+"""Tesserae's spec compiler: builds a view spec
+(a `WidgetSpec`-shaped dict, from `spec/lower.py` or a hand-built widget) into `tess_re`
 0.3.4 nodes with `window.create`/`set`/`add_child`, the job `tess_re`'s
 `engine-spec/src/build.rs` does today and 0.3.5 removes.
 

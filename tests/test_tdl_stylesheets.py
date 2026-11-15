@@ -66,7 +66,7 @@ def test_the_49_shipped_stylesheets_load_with_position_maps_and_go_through_rule_
         check_shape(got)
         rules += len(got["styles"])
         assert len(RuleSheet.of(got, path.name, text).rules) == len(got["styles"])
-    assert rules == 276  # every rule of every shipped sheet
+    assert rules == 280  # every rule of every shipped sheet
 
 
 def test_positions_of_the_tdl_mapping_land_on_the_key_and_the_head_of_each_block():

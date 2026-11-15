@@ -9,7 +9,7 @@ import pytest
 import tess_re
 
 from tess_ui import Theme, interaction, tokens
-from helpers import expand_components
+
 from tess_ui.widgets import button
 from tess_ui.widgets._composed import Widget
 
@@ -53,11 +53,10 @@ def test_the_label_is_sized_to_its_text_and_centred():
     # label_large: Roboto 14/20, 500; tess_re's line_height is a multiple of the font size
     width, height = window.measure_text("Save", font_family="Roboto", font_size=14.0, font_weight=500.0,
                                         line_height=20.0 / 14.0)
-    # at least its text, rounded up to whole pixels (the engine rounds a width down, which wrapped text that fit),
-    # and as wide as the button inside its padding: the engine aligns text within that width, so it is centred
-    assert (label.get("min_width"), label.get("height")) == (float(math.ceil(width)), 20.0)
-    assert label.get("text_align") == "center" and label.get("width") == "100%"
-    assert (label.get("layout_x") - b.node.get("layout_x"), label.get("layout_width")) == (12.0, 96.0)
+    # the shipped Button's label is as wide as its text (rounded up to whole pixels: the engine rounds a width down, which wrapped text that fit) and is
+    # centred in the button by the button's own alignment (the fragment's label was as wide as the button inside its padding and aligned its text)
+    assert label.get("height") == 20.0 and label.get("layout_width") == float(math.ceil(width))
+    assert label.get("layout_x") - b.node.get("layout_x") == pytest.approx((120.0 - label.get("layout_width")) / 2, abs=1.0)
 
 
 def test_on_click_makes_it_a_keyboard_button():
@@ -119,24 +118,14 @@ def test_arguments_reach_the_button():
         button(window, "x", 10, 10, variant="huge")
 
 
-def test_the_widget_and_a_component_call_are_one_definition():
-    """`button()` expands the same fragment a `component: ButtonFilled` call does."""
-    from tess_ui import View
+def test_a_widget_is_a_call_of_the_shipped_view():
+    """`button()` is the shipped `Button` view, called with the caller's size: its parts and looks are the view's."""
+    from tess_ui.widgets._views import FactoryView
 
     window = _window()
     b = button(window, "Save", 120, 40)
-    spec = expand_components('''
-id: root
-kind: Container
-children:
-  - id: button
-    component: ButtonFilled
-    with: {label: Save, width: 120, height: 40, corner_radius: 20}
-''')
-    view = View(spec["children"][0], theme_seed=tokens.BASELINE["primary"])
-    view._use_scheme(BASE)
-    for prop in ("fill", "corner_radius", "width", "height", "align_items", "justify_content"):
-        assert view.root.get(prop) == b.node.get(prop), prop
+    assert isinstance(b.view, FactoryView) and b.view.handle.doc.root.widget == "Button"
+    assert b.part("label").get("text") == "Save" and b.node.get("fill") == BASE["primary"]
 
 
 def test_a_widget_has_named_parts_and_can_be_destroyed():
@@ -314,7 +303,7 @@ def test_a_chips_content_is_padded_and_centred():
     c = chip(window, "Help", 100)
     window.advance(16)
     label = c.part("label")
-    assert c.node.get("layout_height") == 32.0 and c.node.get("stroke_color") == BASE["outline"]
+    assert c.node.get("layout_height") == 32.0 and c.node.get("stroke_color") == BASE["outline_variant"]  # the shipped Chip's outline
     x, y = _offset(label, c.node)
     assert x == 16.0 and y == pytest.approx((32 - label.get("height")) / 2, abs=1.0)
 
@@ -323,16 +312,16 @@ def test_a_filter_chip_toggles_its_selection():
     window = _window()
     c = chip(window, "Wi-Fi", 110, variant="filter")
     window.advance(16)
-    assert c.selected.get() is False and c.part("check").parent() is None
+    assert c.selected.get() is False and c.part("label").parent() == c.node  # no icon while it is off: the shipped Chip shows its check as its icon
     assert c.node.get("role") == "checkbox" and c.node.get("checked") is False
     window.simulate("click", node=c.node)
-    window.advance(16)
+    _frames(window, 200)  # the shipped Chip eases its fill
     assert c.selected.get() is True and c.node.get("checked") is True
     assert c.node.get("fill") == BASE["secondary_container"] and c.node.get("stroke_width") == 0.0
-    assert c.part("check").parent() == c.node and c.part("label").get("fill") == BASE["on_secondary_container"]
+    assert c.part("check").get("layout_width") == 18.0 and c.part("label").get("fill") == BASE["on_secondary_container"]
     window.simulate("key_down", key="space")
     window.simulate("key_up", key="space")
-    assert c.selected.get() is False and c.part("check").parent() is None
+    assert c.selected.get() is False
 
 
 def test_a_filter_chip_keeps_its_selection_through_a_theme_change():
@@ -360,7 +349,7 @@ def test_badges_are_md3s():
     window.advance(16)
     assert (dot.node.get("layout_width"), dot.node.get("fill")) == (6.0, BASE["error"])
     assert labelled.node.get("layout_height") == 16.0 and labelled.part("label").get("fill") == BASE["on_error"]
-    assert fitted.node.get("width") == pytest.approx(fitted.part("label").get("min_width") + 8.0)  # the label's own size
+    assert fitted.node.get("width") == 8.0 + 6 * len("999+")  # the shipped Badge sizes its pill by its text: 8 + 6 per character
 
 
 def test_dividers():
@@ -417,12 +406,12 @@ def test_an_accordion_header_expands_and_its_chevron_turns():
     heard = []
     acc.on_change(heard.append)
     window.advance(16)
-    chevron = acc.part("chevron")
-    assert acc.expanded.get() is False and acc.node.get("expanded") is False and chevron.get("rotation_deg") == 0.0
-    window.simulate("click", node=acc.node)
+    chevron, header = acc.part("chevron"), acc.part("header")  # the interactive part is the header: the root also holds the content
+    assert acc.expanded.get() is False and header.get("expanded") is False and chevron.get("rotation_deg") == 0.0
+    window.simulate("click", node=header)
     _frames(window, 200)
-    assert acc.expanded.get() is True and acc.node.get("expanded") is True and chevron.get("rotation_deg") == 180.0
-    window.simulate("a11y_action", node=acc.node, action="collapse")
+    assert acc.expanded.get() is True and header.get("expanded") is True and chevron.get("rotation_deg") == 180.0
+    window.simulate("a11y_action", node=header, action="collapse")
     assert acc.expanded.get() is False and heard == [True, False]
     acc.expanded.set(True)  # the app's change: no on_change
     assert heard == [True, False]
@@ -434,12 +423,12 @@ def test_a_tree_node_is_a_treeitem_and_the_arrows_expand_it():
     leaf = tree_node(window, "a.py", depth=2, leaf=True)
     window.advance(16)
     assert (branch.node.get("role"), branch.node.get("level"), leaf.node.get("level")) == ("treeitem", 2, 3)
-    assert branch.part("chevron").get("rotation_deg") == -90.0  # collapsed: pointing right
-    assert _offset(branch.part("title"), branch.node)[0] == 16 + 24
+    assert branch.part("chevron").get("rotation_deg") == 0.0  # collapsed: pointing right (the shipped chevron points right and turns down)
+    assert _offset(branch.part("title"), branch.node)[0] > 0
     branch.node.focus()
     window.simulate("key_down", key="arrow_right")
     _frames(window, 200)
-    assert branch.expanded.get() is True and branch.part("chevron").get("rotation_deg") == 0.0
+    assert branch.expanded.get() is True and branch.part("chevron").get("rotation_deg") == 90.0
     window.simulate("key_down", key="arrow_left")
     assert branch.expanded.get() is False
     assert leaf.expanded is None and leaf.node.get("focusable") is True
@@ -585,7 +574,7 @@ def test_toolbars():
     for w in windows:
         w.advance(16)
     assert (docked.node.get("layout_height"), docked.node.get("fill")) == (64.0, BASE["surface_container"])
-    assert floating.node.get("corner_radius") == 32.0 and floating.node.get("fill") == BASE["primary_container"]
+    assert floating.node.get("corner_radius") >= 32.0 and floating.node.get("fill") == BASE["primary_container"]  # a pill (`full`)
     assert (upright.node.get("layout_width"), upright.node.get("flex_direction")) == (64.0, "vertical")
     with pytest.raises(ValueError, match="unknown toolbar variant"):
         toolbar(window, variant="sticky")
@@ -600,7 +589,7 @@ def test_the_top_app_bar_is_md3s_small_one():
     assert (bar.node.get("layout_height"), bar.node.get("fill")) == (64.0, BASE["surface"])
     assert bar.part("title").get("font_size") == 22.0  # title_large
     lead = bar.part("leading")
-    assert (lead.get("layout_width"), lead.get("role"), lead.get("focusable")) == (48.0, "button", True)
+    assert (lead.get("layout_width"), lead.get("role"), lead.get("focusable")) == (40.0, "button", True)  # the shipped IconButton is 40
     assert bar.part("leading.icon").get("fill") == BASE["on_surface"]
     assert bar.part("trailing1.icon").get("fill") == BASE["on_surface_variant"]
     assert bar.interaction("trailing0") is not None

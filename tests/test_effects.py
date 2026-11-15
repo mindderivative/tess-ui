@@ -133,7 +133,7 @@ def test_a_cursor_picture_is_read_with_the_view(tmp_path):
 
 
 def test_a_cursor_picture_must_be_small_and_inside_the_view(tmp_path):
-    from tess_ui.spec.expand import ComponentError
+    from tess_ui.spec import ComponentError
     from tess_ui.spec.images import extract_images
 
     Image.new("RGBA", (300, 10)).save(tmp_path / "big.png")

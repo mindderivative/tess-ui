@@ -30,6 +30,7 @@ Container {
     Max_Length { Type: any, Default: null, Doc: "A floating toolbar's longest length in pixels, for `fit`." }
     Hidden { Type: bool, Default: false, Doc: "Faded out of the way and out of the tab order." }
     Disabled { Type: bool, Default: false, Doc: "No button responds." }
+    Bare { Type: bool, Default: false, Doc: "No items and no group: only the bar, for a Python widget that adds its own nodes straight into it." }
   }
   Measured_Width: <| avail |>
   State { Menu_Open: false, Avail: 0 }
@@ -44,27 +45,29 @@ Container {
     Height: <| 'auto' if (variant == 'floating' and orientation == 'vertical') else 64 |>
   }
   Children {
-    Container {
-      Name: group
-      Style {
-        Flex_Direction: <| 'vertical' if (variant == 'floating' and orientation == 'vertical') else 'horizontal' |>
-        Align_Content: center
-        Flex: <| 'expand_horizontal' if (variant == 'docked' and (fab_icon != '' or len(overflow) > 0 or fit)) else 'none' |>
-      }
-      Children {
-        For o In <| items[:(len(items) if (not fit or (max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) <= 0 or len(items) * 44 - 4 + (48 if len(overflow) > 0 else 0) <= ((max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) - (32 if variant == 'docked' else 16) - (48 if fab_icon != '' else 0))) else max(0, int((((max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) - (32 if variant == 'docked' else 16) - (48 if fab_icon != '' else 0)) - 44) // 44)))] |> Key <| o['value'] |> {
-          IconButton {
-            Name: item
-            Icon: <| o['icon'] |>
-            Label: <| o['label'] |>
-            Tint: <| 'on_primary_container' if vibrant else '' |>
-            Disabled: <| disabled or hidden or o.get('disabled', False) |>
-            Handlers {
-              On_Click { Set { Target: chosen, Value: <| o['value'] |> } }
+    If <| not bare |> {
+      Container {
+        Name: group
+        Style {
+          Flex_Direction: <| 'vertical' if (variant == 'floating' and orientation == 'vertical') else 'horizontal' |>
+          Align_Content: center
+          Flex: <| 'expand_horizontal' if (variant == 'docked' and (fab_icon != '' or len(overflow) > 0 or fit)) else 'none' |>
+        }
+        Children {
+          For o In <| items[:(len(items) if (not fit or (max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) <= 0 or len(items) * 44 - 4 + (48 if len(overflow) > 0 else 0) <= ((max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) - (32 if variant == 'docked' else 16) - (48 if fab_icon != '' else 0))) else max(0, int((((max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) - (32 if variant == 'docked' else 16) - (48 if fab_icon != '' else 0)) - 44) // 44)))] |> Key <| o['value'] |> {
+            IconButton {
+              Name: item
+              Icon: <| o['icon'] |>
+              Label: <| o['label'] |>
+              Tint: <| 'on_primary_container' if vibrant else '' |>
+              Disabled: <| disabled or hidden or o.get('disabled', False) |>
+              Handlers {
+                On_Click { Set { Target: chosen, Value: <| o['value'] |> } }
+              }
             }
           }
+          Slot { }
         }
-        Slot { }
       }
     }
     If <| len(overflow) > 0 or len(items) > (len(items) if (not fit or (max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) <= 0 or len(items) * 44 - 4 + (48 if len(overflow) > 0 else 0) <= ((max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) - (32 if variant == 'docked' else 16) - (48 if fab_icon != '' else 0))) else max(0, int((((max_length if (variant == 'floating' and max_length is not None) else (avail if variant == 'docked' else 0)) - (32 if variant == 'docked' else 16) - (48 if fab_icon != '' else 0)) - 44) // 44))) |> {

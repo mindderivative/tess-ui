@@ -46,6 +46,30 @@ Expressions and handlers run on TEL, the Tesserae Expression Language (`tesserae
 
 Python code that imported `tess_ui.expr` (`compile_expr`, `Template`, ...) uses `tess_ui.tel`, which has the same names.
 
+### The Python widget factories call the shipped views
+
+`tess_ui.widgets.button()` and the others (and the dialog, menu, snackbar, popover and side sheet of `tess_ui.overlays`) are built from the views Tesserae ships, with Tesserae's own stylesheets, so they take those views' looks and behaviour. The functions, their arguments, the `Signal`s (`.selected`, `.expanded`, `.query`, `.period`, `.content`), the callbacks, `.part(name)` and the ids `name` and `name.part` are as they were; `tess_ui.spec.expand_components_to_spec`, `tess_ui.spec.fragments` and the `component:` fragments they expanded are gone (`ComponentError` is `tess_ui.spec.ComponentError`). What you may see:
+
+| Widget | Now |
+| --- | --- |
+| every button, FAB, chip, card (with `on_click`), list item | the shipped state changes ease (a fill over 150 ms, corners and shadow over 200 ms), a filled, tonal or elevated button, a FAB and an actionable elevated card lift on hover, a button takes its pressed corner radius; a theme change still re-colours at once |
+| `button()` | the label is as wide as its text and centred by the button (it was as wide as the button inside its padding) |
+| `split_button()` | the chevron is the `chevron_down` icon at 18 px (it was `expand_more` at 22); `.part("chevron")` is `trailing.icon` |
+| `chip()` | the outline is `outline_variant` (was `outline`); a filter chip shows its check as its `icon` part (`.part("check")` is `.part("icon")`), the close button is `close` (`.part("remove")`) |
+| `badge()` | the pill's width is the shipped one (8 + 6 per character); the label is `flat_label` (`.part("label")` still finds it) |
+| `accordion_header()` | the root holds the header and the content area; the interactive part is `header` (the chevron and title are `header.chevron` and `header.title`, `.part("chevron")` and `.part("title")` find them); the `expanded` state is on `.part("header")` |
+| `tree_node()` | the chevron points right and turns down when open (it pointed down and turned right), over 200 ms |
+| `date_picker_day()` | the state layer and focus ring are on the 48 px root (they were on the 40 px circle, `.part("indicator")`, now `circle`) |
+| `period_selector()` | a group of radios (it was a tab list); the halves are `half[AM]` and `half[PM]` (`.part("am")` and `.part("pm")` find them); one Tab stop by a roving `tab_index` |
+| `search_bar()` | typing makes the bar active: the leading icon becomes a back arrow, a clear button shows while there is a query, and the trailing icons show only while it is empty |
+| `toolbar()` | the floating one is a full pill; |
+| `top_app_bar()` | the title and icon buttons are in the bar's `row` (`.part("title")`, `.part("leading")`, `.part("trailing0")` find them); the navigation icon button is 40 px (it was 48); a bar with `window_controls`, more than three trailing icons or a `style` height under 64 is built by hand as before |
+| `status_bar()` | a three-column strip; its text part is `section[start].note[0].note_text` (found by `.part("text")`) and `.text` is a `Signal` |
+| `link()` | underlined while hovered or focused |
+| actions of `Dialog`, `Snackbar` and `Popover`; rows of `Menu` | the shipped text `Button` (as wide as its label, 40 px tall) and `MenuItem`; a dialog's action is `panel.actions.action0` (`.part("panel.action0")` still finds it) |
+
+An app's own `Button_View.tdl` (or any shipped name) replaces the shipped view for the app's views, not for these widgets: a factory always calls Tesserae's. A theme's `components:` entries (`card.elevated`, `fab.small`, `dialog`, ...) reach the factories' widgets as before and still not a view an app writes.
+
 ## To 0.6.0.1
 
 **Views, stylesheets and themes are written in TDL.** A view is a `<Name>_View.tdl`, a stylesheet a `<Name>_Stylesheet.tdl` and a theme a `<Name>_Theme.tdl`; Tesserae no longer reads the YAML files of those kinds. The language is the same

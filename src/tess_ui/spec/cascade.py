@@ -154,17 +154,19 @@ class Sheet:
 def resolve_style(node: dict[str, Any], layers: Iterable[Optional[Sheet]]) -> dict[str, Any]:
     """`node`'s resolved style: each layer in turn (default theme, custom
     theme, stylesheet; `None`s skipped), then its inline `style:`. A
-    fragment's root (`component_of`, M57) then takes its corner radius and
-    elevation from the themes' `components:`, where they say."""
+    node that says which component it is the root of (`component_of`, M57:
+    `fab.small`, `card.elevated`, set by the Python widget factories) then
+    takes its corner radius and elevation from the themes' `components:`,
+    where they say."""
     resolved: dict[str, Any] = {}
     for sheet in layers:
         if sheet is not None:
             sheet.resolve(node, resolved)
     resolved.update(node.get("style") or {})
-    fragment = node.get("component_of")
+    key = node.get("component_of")
     components = getattr(layers, "components", None)
-    if fragment and components:
-        component, variant = component_key(fragment)
+    if key and components:
+        component, variant = component_key(key)
         for name in ("corner_radius", "elevation"):
             value = _component_value(components, component, variant, name)
             if value is not None:
@@ -172,47 +174,11 @@ def resolve_style(node: dict[str, Any], layers: Iterable[Optional[Sheet]]) -> di
     return resolved
 
 
-#: Fragment families whose `components:` variant is the rest of the name
-#: (`CardElevated` -> `card.elevated`), longest prefix first (M57).
-_VARIANT_FAMILIES = (("IconButton", "icon_button"), ("SplitButton", "split_button"), ("Button", "button"),
-                     ("Card", "card"), ("Chip", "chip"), ("Badge", "badge"), ("SideSheet", "side_sheet"),
-                     ("Toolbar", "toolbar"))
-#: Fragments whose key isn't their name's: a selected filter chip is a
-#: filter chip, and a standard side sheet is the plain entry. (A FAB's
-#: variant is its size: its fragments name `fab.{{ fab_size }}` themselves.)
-_EXACT_KEYS: dict[str, tuple[str, Optional[str]]] = {
-    "ButtonGroup": ("button_group", None), "ChipFilterSelected": ("chip", "filter"),
-    "SideSheetStandard": ("side_sheet", None),
-    **{f"ExtendedFab{c}": ("extended_fab", None) for c in ("Primary", "Secondary", "Tertiary", "Surface")},
-    **{f"PeriodSelector{p}": ("period_selector", None) for p in ("AM", "PM")},
-    **{f"DatePickerDay{s}": ("date_picker_day", None) for s in ("", "Selected", "Today", "OutsideMonth")},
-    **{f"TreeNode{s}": ("tree_node", None) for s in ("Branch", "Leaf")},
-}
-
-
-def _snake(name: str) -> str:
-    out = []
-    for i, ch in enumerate(name):
-        if ch.isupper() and i and (not name[i - 1].isupper() or (i + 1 < len(name) and name[i + 1].islower())):
-            out.append("_")
-        out.append(ch.lower())
-    return "".join(out)
-
-
-def component_key(fragment: str) -> tuple[str, Optional[str]]:
-    """The `components:` entry a fragment's root reads: its
-    component and variant, as a theme names them (`FabPrimary` ->
-    `fab.default`, `CardElevated` -> `card.elevated`, `Dialog` ->
-    `dialog`)."""
-    if "." in fragment:  # a key the fragment named itself (`fab.small`)
-        component, variant = fragment.split(".", 1)
-        return component, variant
-    if fragment in _EXACT_KEYS:
-        return _EXACT_KEYS[fragment]
-    for prefix, component in _VARIANT_FAMILIES:
-        if fragment.startswith(prefix) and len(fragment) > len(prefix):
-            return component, _snake(fragment[len(prefix):])
-    return _snake(fragment), None
+def component_key(key: str) -> tuple[str, Optional[str]]:
+    """The `components:` entry a node's `component_of` names: its component and variant, as a theme writes them (`fab.small` -> `("fab", "small")`,
+    `dialog` -> `("dialog", None)`)."""
+    component, _, variant = key.partition(".")
+    return component, variant or None
 
 
 def _component_value(components: dict[str, Any], component: str, variant: Optional[str], name: str) -> Any:

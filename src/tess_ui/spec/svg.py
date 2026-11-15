@@ -22,8 +22,7 @@ from urllib.parse import unquote_to_bytes
 
 from PIL import Image
 
-from tess_ui.spec.images import is_absolute
-from tess_ui.spec.expand import ComponentError
+from tess_ui.spec.images import ComponentError, is_absolute
 
 __all__ = ["MAX_SIDE", "load_svg"]
 

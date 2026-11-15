@@ -46,10 +46,16 @@ Styles {
     Part: trailing
     Style { Width: 48, Height: 48, Corner_Radius: 24, Align_Content: center }
   }
+  Rule {
+    Widget: SearchBar
+    Part: trailing_item
+    Style { Width: 48, Height: 48, Corner_Radius: 24, Align_Content: center }
+  }
   Rule { Widget: SearchBar, Part: back_icon, Style { Width: 24, Height: 24, Foreground: on_surface } }
   Rule { Widget: SearchBar, Part: leading_glyph, Style { Width: 24, Height: 24, Foreground: on_surface } }
   Rule { Widget: SearchBar, Part: clear_icon, Style { Width: 24, Height: 24, Foreground: on_surface_variant } }
   Rule { Widget: SearchBar, Part: trailing_glyph, Style { Width: 24, Height: 24, Foreground: on_surface_variant } }
+  Rule { Widget: SearchBar, Part: trailing_item_glyph, Style { Width: 24, Height: 24, Foreground: on_surface_variant } }
   Rule {
     Widget: SearchBar
     Part: input
@@ -117,6 +123,15 @@ Each rule names `Widget: SearchBar` and may add the properties the view declares
 | always | `Corner_Radius` | `24` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`Top`, `Right`, `Bottom`, `Left`) with the rest square. |
 | always | `Align_Content` | `center` | Where its children sit: `top_left`, `Top`, `top_right`, `Left`, `center`, `Right`, `bottom_left`, `Bottom` or `bottom_right`. Not set, they fill the space across the layout. |
 
+### `trailing_item` (Container)
+
+| When | Field | Value | What it does |
+| --- | --- | --- | --- |
+| always | `Width` | `48` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| always | `Height` | `48` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| always | `Corner_Radius` | `24` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`Top`, `Right`, `Bottom`, `Left`) with the rest square. |
+| always | `Align_Content` | `center` | Where its children sit: `top_left`, `Top`, `top_right`, `Left`, `center`, `Right`, `bottom_left`, `Bottom` or `bottom_right`. Not set, they fill the space across the layout. |
+
 ### `back_icon` (Icon)
 
 | When | Field | Value | What it does |
@@ -142,6 +157,14 @@ Each rule names `Widget: SearchBar` and may add the properties the view declares
 | always | `Foreground` | `on_surface_variant` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
 
 ### `trailing_glyph` (Icon)
+
+| When | Field | Value | What it does |
+| --- | --- | --- | --- |
+| always | `Width` | `24` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| always | `Height` | `24` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| always | `Foreground` | `on_surface_variant` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
+
+### `trailing_item_glyph` (Icon)
 
 | When | Field | Value | What it does |
 | --- | --- | --- | --- |

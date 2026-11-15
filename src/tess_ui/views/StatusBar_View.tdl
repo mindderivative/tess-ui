@@ -35,7 +35,7 @@ Container {
           Width: 100%
         }
         Children {
-          For it In <| [x for x in ([{'text': text}] if text != '' else []) + items if x.get('side', 'start') == side and x.get('value') is None] |> Key <| it['text'] |> {
+          For n, it In <| enumerate([x for x in ([{'text': text}] if text != '' else []) + items if x.get('side', 'start') == side and x.get('value') is None]) |> Key <| n |> {
             Container {
               Name: note
               Style { Flex_Direction: horizontal, Align_Content: center, Gap: 4, Padding { Left: 4, Right: 4, Top: 0, Bottom: 0 } }

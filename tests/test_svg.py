@@ -14,8 +14,7 @@ import pytest
 from PIL import Image
 
 from tess_ui import App, View
-from tess_ui.spec import expand_components_to_spec
-from tess_ui.spec.expand import ComponentError
+from tess_ui.spec import ComponentError
 from tess_ui.spec.images import extract_images
 from tess_ui.widgets import svg as svg_widget
 
@@ -97,7 +96,7 @@ def test_an_svg_with_no_foreground_leaves_current_color_alone(tmp_path):
 def test_a_document_in_the_view_finds_its_pictures_beside_the_view(tmp_path):
     _png(tmp_path)
     doc = _document('<image href="p.png" width="4" height="2"/>').replace("\n", " ")
-    spec = expand_components_to_spec({"id": "r", "kind": "Container", "children": [{"id": "s", "kind": "Svg", "svg": {"content": doc}}]})
+    spec = {"id": "r", "kind": "Container", "children": [{"id": "s", "kind": "Svg", "svg": {"content": doc}}]}
     out, _ = extract_images(spec, tmp_path)
     assert list(out["children"][0]["svg"]["images"]) == ["p.png"]
 

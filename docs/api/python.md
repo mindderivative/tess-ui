@@ -236,7 +236,7 @@ class View(
 ) -> None
 ```
 
-A built view. `spec` is an expanded view spec (a mapping of nodes, as `expand_components_to_spec` makes one); `frames` maps an Image's id to its decoded `(rgba, width, height)`.
+A built view. `spec` is a view spec (a mapping of nodes: what a composed view is lowered to, or what a hand-built widget gives); `frames` maps an Image's id to its decoded `(rgba, width, height)`.
 
 - `click(node: Any) -> None`: A synthetic click on `node`, for tests: `window.simulate`.
 - `control(widget_id: str) -> Any`: The MD3 control (`tess_ui.controls`) behind `widget_id`, one of the eight control kinds; its `.node` is `node(widget_id)`.
@@ -1479,7 +1479,7 @@ tree_node(
 ) -> Widget
 ```
 
-A tree row, indented 16 px plus 24 per `depth`, `role="treeitem"` at `level` `depth + 1`. A branch has a chevron (pointing right, down when `.expanded`), toggled by a click, Enter or Space, and set by the right and left arrows.
+A tree row, indented by its `depth`, `role="treeitem"` at `level` `depth + 1`. A branch has a chevron (pointing right, down when `.expanded`), toggled by a click, Enter or Space, and set by the right and left arrows.
 
 ### `video`
 
@@ -1785,7 +1785,7 @@ class Dialog(
 ) -> None  # extends Overlay
 ```
 
-MD3's basic dialog (from its fragment): a `surface_container_high` panel with 28 px corners, a `headline_small` headline, `body_medium` supporting text, and text-button `actions` (`(label, fn)`, right- aligned, each closing it after calling `fn`), over a scrim. Modal: focus moves into it, and Escape closes it.
+MD3's basic dialog: a `surface_container_high` panel with 28 px corners, a `headline_small` headline, `body_medium` supporting text, and text-button `actions` (`(label, fn)`, right- aligned, each closing it after calling `fn`), over a scrim. The actions are the shipped `Button`'s.
 
 Also has everything `Overlay` has.
 
@@ -2630,15 +2630,7 @@ Sends log messages at `level` and above to `sink` (stderr by default) in Tessera
 class ComponentError
 ```
 
-A `component:` reference that cannot be expanded, with the call chain that led to it. (The picture loaders raise it too.)
-
-### `expand_components_to_spec`
-
-```python
-expand_components_to_spec(spec: dict[str, Any]) -> Any
-```
-
-Expands every `component:` entry in `spec` (a node, or a tree with such nodes in its `children:`), returning the finished kind-tree dict with no `component:`/`with:`/`params:`/`repeat:` keys remaining, ready for `tess_ui.View(spec)`. `spec` itself is not changed.
+A picture a view or widget names that cannot be loaded (a file that cannot be read, a path that leaves the view's folder, a picture that is too large).
 
 ### `load_stylesheet`
 
