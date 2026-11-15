@@ -22,16 +22,22 @@ class VM(ViewModel):
         self.log.append(self.c.get())
 
 
-def opened(tmp_path, call="{widget: ColourPicker, name: cp, value: \"{{ c }}\", on_change: changed}", extra="", dark=False, size=(400, 640)):
+def opened(tmp_path, call="ColourPicker { Name: cp, Value: <| c |>, On_Change: changed }", extra="", dark=False, size=(400, 640)):
     (tmp_path / "Views").mkdir(parents=True, exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""tesserae: 0.6
-name: main
-widget: Container
-style: {{flex_direction: horizontal, gap: 16, padding: 16, width: {size[0]}, height: {size[1]}}}
-children:
-  - {call}
-  - {{widget: Rect, name: elsewhere, style: {{width: 80, height: 80, background: surface_variant}}}}
-{extra}""")
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: horizontal, Gap: 16, Padding: 16, Width: {size[0]}, Height: {size[1]} }}
+  Children {{
+    {call}
+    Rect {{ Name: elsewhere, Style {{ Width: 80, Height: 80, Background: surface_variant }} }}
+{extra}  }}
+}}
+""")
     app = App(root=tmp_path, width=size[0], height=size[1], theme_seed=(0x67, 0x50, 0xA4, 0xFF), dark=dark)
     app.bind(VM)
     view = app.open_view("Main")
@@ -210,7 +216,7 @@ def test_the_swatches_follow_the_theme_and_a_caller_can_name_other_roles(tmp_pat
     view, _ = opened(tmp_path, dark=False)
     dark, _ = opened(tmp_path / "dark", dark=True)
     assert control(view, "swatches").swatches[0].get("fill") != control(dark, "swatches").swatches[0].get("fill")
-    view, vm = opened(tmp_path / "roles", call="{widget: ColourPicker, name: cp, value: \"{{ c }}\", roles: [primary, scrim, outline]}")
+    view, vm = opened(tmp_path / "roles", call="ColourPicker { Name: cp, Value: <| c |>, Roles: [primary, scrim, outline] }")
     swatches = control(view, "swatches")
     assert swatches.roles == ["primary", "scrim", "outline"] and len(swatches.swatches) == 3
     view.window.simulate("click", node=swatches.swatches[1])
@@ -259,12 +265,12 @@ def test_screen_reader_roles_labels_and_values(tmp_path):
     labels = [control(view, n).input.get("label") for n in ("hex", "channels.red", "channels.green", "channels.blue", "channels.alpha")]
     assert labels == ["Hex colour", "Red", "Green", "Blue", "Alpha"]
     assert control(view, "swatches").node.get("label") == "Theme colours"
-    named, _ = opened(tmp_path / "named", call="{widget: ColourPicker, name: cp, value: \"{{ c }}\", label: Fill}")
+    named, _ = opened(tmp_path / "named", call="ColourPicker { Name: cp, Value: <| c |>, Label: Fill }")
     assert named._built.nodes["root.cp.panel"].get("label") == "Fill"
 
 
 def test_disabled_it_changes_nothing_and_takes_no_focus(tmp_path):
-    view, vm = opened(tmp_path, call="{widget: ColourPicker, name: cp, value: \"{{ c }}\", disabled: true}")
+    view, vm = opened(tmp_path, call="ColourPicker { Name: cp, Value: <| c |>, Disabled: true }")
     drag(view, control(view, "square"), [(200, 20)])
     view.window.simulate("click", node=control(view, "swatches").swatches[3])
     assert vm.c.get() == "#3366cc"
@@ -282,7 +288,7 @@ def test_a_value_that_is_not_a_colour_is_an_error_that_names_the_widget(tmp_path
 
 # -- the popup --------------------------------------------------------------------------------------------------------------------------
 
-POPUP = "{widget: ColourPicker, name: cp, popup: true, open: \"{{ pop }}\", value: \"{{ c }}\", on_change: changed}"
+POPUP = "ColourPicker { Name: cp, Popup: true, Open: <| pop |>, Value: <| c |>, On_Change: changed }"
 
 
 def press(view, node):
@@ -346,7 +352,7 @@ def test_pressing_the_swatch_again_closes_the_popup(tmp_path):
 
 
 def test_a_disabled_popup_does_not_open(tmp_path):
-    view, vm = opened(tmp_path, call=POPUP.replace("popup: true", "popup: true, disabled: true"))
+    view, vm = opened(tmp_path, call=POPUP.replace("Popup: true", "Popup: true, Disabled: true"))
     press(view, view.node("root.cp.trigger"))
     assert vm.pop.get() is False and not view._shown_layers
     assert view.node("root.cp.trigger").get("opacity") == pytest.approx(0.38) or view.node("root.cp.trigger").get("disabled")
@@ -364,4 +370,4 @@ def test_a_popup_can_be_opened_from_the_viewmodel(tmp_path):
 
 def test_the_unknown_property_of_a_picker_is_named(tmp_path):
     with pytest.raises(LoadError, match="colour"):
-        opened(tmp_path, call="{widget: ColourPicker, name: cp, colour: red}")
+        opened(tmp_path, call="ColourPicker { Name: cp, Colour: red }")

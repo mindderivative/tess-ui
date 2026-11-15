@@ -160,20 +160,6 @@ def test_the_command_and_python_m_run(tmp_path):
     assert bad.returncode == 2 and bad.stderr.startswith("tesserae: ")
 
 
-def test_schema_says_where_the_yaml_schemas_are_and_prints_the_setting(capsys):
-    """0.3.2 (#79): `tesserae schema` and `--settings`, for Red Hat's YAML language server."""
-    assert cli.main(["schema"]) == 0
-    listing = capsys.readouterr().out
-    for name in cli.SCHEMA_FILES:
-        assert str(cli.SCHEMAS / name) in listing and (cli.SCHEMAS / name).is_file()
-    assert "**/*_View.yaml" in listing and "editor-support" in listing
-
-    assert cli.main(["schema", "--settings"]) == 0
-    setting = json.loads(capsys.readouterr().out)["yaml.schemas"]
-    assert setting[str(cli.SCHEMAS / "tess-ui-widget-schema.json")] == ["**/*_View.yaml"]
-    assert set(setting) == {str(cli.SCHEMAS / name) for name in cli.SCHEMA_FILES}
-
-
 def _fake_run(monkeypatch, fail=False):
     calls = []
 
@@ -213,7 +199,7 @@ def test_new_with_a_window(tmp_path):
     """`--window` makes a `widget: Window` view whose screens are routed calls of views, served by one ViewModel."""
     assert cli.main(["new", "studio", "--window", "--no-venv", "--dir", str(tmp_path)]) == 0
     project = tmp_path / "studio"
-    assert (project / "Views" / "Window_View.tdl").is_file() and not list(project.glob("Views/*_Shell.yaml"))
+    assert (project / "Views" / "Window_View.tdl").is_file() and not list(project.glob("Views/*_Shell.*"))
     assert "load_shell" not in (project / "app.py").read_text()
     report = _run(project)
     assert report["ran"] and report["screens"] == ["Main", "Settings", "Window"]
@@ -241,7 +227,7 @@ def test_add_screen_to_a_window_project_says_where_the_view_node_goes(tmp_path, 
 
 @pytest.mark.parametrize("flags", [[], ["--window"], ["--window", "--custom-title-bar"]])
 def test_a_new_project_is_in_the_current_view_language_and_checks_clean(tmp_path, flags):
-    """#270: the templates write `widget:` views and ViewModels that serve a named view; `app.check()` and the migration tool find nothing to say."""
+    """#270: the templates write `widget:` views and ViewModels that serve a named view; `app.check()` finds nothing to say."""
     import re
 
     assert cli.main(["new", "fresh", *flags, "--no-venv", "--dir", str(tmp_path)]) == 0
@@ -264,7 +250,6 @@ def test_a_new_project_is_in_the_current_view_language_and_checks_clean(tmp_path
     """), str(project)], capture_output=True, text=True, timeout=120)
     assert out.returncode == 0, out.stderr[-1500:]
     assert "PROBLEMS []" in out.stdout
-    assert cli.main(["migrate-yaml", str(project)]) == 0
 
 
 def test_a_screen_added_to_a_window_project_works_once_its_node_is_in_the_window(tmp_path, capsys):

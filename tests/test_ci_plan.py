@@ -25,7 +25,7 @@ plan = load()
     ("docs/guide/layout.md", True), ("docs/schema/tess-ui-yaml-schema.json", True), ("design/yaml-language.md", True), ("LOG.md", True),
     ("README.md", True), ("mkdocs.yml", True), ("AGENTS.md", True), (".agents/skills/live-check/SKILL.md", True),
     ("src/tess_ui/composed.py", False), ("tests/test_app.py", False), ("tools/check.py", False), ("pyproject.toml", False),
-    ("src/tess_ui/views/Button_View.yaml", False), (".github/workflows/ci.yml", False), ("LICENSE", False), ("src/README.md", False),
+    ("src/tess_ui/views/Button_View.tdl", False), (".github/workflows/ci.yml", False), ("LICENSE", False), ("src/README.md", False),
 ])
 def test_what_counts_as_documentation(path, doc):
     assert plan.is_doc(path) is doc

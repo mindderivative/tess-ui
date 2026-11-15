@@ -1,4 +1,4 @@
-"""M39 Phase 1: a YAML node with an `on_click` handler is reachable from
+"""M39 Phase 1: a view node with an `on_click` handler is reachable from
 the keyboard -- focusable, a Tab stop, activated by Enter and Space -- as
 it was in `tess_re`'s `View` (whose `set_on_click` added a click action), and
 exposed to assistive technology as a button (M39 Q1). M37 had dropped
@@ -88,23 +88,7 @@ def test_adding_or_removing_on_click_by_reconcile_updates_it():
     assert (view.node("x").get("role"), view.node("x").get("focusable")) == ("none", False)
 
 
-def test_a_button_fragment_wrapped_as_a_clickable_is_reachable():
-    """A fragment wrapped in a clickable container: the wrapper is the
-    button. (Since M69 a call can take `handlers:` itself, which puts them
-    on the fragment's root; wrapping still works.)"""
-    from tess_ui.spec import expand_components_to_spec
-
-    spec = expand_components_to_spec(
-        "id: root\nkind: Container\nchildren:\n  - id: save\n    kind: Container\n    handlers: {on_click: go}\n"
-        "    children:\n      - id: face\n        component: ButtonFilled\n"
-        '        with: {label: "Save", width: 120, height: 40, corner_radius: 20}\n'
-    )
-    view = View(spec, theme_seed=(0x67, 0x50, 0xA4, 0xFF))
-    focused, clicks = _keyboard(view, view.window, "save")
-    assert focused is True and clicks == 2
-
-
-def test_a_yaml_link_takes_a_pointer_click():
+def test_a_link_takes_a_pointer_click():
     """M41: a Link was a bare `text`, which `tess_re` 0.3.4 never gives pointer
     events, so only the keyboard could follow it. It's a box holding its
     text now; the box takes the click, the focus and the role."""

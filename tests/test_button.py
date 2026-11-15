@@ -20,8 +20,9 @@ class VM(ViewModel):
 
 def opened(tmp_path, widget):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {flex_direction: vertical, align_content: top_left, width: 500, height: 400}\nchildren:\n" + widget)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(
+        "---\nTDL: 0.2\nName: main\n---\nContainer {\n  Name: main\n  Style { Flex_Direction: vertical, Align_Content: top_left, Width: 500, Height: 400 }\n"
+        "  Children {\n" + widget + "  }\n}\n")
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")
@@ -36,7 +37,7 @@ def role(view, name):
 
 
 def button(extra="", name="b"):
-    return f"  - {{widget: Button, name: {name}, label: Save{', ' + extra if extra else ''}, handlers: {{on_click: bump}}}}\n"
+    return f"    Button {{ Name: {name}, Label: Save{', ' + extra if extra else ''}, Handlers {{ On_Click: bump }} }}\n"
 
 
 def test_it_is_shipped():
@@ -71,7 +72,7 @@ def test_a_filled_button_is_primary_forty_tall_and_as_wide_as_its_label_and_padd
     ("elevated", "surface_container_low", "primary"), ("text", None, "primary"), ("outlined", None, "primary"),
 ])
 def test_each_variant_has_its_colours(tmp_path, variant, fill, content):
-    view, _ = opened(tmp_path, button(f"variant: {variant}"))
+    view, _ = opened(tmp_path, button(f"Variant: {variant}"))
     assert node(view, "label").get("fill") == role(view, content)
     if fill:
         assert node(view).get("fill") == role(view, fill)
@@ -80,36 +81,36 @@ def test_each_variant_has_its_colours(tmp_path, variant, fill, content):
 
 
 def test_elevated_rests_at_level_one_and_the_outline_is_one_pixel(tmp_path):
-    view, _ = opened(tmp_path, button("variant: elevated") + button("variant: outlined", "o") + button("variant: filled", "f"))
+    view, _ = opened(tmp_path, button("Variant: elevated") + button("Variant: outlined", "o") + button("Variant: filled", "f"))
     assert node(view).get("shadows") and not node(view, name="f").get("shadows")
     o = node(view, name="o")
     assert o.get("stroke_width") == 1.0 and o.get("stroke_color") == role(view, "outline")
 
 
 def test_a_text_button_has_twelve_pixels_of_padding(tmp_path):
-    view, _ = opened(tmp_path, button("variant: text"))
+    view, _ = opened(tmp_path, button("Variant: text"))
     assert node(view).get("layout_width") == 12 + node(view, "label").get("layout_width") + 12
 
 
 @pytest.mark.parametrize("size, height", [("xs", 32), ("s", 40), ("m", 56), ("l", 96), ("xl", 136)])
 def test_the_five_sizes(tmp_path, size, height):
-    view, _ = opened(tmp_path, button(f"size: {size}"))
+    view, _ = opened(tmp_path, button(f"Size: {size}"))
     assert node(view).get("layout_height") == float(height)
 
 
 def test_a_larger_size_has_larger_type_and_padding(tmp_path):
-    view, _ = opened(tmp_path, button("size: m") + button("size: xl", "x"))
+    view, _ = opened(tmp_path, button("Size: m") + button("Size: xl", "x"))
     assert node(view, "label").get("font_size") == 16.0 and node(view, "label", "x").get("font_size") == 32.0
     assert node(view, name="x").get("layout_width") == 64 + node(view, "label", "x").get("layout_width") + 64
 
 
 def test_a_square_button_has_rounded_corners_not_a_pill(tmp_path):
-    view, _ = opened(tmp_path, button("shape: square"))
+    view, _ = opened(tmp_path, button("Shape: square"))
     assert node(view).get("corner_radius") == 12.0
 
 
 def test_icons_take_sixteen_on_their_side_and_the_icon_is_eighteen(tmp_path):
-    view, _ = opened(tmp_path, button("icon: home, trailing_icon: search"))
+    view, _ = opened(tmp_path, button("Icon: home, Trailing_Icon: search"))
     icon, trailing, text = node(view, "icon"), node(view, "trailing"), node(view, "label")
     assert (icon.get("layout_width"), icon.get("layout_height")) == (18.0, 18.0)
     assert node(view).get("layout_width") == 16 + 18 + 8 + text.get("layout_width") + 8 + 18 + 16
@@ -125,14 +126,14 @@ def test_a_press_runs_the_call_s_handler_and_the_button_has_a_role_and_a_label(t
 
 
 def test_a_disabled_button_does_not_respond_and_is_dimmed_and_skipped(tmp_path):
-    view, vm = opened(tmp_path, button("disabled: true"))
+    view, vm = opened(tmp_path, button("Disabled: true"))
     b = node(view)
     click(view, b)
     assert vm.clicks.get() == 0 and b.get("disabled") is True and b.get("opacity") < 0.5
 
 
 def test_a_loading_button_shows_a_spinner_for_its_icon_and_does_not_respond(tmp_path):
-    view, vm = opened(tmp_path, button("icon: home, loading: true"))
+    view, vm = opened(tmp_path, button("Icon: home, Loading: true"))
     assert "root.b.spinner" in view._built.specs and "root.b.icon" not in view._built.specs
     assert node(view).get("busy") is True
     click(view, node(view))
@@ -140,7 +141,7 @@ def test_a_loading_button_shows_a_spinner_for_its_icon_and_does_not_respond(tmp_
 
 
 def test_a_toggle_button_flips_and_swaps_colours_and_shape(tmp_path):
-    view, vm = opened(tmp_path, "  - {widget: Button, name: b, label: Mute, toggle: true, selected: \"{{ on }}\"}\n")
+    view, vm = opened(tmp_path, "    Button { Name: b, Label: Mute, Toggle: true, Selected: <| on |> }\n")
     b = node(view)
     assert b.get("pressed") is False and b.get("fill") == role(view, "surface_container_highest")
     assert node(view, "label").get("fill") == role(view, "on_surface_variant") and b.get("corner_radius") >= 20
@@ -176,7 +177,7 @@ def test_it_has_a_state_layer_and_the_keyboard_activates_it(tmp_path):
 
 
 def test_an_elevated_button_rises_from_level_one_to_two_when_hovered_and_back_to_one_when_pressed(tmp_path):
-    view, _ = opened(tmp_path, button("variant: elevated"))
+    view, _ = opened(tmp_path, button("Variant: elevated"))
     b = node(view)
     rest = b.get("shadows")
     view.window.simulate("pointer_enter", node=b)
@@ -191,12 +192,12 @@ def test_an_elevated_button_rises_from_level_one_to_two_when_hovered_and_back_to
 
 @pytest.mark.parametrize("size, radius", [("xs", 12.0), ("s", 12.0), ("m", 16.0), ("l", 28.0), ("xl", 28.0)])
 def test_a_square_button_s_corners_grow_with_its_size(tmp_path, size, radius):
-    view, _ = opened(tmp_path, button(f"shape: square, size: {size}"))
+    view, _ = opened(tmp_path, button(f"Shape: square, Size: {size}"))
     assert node(view).get("corner_radius") == radius
 
 
 def test_a_square_toggle_becomes_a_pill_while_on(tmp_path):
-    view, vm = opened(tmp_path, "  - {widget: Button, name: b, label: Mute, shape: square, toggle: true, selected: \"{{ on }}\"}\n")
+    view, vm = opened(tmp_path, "    Button { Name: b, Label: Mute, Shape: square, Toggle: true, Selected: <| on |> }\n")
     b = node(view)
     assert b.get("corner_radius") == 12.0
     click(view, b)
@@ -215,19 +216,20 @@ def test_a_pressed_pill_squares_off_while_the_button_is_held(tmp_path):
 
 
 def test_a_toggle_flips_even_when_the_call_has_its_own_click_handler(tmp_path):
-    view, vm = opened(tmp_path, "  - {widget: Button, name: b, label: Mute, toggle: true, handlers: {on_click: bump}}\n")
+    view, vm = opened(tmp_path, "    Button { Name: b, Label: Mute, Toggle: true, Handlers { On_Click: bump } }\n")
     click(view, node(view))
     assert vm.clicks.get() == 1 and node(view).get("pressed") is True
 
 
 def test_a_toggle_that_does_not_flip_leaves_the_decision_to_the_caller(tmp_path):
-    view, vm = opened(tmp_path, "  - {widget: Button, name: b, label: Mute, toggle: true, flip: false, selected: \"{{ on }}\", handlers: {on_click: \"clicks += 1\"}}\n")
+    view, vm = opened(tmp_path, "    Button { Name: b, Label: Mute, Toggle: true, Flip: false, Selected: <| on |>,\n"
+                                "      Handlers { On_Click { Set { Target: clicks, Value: <| clicks + 1 |> } } } }\n")
     click(view, node(view))
     assert node(view).get("pressed") is False and vm.on.get() is False
 
 
 def test_a_one_way_selected_follows_the_expression_and_may_be_flipped_in_between(tmp_path):
-    view, vm = opened(tmp_path, "  - {widget: Button, name: b, label: Mute, toggle: true, selected: \"{{ on or clicks > 5 }}\"}\n")
+    view, vm = opened(tmp_path, "    Button { Name: b, Label: Mute, Toggle: true, Selected: <| on or clicks > 5 |> }\n")
     click(view, node(view))
     assert node(view).get("pressed") is True  # its own copy flipped; nothing upstream changed
     vm.on.set(True)

@@ -15,21 +15,35 @@ class VM(ViewModel):
         self.ok = Signal(None)
 
 
-VIEW = """name: main
-widget: Container
-style: {flex_direction: vertical, width: 200, height: 100}
-children:
-  - {widget: Container, name: copy, handlers: {on_click: "ok = copy(name)"}}
-  - {widget: Container, name: paste, handlers: {on_click: "pasted = paste()"}}
-  - {widget: Container, name: both, handlers: {on_click: "copy('x' + name); pasted = paste()"}}
-  - {widget: Container, name: number, handlers: {on_click: "copy(42)"}}
-  - {widget: Container, name: bad, handlers: {on_click: "copy([1])"}}
+VIEW = """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Flex_Direction: vertical, Width: 200, Height: 100 }
+  Children {
+    Container { Name: copy, Handlers { On_Click { Set { Target: ok, Value: <| copy(name) |> } } } }
+    Container { Name: paste, Handlers { On_Click { Set { Target: pasted, Value: <| paste() |> } } } }
+    Container {
+      Name: both
+      Handlers {
+        On_Click {
+          Call { Action: copy, Args: [<| 'x' + name |>] }
+          Set { Target: pasted, Value: <| paste() |> }
+        }
+      }
+    }
+    Container { Name: number, Handlers { On_Click { Call { Action: copy, Args: [<| 42 |>] } } } }
+    Container { Name: bad, Handlers { On_Click { Call { Action: copy, Args: [<| [1] |>] } } } }
+  }
+}
 """
 
 
 def opened(tmp_path, text=VIEW):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(text)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(text)
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")
@@ -85,7 +99,7 @@ def test_something_that_is_not_text_is_a_mistake_naming_the_call(tmp_path):
 def test_the_view_accepts_the_actions_when_it_is_checked(tmp_path):
     app = App(root=tmp_path)
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(VIEW)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(VIEW)
     app.bind(VM)
     app.open_view("Main")
     assert app.check() == []

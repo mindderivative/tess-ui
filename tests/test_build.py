@@ -18,9 +18,9 @@ from tess_ui import App, View, build, cli
 
 def _app_folder(root: Path) -> Path:
     files = {
-        "app.py": "", "Home_View.yaml": "", "Home_ViewModel.py": "", "Home_Style.yaml": "",
-        "panels/Nav_ViewModel.py": "", "panels/Nav_View.yaml": "", "images/logo.png": "",
-        ".git/config": "", ".env": "", ".config/keep.yaml": "", "__pycache__/x.pyc": "", "stray.pyc": "",
+        "app.py": "", "Home_View.tdl": "", "Home_ViewModel.py": "", "Home_Stylesheet.tdl": "",
+        "panels/Nav_ViewModel.py": "", "panels/Nav_View.tdl": "", "images/logo.png": "",
+        ".git/config": "", ".env": "", ".config/keep.json": "", "__pycache__/x.pyc": "", "stray.pyc": "",
         "build/junk": "", "dist/old": "", "app.spec": "", "venv/pyvenv.cfg": "", "venv/lib/x.py": "",
         "myenv/pyvenv.cfg": "", "myenv/lib/y.py": "", "notes/draft.md": "", "notes/keep.txt": "",
     }
@@ -37,8 +37,8 @@ def _bundled(collected):
 def test_the_scan_takes_the_app_and_skips_tooling(tmp_path):
     collected = build.collect_files(_app_folder(tmp_path))
     assert _bundled(collected) == [
-        "Home_Style.yaml", "Home_View.yaml", "Home_ViewModel.py", "app.py", "images/logo.png",
-        "notes/draft.md", "notes/keep.txt", "panels/Nav_View.yaml", "panels/Nav_ViewModel.py"]
+        "Home_Stylesheet.tdl", "Home_View.tdl", "Home_ViewModel.py", "app.py", "images/logo.png",
+        "notes/draft.md", "notes/keep.txt", "panels/Nav_View.tdl", "panels/Nav_ViewModel.py"]
     # every .py but the entry point is analysed, from its own folder
     assert collected.modules == ["Home_ViewModel", "Nav_ViewModel"]
     assert collected.paths == [tmp_path, tmp_path / "panels"]
@@ -47,7 +47,7 @@ def test_the_scan_takes_the_app_and_skips_tooling(tmp_path):
 def test_include_and_exclude_globs(tmp_path):
     collected = build.collect_files(_app_folder(tmp_path), include=[".config", ".env"], exclude=["notes/*.md"])
     bundled = _bundled(collected)
-    assert ".config/keep.yaml" in bundled and ".env" in bundled
+    assert ".config/keep.json" in bundled and ".env" in bundled
     assert "notes/draft.md" not in bundled and "notes/keep.txt" in bundled
     whole = build.collect_files(tmp_path / "app.py", exclude=["panels"])
     assert not any(b.startswith("panels/") for b in _bundled(whole)) and whole.modules == ["Home_ViewModel"]
@@ -63,8 +63,8 @@ def test_pyinstaller_args(tmp_path, monkeypatch):
     assert ("--name", "demo") in pairs and ("--distpath", str(tmp_path / "dist")) in pairs
     assert ("--collect-data", "tess_ui") in pairs and ("--collect-submodules", "tess_ui") in pairs
     assert ("--hidden-import", "Nav_ViewModel") in pairs and ("--paths", str(tmp_path / "panels")) in pairs
-    assert ("--add-data", f"{tmp_path / 'panels' / 'Nav_View.yaml'}{os.pathsep}panels") in pairs
-    assert ("--add-data", f"{tmp_path / 'Home_View.yaml'}{os.pathsep}.") in pairs
+    assert ("--add-data", f"{tmp_path / 'panels' / 'Nav_View.tdl'}{os.pathsep}panels") in pairs
+    assert ("--add-data", f"{tmp_path / 'Home_View.tdl'}{os.pathsep}.") in pairs
     console = build.pyinstaller_args(app_file, "demo", collected, tmp_path, tmp_path,
                                      console=True, icon=tmp_path / "i.ico")
     assert "--windowed" not in console and ("--icon", str(tmp_path / "i.ico")) in list(zip(console, console[1:]))
