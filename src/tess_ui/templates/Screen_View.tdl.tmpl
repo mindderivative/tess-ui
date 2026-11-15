@@ -1,0 +1,28 @@
+---
+TDL: 0.2
+Name: ${name}
+Tesserae: "0.6"
+---
+# The ${name} screen: `${name}_ViewModel.py` holds what it shows and handles.
+Container {
+  Name: ${name}
+  Style { Flex_Direction: vertical, Gap: 16, Padding: 24, Background: surface }
+  Children {
+    Text {
+      Name: title
+      Text: "${title}"
+      Typography_Role: headline_small
+      Style { Foreground: on_surface }
+      A11y { Role: heading, Level: 1 }
+    }
+    Button {
+      Name: back
+      Label: Back
+      Variant: tonal
+      Style { Width: 96 }
+      Handlers {
+        On_Click: go_back
+      }
+    }
+  }
+}

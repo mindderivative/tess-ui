@@ -288,7 +288,7 @@ def test_the_shipped_view_validates_against_the_widget_schema_all_the_way_down()
 
     schema = widgets.json_schema()
     validator = jsonschema.Draft7Validator(schema)
-    views = shipped.shipped_views()
+    views = {name: path.with_suffix(".yaml") for name, path in shipped.shipped_views().items()}  # the schema describes the YAML form
 
     def unwrapped(node):
         """The schema describes the built-in widgets; a shipped view that uses another shipped view (Tabs uses Badge) is checked as the Container it stands in."""
@@ -303,7 +303,7 @@ def test_the_shipped_view_validates_against_the_widget_schema_all_the_way_down()
     for path in views.values():
         errors = list(validator.iter_errors(unwrapped(yaml.safe_load(path.read_text(encoding="utf-8")))))
         assert not errors, f"{path.name}: {errors[0].message[:200]}"
-    broken = yaml.safe_load(shipped.shipped_views()["TextField"].read_text(encoding="utf-8"))
+    broken = yaml.safe_load(views["TextField"].read_text(encoding="utf-8"))
     broken["children"][1]["children"][1]["children"][1]["valu"] = 1  # a misspelt property deep inside
     assert list(validator.iter_errors(broken))
     json.dumps(schema)

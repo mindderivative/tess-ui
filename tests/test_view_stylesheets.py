@@ -39,10 +39,10 @@ def sheet(widget, radius, **selectors):
 
 @pytest.fixture
 def loads(monkeypatch):
-    """The stylesheets read, by file name."""
+    """The stylesheets read, by file name (a `.tdl` one is recorded under its YAML name: the library reads the shipped sheets as TDL)."""
     seen = []
     real = shipped.load_rule_sheet
-    monkeypatch.setattr(shipped, "load_rule_sheet", lambda path, **kw: seen.append(os.path.basename(str(path))) or real(path, **kw))
+    monkeypatch.setattr(shipped, "load_rule_sheet", lambda path, **kw: seen.append(os.path.basename(str(path)).replace(".tdl", ".yaml")) or real(path, **kw))
     monkeypatch.setattr(shipped, "_SHEETS", {})  # a fresh cache: each test sees what its own app reads
     return seen
 

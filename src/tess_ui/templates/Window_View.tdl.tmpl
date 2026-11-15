@@ -1,0 +1,41 @@
+---
+TDL: 0.2
+Name: Window
+Tesserae: "0.6"
+---
+# The app's window (opened by app.py with app.open_view("Window")): its title bar, a rail that navigates, and the
+# screens, each a view of its own called with a `route:`. `app.run(hot_reload=True)` applies edits live.
+Window {
+  Name: Window
+  Title: "${title}"
+  Borderless: ${borderless}
+  Min_Width: 480
+  Min_Height: 320
+  Style { Width: 960, Height: 600, Background: surface, Flex_Direction: horizontal }
+  Title_Bar { Title: "${title}", Icon: home, Buttons: [minimize, maximize, close] }
+  Children {
+    NavigationRailScreens {
+      Name: nav
+      Items {
+        Item { Label: Main, Icon: home, Screen: Main }
+        Item { Label: Settings, Icon: settings, Screen: Settings }
+      }
+    }
+    Container {
+      Name: screens
+      Style { Flex: fill }
+      Children {
+        Main {
+          Name: main
+          Route: ""
+          Style { Flex: fill }
+        }
+        Settings {
+          Name: settings
+          Route: settings
+          Style { Flex: fill }
+        }
+      }
+    }
+  }
+}

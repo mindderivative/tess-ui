@@ -4,10 +4,10 @@
 Run it with `python app.py`, or `python app.py <route>` to open on a
 screen by its route. Add a screen with `tesserae add screen <Name>`.
 
-The project's files are found by name in its folders: `Views/Main_View.yaml`
+The project's files are found by name in its folders: `Views/Main_View.tdl`
 is `app.open_view("Main")`, `ViewModels/Main_ViewModel.py` is
 `app.project.viewmodel("Main")`, a view of your own that another view calls
-is `widget: Name`, a theme in `Themes/` is `App(custom_theme="Name")`, and a
+is the view `Name`, a theme in `Themes/` is `App(custom_theme="Name")`, and a
 stylesheet in `Styles/` is `App(stylesheet="Name")`.
 """
 
@@ -32,7 +32,7 @@ app = App(width=${width}, height=${height}, title="${title}", root=HERE, theme_s
           state=AppState())
 
 app.bind(app.project.viewmodel("Main"))  # ViewModels/Main_ViewModel.py
-app.open_view("Main")  # Views/Main_View.yaml
+app.open_view("Main")  # Views/Main_View.tdl
 app.route("", "Main")
 # (tesserae add screen adds each new screen's lines above this line)
 

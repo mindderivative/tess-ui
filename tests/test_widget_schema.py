@@ -135,10 +135,16 @@ def test_the_command_maps_views_to_the_widget_schema_and_the_project_one_on_requ
 
 @pytest.mark.parametrize("flags", [[], ["--window"]])
 def test_a_new_project_validates_against_its_own_schema(tmp_path, flags):
+    pytest.importorskip("tess_dl", reason="a new project's views are TDL")
+    from tess_ui.spec.nodes import read_marked
+    from tess_ui.spec.tdl_theme import plain
+
     assert cli.main(["new", "fresh", *flags, "--no-venv", "--dir", str(tmp_path)]) == 0
     validator = _validator_for(tmp_path / "fresh")
-    for path in (tmp_path / "fresh" / "Views").glob("*_View.yaml"):
-        assert not _problems(validator, yaml.safe_load(path.read_text())), path.name
+    files = list((tmp_path / "fresh" / "Views").glob("*_View.tdl"))
+    assert files
+    for path in files:
+        assert not _problems(validator, plain(read_marked(path.read_text(), str(path)))), path.name
 
 
 def test_a_link_where_the_project_schema_goes_is_refused_not_followed(tmp_path):

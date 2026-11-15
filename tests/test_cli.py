@@ -70,7 +70,7 @@ def test_new_makes_a_runnable_app(tmp_path):
     assert cli.main(["new", "my-notes", "--no-venv", "--dir", str(tmp_path)]) == 0
     project = tmp_path / "my-notes"
     assert sorted(p.name for p in project.iterdir()) == ["Components", "Styles", "Themes", "ViewModels", "Views", "app.py"]
-    assert (project / "Views" / "Main_View.yaml").is_file() and (project / "ViewModels" / "Main_ViewModel.py").is_file()
+    assert (project / "Views" / "Main_View.tdl").is_file() and (project / "ViewModels" / "Main_ViewModel.py").is_file()
     assert (project / "Components" / ".gitkeep").is_file()
     report = _run(project)
     assert report["start"] == "Main" and report["location"] == "" and report["ran"]
@@ -84,7 +84,7 @@ def test_add_screen_adds_a_pair_and_loads_and_routes_it(tmp_path, capsys):
     project = tmp_path / "notes"
     assert cli.main(["add", "screen", "UserProfile", "--dir", str(project)]) == 0
     assert "with the route 'user-profile'" in capsys.readouterr().out
-    assert (project / "Views" / "UserProfile_View.yaml").is_file()
+    assert (project / "Views" / "UserProfile_View.tdl").is_file()
     assert (project / "ViewModels" / "UserProfile_ViewModel.py").is_file()
     lines = (project / "app.py").read_text().splitlines()
     marker = lines.index(cli.LOAD_MARKER)  # the lines go just above the marker, as it says; found by name, so no import
@@ -108,7 +108,7 @@ def test_without_markers_add_screen_prints_the_lines(tmp_path, capsys, app_py):
     (tmp_path / "app.py").write_text(app_py)
     assert cli.main(["add", "screen", "Settings", "--dir", str(tmp_path)]) == 0
     out = capsys.readouterr().out
-    assert "add these lines to it" in out and 'app.open_view(HERE / "Settings_View.yaml")' in out and "app.bind(SettingsViewModel)" in out
+    assert "add these lines to it" in out and 'app.open_view(HERE / "Settings_View.tdl")' in out and "app.bind(SettingsViewModel)" in out
     assert 'app.route("settings", "Settings")' in out and "from Settings_ViewModel import SettingsViewModel" in out
     assert (tmp_path / "app.py").read_text() == app_py  # left alone
 
@@ -137,7 +137,7 @@ def test_nothing_is_overwritten(tmp_path, capsys):
     before = (project / "app.py").read_text()
     assert cli.main(["add", "screen", "Settings", "--dir", str(project)]) == 2
     assert "already exists" in capsys.readouterr().err
-    assert not (project / "Views" / "Settings_View.yaml").exists() and (project / "app.py").read_text() == before
+    assert not (project / "Views" / "Settings_View.tdl").exists() and (project / "app.py").read_text() == before
     assert cli.main(["add", "screen", "Settings", "--dir", str(tmp_path / "missing")]) == 2
     assert "isn't a folder" in capsys.readouterr().err
 
@@ -210,7 +210,7 @@ def test_new_with_a_window(tmp_path):
     """`--window` makes a `widget: Window` view whose screens are routed calls of views, served by one ViewModel."""
     assert cli.main(["new", "studio", "--window", "--no-venv", "--dir", str(tmp_path)]) == 0
     project = tmp_path / "studio"
-    assert (project / "Views" / "Window_View.yaml").is_file() and not list(project.glob("Views/*_Shell.yaml"))
+    assert (project / "Views" / "Window_View.tdl").is_file() and not list(project.glob("Views/*_Shell.yaml"))
     assert "load_shell" not in (project / "app.py").read_text()
     report = _run(project)
     assert report["ran"] and report["screens"] == ["Main", "Settings", "Window"]
@@ -231,8 +231,8 @@ def test_add_screen_to_a_window_project_says_where_the_view_node_goes(tmp_path, 
     project = tmp_path / "studio"
     assert cli.main(["add", "screen", "UserProfile", "--dir", str(project)]) == 0
     out = capsys.readouterr().out
-    assert '{widget: UserProfile, name: user_profile, route: "user-profile"' in out and "Window_View.yaml" in out and "items:" in out
-    assert (project / "Views" / "UserProfile_View.yaml").is_file()
+    assert 'UserProfile { Name: user_profile, Route: "user-profile"' in out and "Window_View.tdl" in out and "`Items`" in out
+    assert (project / "Views" / "UserProfile_View.tdl").is_file()
     assert not (project / "ViewModels" / "UserProfile_ViewModel.py").exists()  # a screen of the window reads Window_ViewModel's names
 
 
@@ -243,7 +243,7 @@ def test_a_new_project_is_in_the_current_view_language_and_checks_clean(tmp_path
 
     assert cli.main(["new", "fresh", *flags, "--no-venv", "--dir", str(tmp_path)]) == 0
     project = tmp_path / "fresh"
-    for path in [*project.glob("Views/*.yaml"), *project.glob("ViewModels/*.py"), project / "app.py"]:
+    for path in [*project.glob("Views/*.tdl"), *project.glob("ViewModels/*.py"), project / "app.py"]:
         text = path.read_text()
         assert not re.search(r"^\s*-?\s*(kind|component|include|view|id):", text, re.M), path.name
         assert "app.load(" not in text and "load_shell" not in text
@@ -266,9 +266,12 @@ def test_a_screen_added_to_a_window_project_works_once_its_node_is_in_the_window
     assert cli.main(["new", "studio", "--window", "--no-venv", "--dir", str(tmp_path)]) == 0
     project = tmp_path / "studio"
     cli.main(["add", "screen", "UserProfile", "--dir", str(project)])
-    node = next(line for line in capsys.readouterr().out.splitlines() if line.strip().startswith("- {widget: UserProfile"))
-    window = project / "Views" / "Window_View.yaml"
-    window.write_text(window.read_text().rstrip("\n") + "\n      " + node.strip() + "\n")
+    node = next(line for line in capsys.readouterr().out.splitlines() if line.strip().startswith("UserProfile {"))
+    window = project / "Views" / "Window_View.tdl"
+    tail = "      }\n    }\n  }\n}\n"  # the end of the `screens` node's Children, of the node, of the rail's sibling list, of the window
+    text = window.read_text()
+    assert text.endswith(tail)
+    window.write_text(text[: -len(tail)] + "        " + node.strip() + "\n" + tail)
     assert _run(project, "user-profile")["start"] == "UserProfile"
     report = _run(project)
     assert report["routes"] == ["", "settings", "user-profile"]

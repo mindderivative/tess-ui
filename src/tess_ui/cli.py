@@ -30,6 +30,8 @@ from pathlib import Path
 from string import Template
 from typing import Optional, Sequence
 
+from tess_ui.project import sibling_file
+
 TEMPLATES = Path(__file__).parent / "templates"
 #: The lines `tesserae new` leaves in `app.py`; `add screen` inserts above them.
 IMPORT_MARKER = "# (tesserae add screen adds each new screen's import above this line)"
@@ -114,14 +116,14 @@ def new(name: str, parent: Path, custom_title_bar: bool = False, venv: bool = Tr
     title = " ".join(w.capitalize() for w in _words(name))
     if window:  # one ViewModel serves the window and, through it, its screens (a routed screen has none of its own)
         _write(folder / "app.py", _render("app_window.py.tmpl", title=title))
-        _write(folder / "Views" / "Window_View.yaml",
-               _render("Window_View.yaml.tmpl", title=title, borderless="true" if custom_title_bar else "false"))
+        _write(folder / "Views" / "Window_View.tdl",
+               _render("Window_View.tdl.tmpl", title=title, borderless="true" if custom_title_bar else "false"))
         _write(folder / "ViewModels" / "Window_ViewModel.py", _render("Window_ViewModel.py.tmpl"))
-        _write(folder / "Views" / "Main_View.yaml", _render("WindowMain_View.yaml.tmpl"))
-        _write(folder / "Views" / "Settings_View.yaml", _render("WindowScreen_View.yaml.tmpl", name="Settings", title="Settings"))
+        _write(folder / "Views" / "Main_View.tdl", _render("WindowMain_View.tdl.tmpl"))
+        _write(folder / "Views" / "Settings_View.tdl", _render("WindowScreen_View.tdl.tmpl", name="Settings", title="Settings"))
     else:
         _write(folder / "app.py", _render("app.py.tmpl", title=title, width="480", height="320"))
-        _write(folder / "Views" / "Main_View.yaml", _render("Main_View.yaml.tmpl"))
+        _write(folder / "Views" / "Main_View.tdl", _render("Main_View.tdl.tmpl"))
         _write(folder / "ViewModels" / "Main_ViewModel.py", _render("Main_ViewModel.py.tmpl"))
     if venv:
         _make_venv(folder)
@@ -129,7 +131,7 @@ def new(name: str, parent: Path, custom_title_bar: bool = False, venv: bool = Tr
 
 
 def add_screen(name: str, folder: Path) -> list[str]:
-    """Adds the screen `name` (a `Name_View.yaml`/`Name_ViewModel.py` pair)
+    """Adds the screen `name` (a `Name_View.tdl`/`Name_ViewModel.py` pair)
     to the app in `folder`, and its lines to `app.py` at the markers.
     Returns the lines it couldn't add (no `app.py`, or no markers)."""
     if not re.fullmatch(r"[A-Z][A-Za-z0-9]*", name):
@@ -137,17 +139,17 @@ def add_screen(name: str, folder: Path) -> list[str]:
     if not folder.is_dir():
         raise CliError(f"{folder} isn't a folder")
     laid_out = (folder / "Views").is_dir() and (folder / "ViewModels").is_dir()  # a project, or the flat layout
-    in_window = laid_out and (folder / "Views" / "Window_View.yaml").is_file()  # a window project: its screens have no ViewModel of their own
-    view = folder / "Views" / f"{name}_View.yaml" if laid_out else folder / f"{name}_View.yaml"
+    in_window = laid_out and sibling_file(folder / "Views" / "Window_View.tdl", "view", "Window") is not None  # a window project: its screens have no ViewModel of their own
+    view = folder / "Views" / f"{name}_View.tdl" if laid_out else folder / f"{name}_View.tdl"
     viewmodel = folder / "ViewModels" / f"{name}_ViewModel.py" if laid_out else folder / f"{name}_ViewModel.py"
     for path in (view,) if in_window else (view, viewmodel):  # both checked first, so a refusal writes neither
         if path.exists():
             raise CliError(f"{path} already exists; nothing was overwritten")
     title = " ".join(w.capitalize() for w in _words(name))
     if in_window:
-        _write(view, _render("WindowScreen_View.yaml.tmpl", name=name, title=title))
-        return [f'{{widget: {name}, name: {screen_route(name).replace("-", "_")}, route: "{screen_route(name)}", style: {{flex: fill}}}}']
-    _write(view, _render("Screen_View.yaml.tmpl", name=name, title=title))
+        _write(view, _render("WindowScreen_View.tdl.tmpl", name=name, title=title))
+        return [f'{name} {{ Name: {screen_route(name).replace("-", "_")}, Route: "{screen_route(name)}", Style {{ Flex: fill }} }}']
+    _write(view, _render("Screen_View.tdl.tmpl", name=name, title=title))
     _write(viewmodel, _render("Screen_ViewModel.py.tmpl", name=name))
     route = f'app.route("{screen_route(name)}", "{name}")'
     app = folder / "app.py"
@@ -156,7 +158,7 @@ def add_screen(name: str, folder: Path) -> list[str]:
         imports, load_lines = [], [f'app.bind(app.project.viewmodel("{name}"))', f'app.open_view("{name}")', route]
     else:
         imports = [f"from {name}_ViewModel import {name}ViewModel"]
-        load_lines = [f"app.bind({name}ViewModel)", f'app.open_view(HERE / "{name}_View.yaml")', route]
+        load_lines = [f"app.bind({name}ViewModel)", f'app.open_view(HERE / "{name}_View.tdl")', route]
     if LOAD_MARKER not in text or (imports and IMPORT_MARKER not in text):
         return [*imports, *load_lines]
     if imports:
@@ -382,15 +384,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             print(f"made {folder}; run it with\n\n    {steps}\n")
         else:
             missing = add_screen(args.name, args.dir)
-            if missing and (args.dir / "Views" / "Window_View.yaml").is_file():
-                print(f"added {args.name}_View.yaml (a screen of the window has no ViewModel of its own: its names are in "
-                      "ViewModels/Window_ViewModel.py); add this under the `screens` node's `children:` in Views/Window_View.yaml, "
-                      f"and a rail item `{{label: {args.name}, icon: home, screen: {args.name}}}` under `nav`'s `items:`:\n\n    - " + missing[0] + "\n")
+            if missing and sibling_file(args.dir / "Views" / "Window_View.tdl", "view", "Window") is not None:
+                print(f"added {args.name}_View.tdl (a screen of the window has no ViewModel of its own: its names are in "
+                      "ViewModels/Window_ViewModel.py); add this under the `screens` node's `Children` in Views/Window_View.tdl, "
+                      f"and a rail item `Item {{ Label: {args.name}, Icon: home, Screen: {args.name} }}` under `nav`'s `Items`:\n\n    " + missing[0] + "\n")
             elif missing:
-                print(f"added {args.name}_View.yaml and {args.name}_ViewModel.py; app.py has no markers, "
+                print(f"added {args.name}_View.tdl and {args.name}_ViewModel.py; app.py has no markers, "
                       "so add these lines to it:\n\n    " + "\n    ".join(missing) + "\n")
             else:
-                print(f"added {args.name}_View.yaml and {args.name}_ViewModel.py, and opened it in app.py "
+                print(f"added {args.name}_View.tdl and {args.name}_ViewModel.py, and opened it in app.py "
                       f"with the route {screen_route(args.name)!r}")
     except CliError as exc:
         print(f"tesserae: {exc}", file=sys.stderr)

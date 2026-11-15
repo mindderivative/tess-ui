@@ -1,0 +1,34 @@
+---
+TDL: 0.2
+Name: Main
+Tesserae: "0.6"
+---
+# The Main screen: `Main_ViewModel.py` holds what it shows and handles.
+Container {
+  Name: Main
+  Style { Flex_Direction: vertical, Gap: 16, Padding: 24, Background: surface }
+  Children {
+    Text {
+      Name: greeting
+      Text: <| app.state.greeting |>  # the app's shared state
+      Typography_Role: headline_small
+      Style { Foreground: on_surface }
+      A11y { Role: heading, Level: 1 }
+    }
+    Text {
+      Name: count
+      Text: <| label |>
+      Typography_Role: body_large
+      Style { Foreground: on_surface_variant }
+      A11y { Live: polite }
+    }
+    Button {
+      Name: button
+      Label: "Click me"
+      Style { Width: 120 }
+      Handlers {
+        On_Click: increment
+      }
+    }
+  }
+}

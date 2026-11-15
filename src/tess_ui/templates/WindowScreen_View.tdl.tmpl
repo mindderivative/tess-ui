@@ -1,0 +1,28 @@
+---
+TDL: 0.2
+Name: ${name}
+Tesserae: "0.6"
+---
+# The ${name} screen of the window. It has no `name:` and no ViewModel of its own: it reads the names of
+# `Window_ViewModel.py`, which serves `Window_View.tdl`.
+Container {
+  Style { Flex_Direction: vertical, Gap: 16, Padding: 24, Flex: fill }
+  Children {
+    Text {
+      Name: title
+      Text: "${title}"
+      Typography_Role: headline_small
+      Style { Foreground: on_surface }
+      A11y { Role: heading, Level: 1 }
+    }
+    Button {
+      Name: back
+      Label: Back
+      Variant: tonal
+      Style { Width: 96 }
+      Handlers {
+        On_Click: go_back
+      }
+    }
+  }
+}

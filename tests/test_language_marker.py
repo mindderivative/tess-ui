@@ -359,19 +359,20 @@ def test_the_stamp_tool_prepends_replaces_and_leaves_alone(tmp_path):
 
 
 def test_a_new_app_and_a_new_screen_are_written_with_the_marker(tmp_path):
+    """The templates write TDL: the series is the `Tesserae` metadata line, and a project's own files load."""
     from tess_ui import cli
 
     for flags in ([], ["--window"], ["--window", "--custom-title-bar"]):
         name = "app" + "".join(f.strip("-") for f in flags).replace("window", "w").replace("custom", "c").replace("title-bar", "t")
         assert cli.main(["new", name, "--no-venv", "--dir", str(tmp_path), *flags]) == 0
-        written = [p for p in (tmp_path / name).rglob("*_View.yaml")]
-        assert written, name
+        written = [p for p in (tmp_path / name).rglob("*_View.tdl")]
+        assert written and not list((tmp_path / name).rglob("*_View.yaml")), name
         for path in written:
             text = path.read_text(encoding="utf-8")
-            assert text.startswith(f"tesserae: {marker.LINE}\n"), f"{path.relative_to(tmp_path)}: {text[:40]!r}"
-            assert marker.scan(text).problem is None
+            assert text.startswith("---\nTDL: 0.2\n") and f'\nTesserae: "{marker.LINE}"\n' in text, f"{path.relative_to(tmp_path)}: {text[:60]!r}"
     assert cli.main(["add", "screen", "Settings", "--dir", str(tmp_path / "app")]) == 0
-    assert (tmp_path / "app" / "Views" / "Settings_View.yaml").read_text(encoding="utf-8").startswith(f"tesserae: {marker.LINE}\n")
+    added = (tmp_path / "app" / "Views" / "Settings_View.tdl").read_text(encoding="utf-8")
+    assert f'\nTesserae: "{marker.LINE}"\n' in added
 
 
 def test_an_example_loads_with_no_note_about_the_marker(tmp_path):
