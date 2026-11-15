@@ -1,7 +1,7 @@
-"""Tesserae's `{{ }}` bindings: a thin layer over :mod:`tess_ui.expr`.
+"""Tesserae's `{{ }}` bindings: a thin layer over :mod:`tess_ui.tel`.
 
 Since 0.5.0 a binding is a Python-subset expression (see ``design/yaml-language.md`` section 8), evaluated by the
-sandboxed evaluator in :mod:`tess_ui.expr` -- no longer the port of `tess_re`'s binding grammar. Python's arithmetic and
+sandboxed evaluator in :mod:`tess_ui.tel` (TEL, the Tesserae Expression Language) -- no longer the port of `tess_re`'s binding grammar. Python's arithmetic and
 comparison rules apply (``1 == 1.0``, unbounded ints up to a limit, unary minus, ``None``), and a Signal reads as its
 value, with ``count.get()`` still working.
 
@@ -22,7 +22,7 @@ import re
 from dataclasses import dataclass
 from typing import Any, Union
 
-from tess_ui.expr import Expr, ExprError, compile_expr
+from tess_ui.tel import Expr, ExprError, compile_expr
 
 __all__ = ["BindingError", "Expression", "Handle", "evaluate", "evaluate_value", "parse_binding", "value_debug"]
 
