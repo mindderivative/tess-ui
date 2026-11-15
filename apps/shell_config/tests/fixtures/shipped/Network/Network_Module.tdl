@@ -1,5 +1,5 @@
 ---
-TDL: 0.1
+TDL: 0.2
 Shell: 0.1
 Name: Network
 ---
@@ -31,9 +31,9 @@ Module {
 
     FlexBox {
         Name: Root
-        Visible: {{ available and ready }}
+        Visible: <| available and ready |>
         Role: GROUP
-        Label: {{ label }}
+        Label: <| label |>
         Flex: HORIZONTAL
         Align_Items: CENTER
         Tooltip {
@@ -49,7 +49,7 @@ Module {
                     Padding: [12, 8, 12, 8]
                     Children {
                         Text {
-                            Text: {{ tooltip }}
+                            Text: <| tooltip |>
                             Width: AUTO
                             Height: AUTO
                             Font_Size: 14
@@ -62,14 +62,14 @@ Module {
         Children {
             FlexBox {
                 Name: Level
-                Visible: {{ state == "CONNECTED" or state == "CONNECTING" }}
+                Visible: <| state == "CONNECTED" or state == "CONNECTING" |>
                 Flex: HORIZONTAL
                 Align_Items: CENTER
                 Spacing: 4
                 Children {
                     SVG {
                         Name: Glyph
-                        Icon: {{ icon }}
+                        Icon: <| icon |>
                         Width: 16
                         Height: 16
                         A11y_Hidden: true
@@ -77,30 +77,30 @@ Module {
                     SVG {
                         Name: Vpn
                         Icon: "mdi:vpn"
-                        Visible: {{ params.show_vpn and vpn }}
+                        Visible: <| params.show_vpn and vpn |>
                         Width: 16
                         Height: 16
                         A11y_Hidden: true
                     }
-                    If {{ params.show_name }} {
+                    If <| params.show_name |> {
                         Text {
                             Name: Label
                             Class: network_text
-                            Text: {{ name }}
+                            Text: <| name |>
                         }
                     }
                 }
             }
             FlexBox {
                 Name: Level_Warn
-                Visible: {{ state == "LIMITED" or state == "PORTAL" }}
+                Visible: <| state == "LIMITED" or state == "PORTAL" |>
                 Flex: HORIZONTAL
                 Align_Items: CENTER
                 Spacing: 4
                 Children {
                     SVG {
                         Name: Glyph_Warn
-                        Icon: {{ icon }}
+                        Icon: <| icon |>
                         Width: 16
                         Height: 16
                         A11y_Hidden: true
@@ -109,17 +109,17 @@ Module {
                     SVG {
                         Name: Vpn_Warn
                         Icon: "mdi:vpn"
-                        Visible: {{ params.show_vpn and vpn }}
+                        Visible: <| params.show_vpn and vpn |>
                         Width: 16
                         Height: 16
                         A11y_Hidden: true
                         Foreground: $color.warning
                     }
-                    If {{ params.show_name }} {
+                    If <| params.show_name |> {
                         Text {
                             Name: Label_Warn
                             Class: network_text
-                            Text: {{ name }}
+                            Text: <| name |>
                             Foreground: $color.warning
                         }
                     }
@@ -127,14 +127,14 @@ Module {
             }
             FlexBox {
                 Name: Level_Muted
-                Visible: {{ state == "DISCONNECTED" or state == "DISABLED" or state == "UNKNOWN" }}
+                Visible: <| state == "DISCONNECTED" or state == "DISABLED" or state == "UNKNOWN" |>
                 Flex: HORIZONTAL
                 Align_Items: CENTER
                 Spacing: 4
                 Children {
                     SVG {
                         Name: Glyph_Muted
-                        Icon: {{ icon }}
+                        Icon: <| icon |>
                         Width: 16
                         Height: 16
                         A11y_Hidden: true
@@ -143,17 +143,17 @@ Module {
                     SVG {
                         Name: Vpn_Muted
                         Icon: "mdi:vpn"
-                        Visible: {{ params.show_vpn and vpn }}
+                        Visible: <| params.show_vpn and vpn |>
                         Width: 16
                         Height: 16
                         A11y_Hidden: true
                         Foreground: $color.on_surface_muted
                     }
-                    If {{ params.show_name }} {
+                    If <| params.show_name |> {
                         Text {
                             Name: Label_Muted
                             Class: network_text
-                            Text: {{ name }}
+                            Text: <| name |>
                             Foreground: $color.on_surface_muted
                         }
                     }

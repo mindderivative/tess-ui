@@ -1,7 +1,7 @@
 ---
-TDL: 0.1
+TDL: 0.2
 Name: T
 ---
 Shell {
-  For item In {{ items }} Key {{ item.id }} { Label { Text: {{ item.title }} } }
+  For item In <| items |> Key <| item.id |> { Label { Text: <| item.title |> } }
 }

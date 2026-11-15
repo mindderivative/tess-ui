@@ -241,7 +241,7 @@ def test_a_length_unit_is_chosen_from_a_list_of_the_keys_units(w):
 
 
 BOX_SHELL = """---
-TDL: 0.1
+TDL: 0.2
 Name: Box
 ---
 
@@ -338,11 +338,11 @@ def test_a_key_with_a_slot_has_an_expression_button_that_swaps_the_widget_for_a_
     before = w.session.model.text
     w.focus("k:Opacity", "expression_button")
     w.key("enter")
-    assert w.node("k:Opacity", "field").get("text") == "{{  }}" and w.session.model.text == before
+    assert w.node("k:Opacity", "field").get("text") == "<|  |>" and w.session.model.text == before
     w.focus("k:Opacity", "field")
-    w.type_over("{{ battery.level }}")
+    w.type_over("<| battery.level |>")
     w.key("Enter")
-    assert w.diff(before) == ["-Box { Name: B, Margin: [1, 2, 3, 4], Opacity: 0.5 }", "+Box { Name: B, Margin: [1, 2, 3, 4], Opacity: {{ battery.level }} }"]
+    assert w.diff(before) == ["-Box { Name: B, Margin: [1, 2, 3, 4], Opacity: 0.5 }", "+Box { Name: B, Margin: [1, 2, 3, 4], Opacity: <| battery.level |> }"]
     w.focus("k:Opacity", "expression_button")
     w.key("enter")
     assert "Opacity" not in w.session.model.text, "back to the widget removes the expression"

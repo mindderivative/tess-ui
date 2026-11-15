@@ -493,7 +493,7 @@ def test_a_change_of_a_file_that_is_not_open_only_reads_the_folder_again(rig):
     rig.services.disk_events({"Shells/Windows_Shell.tdl": other.read_bytes()})
     assert not rig.vm.has_disk_change.get()
     new = rig.folder / "Shells" / "Fresh_Shell.tdl"
-    new.write_text("---\nTDL: 0.1\nShell: 0.1\nName: Fresh\n---\n\nShell { }\n")
+    new.write_text("---\nTDL: 0.2\nShell: 0.1\nName: Fresh\n---\n\nShell { }\n")
     rig.services.disk_events({"Shells/Fresh_Shell.tdl": new.read_bytes()})
     assert any(row["value"] == "f:Shells/Fresh_Shell.tdl" for group in rig.vm.file_nodes.get() for row in group.get("children", []))
 

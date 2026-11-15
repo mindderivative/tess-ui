@@ -10,7 +10,7 @@ from tess_shell_config.selector import STATES, Selector, parse_selector
 from tess_shell_config.structure import label_of
 
 SHEET = """---
-TDL: 0.1
+TDL: 0.2
 Name: Sheet
 ---
 

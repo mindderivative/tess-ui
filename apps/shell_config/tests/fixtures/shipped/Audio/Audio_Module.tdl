@@ -1,5 +1,5 @@
 ---
-TDL: 0.1
+TDL: 0.2
 Shell: 0.1
 Name: Audio
 ---
@@ -36,13 +36,13 @@ Module {
 
     FlexBox {
         Name: Root
-        Visible: {{ ready }}
+        Visible: <| ready |>
         Role: GROUP
-        Label: {{ label }}
+        Label: <| label |>
         Flex: HORIZONTAL
         Align_Items: CENTER
         Spacing: 4
-        On_Scroll { Action: step, delta: {{ 0 - event.delta * params.step }} }
+        On_Scroll { Action: step, delta: <| 0 - event.delta * params.step |> }
         On_Secondary_Click: show_outputs
         Tooltip {
             Alignment: CENTER
@@ -57,7 +57,7 @@ Module {
                     Padding: [12, 8, 12, 8]
                     Children {
                         Text {
-                            Text: {{ tooltip }}
+                            Text: <| tooltip |>
                             Width: AUTO
                             Height: AUTO
                             Font_Size: 14
@@ -71,7 +71,7 @@ Module {
             FlexBox {
                 Name: Toggle
                 Role: BUTTON
-                Label: {{ "Unmute" if muted else "Mute" }}
+                Label: <| "Unmute" if muted else "Mute" |>
                 Width: 32
                 Height: 32
                 Align_Items: CENTER
@@ -80,16 +80,16 @@ Module {
                 Children {
                     SVG {
                         Name: Glyph
-                        Icon: {{ icon }}
-                        Visible: {{ not muted }}
+                        Icon: <| icon |>
+                        Visible: <| not muted |>
                         Width: 16
                         Height: 16
                         A11y_Hidden: true
                     }
                     SVG {
                         Name: Glyph_Muted
-                        Icon: {{ icon }}
-                        Visible: {{ muted }}
+                        Icon: <| icon |>
+                        Visible: <| muted |>
                         Width: 16
                         Height: 16
                         A11y_Hidden: true
@@ -97,23 +97,23 @@ Module {
                     }
                 }
             }
-            If {{ params.show_percent }} {
-                Text { Name: Percent, Class: audio_text, Text: {{ volume_text }} }
+            If <| params.show_percent |> {
+                Text { Name: Percent, Class: audio_text, Text: <| volume_text |> }
             }
-            If {{ params.show_slider }} {
+            If <| params.show_slider |> {
                 Slider {
                     Name: Volume
                     Label: "Volume"
-                    Value: {{ volume }}
+                    Value: <| volume |>
                     Max: 100
-                    On_Changed { Action: drag, percent: {{ event.value }} }
-                    On_Released { Action: set_volume, percent: {{ event.value }} }
+                    On_Changed { Action: drag, percent: <| event.value |> }
+                    On_Released { Action: set_volume, percent: <| event.value |> }
                 }
             }
             SVG {
                 Name: Mic
                 Icon: "mdi:microphone-off"
-                Visible: {{ params.show_mic and mic_muted }}
+                Visible: <| params.show_mic and mic_muted |>
                 Width: 16
                 Height: 16
                 Foreground: $color.on_surface_muted

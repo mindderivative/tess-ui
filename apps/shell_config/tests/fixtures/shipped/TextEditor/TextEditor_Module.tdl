@@ -1,5 +1,5 @@
 ---
-TDL: 0.1
+TDL: 0.2
 Shell: 0.1
 Name: TextEditor
 ---
@@ -25,13 +25,13 @@ Module {
     }
     TextField {
         Multiline: true
-        Text: {{ params.Text }}
-        Placeholder: {{ params.Placeholder }}
-        Read_Only: {{ params.Read_Only }}
-        Max_Length: {{ params.Max_Length }}
-        Wrap: {{ params.Wrap }}
-        Lines: {{ params.Lines }}
-        Enabled: {{ params.Enabled }}
-        Width: {{ params.Width }}
+        Text: <| params.Text |>
+        Placeholder: <| params.Placeholder |>
+        Read_Only: <| params.Read_Only |>
+        Max_Length: <| params.Max_Length |>
+        Wrap: <| params.Wrap |>
+        Lines: <| params.Lines |>
+        Enabled: <| params.Enabled |>
+        Width: <| params.Width |>
     }
 }

@@ -1,5 +1,5 @@
 ---
-TDL: 0.1
+TDL: 0.2
 Name: T
 ---
 Shell {
@@ -8,6 +8,6 @@ Shell {
   Text: "abc
   Height: 1
   Height: 2
-  Icon: {{ }}
+  Icon: <| |>
   Font: "a\q"
 }

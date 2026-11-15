@@ -1,5 +1,5 @@
 ---
-TDL: 0.1
+TDL: 0.2
 Shell: 0.1
 Name: Badge
 ---
@@ -21,19 +21,19 @@ Module {
         Name: Root
         Part: dot
         A11y_Hidden: true
-        Visible: {{ params.Dot or params.Count > 0 or (params.Show_Zero and params.Count == 0) }}
-        Height: {{ 8 if params.Dot else 18 }}
-        Width: {{ 8 if params.Dot else "AUTO" }}
-        Min_Width: {{ 8 if params.Dot else 18 }}
-        Padding: {{ 0 if params.Dot else [5, 0, 5, 0] }}
+        Visible: <| params.Dot or params.Count > 0 or (params.Show_Zero and params.Count == 0) |>
+        Height: <| 8 if params.Dot else 18 |>
+        Width: <| 8 if params.Dot else "AUTO" |>
+        Min_Width: <| 8 if params.Dot else 18 |>
+        Padding: <| 0 if params.Dot else [5, 0, 5, 0] |>
         Align_Items: CENTER
         Justify_Content: CENTER
         Style { Corner_Radius: $shape.full }
         Children {
             Text {
                 Name: Digits
-                Visible: {{ not params.Dot }}
-                Text: {{ str(params.Count) if params.Count <= params.Max else str(params.Max) + "+" }}
+                Visible: <| not params.Dot |>
+                Text: <| str(params.Count) if params.Count <= params.Max else str(params.Max) + "+" |>
                 Font_Size: 11
                 Font_Weight: 600
             }

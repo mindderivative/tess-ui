@@ -29,7 +29,7 @@ def test_the_files_are_listed_by_the_type_of_their_root_block(tmp_path):
 
 def test_the_type_comes_from_the_root_block_not_the_file_name(tmp_path):
     folder = copy(tmp_path)
-    (folder / "Themes" / "Odd_Shell.tdl").write_text("---\nTDL: 0.1\nName: Odd\n---\nTheme { }\n")
+    (folder / "Themes" / "Odd_Shell.tdl").write_text("---\nTDL: 0.2\nName: Odd\n---\nTheme { }\n")
     found = next(f for f in scan(folder) if f.rel == "Themes/Odd_Shell.tdl")
     assert found.type is FileType.THEME and found.name == "Odd" and found.parses
 
@@ -52,8 +52,8 @@ def test_generated_folders_and_hidden_files_are_not_listed(tmp_path):
     folder = copy(tmp_path)
     for name in ("schemas", "logs", "Icons", ".trash", ".git"):
         (folder / name).mkdir()
-        (folder / name / "Ghost_Shell.tdl").write_text("---\nTDL: 0.1\nName: G\n---\nShell { }\n")
-    (folder / "Shells" / ".Hidden_Shell.tdl").write_text("---\nTDL: 0.1\nName: G\n---\nShell { }\n")
+        (folder / name / "Ghost_Shell.tdl").write_text("---\nTDL: 0.2\nName: G\n---\nShell { }\n")
+    (folder / "Shells" / ".Hidden_Shell.tdl").write_text("---\nTDL: 0.2\nName: G\n---\nShell { }\n")
     (folder / "Shells" / "notes.txt").write_text("x")
     assert not any("Ghost" in f.rel or "Hidden" in f.rel or f.rel.endswith(".txt") for f in scan(folder))
 

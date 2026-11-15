@@ -1,5 +1,5 @@
 ---
-TDL: 0.1
+TDL: 0.2
 Shell: 0.1
 Name: MenuItem
 ---
@@ -28,40 +28,40 @@ Module {
     }
     FlexBox {
         Name: Root
-        Role: {{ "SEPARATOR" if params.Separator else "MENUITEM" }}
-        Menu_Item: {{ not params.Separator }}
-        Opens: {{ params.Submenu }}
-        Expanded: {{ False if params.Submenu != "" else None }}
-        Label: {{ params.Label if params.Label else params.Text }}
-        Height: {{ 9 if params.Separator else 28 }}
+        Role: <| "SEPARATOR" if params.Separator else "MENUITEM" |>
+        Menu_Item: <| not params.Separator |>
+        Opens: <| params.Submenu |>
+        Expanded: <| False if params.Submenu != "" else None |>
+        Label: <| params.Label if params.Label else params.Text |>
+        Height: <| 9 if params.Separator else 28 |>
         Align_Items: CENTER
         Spacing: 8
-        Padding: {{ [4, 0, 4, 0] if params.Separator else [10, 0, 10, 0] }}
+        Padding: <| [4, 0, 4, 0] if params.Separator else [10, 0, 10, 0] |>
         Children {
             Rectangle {
                 Name: Rule
                 Part: rule
-                Visible: {{ params.Separator }}
+                Visible: <| params.Separator |>
                 Flex_Grow: 1
                 Height: 1
             }
             Box {
                 Name: Glyph_Slot
-                Visible: {{ not params.Separator }}
+                Visible: <| not params.Separator |>
                 Width: 16
                 Height: 16
                 Flex_Shrink: 0
                 Children {
-                    If {{ params.Icon != "" }} {
-                        SVG { Name: Glyph, Part: icon, Source: {{ params.Icon }}, Width: 16, Height: 16 }
+                    If <| params.Icon != "" |> {
+                        SVG { Name: Glyph, Part: icon, Source: <| params.Icon |>, Width: 16, Height: 16 }
                     }
                 }
             }
             Text {
                 Name: Words
                 Part: label
-                Visible: {{ not params.Separator }}
-                Text: {{ params.Text }}
+                Visible: <| not params.Separator |>
+                Text: <| params.Text |>
                 Flex_Grow: 1
                 Width: AUTO
                 Height: AUTO
@@ -69,8 +69,8 @@ Module {
             Text {
                 Name: Hint
                 Part: shortcut
-                Visible: {{ params.Shortcut_Text != "" and not params.Separator }}
-                Text: {{ params.Shortcut_Text }}
+                Visible: <| params.Shortcut_Text != "" and not params.Separator |>
+                Text: <| params.Shortcut_Text |>
                 Width: AUTO
                 Height: AUTO
             }
@@ -78,7 +78,7 @@ Module {
                 Name: Arrow
                 Part: arrow
                 Icon: "mdi:chevron-right"
-                Visible: {{ params.Submenu != "" }}
+                Visible: <| params.Submenu != "" |>
                 Width: 16
                 Height: 16
             }

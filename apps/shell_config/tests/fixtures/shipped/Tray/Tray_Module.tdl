@@ -1,5 +1,5 @@
 ---
-TDL: 0.1
+TDL: 0.2
 Shell: 0.1
 Name: Tray
 ---
@@ -32,26 +32,26 @@ Module {
 
     FlexBox {
         Name: Root
-        Visible: {{ available and has_items }}
+        Visible: <| available and has_items |>
         Role: GROUP
         Label: "Tesserae Shell tray"
         Flex: HORIZONTAL
         Align_Items: CENTER
-        Spacing: {{ params.spacing }}
+        Spacing: <| params.spacing |>
         Children {
-            For item In {{ items }} Key {{ item.id }} {
+            For item In <| items |> Key <| item.id |> {
                 Tray_Item {
-                    icon: {{ item.icon }}
-                    size: {{ params.icon_size }}
-                    tooltip_title: {{ item.tooltip_title }}
-                    tooltip_text: {{ item.tooltip_text }}
-                    label: {{ item.label }}
-                    description: {{ item.description }}
-                    attention: {{ item.attention }}
-                    On_Click { Action: activate, id: {{ item.id }} }
-                    On_Middle_Click { Action: secondary, id: {{ item.id }} }
-                    On_Secondary_Click { Action: menu, id: {{ item.id }} }
-                    On_Scroll { Action: scroll, id: {{ item.id }}, delta: {{ event.delta }} }
+                    icon: <| item.icon |>
+                    size: <| params.icon_size |>
+                    tooltip_title: <| item.tooltip_title |>
+                    tooltip_text: <| item.tooltip_text |>
+                    label: <| item.label |>
+                    description: <| item.description |>
+                    attention: <| item.attention |>
+                    On_Click { Action: activate, id: <| item.id |> }
+                    On_Middle_Click { Action: secondary, id: <| item.id |> }
+                    On_Secondary_Click { Action: menu, id: <| item.id |> }
+                    On_Scroll { Action: scroll, id: <| item.id |>, delta: <| event.delta |> }
                 }
             }
         }

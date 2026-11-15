@@ -1,5 +1,5 @@
 ---
-TDL: 0.1
+TDL: 0.2
 Shell: 0.1
 Name: TextInput
 ---
@@ -24,12 +24,12 @@ Module {
         Width { Type: number, Default: 240 }
     }
     TextField {
-        Text: {{ params.Text }}
-        Placeholder: {{ params.Placeholder }}
-        Read_Only: {{ params.Read_Only }}
-        Max_Length: {{ params.Max_Length }}
-        Password: {{ params.Password }}
-        Enabled: {{ params.Enabled }}
-        Width: {{ params.Width }}
+        Text: <| params.Text |>
+        Placeholder: <| params.Placeholder |>
+        Read_Only: <| params.Read_Only |>
+        Max_Length: <| params.Max_Length |>
+        Password: <| params.Password |>
+        Enabled: <| params.Enabled |>
+        Width: <| params.Width |>
     }
 }

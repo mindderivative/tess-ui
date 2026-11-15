@@ -15,7 +15,7 @@ from tess_shell_config.schema import Schema
 from tess_shell_config.widgets import Context, FontWidget, IconWidget, KeyChordWidget, ListWidget, default_registry
 
 TEXT = """---
-TDL: 0.1
+TDL: 0.2
 Name: Widgets_Test
 ---
 
@@ -81,7 +81,7 @@ def test_the_icon_picker_is_offered_the_icons_folder_of_the_configuration_folder
 
 def test_an_icon_that_is_not_a_string_is_shown_as_tdl_and_kept(rig):
     rig.text_before = rig.text
-    rig.model.set_text(rig.text.replace('Icon: "home"', "Icon: {{ icon_name }}"))
+    rig.model.set_text(rig.text.replace('Icon: "home"', "Icon: <| icon_name |>"))
     rig.select("SVG", "Logo")
     cell = rig.build().cell("Icon")
     assert cell.tdl or cell.is_slot, "an expression is shown as text"

@@ -123,7 +123,7 @@ def test_adding_a_block_adds_its_lines_only_and_returns_its_path():
 
 
 def test_adding_an_inline_block_to_an_inline_parent_stays_on_that_line():
-    m = DocumentModel("---\nTDL: 0.1\nName: X\n---\nShell { }\n")
+    m = DocumentModel("---\nTDL: 0.2\nName: X\n---\nShell { }\n")
     new = m.add_block((), "Monitor { Name: Primary }")
     assert new == (0,) and m.document.at(new).type == "Monitor"
     assert "Monitor" in m.text and m.text.count("\n") == 5
@@ -136,7 +136,7 @@ def test_a_new_block_that_is_not_valid_is_refused_with_the_reason_and_the_file_i
         m.add_block(MONITOR, "Text {")
     assert str(raised.value) and m.text == before and not m.dirty and not m.can_undo
     with pytest.raises(EditError):
-        m.add_block(MONITOR, "If {{ x }} { Text { } }")  # an If is not a block to add
+        m.add_block(MONITOR, "If <| x |> { Text { } }")  # an If is not a block to add
 
 
 def test_removing_a_block_takes_its_lines_and_its_end_of_line_comment_and_selects_the_parent():
@@ -166,7 +166,7 @@ def test_an_if_and_a_for_can_be_removed():
         path = next(p for p in _paths(m) if type(m.node_at(p)).__name__ == kind)
         before = m.text
         m.remove_block(path)
-        assert {"If": "If {{", "For": "For item"}[kind] not in m.text
+        assert {"If": "If <|", "For": "For item"}[kind] not in m.text
         assert m.text != before
     assert m.valid
 
@@ -243,7 +243,7 @@ def test_metadata_is_set_and_cleared():
 
 
 def test_format_runs_only_when_asked_and_is_one_undo_step():
-    raw = b"---\nTDL: 0.1\nName: X\n---\nShell {   A: 1,   B: 2 }\n"
+    raw = b"---\nTDL: 0.2\nName: X\n---\nShell {   A: 1,   B: 2 }\n"
     m = DocumentModel.from_bytes(raw)
     assert m.text == raw.decode()
     m.format_file()
@@ -425,9 +425,9 @@ def test_a_text_edit_that_changes_nothing_is_not_a_step():
 
 
 def test_a_file_that_is_not_utf8_cannot_be_edited_in_the_text_view():
-    m = DocumentModel.from_bytes(b"---\nTDL: 0.1\nName: X\n---\nShell { A: \xff }\n")
+    m = DocumentModel.from_bytes(b"---\nTDL: 0.2\nName: X\n---\nShell { A: \xff }\n")
     with pytest.raises(EditError, match="not UTF-8"):
-        m.set_text("---\nTDL: 0.1\nName: X\n---\nShell { }\n")
+        m.set_text("---\nTDL: 0.2\nName: X\n---\nShell { }\n")
 
 
 def test_adopting_the_disk_after_a_change_starts_the_history_over():

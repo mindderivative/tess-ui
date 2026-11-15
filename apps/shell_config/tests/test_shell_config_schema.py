@@ -1,4 +1,4 @@
-"""The schema reader: the recorded schema 1.2 reads into typed classes, an unknown major version is refused, a higher minor is tolerated, no key name is in the code."""
+"""The schema reader: the recorded schema 1.3 (tess-shell 4cbacd2) reads into typed classes, an unknown major version is refused, a higher minor is tolerated, no key name is in the code."""
 
 import copy
 import json
@@ -13,7 +13,7 @@ SOURCE = Path(tess_shell_config.__file__).parent
 
 
 def test_the_recorded_schema_reads_into_every_table(schema, schema_data):
-    assert schema.version == (1, 2) and schema.version_text == "1.2"
+    assert schema.version == (1, 3) and schema.version_text == "1.3"
     assert list(schema.kinds) == list(schema_data["kinds"])
     assert list(schema.roots) == list(schema_data["roots"])
     assert list(schema.blocks) == list(schema_data["blocks"])
@@ -63,7 +63,7 @@ def test_every_key_of_the_schema_reads_with_its_range_hints(schema, schema_data)
                     assert info.minimum == raw.get("min") and info.maximum == raw.get("max") and info.step == raw.get("step") and info.unit == raw.get("unit")
                     assert info.tokens == tuple(raw["tokens"]) and info.preferred_tokens == tuple(raw["preferred_tokens"])
                     assert set(info.extra) == set(raw) - {"kind", "choices", "enum", "default", "doc", "slot", "required", "built", "group", "tokens", "preferred_tokens"}
-    assert seen == 1030
+    assert seen == 1031
 
 
 def test_a_module_has_params_events_and_common_keys(schema, schema_data):
@@ -105,7 +105,7 @@ def test_a_higher_minor_version_is_read_and_keeps_what_it_adds(schema_data):
     data["roots"]["Bar"]["keys"]["Width"]["fancy"] = True
     data["roots"]["Bar"]["new_part"] = [1]
     schema = Schema.from_data(data)
-    assert schema.version == (1, 9) and schema.extra == {"future_table": {"x": 1}}
+    assert schema.version == (1, 9) and schema.extra == {"future_table": {"x": 1}, "shortcuts": schema_data["shortcuts"]}  # `shortcuts` is 1.3's own table, which no form reads yet: it stays in `extra`
     assert schema.kinds["hologram"].extra == {"palette": 3}
     assert schema.roots["Bar"].keys["Width"].extra["fancy"] is True and schema.roots["Bar"].extra == {"new_part": [1]}
 
@@ -139,8 +139,8 @@ def test_the_code_writes_no_key_name_or_enum_value_of_the_schema(schema):
     quoted = {w for w in words if f'"{w}"' in text or f"'{w}'" in text}
     # the file types' root words and the configuration folder's own folder names are the application's vocabulary (what a file and a folder are called), not keys; the two grammars the schema does not carry
     # (a rule's Selector, from the Style Schema note, and a module file's Params block, from its file) are the rest; nothing else may appear
-    assert quoted <= {"Shell", "Module", "Style", "Stylesheet", "Theme", "Settings", "Shells", "Modules", "Styles", "Stylesheets", "Themes", "Icons", "Selector", "Default", "Children", "Params"}, quoted
+    assert quoted <= {"Shell", "Module", "Style", "Stylesheet", "Theme", "Settings", "Shells", "Modules", "Styles", "Stylesheets", "Themes", "Icons", "Selector", "Default", "Children", "Params", "Shortcuts"}, quoted  # "Shortcuts" is the class in `shortcuts.__all__`, not a key
 
 
 def test_the_recorded_file_is_the_schema_the_shell_exports(schema_text):
-    assert json.loads(schema_text)["schema_version"] == "1.2"
+    assert json.loads(schema_text)["schema_version"] == "1.3"

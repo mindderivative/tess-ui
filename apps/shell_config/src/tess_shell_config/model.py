@@ -225,7 +225,7 @@ class DocumentModel:
     FLOW_PARTS = {"If": ("condition",), "For": ("variable", "items", "key")}
 
     def set_flow(self, path: IndexPath, part: str, text: str) -> None:
-        """Change one part of the `If` or `For` at `path`: `condition` of an `If`; `items`, `key` (slots, written with their braces: `{{ ... }}`) or `variable` (a name) of a `For`. Only the
+        """Change one part of the `If` or `For` at `path`: `condition` of an `If`; `items`, `key` (slots, written with their braces: `<| ... |>`) or `variable` (a name, or several separated by commas: `i, item`) of a `For`. Only the
         bytes of that part change. `tess_dl` refuses text that is not exactly one slot, or a name that is not one; the file is then unchanged and the message says why. Renaming `variable`
         does not rename its uses inside the slots below."""
         node = self.node_at(path)

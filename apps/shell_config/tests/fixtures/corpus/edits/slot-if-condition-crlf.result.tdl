@@ -1,0 +1,10 @@
+---
+TDL: 0.2
+Name: Shell_Root
+---
+Shell {
+  If <| a |> {   # warn
+    Icon { }
+  }
+  B { }
+}

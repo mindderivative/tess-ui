@@ -17,7 +17,7 @@ from tess_shell_config.tdl import walk
 from tess_shell_config.widgets import ChoiceWidget, Context, LengthWidget, NumberWidget, PathWidget, SidesWidget, SwitchWidget, WidgetRegistry, default_registry
 
 DOC = """---
-TDL: 0.1
+TDL: 0.2
 Name: Form_Test
 ---
 
@@ -40,7 +40,7 @@ Shell {
             Box {
                 Name: Other
                 Opacity: 0.5
-                Enabled: {{ show }}
+                Enabled: <| show |>
                 Corner_Radius: [1, 2, 3, 4]
                 Weird_Key: 3
             }
@@ -195,7 +195,7 @@ def test_a_number_outside_its_range_is_refused_with_the_range_and_nothing_is_wri
 
 
 def test_a_number_that_is_not_a_number_and_a_fraction_for_a_whole_key_are_refused(tmp_path, schema):
-    r = Rig(tmp_path, schema, "---\nTDL: 0.1\nName: S\n---\nStylesheet { Rule { Selector: Text } }\n")
+    r = Rig(tmp_path, schema, "---\nTDL: 0.2\nName: S\n---\nStylesheet { Rule { Selector: Text } }\n")
     r.select("Rule")
     before = r.text
     for text, message in (("abc", "takes a number"), ("400.5", "takes a whole number"), ("0", "must be from 1 to 1000"), ("1001", "must be from 1 to 1000")):
@@ -217,7 +217,7 @@ def test_a_number_written_with_a_fraction_keeps_it_and_a_blank_field_removes_the
 
 
 def test_the_arrow_keys_step_a_number_by_the_schemas_step_inside_its_range(tmp_path, schema):
-    r = Rig(tmp_path, schema, "---\nTDL: 0.1\nName: S\n---\nStylesheet { Rule { Selector: Text, Font_Weight: 999 } }\n")
+    r = Rig(tmp_path, schema, "---\nTDL: 0.2\nName: S\n---\nStylesheet { Rule { Selector: Text, Font_Weight: 999 } }\n")
     r.select("Rule")
     r.form.step("k:Font_Weight|", 1, "999")
     assert "Font_Weight: 1000" in r.text
@@ -354,7 +354,7 @@ def test_a_file_the_dialog_chose_is_written_relative_to_the_open_file_unless_the
     elsewhere = "/somewhere/else/logo.png"
     r.form.use_path("k:Source|", elsewhere)
     assert f'Source: "{elsewhere}"' in r.text
-    settings = Rig(tmp_path, schema, "---\nTDL: 0.1\nName: Settings\n---\nSettings { Logging { Level: INFO } }\n", "settings.tdl")
+    settings = Rig(tmp_path, schema, "---\nTDL: 0.2\nName: Settings\n---\nSettings { Logging { Level: INFO } }\n", "settings.tdl")
     settings.select("Logging")
     settings.form.use_path("k:Directory|", str(tmp_path / "logs"))
     assert f'Directory: "{tmp_path / "logs"}"' in settings.text, "an absolute key keeps the absolute path"
@@ -368,19 +368,19 @@ def test_a_key_with_a_slot_gets_an_expression_toggle_that_swaps_to_a_field_holdi
     assert view.cell("Opacity").slot and not view.cell("Opacity").expression
     r.form.toggle_expression("k:Opacity|")
     cell = r.build().cell("Opacity")
-    assert cell.expression and cell.view()["ui"] == "field" and cell.view()["field"] == "{{  }}" and cell.view()["placeholder"] == "{{ expression }}"
+    assert cell.expression and cell.view()["ui"] == "field" and cell.view()["field"] == "<|  |>" and cell.view()["placeholder"] == "<| expression |>"
     assert r.text == DOC, "toggling writes nothing"
-    outcome, lines = r.commit("Opacity", {"text": "{{ a + b }}"})
-    assert lines == ["-                Opacity: 0.5", "+                Opacity: {{ a + b }}"], "written as it is"
+    outcome, lines = r.commit("Opacity", {"text": "<| a + b |>"})
+    assert lines == ["-                Opacity: 0.5", "+                Opacity: <| a + b |>"], "written as it is"
     assert r.build().cell("Opacity").is_slot
-    assert r.commit("Opacity", {"text": "a + b"})[0].ok is False, "an expression is written {{ ... }}"
-    assert not r.commit("Opacity", {"text": "{{  }}"})[0].changed, "an empty expression asks for nothing"
+    assert r.commit("Opacity", {"text": "a + b"})[0].ok is False, "an expression is written <| ... |>"
+    assert not r.commit("Opacity", {"text": "<|  |>"})[0].changed, "an empty expression asks for nothing"
 
 
 def test_an_expression_in_the_file_is_shown_as_its_text_and_switching_back_removes_it(tmp_path, schema):
     r = Rig(tmp_path, schema)
     cell = r.select("Box", "Other").cell("Enabled")
-    assert cell.expression and cell.view()["field"] == "{{ show }}" and cell.is_slot
+    assert cell.expression and cell.view()["field"] == "<| show |>" and cell.is_slot
     outcome = r.form.toggle_expression("k:Enabled|")
     assert outcome.changed and "Enabled" not in r.text
     assert not r.form.toggle_expression("k:Name|").ok, "a key without a slot has no expression"
@@ -395,7 +395,7 @@ def test_the_token_list_holds_only_the_groups_the_key_accepts_preferred_ones_fir
     radius = box.form.tokens_for("k:Corner_Radius|")
     assert {t["group"] for t in radius} == {"type", "shape", "space", "elevation", "motion"}
     assert [t["group"] for t in radius[: len(schema.tokens["shape"])]] == ["shape"] * len(schema.tokens["shape"]), "the preferred group comes first"
-    weight = Rig(rig.path.parent, schema, "---\nTDL: 0.1\nName: S\n---\nStylesheet { Rule { Selector: Text } }\n")
+    weight = Rig(rig.path.parent, schema, "---\nTDL: 0.2\nName: S\n---\nStylesheet { Rule { Selector: Text } }\n")
     weight.select("Rule")
     assert weight.form.tokens_for("k:Font_Weight|")[0]["ref"].endswith(".font_weight") and weight.form.tokens_for("k:Font_Weight|")[0]["group"] == "type"
 
@@ -460,7 +460,7 @@ def test_a_module_call_shows_the_modules_params_then_the_keys_every_module_takes
 
 
 def test_a_settings_section_is_a_page_of_its_keys(tmp_path, schema):
-    text = "---\nTDL: 0.1\nName: Settings\n---\nSettings {\n    Main_Shell: \"Main_Shell.tdl\"\n    Logging { Level: INFO, Retention: 7 }\n}\n"
+    text = "---\nTDL: 0.2\nName: Settings\n---\nSettings {\n    Main_Shell: \"Main_Shell.tdl\"\n    Logging { Level: INFO, Retention: 7 }\n}\n"
     r = Rig(tmp_path, schema, text, "settings.tdl")
     view = r.select("Logging")
     assert view.cell("Level").view()["current"] == "INFO" and view.cell("Retention").view()["field"] == "7"
@@ -471,7 +471,7 @@ def test_a_settings_section_is_a_page_of_its_keys(tmp_path, schema):
 
 
 THEME = """---
-TDL: 0.1
+TDL: 0.2
 Name: Mine
 ---
 
@@ -537,7 +537,7 @@ def test_with_no_file_no_tree_or_no_block_selected_the_form_says_why(tmp_path, s
     assert form.build(None).items == []
     broken = DocumentModel("Shell {\n", None, relative="B.tdl")
     assert "syntax errors" in form.build(broken).notes[0]
-    r = Rig(tmp_path, schema, DOC.replace("            Bitmap", "            If {{ x }} { Bitmap { Source: \"a\" } }\n            Bitmap"))
+    r = Rig(tmp_path, schema, DOC.replace("            Bitmap", "            If <| x |> { Bitmap { Source: \"a\" } }\n            Bitmap"))
     r.model.select(None) if False else None
     if_node = next(n for n in walk(r.model.document.root) if type(n).__name__ == "If")
     r.model.select(if_node.index_path)
@@ -615,14 +615,14 @@ def test_the_coverage_report_lists_every_key_that_got_the_generic_field_each_wit
     by_kind = {}
     for fallback in fallbacks:
         by_kind.setdefault(fallback.kind, []).append(f"{fallback.where}.{fallback.key}")
-    assert len(by_kind[""]) == 13, "ten keys and three tokens with no kind"
+    assert len(by_kind[""]) == 12, "nine keys and three tokens with no kind (schema 1.3 gives Bar.Reveal_Key the key_chord kind)"
     assert set(by_kind) == {"", "shadows", "tooltip"}, "the list, icon, font, key_chord, shadows and block kinds have widgets now"
     assert len(report.entries) == len(list(schema.walk_keys())) + sum(len(m.params) for m in schema.modules.values()) + sum(len(t) for t in schema.tokens.values())
     print("generic TDL field:", {kind: len(names) for kind, names in by_kind.items()})
 
 
 def _scratch(root, child):
-    return f"---\nTDL: 0.1\nName: Scratch\n---\n{root} {{ {child} {{ }} }}\n" if child else f"---\nTDL: 0.1\nName: Scratch\n---\n{root} {{ }}\n"
+    return f"---\nTDL: 0.2\nName: Scratch\n---\n{root} {{ {child} {{ }} }}\n" if child else f"---\nTDL: 0.2\nName: Scratch\n---\n{root} {{ }}\n"
 
 
 def _forms_of_the_schema(schema):

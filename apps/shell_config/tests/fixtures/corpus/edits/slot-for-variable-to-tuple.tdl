@@ -1,0 +1,10 @@
+---
+TDL: 0.2
+Name: Shell_Root
+---
+Shell {
+  A: 1
+  For x In <| enumerate(xs) |>   Key <| x.id |> {
+    L { T: <| x.t |> }
+  }
+}

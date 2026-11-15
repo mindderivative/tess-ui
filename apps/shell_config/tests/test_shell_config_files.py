@@ -44,7 +44,7 @@ def test_every_byte_string_decodes_and_encodes_back():
 
 
 def test_a_file_that_is_not_utf8_is_shown_with_replacement_characters_and_saves_its_bytes():
-    raw = b"---\nTDL: 0.1\nName: X\n---\nShell { A: \xff\xfe }\n"
+    raw = b"---\nTDL: 0.2\nName: X\n---\nShell { A: \xff\xfe }\n"
     model = DocumentModel.from_bytes(raw, "x_Shell.tdl")
     assert not model.utf8 and model.data == raw and "\ufffd" in model.display_text
     assert display_text(decode(raw)).count("\ufffd") == 2
@@ -72,7 +72,7 @@ def test_a_failed_save_leaves_the_old_file_intact_and_names_the_cause(tmp_path):
     folder = tmp_path / "cfg"
     (folder / "Shells").mkdir(parents=True)
     target = folder / "Shells" / "Main_Shell.tdl"
-    target.write_bytes(b"---\nTDL: 0.1\nName: X\n---\nShell { }\n")
+    target.write_bytes(b"---\nTDL: 0.2\nName: X\n---\nShell { }\n")
     session = ConfigSession(folder, state_dir=tmp_path / "state")
     model = session.open("Shells/Main_Shell.tdl")
     model.set_value((), "Anything", "1")
@@ -94,7 +94,7 @@ def test_the_first_save_keeps_the_old_content_in_the_state_folder_and_later_save
     folder = tmp_path / "cfg"
     (folder / "Shells").mkdir(parents=True)
     target = folder / "Shells" / "Main_Shell.tdl"
-    original = b"---\nTDL: 0.1\nName: X\n---\nShell { }\n"
+    original = b"---\nTDL: 0.2\nName: X\n---\nShell { }\n"
     target.write_bytes(original)
     state = tmp_path / "state"
     session = ConfigSession(folder, state_dir=state)

@@ -178,7 +178,7 @@ jobs:
           PYTHONUTF8: "1"
         run: |
           # The application's tests are skipped (not failed) where `tess_dl` is missing, in the other jobs: so this job must prove it ran them. `tess_dl` must import (the `tesserae-dl` pin of
-          # apps/shell_config/pyproject.toml, 0.2), at least 600 app tests must be collected (635 on 2026-11-14), and none may be skipped except the `real_shell_check` tests, which need the shell's own checkout and venv (D-056) and so cannot run on GitHub.
+          # apps/shell_config/pyproject.toml, 0.2), at least 600 app tests must be collected (677 on 2026-11-14, after the move to TDL 0.2), and none may be skipped except the `real_shell_check` tests, which need the shell's own checkout and venv (D-056) and so cannot run on GitHub.
           python -c "import tess_dl; print('tess_dl', tess_dl.__file__)"
           collected=$(pytest apps/shell_config/tests --collect-only -q -p no:cacheprovider | tail -1 | grep -oE '^[0-9]+')
           echo "collected $collected application tests"

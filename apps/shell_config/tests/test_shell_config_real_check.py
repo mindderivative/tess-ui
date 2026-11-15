@@ -1,7 +1,7 @@
-"""Against the REAL checker: what the application writes is run through `tesserae-shell check --json` and `tesserae-shell schema --json` of the shell itself (tess-shell at a3083ca), not the recorded fixtures.
+"""Against the REAL checker: what the application writes is run through `tesserae-shell check --json` and `tesserae-shell schema --json` of the shell itself (tess-shell at 4cbacd2, TDL 0.2, schema 1.3), not the recorded fixtures.
 
-The module is on only when the shell's checkout (`/home/phil/Projects/pyDev/projects/tess-shell`, or `TESS_SHELL_CHECKOUT`) is there AND a virtual environment of its own with `tesserae-shell` installed from that commit
-(`TESS_SHELL_VERIFY_VENV`, default `tesserae-shell-verify-venv` beside the repository); otherwise it is skipped with that reason. The commands are the two that only read files and start no shell: each runs with an
+The module is on only when a virtual environment of its own has `tesserae-shell` installed from commit 4cbacd2 (`TESS_SHELL_VERIFY_VENV`, default `tesserae-shell-verify-venv-4cbacd2` beside the repository: `python -m venv` and `pip install` of the shell's source at that
+commit, e.g. `git archive 4cbacd2 | tar -x -C ../tesserae-shell-4cbacd2`); otherwise it is skipped with that reason. The commands are the two that only read files and start no shell: each runs with an
 environment built from scratch (PATH, HOME and XDG_* in a temporary folder, no DISPLAY, WAYLAND_DISPLAY or DBUS), on a temporary configuration folder given with `--config-dir`. Nothing here starts, reloads or asks a shell.
 
 What is written: a new file of every type by the application's own new-file code, every block a structure edit can add (to every block that may hold it, down from each file's root), every selector the builder makes, a
@@ -30,12 +30,11 @@ from tess_shell_config.selector import BASES, STATES, Selector, SelectorStore
 from tess_shell_config.tdl import walk
 
 REPO = Path(__file__).resolve().parents[3]
-SHELL_CHECKOUT = Path(os.environ.get("TESS_SHELL_CHECKOUT", "/home/phil/Projects/pyDev/projects/tess-shell"))
-VENV = Path(os.environ.get("TESS_SHELL_VERIFY_VENV", REPO.parent / "tesserae-shell-verify-venv"))
+VENV = Path(os.environ.get("TESS_SHELL_VERIFY_VENV", REPO.parent / "tesserae-shell-verify-venv-4cbacd2"))
 SHELL = VENV / "bin" / "tesserae-shell"
 
-REASON = f"needs the shell's checkout ({SHELL_CHECKOUT}) and a venv with tesserae-shell installed from commit a3083ca ({SHELL}): set TESS_SHELL_CHECKOUT / TESS_SHELL_VERIFY_VENV"
-pytestmark = [pytest.mark.real_shell_check, pytest.mark.skipif(not (SHELL_CHECKOUT.is_dir() and SHELL.is_file()), reason=REASON)]
+REASON = f"needs a venv with tesserae-shell installed from commit 4cbacd2 ({SHELL}): set TESS_SHELL_VERIFY_VENV"
+pytestmark = [pytest.mark.real_shell_check, pytest.mark.skipif(not SHELL.is_file(), reason=REASON)]
 
 BATCH = 40  # files per check run: the shell prints at most 50 findings
 
@@ -112,8 +111,8 @@ def test_the_real_schema_is_read_by_the_applications_reader_and_its_coverage_rep
     assert {f.kind for f in report.fallbacks} == {"", "shadows", "tooltip"}
     no_kind = [(w, k.name) for w, k, widget in report.entries if widget.reason and not k.kind]
     recorded = [(w, k.name) for w, k, widget in coverage(schema).entries if widget.reason and not k.kind]
-    # the real schema 1.3 gives `Bar.Reveal_Key` a kind (key_chord) and it is built: 12 entries without a kind against the recorded 1.2's 13
-    assert len(recorded) - len(no_kind) == 1 and set(recorded) - set(no_kind) == {("Bar", "Reveal_Key")}
+    # the recorded schema is the real one's (1.3, tess-shell 4cbacd2): the same entries have no kind, 12 of them (`Bar.Reveal_Key` has the key_chord kind since 1.3)
+    assert len(no_kind) == 12 and sorted(recorded) == sorted(no_kind) and ("Bar", "Reveal_Key") not in no_kind
     assert len(report.entries) == len(list(real_schema.walk_keys())) + sum(len(m.params) for m in real_schema.modules.values()) + sum(len(t) for t in real_schema.tokens.values())
 
 
@@ -380,7 +379,7 @@ def test_a_shadows_block_of_a_surface_and_of_a_drawn_block_is_accepted(tmp_path,
 # -- For and If ------------------------------------------------------------------------------------------------------------------------
 
 FLOW = """---
-TDL: 0.1
+TDL: 0.2
 Name: Flow
 ---
 Shell {
@@ -393,13 +392,13 @@ Shell {
         Width: EXPAND
         Height: 32
         Children {
-          If {{ true }} {
+          If <| true |> {
             Text { Text: "yes" }
           } Else {
             Text { Text: "no" }
           }
-          For tile In {{ [1, 2, 3] }} Key {{ tile }} {
-            Text { Text: {{ tile }} }
+          For tile In <| [1, 2, 3] |> Key <| tile |> {
+            Text { Text: <| tile |> }
           }
         }
       }
@@ -414,26 +413,34 @@ def test_a_for_and_an_if_after_every_edit_of_their_parts_are_accepted(tmp_path, 
     assert [f for f in before if f.severity == "error"] == [], before
     model = DocumentModel(FLOW)
     node = {type(n).__name__: n for n in walk(model.document.root) if type(n).__name__ in ("If", "For")}
-    model.set_flow(node["If"].index_path, "condition", "{{ false }}")
-    model.set_flow(next(n for n in walk(model.document.root) if type(n).__name__ == "For").index_path, "items", "{{ [4, 5] }}")
-    model.set_flow(next(n for n in walk(model.document.root) if type(n).__name__ == "For").index_path, "key", "{{ tile }}")
+    model.set_flow(node["If"].index_path, "condition", "<| false |>")
+    model.set_flow(next(n for n in walk(model.document.root) if type(n).__name__ == "For").index_path, "items", "<| [4, 5] |>")
+    model.set_flow(next(n for n in walk(model.document.root) if type(n).__name__ == "For").index_path, "key", "<| tile |>")
     model.set_flow(next(n for n in walk(model.document.root) if type(n).__name__ == "For").index_path, "variable", "entry")
-    text = model.text.replace("Text: {{ tile }}", "Text: {{ entry }}").replace("Key {{ tile }}", "Key {{ entry }}")
-    assert "For entry In {{ [4, 5] }}" in text and "If {{ false }}" in text
+    text = model.text.replace("Text: <| tile |>", "Text: <| entry |>").replace("Key <| tile |>", "Key <| entry |>")
+    assert "For entry In <| [4, 5] |>" in text and "If <| false |>" in text
     after = check({"Shells/Flow_Shell.tdl": text}, tmp_path / "after")
     assert [f for f in after if f.severity == "error"] == [], after
-    print("For/If warnings:", sorted({(f.rule, f.message[:60]) for f in before + after}))
+    # language 0.2: a For takes several variables, written by the form's Variables row (`with_variable("i, entry")`) and read by the shell's own `For i, item In`
+    pair = DocumentModel(text)
+    loop = next(n for n in walk(pair.document.root) if type(n).__name__ == "For")
+    pair.set_flow(loop.index_path, "variable", "i, entry")
+    pair.set_flow(loop.index_path, "items", "<| enumerate([4, 5]) |>")
+    assert "For i, entry In <| enumerate([4, 5]) |> Key <| entry |>" in pair.text
+    paired = check({"Shells/Flow_Shell.tdl": pair.text}, tmp_path / "paired")
+    assert [f for f in paired if f.severity == "error"] == [], paired
+    print("For/If warnings:", sorted({(f.rule, f.message[:60]) for f in before + after + paired}))
 
 
 # -- module calls and user modules -----------------------------------------------------------------------------------------------
 
 USER_CLOCK = """---
-TDL: 0.1
+TDL: 0.2
 Name: Clock
 ---
 Module {
     Params { who { Type: string, Default: "world" } }
-    Text { Text: {{ params.who }} }
+    Text { Text: <| params.who |> }
 }
 """
 

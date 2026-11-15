@@ -1,5 +1,5 @@
 ---
-TDL: 0.1
+TDL: 0.2
 Shell: 0.1
 Name: List
 ---
@@ -13,7 +13,7 @@ Name: List
 # keys). The chosen entry takes the style state `:selected` (and the role LISTITEM carries
 # `selected`), so give the entries a class and style `.list_item:selected`; the Default stylesheet
 # does for the class `list_item`. The role is LIST. Keys to move the choice are M6.
-#   List { Selected: {{ picked }}, On_Changed: choose, Children { For ... Key {{ w.id }} { ... } } }
+#   List { Selected: <| picked |>, On_Changed: choose, Children { For ... Key <| w.id |> { ... } } }
 Module {
     Params {
         Selected { Type: string, Default: "" }
@@ -23,9 +23,9 @@ Module {
     ScrollBox {
         Name: Root
         Role: LIST
-        Label: {{ params.Label }}
-        Selection_Mode: {{ params.Selection }}
-        Chosen: {{ params.Selected }}
+        Label: <| params.Label |>
+        Selection_Mode: <| params.Selection |>
+        Chosen: <| params.Selected |>
         Width: 240
         Height: 200
         Children {

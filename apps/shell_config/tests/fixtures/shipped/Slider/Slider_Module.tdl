@@ -1,5 +1,5 @@
 ---
-TDL: 0.1
+TDL: 0.2
 Shell: 0.1
 Name: Slider
 ---
@@ -25,40 +25,40 @@ Module {
     Box {
         Name: Root
         Role: SLIDER
-        Slides: {{ params.Orientation }}
-        Value: {{ params.Value }}
-        Value_Min: {{ params.Min }}
-        Value_Max: {{ params.Max }}
-        Value_Step: {{ params.Step }}
-        Label: {{ params.Label }}
-        Width: {{ 160 if params.Orientation == "HORIZONTAL" else 20 }}
-        Height: {{ 20 if params.Orientation == "HORIZONTAL" else 160 }}
+        Slides: <| params.Orientation |>
+        Value: <| params.Value |>
+        Value_Min: <| params.Min |>
+        Value_Max: <| params.Max |>
+        Value_Step: <| params.Step |>
+        Label: <| params.Label |>
+        Width: <| 160 if params.Orientation == "HORIZONTAL" else 20 |>
+        Height: <| 20 if params.Orientation == "HORIZONTAL" else 160 |>
         Children {
             Rectangle {
                 Name: Track
                 Part: track
                 Position: ABSOLUTE
-                Left: {{ 0 if params.Orientation == "HORIZONTAL" else 8 }}
-                Top: {{ 8 if params.Orientation == "HORIZONTAL" else 0 }}
-                Width: {{ "100%" if params.Orientation == "HORIZONTAL" else 4 }}
-                Height: {{ 4 if params.Orientation == "HORIZONTAL" else "100%" }}
+                Left: <| 0 if params.Orientation == "HORIZONTAL" else 8 |>
+                Top: <| 8 if params.Orientation == "HORIZONTAL" else 0 |>
+                Width: <| "100%" if params.Orientation == "HORIZONTAL" else 4 |>
+                Height: <| 4 if params.Orientation == "HORIZONTAL" else "100%" |>
             }
             Rectangle {
                 Name: Fill
                 Part: fill
                 Position: ABSOLUTE
-                Left: {{ 0 if params.Orientation == "HORIZONTAL" else 8 }}
-                Top: {{ 8 if params.Orientation == "HORIZONTAL" else 0 }}
-                Width: {{ 0 if params.Orientation == "HORIZONTAL" else 4 }}
-                Height: {{ 4 if params.Orientation == "HORIZONTAL" else 0 }}
+                Left: <| 0 if params.Orientation == "HORIZONTAL" else 8 |>
+                Top: <| 8 if params.Orientation == "HORIZONTAL" else 0 |>
+                Width: <| 0 if params.Orientation == "HORIZONTAL" else 4 |>
+                Height: <| 4 if params.Orientation == "HORIZONTAL" else 0 |>
             }
             Circle {
                 Name: Handle
                 Part: handle
                 Diameter: 16
                 Position: ABSOLUTE
-                Left: {{ 0 if params.Orientation == "HORIZONTAL" else 2 }}
-                Top: {{ 2 if params.Orientation == "HORIZONTAL" else 0 }}
+                Left: <| 0 if params.Orientation == "HORIZONTAL" else 2 |>
+                Top: <| 2 if params.Orientation == "HORIZONTAL" else 0 |>
             }
         }
     }

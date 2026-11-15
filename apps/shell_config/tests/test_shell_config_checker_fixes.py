@@ -11,7 +11,7 @@ from tess_shell_config.widgets import ListWidget
 
 
 def shell_model(schema, *way):
-    model = DocumentModel("---\nTDL: 0.1\nName: T\n---\nShell { }\n")
+    model = DocumentModel("---\nTDL: 0.2\nName: T\n---\nShell { }\n")
     path = ()
     for step in way:
         path = add_child(model, schema, path, step)
@@ -52,7 +52,7 @@ def test_a_block_with_alternative_required_keys_gets_one_of_each_set_and_not_a_f
 
 def test_a_new_rule_selects_a_class_nothing_has_yet_and_a_type_default_in_a_style_has_no_required_keys(schema):
     assert '".new_rule"' in new_block_text(schema, "Rule", set())
-    model = DocumentModel("---\nTDL: 0.1\nName: T\n---\nStyle { }\n")
+    model = DocumentModel("---\nTDL: 0.2\nName: T\n---\nStyle { }\n")
     path = add_child(model, schema, (), "SVG")
     assert model.document.at(path).entries == (), "the keys that make an SVG are not style keys"
 

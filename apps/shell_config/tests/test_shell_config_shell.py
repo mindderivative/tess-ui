@@ -20,7 +20,7 @@ def command(fake, **kwargs):
 
 def test_the_schema_is_read_through_the_command(fake_shell):
     schema = command(fake_shell).schema()
-    assert schema.version_text == "1.2" and "Bar" in schema.roots
+    assert schema.version_text == "1.3" and "Bar" in schema.roots
     assert fake_shell.calls() == ["schema --json"]
 
 
@@ -73,7 +73,7 @@ def test_a_missing_command_is_a_message_naming_it(tmp_path, monkeypatch):
 
 def test_a_command_found_by_name_on_the_path_runs(fake_shell, monkeypatch):
     monkeypatch.setenv("PATH", f"{fake_shell.folder}{os.pathsep}/usr/bin{os.pathsep}/bin")  # the script itself needs cat and sleep
-    assert ShellCommand().schema().version_text == "1.2"
+    assert ShellCommand().schema().version_text == "1.3"
 
 
 def test_a_command_that_does_not_answer_in_time_is_a_message(fake_shell, tmp_path):

@@ -275,7 +275,7 @@ class TokenStore(Store):
 
 @dataclass(frozen=True)
 class FlowStore(Store):
-    """One part of an `If` or `For`: the `condition`, or the `items`, `key` or `variable`. The node is found by its index path, which comes from `node.index_path` and is never counted by hand."""
+    """One part of an `If` or `For`: the `condition`, or the `items`, `key` or `variable` (the names of the loop, `i, item` for a pair). The node is found by its index path, which comes from `node.index_path` and is never counted by hand."""
 
     path: IndexPath
     part: str
@@ -287,7 +287,7 @@ class FlowStore(Store):
             return Found()
         if not isinstance(node, (If, For)):
             return Found()
-        value = getattr(node, self.part, None)
+        value = ", ".join(node.variables) if isinstance(node, For) and self.part == "variable" else getattr(node, self.part, None)
         if isinstance(value, Slot):
             return Found(value=value, key=self.part)
         if isinstance(value, str):
@@ -336,7 +336,7 @@ class Cell:
         }
         data.update(self.shown)
         if self.expression:
-            data.update(field=self.text if self.is_slot else EXPRESSION_STUB, placeholder="{{ expression }}", suffix="", stepping=False, browse=False, mono=True)
+            data.update(field=self.text if self.is_slot else EXPRESSION_STUB, placeholder="<| expression |>", suffix="", stepping=False, browse=False, mono=True)
         elif self.tdl or self.readonly:
             data.update(field=self.text, mono=True, stepping=False, browse=False, suffix="")
         return data
@@ -451,12 +451,12 @@ class Form:
         self.view = view
         return view
 
-    FLOW_LABELS = {"condition": "Condition", "items": "In", "key": "Key", "variable": "Variable"}
+    FLOW_LABELS = {"condition": "Condition", "items": "In", "key": "Key", "variable": "Variables"}
     FLOW_DOCS = {
-        "condition": "The expression that decides whether the body is built, written {{ ... }}.",
-        "items": "The list the For repeats over, written {{ ... }}.",
-        "key": "What tells one repeat from another, written {{ ... }}; the body is kept for an item as long as its key stays.",
-        "variable": "The name the body uses for one item. Only this word changes: its uses inside the {{ }} slots below are not renamed.",
+        "condition": "The expression that decides whether the body is built, written <| ... |>.",
+        "items": "The list the For repeats over, written <| ... |>.",
+        "key": "What tells one repeat from another, written <| ... |>; the body is kept for an item as long as its key stays.",
+        "variable": "The name the body uses for one item, or several names separated by commas when the list holds pairs (`i, item` for `enumerate(items)`). Only these words change: their uses inside the <| |> slots below are not renamed.",
     }
 
     def _fill_flow(self, view: FormView, document: Document, node: If | For) -> None:
@@ -478,7 +478,7 @@ class Form:
             cell.error = self.errors.get(cell_id, "")
             view.rows.append(Row(f"f:{part}", key.name, key.doc, [cell], kind, key, True))
         if kind == "For":
-            view.notes.append("Renaming the variable does not rename its uses inside the {{ }} slots of the body: change those yourself.")
+            view.notes.append("Renaming the variables does not rename their uses inside the <| |> slots of the body: change those yourself.")
         view.notes.append("An If holds blocks; its Else body, if it has one, is under the Else node of the structure." if kind == "If" else "A For repeats its body for each item of the list.")
 
     def _context(self) -> Context:
@@ -791,10 +791,10 @@ class Form:
             raise Refused(cell.note or "This value cannot be edited here.")
         raw = str(edit.get("text", "")).strip()
         if cell.expression:
-            if not raw or raw.replace(" ", "") == "{{}}":
+            if not raw or raw.replace(" ", "") == "<||>":
                 raise _Skip
-            if not (raw.startswith("{{") and raw.endswith("}}")):
-                raise Refused("An expression is written {{ ... }}.")
+            if not (raw.startswith("<|") and raw.endswith("|>")):
+                raise Refused("An expression is written <| ... |>.")
             return raw
         if cell.tdl and "text" in edit:
             return raw or None
@@ -818,7 +818,7 @@ class Form:
                 return Outcome()
             else:
                 cell.store.write(model, text)
-                if text.startswith("{{"):
+                if text.startswith("<|"):
                     self.expressions.add(cell.id)
                 else:
                     self.expressions.discard(cell.id)
@@ -838,7 +838,7 @@ class Form:
         return self._apply(cell, None)
 
     def toggle_expression(self, cell_id: str) -> Outcome:
-        """Swap the cell between its widget and an expression field holding `{{ ... }}`. Switching an expression that is in the file back to the widget removes it (the property goes back to its default)."""
+        """Swap the cell between its widget and an expression field holding `<| ... |>`. Switching an expression that is in the file back to the widget removes it (the property goes back to its default)."""
         cell = self.cell(cell_id)
         if not cell.slot:
             return Outcome(False, "This key does not take an expression.", False)

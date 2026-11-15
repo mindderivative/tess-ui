@@ -31,7 +31,8 @@ from tess_shell_config.widgets import LengthWidget, NumberWidget, Refused
 HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE.parents[2] / "tests"))
 import real_session  # noqa: E402
-TESS_SHELL = Path("/home/phil/Projects/pyDev/projects/tess-shell/src/tess_shell/shipped")
+#: The shell's shipped files, copied from tess-shell 4cbacd2 (`src/tess_shell/shipped`, TDL 0.2): the byte-for-byte test no longer reads a checkout of the shell, which may be at any commit.
+SHIPPED_DIR = HERE / "fixtures" / "shipped"
 
 
 # -- (c) the shipped default configuration opens and shows no finding -----------------------------------------------------------------
@@ -58,10 +59,10 @@ def test_the_application_starts_opens_the_shells_default_configuration_and_shows
 # -- (b) open and save unchanged, byte for byte, for the shell's shipped default configuration ---------------------------------------
 
 RECORDED_FILES = sorted((RECORDED / "config_clean").rglob("*.tdl")) + sorted((RECORDED / "config_findings").rglob("*.tdl"))
-LIVE_FILES = sorted(TESS_SHELL.rglob("*.tdl")) if TESS_SHELL.is_dir() else []
+SHIPPED_FILES = sorted(SHIPPED_DIR.rglob("*.tdl"))
 
 
-@pytest.mark.parametrize("source", RECORDED_FILES + LIVE_FILES, ids=lambda p: "/".join(p.parts[-3:]))
+@pytest.mark.parametrize("source", RECORDED_FILES + SHIPPED_FILES, ids=lambda p: "/".join(p.parts[-3:]))
 def test_every_file_of_the_shells_shipped_configuration_opens_and_saves_byte_for_byte(source, tmp_path):
     folder = tmp_path / "cfg"
     target = folder / "Shells" / "X_Shell.tdl"
@@ -76,7 +77,7 @@ def test_every_file_of_the_shells_shipped_configuration_opens_and_saves_byte_for
 
 
 def test_the_shipped_files_are_there_to_be_tested():
-    assert len(RECORDED_FILES) == 3 and (not TESS_SHELL.is_dir() or len(LIVE_FILES) >= 30)
+    assert len(RECORDED_FILES) == 3 and len(SHIPPED_FILES) == 35
 
 
 # -- (a) the whole-schema coverage test lists what fell back, each with its reason ---------------------------------------------------
@@ -119,7 +120,7 @@ def test_a_refused_value_writes_nothing_in_the_form_for_every_ranged_block_key(s
     for where, key, widget in ranged(schema):
         if where.startswith(("tokens", "module")) or isinstance(widget, LengthWidget) or key.maximum is None:
             continue
-        text = f"---\nTDL: 0.1\nName: R\n---\nShell {{ Monitor {{ Name: M, Index: default, {where} {{ Name: B }} }} }}\n"
+        text = f"---\nTDL: 0.2\nName: R\n---\nShell {{ Monitor {{ Name: M, Index: default, {where} {{ Name: B }} }} }}\n"
         model = DocumentModel.from_bytes(text.encode())
         node = next((n for n in walk(model.document.root) if getattr(n, "type", "") == where), None)
         if node is None:
@@ -148,7 +149,7 @@ def test_a_token_for_a_colour_key_writes_color_dot_name_and_the_list_has_only_th
         preferred = schema.preferred_refs(key)
         assert [t.ref for t in found][: len(preferred)] == preferred, (where, key.name)
     where, key = next((w, k) for w, k in keys if k.preferred_tokens)
-    text = f"---\nTDL: 0.1\nName: T\n---\nShell {{ Monitor {{ Name: M, Index: default, {where} {{ Name: B }} }} }}\n"
+    text = f"---\nTDL: 0.2\nName: T\n---\nShell {{ Monitor {{ Name: M, Index: default, {where} {{ Name: B }} }} }}\n"
     model = DocumentModel.from_bytes(text.encode())
     node = next(n for n in walk(model.document.root) if getattr(n, "type", "") == where)
     model.select(tuple(node.index_path))

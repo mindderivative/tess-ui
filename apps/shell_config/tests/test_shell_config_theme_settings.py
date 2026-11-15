@@ -12,7 +12,7 @@ from tess_shell_config.form import Form
 from tess_shell_config.model import DocumentModel
 
 THEME = """---
-TDL: 0.1
+TDL: 0.2
 Name: Mine
 ---
 
@@ -148,7 +148,7 @@ def test_a_settings_section_is_a_page_and_a_missing_section_is_added_from_the_ad
 
 
 def test_every_settings_section_of_the_schema_has_a_page(schema):
-    text = "---\nTDL: 0.1\nName: S\n---\nSettings {\n" + "".join(f"    {s} {{ }}\n" for s in schema.settings if s != "Settings") + "}\n"
+    text = "---\nTDL: 0.2\nName: S\n---\nSettings {\n" + "".join(f"    {s} {{ }}\n" for s in schema.settings if s != "Settings") + "}\n"
     model = DocumentModel.from_bytes(text.encode())
     form = Form(schema)
     for entry in model.document.root.entries:
@@ -160,7 +160,7 @@ def test_every_settings_section_of_the_schema_has_a_page(schema):
 
 
 POPUPS = """---
-TDL: 0.1
+TDL: 0.2
 Name: Pop
 ---
 

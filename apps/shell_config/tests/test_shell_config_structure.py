@@ -13,7 +13,7 @@ from tess_shell_config.model import DocumentModel, EditError, block_names
 from tess_shell_config.tdl import walk
 
 DOC = """---
-TDL: 0.1
+TDL: 0.2
 Name: Structure_Test
 ---
 
@@ -35,7 +35,7 @@ Shell {
                 Name: C
                 Height: 2
             }
-            If {{ x }} {
+            If <| x |> {
                 Box { Name: In_If }
             }
         }
@@ -248,7 +248,7 @@ def test_a_block_can_be_added_into_a_block_that_is_inside_an_if_and_an_if_can_be
     assert diff(before, m.text) == ["-                Box { Name: In_If }", "+                Box { Name: In_If, Box { Name: Deep } }"]
     if_path = rig.at("If")
     m.move_block(if_path, None, m.neighbour(if_path, -1))
-    assert tess_dl.loads(m.text) and rig.at("If")[-1] < if_path[-1] and m.text.index("If {{ x }}") < m.text.index("Name: C")
+    assert tess_dl.loads(m.text) and rig.at("If")[-1] < if_path[-1] and m.text.index("If <| x |>") < m.text.index("Name: C")
 
 
 def test_the_root_block_cannot_be_removed_moved_or_duplicated(rig):
@@ -283,7 +283,7 @@ def test_the_add_list_is_the_allowed_children_then_the_modules_where_the_block_t
 
 
 def _scratch(root, head):
-    return f"---\nTDL: 0.1\nName: Scratch\n---\n{root} {{ {head} {{ }} }}\n" if head != root else f"---\nTDL: 0.1\nName: Scratch\n---\n{root} {{ }}\n"
+    return f"---\nTDL: 0.2\nName: Scratch\n---\n{root} {{ {head} {{ }} }}\n" if head != root else f"---\nTDL: 0.2\nName: Scratch\n---\n{root} {{ }}\n"
 
 
 def test_adding_each_allowed_child_to_every_block_of_the_schema_gives_a_file_tess_dl_parses_and_undo_brings_it_back(tmp_path, schema):

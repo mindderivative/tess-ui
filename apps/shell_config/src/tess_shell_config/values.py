@@ -16,7 +16,7 @@ from tess_dl import Document, Value
 __all__ = ["value_text", "key_problem", "quote", "parse_number", "normal_colour", "colour_text", "format_number", "is_reference", "EXPRESSION_STUB"]
 
 #: What an expression's field holds before the person types inside it.
-EXPRESSION_STUB = "{{  }}"
+EXPRESSION_STUB = "<|  |>"
 
 _ESCAPES = {"\\": "\\\\", '"': '\\"', "\n": "\\n", "\t": "\\t"}
 _NUMBER = re.compile(r"^-?(?:\d+\.?\d*|\.\d+)$")
@@ -32,7 +32,7 @@ def value_text(document: Document, value: Value) -> str:
 @cache
 def key_problem(name: str) -> str:
     """Why `tess_dl` will not write a property called `name` (a word the language reserves, a name that is not one), or `''` when it will. Asked of `tess_dl` itself, once for each name."""
-    root = tess_dl.loads("---\nTDL: 0.1\nName: Probe\n---\nProbe { }\n").root
+    root = tess_dl.loads("---\nTDL: 0.2\nName: Probe\n---\nProbe { }\n").root
     try:
         root.with_property(name, "0")
     except (ValueError, tess_dl.TDLError) as error:

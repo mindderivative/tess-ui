@@ -1,0 +1,7 @@
+---
+TDL: 0.2
+Name: T
+---
+Shell {
+  For x, x In <| xs |> Key <| x |> { }
+}

@@ -1,5 +1,5 @@
 ---
-TDL: 0.1
+TDL: 0.2
 Shell: 0.1
 Name: Battery
 ---
@@ -32,9 +32,9 @@ Module {
 
     FlexBox {
         Name: Root
-        Visible: {{ available and present }}
+        Visible: <| available and present |>
         Role: GROUP
-        Label: {{ label }}
+        Label: <| label |>
         Flex: HORIZONTAL
         Align_Items: CENTER
         Tooltip {
@@ -50,7 +50,7 @@ Module {
                     Padding: [12, 8, 12, 8]
                     Children {
                         Text {
-                            Text: {{ tooltip }}
+                            Text: <| tooltip |>
                             Width: AUTO
                             Height: AUTO
                             Font_Size: 14
@@ -63,47 +63,47 @@ Module {
         Children {
             FlexBox {
                 Name: Level
-                Visible: {{ not low and not critical }}
+                Visible: <| not low and not critical |>
                 Flex: HORIZONTAL
                 Align_Items: CENTER
                 Spacing: 4
                 Children {
                     SVG {
                         Name: Glyph
-                        Icon: {{ icon }}
+                        Icon: <| icon |>
                         Width: 16
                         Height: 16
                         A11y_Hidden: true
                     }
-                    If {{ params.show_percent }} {
+                    If <| params.show_percent |> {
                         Text {
                             Name: Percent
                             Class: battery_text
-                            Text: {{ percent }} %
+                            Text: <| percent |> %
                         }
                     }
                 }
             }
             FlexBox {
                 Name: Level_Low
-                Visible: {{ low and not critical }}
+                Visible: <| low and not critical |>
                 Flex: HORIZONTAL
                 Align_Items: CENTER
                 Spacing: 4
                 Children {
                     SVG {
                         Name: Glyph_Low
-                        Icon: {{ icon_alert }}
+                        Icon: <| icon_alert |>
                         Width: 24
                         Height: 16
                         A11y_Hidden: true
                         Foreground: $color.warning
                     }
-                    If {{ params.show_percent }} {
+                    If <| params.show_percent |> {
                         Text {
                             Name: Percent_Low
                             Class: battery_text
-                            Text: {{ percent }} %
+                            Text: <| percent |> %
                             Foreground: $color.warning
                         }
                     }
@@ -111,24 +111,24 @@ Module {
             }
             FlexBox {
                 Name: Level_Critical
-                Visible: {{ critical }}
+                Visible: <| critical |>
                 Flex: HORIZONTAL
                 Align_Items: CENTER
                 Spacing: 4
                 Children {
                     SVG {
                         Name: Glyph_Critical
-                        Icon: {{ icon_alert }}
+                        Icon: <| icon_alert |>
                         Width: 24
                         Height: 16
                         A11y_Hidden: true
                         Foreground: $color.error
                     }
-                    If {{ params.show_percent }} {
+                    If <| params.show_percent |> {
                         Text {
                             Name: Percent_Critical
                             Class: battery_text
-                            Text: {{ percent }} %
+                            Text: <| percent |> %
                             Foreground: $color.error
                         }
                     }

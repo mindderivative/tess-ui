@@ -1,0 +1,7 @@
+---
+TDL: 0.2
+Name: T
+---
+Shell {
+  For i, item In <| enumerate(items) |> Key <| item['id'] |> { Label { Text: <| i |> } }
+}

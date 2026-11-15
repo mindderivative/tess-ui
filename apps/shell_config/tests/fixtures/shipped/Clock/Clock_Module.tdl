@@ -1,5 +1,5 @@
 ---
-TDL: 0.1
+TDL: 0.2
 Shell: 0.1
 Name: Clock
 ---
@@ -36,7 +36,7 @@ Module {
                     Padding: [12, 8, 12, 8]
                     Children {
                         Text {
-                            Text: {{ tooltip }}
+                            Text: <| tooltip |>
                             Width: AUTO
                             Height: AUTO
                             Font_Size: 14
@@ -50,7 +50,7 @@ Module {
             Text {
                 Name: Face
                 Class: clock_text
-                Text: {{ time }}
+                Text: <| time |>
             }
         }
     }

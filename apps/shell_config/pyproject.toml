@@ -19,8 +19,7 @@ classifiers = [
 
 dependencies = [
     "tesserae-ui>=0.6.0.1",  # the toolkit: this repository's root; for development install it editable first (`pip install -e ../..`)
-    # tess_dl, pinned to a full commit while its edit functions and formatter are unreleased; a version pin once tess-dl publishes them.
-    "tesserae-dl @ git+https://github.com/mindderivative/tess-dl@a6f101070f6bb17c0f54eb4b2c32cc4455f18520",
+    "tesserae-dl>=0.2.0,<0.3",  # tess_dl on PyPI: language 0.2 (`<| |>` slots, a For with several variables) and the edit functions and formatter this application uses
 ]
 
 [project.scripts]
@@ -28,9 +27,6 @@ tesserae-shell-config = "tess_shell_config.cli:main"
 
 [project.urls]
 Repository = "https://github.com/mindderivative/tess-ui"
-
-[tool.hatch.metadata]
-allow-direct-references = true  # the pinned tess-dl commit
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tess_shell_config"]

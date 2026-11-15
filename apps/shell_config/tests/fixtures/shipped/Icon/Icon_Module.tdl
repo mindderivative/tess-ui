@@ -1,5 +1,5 @@
 ---
-TDL: 0.1
+TDL: 0.2
 Shell: 0.1
 Name: Icon
 ---
@@ -19,16 +19,16 @@ Module {
     FlexBox {
         Name: Root
         A11y_Hidden: true
-        Width: {{ params.Size }}
-        Height: {{ params.Size }}
+        Width: <| params.Size |>
+        Height: <| params.Size |>
         Align_Items: CENTER
         Justify_Content: CENTER
         Children {
-            If {{ params.Icon[:1] == "<" }} {
-                SVG { Source: {{ params.Icon }}, Width: {{ params.Size }}, Height: {{ params.Size }} }
+            If <| params.Icon[:1] == "<" |> {
+                SVG { Source: <| params.Icon |>, Width: <| params.Size |>, Height: <| params.Size |> }
             } Else {
-                If {{ params.Icon != "" }} {
-                    Bitmap { Source: {{ params.Icon }}, Width: {{ params.Size }}, Height: {{ params.Size }} }
+                If <| params.Icon != "" |> {
+                    Bitmap { Source: <| params.Icon |>, Width: <| params.Size |>, Height: <| params.Size |> }
                 }
             }
         }

@@ -11,7 +11,7 @@ from tess_shell_config.usermodules import read_module, user_modules
 from test_shell_config_window import CONFIG
 
 MODULE = """---
-TDL: 0.1
+TDL: 0.2
 Name: Hello
 ---
 
@@ -26,7 +26,7 @@ Module {
     }
 
     FlexBox {
-        Children { Text { Text: {{ who }} } }
+        Children { Text { Text: <| who |> } }
     }
 }
 """
@@ -39,7 +39,7 @@ def test_a_module_files_params_are_read_with_name_type_and_default():
         ("who", "string", '"world"'), ("size", "number", "12"), ("shout", "boolean", None), ("odd", "widget_of_the_future", None), ("loud", "bool", "true"), ("bare", "", None)]
 
 
-@pytest.mark.parametrize("text", ["not tdl at all", "---\nTDL: 0.1\nName: X\n---\nShell { }\n", "---\nTDL: 0.1\nName: X\n---\nModule { Params { a { Type: string } }\n"])
+@pytest.mark.parametrize("text", ["not tdl at all", "---\nTDL: 0.2\nName: X\n---\nShell { }\n", "---\nTDL: 0.2\nName: X\n---\nModule { Params { a { Type: string } }\n"])
 def test_a_file_that_is_not_a_module_or_does_not_parse_is_not_a_user_module(text, schema):
     assert read_module("Modules/X/X_Module.tdl", text, "X") is None
     assert user_modules([("Modules/X/X_Module.tdl", text, "X")], schema) == {}
@@ -87,7 +87,7 @@ def test_the_session_adds_the_users_modules_to_the_schema_and_follows_a_changed_
 
 
 SHELL = """---
-TDL: 0.1
+TDL: 0.2
 Name: Calls
 ---
 

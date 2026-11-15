@@ -298,7 +298,7 @@ def _rows(rows):
 
 
 def test_a_file_that_is_not_utf8_opens_read_only_and_saves_its_bytes(folder, tmp_path):
-    raw = b"---\nTDL: 0.1\nName: Odd\n---\nShell { }\n# \xff\n"
+    raw = b"---\nTDL: 0.2\nName: Odd\n---\nShell { }\n# \xff\n"
     (folder / "Shells" / "Odd_Shell.tdl").write_bytes(raw)
     w = opened(folder, tmp_path)
     w.vm.open_file("Shells/Odd_Shell.tdl")

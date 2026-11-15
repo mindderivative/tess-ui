@@ -1,5 +1,5 @@
 ---
-TDL: 0.1
+TDL: 0.2
 Shell: 0.1
 Name: Marquee_Text
 ---
@@ -24,12 +24,12 @@ Module {
     Marquee {
         Name: Root
         Width: 160
-        Text: {{ params.Text }}
-        Speed: {{ params.Speed }}
-        Pause: {{ params.Pause }}
-        Direction: {{ params.Direction }}
-        Loop: {{ params.Loop }}
-        Tooltip: {{ params.Text }}
+        Text: <| params.Text |>
+        Speed: <| params.Speed |>
+        Pause: <| params.Pause |>
+        Direction: <| params.Direction |>
+        Loop: <| params.Loop |>
+        Tooltip: <| params.Text |>
         Tooltip_When_Disabled: true
     }
 }

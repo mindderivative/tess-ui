@@ -1,5 +1,5 @@
 ---
-TDL: 0.1
+TDL: 0.2
 Shell: 0.1
 Name: Tray_Menu
 ---
@@ -29,24 +29,24 @@ Module {
         Flex: VERTICAL
         Children {
             Menu {
-                Label: {{ caller.data.title }}
+                Label: <| caller.data.title |>
                 Children {
-                    For e In {{ caller.data.menus["0"] if params.Level == 1 else caller.data.menus[caller.use.params.Id] }} Key {{ e.id }} {
+                    For e In <| caller.data.menus["0"] if params.Level == 1 else caller.data.menus[caller.use.params.Id] |> Key <| e.id |> {
                         MenuItem {
-                            Text: {{ e.text }}
-                            Icon: {{ e.icon }}
-                            Shortcut_Text: {{ e.shortcut }}
-                            Separator: {{ e.separator }}
-                            Submenu: {{ e.submenu }}
-                            Id: {{ e.id }}
-                            Label: {{ e.label }}
-                            Enabled: {{ e.enabled }}
+                            Text: <| e.text |>
+                            Icon: <| e.icon |>
+                            Shortcut_Text: <| e.shortcut |>
+                            Separator: <| e.separator |>
+                            Submenu: <| e.submenu |>
+                            Id: <| e.id |>
+                            Label: <| e.label |>
+                            Enabled: <| e.enabled |>
                             On_Click {
                                 Action: pick
-                                id: {{ e.id }}
-                                submenu: {{ e.submenu }}
-                                service: {{ caller.data.service }}
-                                path: {{ caller.data.path }}
+                                id: <| e.id |>
+                                submenu: <| e.submenu |>
+                                service: <| caller.data.service |>
+                                path: <| caller.data.path |>
                             }
                         }
                     }
