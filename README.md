@@ -95,7 +95,7 @@ pip install tesserae-ui
 ```
 
 That's all: it installs Tesserae and everything it needs, `tess_re`'s engine
-included, as prebuilt wheels. It needs **Python 3.12 or newer**, on Linux
+included, as prebuilt wheels. It needs **Python 3.14 or newer**, on Linux
 x86-64, macOS on Apple silicon or Windows x64 (elsewhere, pip builds `tess_re`
 from source, which needs Rust). The PyPI name is `tesserae-ui` (`tesserae`
 on PyPI is an unrelated project); the import name is `tess_ui`. If you installed `tess-ui`, a name it was briefly published under, run

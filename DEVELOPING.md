@@ -18,7 +18,7 @@ sudo dnf install git python3 python3-devel gh gcc pkgconf-pkg-config fontconfig-
 On Arch the headers ship in the `python` and `fontconfig` packages and `venv` is built in, so there are no `-devel` or `python3-venv` packages to add. The suite and
 `mkdocs build --strict` were checked on CachyOS (Python 3.14.7, Wayland session): 7791 passed, 4 skipped.
 
-Python 3.12 or newer (the developer's was 3.14). `gh auth login` once, with the `project` scope (`gh auth refresh -s project`), to use the board.
+Python 3.14 or newer. `gh auth login` once, with the `project` scope (`gh auth refresh -s project`), to use the board.
 
 ## 2. The checkout and the venv
 

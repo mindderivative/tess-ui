@@ -8,7 +8,7 @@ version = "0.6.0.1"
 description = "A pyCopper-style declarative Python GUI framework, powered by the Tesserae Render Engine (tess_re)."
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.12"  # the user's floor (M76); 3.9 would also need a compiler for materialyoucolor
+requires-python = ">=3.14"  # tess_dl (TDL, the format of Tesserae's files) needs 3.14; it was 3.12 before the switch to TDL (design/tdl-switch-plan.md)
 authors = [{ name = "Phil Hodgins", email = "philip.a.hodgins@gmail.com" }]
 keywords = ["gui", "desktop", "declarative", "mvvm", "material-design"]
 classifiers = [
@@ -19,8 +19,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: User Interfaces",
     "Topic :: Software Development :: Libraries :: Application Frameworks",
@@ -29,6 +27,7 @@ classifiers = [
 dependencies = [
     "tesserae-engine==0.6.7",  # tess_re, on PyPI as tesserae-engine (`import tess_re`; it was `import tre` before 0.6.0), pinned to the release the whole suite was run on. A new engine release is tried first, by the user: a new engine line is a new Tesserae line. PyPI's own `tre` is an unrelated regex library.
     "pyyaml>=6.0",
+    "tesserae-dl>=0.2.0,<0.3",  # tess_dl: TDL, the format of views, stylesheets and themes
     "Pillow>=10.0",
     "watchfiles>=1.0",
     "loguru>=0.7",
@@ -43,9 +42,7 @@ Repository = "https://github.com/mindderivative/tess-ui"
 
 [project.optional-dependencies]
 build = ["pyinstaller>=6.10"]
-# TDL (language 0.2): reading a `.tdl` file and `tesserae migrate-tdl` need `tess_dl`, which needs Python 3.14. Without it Tesserae loads its shipped YAML files and refuses a project's `.tdl` ones (piece 10 of design/tdl-switch-plan.md makes it required).
-tdl = ["tesserae-dl>=0.2.0,<0.3; python_version >= '3.14'"]
-dev = ["pytest>=8.0", "pyinstaller>=6.10", "jsonschema>=4.17", "ruff>=0.6", "mypy>=1.10", "tesserae-dl>=0.2.0,<0.3; python_version >= '3.14'"]
+dev = ["pytest>=8.0", "pyinstaller>=6.10", "jsonschema>=4.17", "ruff>=0.6", "mypy>=1.10"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tess_ui"]
