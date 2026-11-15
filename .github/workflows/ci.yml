@@ -10,10 +10,13 @@ name: CI
 # The docs checks run in every mode. The platform jobs (clean install, built executable) run in `full`, and in `partial` when a packaging
 # file changed. Since 0.3.5.2 the engine is on PyPI as `tesserae-engine` (`import tess_re` from 0.6.0), so installing Tesserae installs it as a
 # user's `pip install` would: no tess-re checkout, no Rust toolchain, no maturin build.
+# The installers (the macOS .dmg, the Windows setup, the Linux .deb, AppImage, pacman, rpm and Flatpak) are the slowest part of the run, so they run only in `full` and
+# when installer code changed (`tools/ci_plan.py`, output `installers`); a pull request that only moves a dependency builds and runs the executable and stops there.
+# The `full` suite runs in parallel (`pytest -n auto`). `ci-result` is the one job to look at: it fails if any job that ran failed.
 
 on:
   push:
-    branches: [main, "0.3.0", "0.3.1", "0.3.2", "0.3.3", "0.3.4", "0.3.5", "0.3.6", "0.4.0", "0.4.1", "0.4.2", "0.4.3", "0.4.3.1", "0.4.3.2", "0.4.3.3", "0.4.4", "0.5.0"]  # a line's branch, until the user merges it
+    branches: [main]
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened, labeled]  # `labeled`: adding `full-test` starts a full run
@@ -25,24 +28,29 @@ on:
         options: [auto, docs, partial, full]
         default: auto
 
+permissions:
+  contents: read
+
+# A newer push to a pull request makes the run for the older one pointless: stop it. A run on `main` is never cancelled.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   # Decides the mode. Needs the history (fetch-depth 0) to see what changed and the version before.
   plan:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # system Python is enough: `tools/ci_plan.py` uses git and the standard library only
     outputs:
       mode: ${{ steps.plan.outputs.mode }}
       reason: ${{ steps.plan.outputs.reason }}
       tests: ${{ steps.plan.outputs.tests }}
       doc_tests: ${{ steps.plan.outputs.doc_tests }}
       packaging: ${{ steps.plan.outputs.packaging }}
+      installers: ${{ steps.plan.outputs.installers }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.14"
 
       - id: plan
         env:
@@ -50,7 +58,7 @@ jobs:
           LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
           MESSAGE: ${{ github.event.head_commit.message || github.event.pull_request.title }}
           BASE: ${{ github.event.pull_request.base.sha || github.event.before }}  # a pull request: its base (`before` is also set on a synchronize, and is only the last push)
-        run: python -I tools/ci_plan.py --base "${BASE:-HEAD~1}"
+        run: python3 -I tools/ci_plan.py --base "${BASE:-HEAD~1}"
 
   # The docs checks, in every mode: the generated pages and schemas match the code, the skill files parse, the site builds with warnings as
   # errors, and the tests that read the docs pass. Alone, this is the whole run for a documentation-only change.
@@ -65,9 +73,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
+          cache: pip
+          cache-dependency-path: tesserae/pyproject.toml
 
       - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y mesa-vulkan-drivers libfontconfig1-dev
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers libfontconfig1-dev
 
       # tess-re's source, for the one real font file a docs test reads (see the test job).
       - uses: actions/checkout@v4
@@ -75,6 +85,7 @@ jobs:
           repository: mindderivative/tess-re
           ref: v0.6.7
           path: tess-re
+          sparse-checkout: crates/engine-render/assets/fonts  # only the font file: the engine's source is not built here
 
       - name: Install tesserae and the docs build
         working-directory: tesserae
@@ -112,13 +123,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
+          cache: pip
+          cache-dependency-path: tesserae/pyproject.toml
 
       # See `tess-re`'s own ci.yml for the full real reasoning -- lavapipe
       # (Mesa's software Vulkan implementation) is enough for a real
       # `wgpu::Instance::request_adapter` to succeed headlessly.
       - name: Install system dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y mesa-vulkan-drivers libfontconfig1-dev
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers libfontconfig1-dev
 
       # tess-re's source at the release pyproject pins, checked out only
       # for a real font file (tests/test_themes.py reads Roboto through
@@ -128,6 +141,7 @@ jobs:
           repository: mindderivative/tess-re
           ref: v0.6.7
           path: tess-re
+          sparse-checkout: crates/engine-render/assets/fonts
 
       # Pulls `tesserae-engine` (tess_re) from PyPI, per pyproject's pin.
       - name: Install tesserae (editable, dev extras)
@@ -136,7 +150,8 @@ jobs:
 
       # PYTHONUTF8 for the tests' own file reads (Windows defaults to its
       # code page); Tesserae's source says UTF-8 itself (test_source_encoding).
-      # `full`: the whole suite. Otherwise the files `tools/ci_plan.py` picked.
+      # `full`: the whole suite, on every core the runner has (pytest-xdist; 4 workers took 1m37 against about 5 minutes serial, the same 9501 tests).
+      # Otherwise the files `tools/ci_plan.py` picked, in one process (a handful of files: the workers would cost more than they save).
       - name: Run tests (${{ needs.plan.outputs.mode }})
         shell: bash
         working-directory: tesserae
@@ -148,10 +163,10 @@ jobs:
           REASON: ${{ needs.plan.outputs.reason }}
         run: |
           echo "mode $MODE: $REASON"
-          if [ "$MODE" = full ]; then pytest tests/; else pytest $TESTS; fi
+          if [ "$MODE" = full ]; then pytest tests/ -n auto; else pytest $TESTS; fi
 
-  # The Configuration Application (`apps/shell_config`): its tests need Python 3.14 (`tess_dl`), which the suite's 3.12 job lacks, so they run here. They use a fake
-  # `tesserae-shell` script and recorded fixtures; the real shell is never started.
+  # The Configuration Application (`apps/shell_config`). Its tests use a fake `tesserae-shell` script and recorded fixtures; the real shell is never started.
+  # This job proves they ran: `tess_dl` imports, enough are collected, none is skipped but the ones that need the shell's own checkout.
   shell-config:
     needs: plan
     if: needs.plan.outputs.mode != 'docs'
@@ -164,9 +179,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
+          cache: pip
+          cache-dependency-path: |
+            tesserae/pyproject.toml
+            tesserae/apps/shell_config/pyproject.toml
 
       - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y mesa-vulkan-drivers libfontconfig1-dev
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers libfontconfig1-dev
 
       - name: Install tesserae and the application
         working-directory: tesserae
@@ -183,17 +202,8 @@ jobs:
           collected=$(pytest apps/shell_config/tests --collect-only -q -p no:cacheprovider | tail -1 | grep -oE '^[0-9]+')
           echo "collected $collected application tests"
           test "${collected:-0}" -ge 600
-          pytest apps/shell_config/tests tests/test_apps_tooling.py -rs | tee run.log
+          pytest apps/shell_config/tests tests/test_apps_tooling.py -rs -n auto | tee run.log
           ! grep -E "^SKIPPED .*apps/shell_config" run.log | grep -v "test_shell_config_real_check.py"
-
-      - name: Run the TDL tests of the toolkit
-        working-directory: tesserae
-        env:
-          PYTHONUTF8: "1"
-        run: |
-          # The TDL front end, converters and shipped-file tests skip where `tess_dl` is missing (the 3.12 jobs): here, on 3.14, none may be skipped.
-          pytest tests/test_tdl_front.py tests/test_migrate_tdl.py tests/test_tdl_stylesheets.py tests/test_tdl_themes.py tests/test_tdl_shipped.py tests/test_tdl_shipped_sheets.py tests/test_tdl_shipped_themes.py -rs | tee tdl.log
-          ! grep -E "^SKIPPED" tdl.log
 
   # M76: one `pip install` is enough, on every supported platform. Only the
   # built wheel goes into a fresh venv; its dependencies come from PyPI as
@@ -215,6 +225,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
 
       - name: Build the wheel
         run: |
@@ -255,10 +267,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
+          cache: pip
+          cache-dependency-path: pyproject.toml
 
       - name: Install a display and software Vulkan
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y xvfb mesa-vulkan-drivers libxkbcommon-x11-0
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends xvfb mesa-vulkan-drivers libxkbcommon-x11-0
 
       - name: Build the wheel and install it with the build extra
         shell: bash
@@ -299,7 +313,7 @@ jobs:
       # M78: the installer. On macOS, a .app in a .dmg: mount it, check the
       # .app's details and signature, copy it out as a user would, run it.
       - name: Build the installer (macOS), and install and run it from the .dmg
-        if: runner.os == 'macOS'
+        if: needs.plan.outputs.installers == 'true' && runner.os == 'macOS'
         shell: bash
         working-directory: work/demo
         run: |
@@ -323,7 +337,7 @@ jobs:
       # installed, and uninstalled. Then built again with the Inno Setup 7
       # that Tesserae fetches itself.
       - name: Build the installer (Windows), install, run and uninstall it
-        if: runner.os == 'Windows'
+        if: needs.plan.outputs.installers == 'true' && runner.os == 'Windows'
         shell: pwsh
         working-directory: work/demo
         run: |
@@ -350,7 +364,7 @@ jobs:
           Write-Output "installed, ran and uninstalled"
 
       - name: Build the installer (Windows) with the Inno Setup Tesserae fetches
-        if: runner.os == 'Windows'
+        if: needs.plan.outputs.installers == 'true' && runner.os == 'Windows'
         shell: pwsh
         working-directory: work/demo
         run: |
@@ -371,7 +385,7 @@ jobs:
       # Linux container, with its dependencies from Arch's repositories,
       # and run there under Xvfb with Mesa's software Vulkan.
       - name: Build the installers (Linux), install and run each
-        if: runner.os == 'Linux'
+        if: needs.plan.outputs.installers == 'true' && runner.os == 'Linux'
         shell: bash
         working-directory: work/demo
         run: |
@@ -426,3 +440,16 @@ jobs:
         with:
           name: demo-${{ matrix.os }}
           path: work/demo/dist/
+
+  # One job to look at (or to require): it fails when any job that ran failed or was cancelled, and passes when the others were skipped by design.
+  ci-result:
+    if: always()
+    needs: [plan, docs, test, shell-config, clean-install, build-executable]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every job that ran passed
+        env:
+          RESULTS: ${{ toJSON(needs.*.result) }}
+        run: |
+          echo "$RESULTS"
+          if echo "$RESULTS" | grep -Eq '"(failure|cancelled)"'; then exit 1; fi

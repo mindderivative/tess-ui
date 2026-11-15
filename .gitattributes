@@ -1,0 +1,11 @@
+# Text files are checked out with LF on every system. Windows' default (CRLF) made the checked-in .tdl files differ from what the converter writes, and failed the
+# tests that compare them (tests/test_tdl_shipped*.py). A test that wants CRLF writes it itself.
+* text=auto eol=lf
+*.png binary
+*.ttf binary
+*.otf binary
+*.ico binary
+*.icns binary
+*.gif binary
+*.jpg binary
+*.svgz binary

@@ -29,6 +29,8 @@ class Fake:
     """A file system in a dict, for what a disk will not do on request: errors, vanishing folders, a huge listing."""
 
     def __init__(self, folders):
+        if os.name == "nt":
+            pytest.skip("this file system is keyed by POSIX paths ('/a'); the browser's own path logic is checked on a real disk by the tmp_path tests")
         self.folders = {k: list(v) for k, v in folders.items()}
         self.denied = set()
         self.made = []
@@ -235,7 +237,8 @@ def test_the_crumbs_run_from_the_top_to_the_folder_and_from_the_root_when_there_
     inner = base / "Alpha" / "deeper"
     plain = FileBrowser(start=str(inner))
     trail = plain.crumbs
-    assert trail[0] == {"name": os.path.splitroot(str(inner))[0] + os.sep, "path": os.sep} or trail[0]["path"] == os.path.splitroot(str(inner))[1]
+    anchor = os.path.splitdrive(str(inner))[0] + os.sep  # "/" on POSIX, "C:\" on Windows
+    assert trail[0] == {"name": anchor, "path": anchor}
     assert [c["name"] for c in trail][-3:] == [base.name, "Alpha", "deeper"] and trail[-1]["path"] == str(inner)
     confined = FileBrowser(start=str(inner), root=str(base))
     assert [c["name"] for c in confined.crumbs] == [base.name, "Alpha", "deeper"]
@@ -314,7 +317,7 @@ def test_the_local_file_system_explains_a_failure_in_words(tmp_path):
         fs.list_dir(str(tmp_path / "f"))
     with pytest.raises(FileSystemError, match="name is taken"):
         fs.make_dir(str(tmp_path))
-    if os.geteuid() != 0:
+    if os.name != "nt" and os.geteuid() != 0:  # POSIX permissions: chmod(0) does not lock a folder on Windows
         locked = tmp_path / "locked"
         locked.mkdir()
         locked.chmod(0)

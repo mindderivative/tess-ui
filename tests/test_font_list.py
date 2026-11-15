@@ -2,6 +2,7 @@
 a fake `fc-list` under `tmp_path`. Nothing here runs the real `fc-list` or reads outside `tmp_path`."""
 
 import stat
+import sys
 
 import pytest
 
@@ -38,7 +39,9 @@ def provider():
 
 
 def fake_fc_list(tmp_path, body):
-    """A `fc-list` script in its own folder, and `PATH` set to that folder only."""
+    """A `fc-list` script in its own folder, and `PATH` set to that folder only. A shell script: Windows has neither it nor `fc-list` (the list falls back to a text field there)."""
+    if sys.platform == "win32":
+        pytest.skip("the fake fc-list is a shell script, and Windows has no fc-list")
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir(exist_ok=True)
     script = bin_dir / "fc-list"
