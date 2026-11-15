@@ -172,13 +172,45 @@ def test_editing_the_window_view_adds_and_removes_screens(project):
     assert watcher.poll() is True
     view.window.advance(16)
     assert "Pref" not in app._registered
+    assert app.current == "Home"  # the screen the app is on is still there
     with pytest.raises(KeyError):
         app.navigate_to("settings")
     write(original)  # and comes back
     assert watcher.poll() is True
     view.window.advance(16)
+    assert app.current == "Home"
     app.navigate_to("settings")
     assert app.current == "Pref" and view.node("root.screens.settings").get("visible")
+
+
+def _reload(view, app, path, text):
+    watcher = ComposedWatcher(view, view.source, app._composed_docs, lambda library, doc: app._composed_rules(library, doc=doc)[0])
+    path.write_text(text)
+    stat = path.stat()
+    os.utime(path, ns=(stat.st_atime_ns, stat.st_mtime_ns + 5_000_000_000))
+    assert watcher.poll() is True
+    view.window.advance(16)
+
+
+def test_a_reload_of_the_window_view_keeps_the_current_screen(project):
+    """The screens are built again by a reload; the one the app is on is still there, so it stays current and showing."""
+    app, view = _app(project)
+    app.navigate_to("settings")
+    assert app.current == "Pref"
+    path = project / "Views" / "Window_View.tdl"
+    _reload(view, app, path, path.read_text().replace("Title: App", "Title: Renamed"))
+    assert app.current == "Pref" and app.current_screen.get() == "Pref"
+    assert _shown(view) == {"main": False, "settings": True}
+    app.navigate_to("")  # and it navigates on from there
+    assert app.current == "Home" and _shown(view) == {"main": True, "settings": False}
+
+
+def test_a_reload_that_removes_the_current_screen_falls_back_to_the_window(project):
+    app, view = _app(project)
+    app.navigate_to("settings")
+    path = project / "Views" / "Window_View.tdl"
+    _reload(view, app, path, path.read_text().replace("        Pref { Name: settings, Route: settings }\n", ""))
+    assert app.current == "window" and "Pref" not in app._registered
 
 
 def test_a_rail_of_screens_follows_the_current_screen(project):

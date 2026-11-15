@@ -337,6 +337,12 @@ class ComposedView(View):
             self._effect = Effect(self._sync, deferred=True)  # the old composition drawn again
             raise
         old.dispose()
+        app = app_of(self.window)
+        frame = getattr(app, "_frame", None)
+        if app is not None and frame is not None and frame.view is self:  # a lazy screen the app is on was built before and is not now: build it again, or the window shows nothing
+            for record in new.routes:
+                if record.view == app._current:
+                    record.activate()
 
     def _sync(self) -> None:
         spec, frames = self._lowered()  # read inside the effect: these are the values the view depends on

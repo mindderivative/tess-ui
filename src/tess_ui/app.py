@@ -1115,10 +1115,11 @@ class App:
         self._registered[name] = _Registered(view, viewmodel)
         self.route(route, name)
 
-    def _unregister_screen(self, name: str) -> None:
+    def _unregister_screen(self, name: str, *, rebuilt: bool = False) -> None:
+        """Forgets the screen `name`. A `rebuilt` one (a hot reload made its view again) is registered again at once, so it stays the current screen if it was."""
         self._registered.pop(name, None)
         self._routes = [r for r in self._routes if r.name != name]
-        if self._current == name:
+        if self._current == name and not rebuilt:
             self._current = self._frame.name if self._frame is not None else None
             self._screen_name.set(self._current)
 

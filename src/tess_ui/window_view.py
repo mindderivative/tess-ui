@@ -61,7 +61,7 @@ class Frame:
         wanted = self._routed()
         for screen in list(self.screens):
             if screen not in wanted or app._registered[screen].view is not wanted[screen][1]:
-                app._unregister_screen(screen)
+                app._unregister_screen(screen, rebuilt=screen in wanted)
                 del self.screens[screen]
         for screen, (node_id, component, viewmodel, route) in wanted.items():
             if screen not in self.screens:
