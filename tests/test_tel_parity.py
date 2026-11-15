@@ -3,14 +3,9 @@
 `tests/tel_parity.py` collects the texts and runs both evaluators on sample scopes; the differences that remain are listed, each with its reason and the kind of
 fix it needs, in `tests/tel_parity_known.json`. This test fails on a difference that is not listed (a new one) and on a listed one that is gone (so the list only
 shrinks): when it is gone, delete its entry.
-
-Needs `tess_el` (the TEL library, git SHA 8b56fd0b02e6ade68fa4e05bd075ebe556d21c2a of tess-el), which is not a dependency of tess-ui yet: without it the module
-is skipped.
 """
 
 import pytest
-
-pytest.importorskip("tess_el", reason="tess_el (tess-el at 8b56fd0b02e6ade68fa4e05bd075ebe556d21c2a) is not installed; it is not a dependency of tess-ui yet")
 
 import tel_parity  # noqa: E402  (tests/ is on the path)
 from tess_ui import expr, tel  # noqa: E402

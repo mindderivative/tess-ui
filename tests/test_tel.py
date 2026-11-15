@@ -1,8 +1,6 @@
 """The adapter that evaluates tess-ui's expressions with TEL (`tess_ui.tel`, piece 11a of `design/tdl-switch-plan.md`): name lookup order, the built-in functions, what an
 evaluation reads (the reactive layer), the errors, and the places where it differs from `tess_ui.expr`. `tests/test_tel_parity.py` runs both evaluators over every
 expression of the repository; these tests say why the adapter is shaped as it is.
-
-Needs `tess_el` (tess-el at git SHA 8b56fd0b02e6ade68fa4e05bd075ebe556d21c2a), which tess-ui does not depend on yet: without it the module is skipped.
 """
 
 import datetime
@@ -10,8 +8,6 @@ import os
 from types import SimpleNamespace
 
 import pytest
-
-pytest.importorskip("tess_el", reason="tess_el (tess-el at 8b56fd0b02e6ade68fa4e05bd075ebe556d21c2a) is not installed; it is not a dependency of tess-ui yet")
 
 from tess_ui import expr, tel  # noqa: E402
 from tess_ui.reactive import Computed, Effect, Signal  # noqa: E402
