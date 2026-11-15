@@ -24,7 +24,7 @@ def found():
 def test_the_harness_has_something_to_compare():
     groups = tel_parity.collect()
     sizes = {name: len(units) for name, units in groups.items()}
-    assert sizes["views"] >= 800 and sizes["docs"] >= 150 and sizes["tests"] >= 150 and sizes["corpus"] >= 300, sizes
+    assert sizes["views"] >= 1400 and sizes["docs"] >= 250 and sizes["tests"] >= 350 and sizes["corpus"] >= 300, sizes
     kinds = {u.kind for units in groups.values() for u in units}
     assert kinds == {"expr", "template"}
 

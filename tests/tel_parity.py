@@ -5,9 +5,9 @@
     python tests/tel_parity.py --speed         # the 20 heaviest expressions, both evaluators timed
     python tests/tel_parity.py --info          # how often the error text and position of the two agree
 
-*What is collected* (`collect`): each `{{ }}` text (a template), and each bare expression a view writes: `if:`, `for:` (its iterable), `key:`, and the right-hand
-sides and call arguments of a handler's statements, from the shipped YAML (`src`, `examples`, `apps`, `tools`), the fenced `yaml` blocks of `docs`, the strings in
-`tests/*.py` that are YAML or a `{{ }}` text, the `{{ }}` texts in the docs' prose, and every one-line string of the expression language's own tests
+*What is collected* (`collect`): each `<| |>` slot, each `{{ }}` text (a template, in what is left of the old form), and each bare expression a view writes: `if:`, `for:` (its iterable), `key:`, and the right-hand
+sides and call arguments of a handler's statements, from the shipped TDL (`.tdl` in `src`, `examples`, `apps`, `tools`: the `<| |>` slots, which also carry a handler's `Set`/`Call` values), the fenced blocks of
+`docs` (`<| |>` slots; the `yaml` blocks that show the old form), the strings in `tests/*.py` that hold `<| |>` slots, are YAML or a `{{ }}` text, the `{{ }}` texts in the docs' prose, and every one-line string of the expression language's own tests
 (`CORPUS_FILES`: the grammar table, the sandbox escapes). Unique texts only.
 
 *What is compared* (`compare`): compiling (both accept, or both refuse), the names read, and the outcome in each of `SCOPES` sample scopes made from the names the
@@ -100,18 +100,37 @@ def _yaml_units(text: str, units: set[Unit]) -> bool:
     return True
 
 
+SLOT = re.compile(r"<\|(.*?)\|>", re.S)
+
+
+def _slot_units(text: str, units: set[Unit]) -> int:
+    """The `<| expression |>` slots of a TDL text (a property, an `If`, a `For ... In <| |> Key <| |>`, a `Set`/`Call` value) added as units; how many."""
+    found = [m.group(1).strip() for m in SLOT.finditer(text)]
+    units.update(Unit("expr", e) for e in found if e)
+    return len(found)
+
+
 def collect() -> dict[str, set[Unit]]:
-    """The units, by where they came from: `views` (the shipped YAML), `docs`, `tests`, `corpus`."""
+    """The units, by where they came from: `views` (the shipped `.tdl` files), `docs`, `tests`, `corpus`."""
     out: dict[str, set[Unit]] = {"views": set(), "docs": set(), "tests": set(), "corpus": set()}
     for top in ("src", "examples", "apps", "tools"):
+        for path in sorted((ROOT / top).rglob("*.tdl")):
+            if "tests" in path.parts or ".venv" in path.parts or "node_modules" in path.parts:
+                continue
+            _slot_units(path.read_text(encoding="utf-8"), out["views"])
         for path in sorted((ROOT / top).rglob("*.yaml")):
             if "tests" in path.parts or ".venv" in path.parts or "node_modules" in path.parts:
                 continue
             _yaml_units(path.read_text(encoding="utf-8"), out["views"])
     for path in sorted((ROOT / "docs").rglob("*.md")):
         text = path.read_text(encoding="utf-8")
-        for block in re.findall(r"^```ya?ml[^\n]*\n(.*?)^```", text, re.S | re.M):
-            _yaml_units(block, out["docs"])
+        for block in re.findall(r"^```([^\n]*)\n(.*?)^```", text, re.S | re.M):
+            if block[0].strip().startswith(("yaml", "yml")):
+                _yaml_units(block[1], out["docs"])  # a block that shows the old form
+            else:
+                _slot_units(block[1], out["docs"])
+        for inline in re.findall(r"`([^`\n]*<\|[^`\n]*)`", text):
+            _slot_units(inline, out["docs"])
         for inline in re.findall(r"`([^`\n]*\{\{[^`\n]*)`", text):
             out["docs"].add(Unit("template", inline))
     for name in CORPUS_FILES:  # the expression language's own tests: every one-line text in them is tried as an expression (the grammar, the sandbox escapes)
@@ -122,7 +141,9 @@ def collect() -> dict[str, set[Unit]]:
         if path.name == "tel_parity.py" or path.name.startswith("test_tel"):
             continue
         for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
-            if isinstance(node, ast.Constant) and isinstance(node.value, str) and "{{" in node.value:
+            if isinstance(node, ast.Constant) and isinstance(node.value, str) and "<|" in node.value:
+                _slot_units(node.value, out["tests"])
+            elif isinstance(node, ast.Constant) and isinstance(node.value, str) and "{{" in node.value:
                 if not _yaml_units(node.value, out["tests"]) and "\n" not in node.value.strip() and len(node.value) < 400:
                     out["tests"].add(Unit("template", node.value))
     return out

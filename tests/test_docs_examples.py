@@ -31,9 +31,12 @@ def test_a_tdl_example_loads(block):
 
 
 def test_a_marked_old_syntax_block_is_one_the_loader_refuses():
-    """The marker must not hide a block that has become valid or was never old."""
-    for block in ALL:
-        if block.old and block.is_tdl:
+    """The marker must not hide a block that has become valid or was never old: the old YAML form is what the TDL front end refuses (a view, a stylesheet or a
+    theme is read as TDL only). The blocks the pages mark are ```yaml, so they are fed to the front end as they stand."""
+    marked = [block for block in ALL if block.old]
+    assert marked, "no page carries an old-syntax block any more: delete the marker and this test"
+    for block in marked:
+        if block.lang in ("yaml", "yml") or block.is_tdl:
             with pytest.raises(Exception):
                 docs.load(block.text)
 
