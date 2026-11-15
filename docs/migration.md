@@ -3,6 +3,31 @@
 What to change in an existing app when you upgrade. Each section is the release you are moving to; the
 [changelog](changelog.md) has everything else that changed.
 
+## To 0.6.1
+
+**YAML is no longer read.** Tesserae 0.6.1 reads TDL only; a `.yaml` view, stylesheet or theme is refused with a message that points here. A project still in YAML moves first, then upgrades.
+
+### Migrating from YAML
+
+1. **Install the last release that has the converter**, in a virtual environment of its own or over your project's: `pip install "tesserae-ui<0.6.1"`.
+2. **Convert the project**: `tesserae migrate-tdl PATH --write` (PATH is the project's folder, here by default; leave out `--write` to see what it would do, add `--remove-source` to delete each YAML file it wrote). A project in the 0.4.x syntax (`kind:`, `id:`, `component:`) goes through `tesserae migrate-yaml PATH --write` first. What each command does, and what it refuses, is in [To 0.6.0.1](#to-0601) below and in `tesserae migrate-tdl --help` of that release.
+3. **Upgrade**: `pip install --upgrade tesserae-ui` (Python 3.14 or newer), and run your app and tests.
+4. **Replace what the removed Python API did**:
+
+| Removed | Use instead |
+| --- | --- |
+| `app.load("Main_View.yaml", MainViewModel)` | `app.bind(MainViewModel)` and `app.open_view("Main")` (the ViewModel names the views it serves with `views = "Main"`) |
+| `app.build_view(path)` then `app.register(...)` | `app.open_view(...)`; `app.register(name, view, viewmodel)` still takes a `View` built from a spec |
+| `App(window_view="Window_View.yaml")`, `app.load("Window")` | `app.open_view("Window")` of a `Window_View.tdl` whose root is a `Window` |
+| `App.load(..., stylesheet=)` (a stylesheet for one screen) | `App(stylesheet=)`, the app's stylesheet of `Widget:` rules |
+| `View("Home_View.yaml")`, `load_view`, `ViewWatcher` | `app.open_view`; hot reload is `app.run(hot_reload=True)` |
+| `tess_ui.instantiate(view, "Card", into=node)`, `Component` | a call of the view in a view: `Card { ... }` |
+| `tess_ui.Repeater(view, items, "Row", into=node)` | a `For row In <| items |> Key <| row.id |> { Row { ... } }` in the view ([Lists](guide/lists.md)) |
+| `ViewDialog(window, "Settings_View.yaml")` | a modal `Overlay` in a view with the view you call as its content, `Open` bound to a Signal, and `surface.dismiss` to close it ([Overlays](guide/overlays.md)) |
+| `style: row_Style.yaml`, `*_Style.yaml` | the fields in `Style`, or a rule in a stylesheet that matches through a class or a widget name |
+| `Components/Name_Component.yaml`, `component: Name` | a view `Name` with `Params`, called as `Name { ... }` |
+| `TESS_UI_SHIPPED=yaml` | nothing: Tesserae's own views are TDL only |
+
 ## To 0.6.0.1
 
 **Views, stylesheets and themes are written in TDL.** A view is a `<Name>_View.tdl`, a stylesheet a `<Name>_Stylesheet.tdl` and a theme a `<Name>_Theme.tdl`; Tesserae no longer reads the YAML files of those kinds. The language is the same

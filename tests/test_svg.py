@@ -8,15 +8,15 @@ The engine draws the document itself but decodes no image format, so Tesserae de
 import base64
 import gzip
 import io
+import json
 
 import pytest
 from PIL import Image
 
-from tess_ui import App
-from tess_ui.spec import ViewWatcher, expand_components_to_spec
+from tess_ui import App, View
+from tess_ui.spec import expand_components_to_spec
 from tess_ui.spec.expand import ComponentError
 from tess_ui.spec.images import extract_images
-from tess_ui.spec.load import build_view_spec
 from tess_ui.widgets import svg as svg_widget
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
@@ -40,16 +40,25 @@ def _data_png(color=(0, 255, 0, 255)):
     return "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode()
 
 
-def _view(tmp_path, svg_yaml='{src: logo.svg}', style="{width: 80, foreground: primary}"):
-    (tmp_path / "S_View.yaml").write_text(
-        f"id: root\nkind: Container\nstyle: {{width: 300, height: 200}}\nchildren:\n"
-        f"  - id: logo\n    kind: Svg\n    svg: {svg_yaml}\n    style: {style}\n", encoding="utf-8")
-    return tmp_path / "S_View.yaml"
+def _view(tmp_path, svg=None, style=None):
+    """Writes the spec of a view with one `Svg` node, as a JSON file in `tmp_path` (what `_spec` reads: the `svg:` mapping and `style:` are what the tests vary)."""
+    spec = {"id": "root", "kind": "Container", "style": {"width": 300, "height": 200}, "children": [
+        {"id": "logo", "kind": "Svg", "svg": {"src": "logo.svg"} if svg is None else svg,
+         "style": {"width": 80, "foreground": "primary"} if style is None else style}]}
+    (tmp_path / "S_spec.json").write_text(json.dumps(spec), encoding="utf-8")
+
+
+def _spec(folder):
+    """The spec written by `_view` (one is made when the test has not), with its images decoded: `(spec, frames)`."""
+    if not (folder / "S_spec.json").exists():
+        _view(folder)
+    return extract_images(json.loads((folder / "S_spec.json").read_text(encoding="utf-8")), folder)
 
 
 def _build(tmp_path, **kwargs):
     app = App(width=400, height=300, theme_seed=SEED, **kwargs)
-    view = app.build_view(_view(tmp_path) if not (tmp_path / "S_View.yaml").exists() else tmp_path / "S_View.yaml")
+    spec, frames = _spec(tmp_path)
+    view = View(spec, window=app.window, frames={node_id: (rgba, w, h) for node_id, rgba, w, h in frames})
     app.window.root.add_child(view.root)
     app.window.advance(16)
     return app, view
@@ -80,7 +89,7 @@ def test_foreground_is_what_current_color_means_and_follows_the_theme(tmp_path):
 
 def test_an_svg_with_no_foreground_leaves_current_color_alone(tmp_path):
     (tmp_path / "logo.svg").write_text(_document(), encoding="utf-8")
-    _view(tmp_path, style="{width: 80}")
+    _view(tmp_path, style={"width": 80})
     app, view = _build(tmp_path)
     assert view.node("logo").get("svg_color") is None
 
@@ -128,7 +137,7 @@ def test_a_picture_in_a_folder_is_found_relative_to_the_svg_file(tmp_path):
     (tmp_path / "assets").mkdir()
     (tmp_path / "assets" / "logo.svg").write_text(_document('<image href="img/p.png"/>'), encoding="utf-8")
     _png(tmp_path / "assets", "img/p.png")
-    _view(tmp_path, svg_yaml="{src: assets/logo.svg}")
+    _view(tmp_path, svg={"src": "assets/logo.svg"})
     app, view = _build(tmp_path)
     assert list(view.node("logo").get("svg_images")) == ["img/p.png"]
 
@@ -145,7 +154,7 @@ def test_a_picture_that_cant_be_used_is_an_error_naming_it(tmp_path, href, messa
     (folder / "logo.svg").write_text(_document(f'<image href="{href}"/>'), encoding="utf-8")
     _view(folder)
     with pytest.raises(ComponentError, match=rf"widget 'logo': svg <image href='{href}'>: .*{message}"):
-        build_view_spec(folder / "S_View.yaml")
+        _spec(folder)
 
 
 def test_a_picture_that_is_not_a_picture_is_an_error(tmp_path):
@@ -153,7 +162,7 @@ def test_a_picture_that_is_not_a_picture_is_an_error(tmp_path):
     (tmp_path / "p.png").write_text("not a picture")
     _view(tmp_path)
     with pytest.raises(ComponentError, match="cannot decode"):
-        build_view_spec(tmp_path / "S_View.yaml")
+        _spec(tmp_path)
 
 
 def test_a_picture_longer_than_8192_pixels_is_refused(tmp_path):
@@ -161,17 +170,17 @@ def test_a_picture_longer_than_8192_pixels_is_refused(tmp_path):
     _png(tmp_path, "wide.png", size=(8193, 1))
     _view(tmp_path)
     with pytest.raises(ComponentError, match="at most 8192 pixels on a side, got 8193x1"):
-        build_view_spec(tmp_path / "S_View.yaml")
+        _spec(tmp_path)
 
 
-@pytest.mark.parametrize("svg_yaml, message", [
-    ("{}", "takes `src:`"), ("{src: a.svg, content: x}", "takes `src:`"), ("{src: 3}", "svg.src must be a string"),
-    ("{src: /abs.svg}", "must be a relative path"), ("{src: gone.svg}", "cannot read"),
+@pytest.mark.parametrize("svg, message", [
+    ({}, "takes `src:`"), ({"src": "a.svg", "content": "x"}, "takes `src:`"), ({"src": 3}, "svg.src must be a string"),
+    ({"src": "/abs.svg"}, "must be a relative path"), ({"src": "gone.svg"}, "cannot read"),
 ])
-def test_an_svg_node_says_what_is_wrong_with_it(tmp_path, svg_yaml, message):
-    _view(tmp_path, svg_yaml=svg_yaml)
+def test_an_svg_node_says_what_is_wrong_with_it(tmp_path, svg, message):
+    _view(tmp_path, svg=svg)
     with pytest.raises(ComponentError, match=message):
-        build_view_spec(tmp_path / "S_View.yaml")
+        _spec(tmp_path)
 
 
 def test_a_malformed_document_is_an_error_naming_the_widget(tmp_path):
@@ -179,20 +188,6 @@ def test_a_malformed_document_is_an_error_naming_the_widget(tmp_path):
     _view(tmp_path)
     with pytest.raises(ValueError, match='widget "logo"'):
         _build(tmp_path)
-
-
-def test_the_svg_and_its_pictures_are_what_hot_reload_watches(tmp_path):
-    (tmp_path / "logo.svg").write_text(_document('<image href="p.png"/>'), encoding="utf-8")
-    picture = _png(tmp_path)
-    app, view = _build(tmp_path)
-    watcher = ViewWatcher(view, tmp_path / "S_View.yaml", project=app.project)
-    assert {p.name for p in watcher.files} >= {"S_View.yaml", "logo.svg", "p.png"}
-    assert watcher.poll() is False
-    Image.new("RGBA", (4, 2), (0, 0, 255, 255)).save(picture)
-    import os
-    os.utime(picture, (picture.stat().st_atime + 5, picture.stat().st_mtime + 5))
-    assert watcher.poll() is True
-    assert view.node("logo").get("svg_images")["p.png"][0][:4] == bytes([0, 0, 255, 255])  # re-decoded, re-set
 
 
 def test_the_svg_widget_from_a_file_and_from_text(tmp_path):
@@ -213,6 +208,6 @@ def test_changing_the_documents_text_reconciles_in_place(tmp_path):
     app, view = _build(tmp_path)
     node = view.node("logo")
     (tmp_path / "logo.svg").write_text(HEAD.replace('width="40" height="20"', 'width="10" height="10"') + "</svg>", encoding="utf-8")
-    spec, _, _ = build_view_spec(tmp_path / "S_View.yaml")
+    spec, _ = _spec(tmp_path)
     view.reconcile(spec)
     assert node.get("svg_size") == (10.0, 10.0)

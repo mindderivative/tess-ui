@@ -644,6 +644,6 @@ data in a view's header: `Expects { Count: int, Rows: list, Add: handler }`.
 
 ## Tools
 
-- `tesserae migrate-tdl [PATH] [--write] [--remove-source]` moves YAML views, stylesheets and themes to TDL: [Migrating](../migration.md#to-0601).
+- A YAML view, stylesheet or theme is not read: [Migrating from YAML](../migration.md#migrating-from-yaml).
 - A JSON schema of every widget's node, with its properties and style fields, ships in the package as `schema/tess-ui-widget-schema.json` (and one for a
   stylesheet of rules, `tess-ui-stylesheet-schema.json`). `tesserae schema --project` adds your own views to it: [Editor Support](editor-support.md).

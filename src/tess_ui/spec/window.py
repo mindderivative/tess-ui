@@ -1,4 +1,4 @@
-"""`kind: Window`: the root of a `*_View.yaml` that is a whole OS window.
+"""`kind: Window`: the root of a view that is a whole OS window (a `Window` widget lowers to one).
 
     id: root
     kind: Window
@@ -12,11 +12,11 @@
     children:                    # the window's content, under the title bar
       - id: ...
 
-A Window has no parent: it is the root of its view, there is one per app, and it can't be embedded (`view:`) or nested in
+A Window has no parent: it is the root of its view, there is one per app, and it can't be nested in
 another. Before the view is built, it is turned into a vertical `Container` that fills the window, holding the `TitleBar`
 (when it has a `title_bar:`) and a `<id>.content` container with its `children`; the keys the app needs, to set the OS window,
 stay on the root as `window:`. `style:`'s `width` and `height` are the window's size (when numbers), its `background` is the
-window's, and the rest of `style:` lays out the content. `tess_ui.App` reads `window:` when the view is loaded.
+window's, and the rest of `style:` lays out the content. `tess_ui.App` reads `window:` when the view is opened.
 """
 
 from __future__ import annotations

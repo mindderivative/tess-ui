@@ -1,7 +1,7 @@
-"""The TDL front end: a view written in TDL, read into the same mapping with positions that `nodes.load_marked` makes of YAML.
+"""The TDL front end: a view written in TDL, read into a mapping with positions.
 
 Piece 1 of `design/tdl-switch-plan.md`, the rules in `design/tdl-views.md`. Nothing after this changes: `load_marked_tdl(text, file)` returns a `PMap` that
-`nodes.parse_data` takes exactly as it takes the YAML one (`{widget, name, style, children, handlers, ...}`, `{{ }}` still the template form inside
+`nodes.parse_data` takes (`{widget, name, style, children, handlers, ...}`, `{{ }}` still the template form inside
 strings, `if`/`for`/`key` on the node), with the same position maps (`at`, `key_at`, `val_at`), so every error a view can have keeps its wording and now
 points into the `.tdl` file.
 
@@ -12,7 +12,7 @@ What it undoes, in one place each:
 - `Children { ... }` is the `children` list; `Handlers { On_Click { Set {...} Call {...} } }` is the handler text the runtime takes
   (`open = not open; on_toggle()`); a handler that is a bare action name is a property (`On_Click: save`);
 - a slot (`<| expr |>`) is the string `{{ expr }}`, text with slots in it is the template string, a quoted string is plain text;
-- the metadata line `Tesserae: "0.6"` goes through `marker.scan` as the first line of a YAML file does.
+- the metadata line `Tesserae: "0.6"` goes through `marker.scan`.
 - the metadata line `TDL: 0.2` is the language (0.2: slots are `<| |>`, a `For` takes several variables, `For i, it In <| enumerate(items) |> Key <| ... |>`): a file that says `TDL: 0.1` is refused with a hint to convert it.
 
 Where a block is a node and where it is a map is told by position, never by letter case: a block directly in `Children`, `If` or `For` is a node, so
@@ -97,7 +97,7 @@ class _Front:
 
     @staticmethod
     def pos(where: Any) -> Position:
-        """`(line, column)`, line 1-based and column 0-based as `LoadError` and the YAML position maps have them."""
+        """`(line, column)`, line 1-based and column 0-based as `LoadError` has them."""
         if isinstance(where, tuple):
             return where
         origin = where if isinstance(where, tess_dl.Origin) else where.origin
@@ -405,7 +405,7 @@ class _Front:
 
 
 def load_marked_tdl(text: str, file: str = "<view>", *, resolver: Callable[[str], WidgetDecl | None] | None = None) -> PMap:
-    """Reads the TDL view in `text` into the mapping with positions that `nodes.load_marked` makes of YAML, for `nodes.parse_data`.
+    """Reads the TDL view in `text` into a mapping with positions, for `nodes.parse_data`.
     A syntax error, a key that is not `Title_Case`, a misplaced block or a bad step is a `LoadError` at its line and column in the file.
     `resolver` is as `parse_view`'s: it declares a widget that is not built in, so its `node` and `nodes` properties are read as nodes."""
     text = text.removeprefix(_BOM)

@@ -1,19 +1,16 @@
-"""Piece 1 of the TDL switch: the TDL front end reads a view into the same mapping with positions that the YAML loader makes, and its errors name the
+"""The TDL front end reads a view into a mapping with positions, and its errors name the
 `.tdl` file, line and column in the same words (`design/tdl-views.md`)."""
 
-import re
 from pathlib import Path
 
 import pytest
 
 pytest.importorskip("tess_dl", reason="TDL needs tess_dl, which needs Python 3.14 (not installed in the 3.12 CI jobs)")
 from tess_ui.spec import tdl as T
-from tess_ui.spec.nodes import LoadError, PMap, PSeq, load_marked, parse_data, parse_view
+from tess_ui.spec.nodes import LoadError, PMap, PSeq, parse_data, parse_view
 from tess_ui.spec.widgets import Property, WidgetDecl
-from tess_ui.migrate_tdl import ConvertError
-from tests.tdl_helper import normal, yaml_to_tdl
 
-VIEWS = sorted((Path(__file__).parent.parent / "src" / "tess_ui" / "views").glob("*_View.yaml"))
+VIEWS = sorted((Path(__file__).parent.parent / "src" / "tess_ui" / "views").glob("*_View.tdl"))
 
 
 def view(body, meta='Tesserae: "0.6"'):
@@ -40,19 +37,6 @@ def at(err, line, column):
 # -- (a) the shipped views -------------------------------------------------------------------------------------------------
 
 
-def test_every_shipped_view_read_as_tdl_equals_the_yaml_mapping():
-    assert len(VIEWS) == 61
-    pairs = 0
-    for path in VIEWS:
-        text = path.read_text(encoding="utf-8")
-        expected = load_marked(text)
-        tdl_text = yaml_to_tdl(text, path.name.removesuffix("_View.yaml"))
-        got = T.load_marked_tdl(tdl_text, path.name.replace(".yaml", ".tdl"))
-        assert normal(got) == normal(expected), path.name
-        pairs += len(re.findall(r"^\s*For \w+, \w+ In ", tdl_text, re.M))
-    assert pairs == 10  # the loops with a pair target, written with two variables as they are in the YAML (the plan's list)
-
-
 def check_shape(item):
     if isinstance(item, PMap):
         assert set(item.key_at) == set(item.val_at) == set(item)
@@ -65,24 +49,16 @@ def check_shape(item):
             check_shape(sub)
 
 
-def test_the_tdl_mapping_has_the_same_shape_of_position_maps():
+def test_every_shipped_view_reads_with_position_maps_and_goes_through_the_node_parser():
     """Every mapping the front end makes has `at`, `key_at` and `val_at` for exactly its keys, every list `at` and `item_at` for its items."""
-    for path in VIEWS[:12]:
-        check_shape(T.load_marked_tdl(yaml_to_tdl(path.read_text(encoding="utf-8"), "X"), "X_View.tdl"))
+    from tess_ui.shipped import ViewLibrary
 
-
-def test_a_converted_view_goes_through_the_node_parser_to_the_same_tree():
-    path = next(p for p in VIEWS if p.name == "Button_View.yaml")
-    text = path.read_text(encoding="utf-8")
-    want = parse_view(text, path.name)
-    tdl_text = yaml_to_tdl(text, "Button")
-    got = parse_data(T.load_marked_tdl(tdl_text, "Button_View.tdl"), tdl_text, "Button_View.tdl")
-
-    def shape(node):
-        return (node.id, node.widget, node.name, sorted(node.props), sorted(node.style), sorted(node.handlers), [shape(c) for c in node.children])
-
-    assert shape(got.root) == shape(want.root)
-    assert sorted(got.params) == sorted(want.params)
+    library = ViewLibrary()  # the shipped views call each other
+    assert len(VIEWS) == 61
+    for path in VIEWS:
+        text = path.read_text(encoding="utf-8")
+        check_shape(T.load_marked_tdl(text, path.name, resolver=library.decl))
+        assert library.parse(path).root.widget
 
 
 # -- (b) what the language has ---------------------------------------------------------------------------------------------
@@ -94,7 +70,7 @@ def test_a_node_is_a_block_headed_by_its_widget_and_keys_come_back_snake_case():
                  "a11y": {"value_min": 1}}
 
 
-def test_values_are_typed_as_yaml_types_them_but_without_its_surprises():
+def test_values_are_typed_without_surprises():
     m = load('Text {\n  A: true\n  B: false\n  C: null\n  D: 3\n  E: -0.5\n  F: yes\n  G: "true"\n  H: 50%\n  I: [a, 1, "x y"]\n}\n')
     assert m == {"widget": "Text", "a": True, "b": False, "c": None, "d": 3, "e": -0.5, "f": "yes", "g": "true", "h": "50%", "i": ["a", 1, "x y"]}
 
@@ -200,13 +176,13 @@ def test_a_property_the_widget_declares_as_a_node_or_nodes_is_read_as_nodes():
     fails("Panel {\n  Header { Text { } Text { } }\n}\n", "'Header' holds one node", resolver=resolver)
 
 
-def test_the_marker_is_checked_as_the_first_line_of_a_yaml_file_is():
+def test_the_marker_is_checked_in_the_metadata_block():
     fails("Text { }\n", "written for Tesserae 0.5", text=view("Text { }\n", 'Tesserae: "0.5"'))
     fails("Text { }\n", "written for Tesserae 9.1", text=view("Text { }\n", 'Tesserae: "9.1"'))
     err = fails("Text { }\n", "write `Tesserae: 0.6`", text=view("Text { }\n", "Tesserae: soon"))
     at(err, 4, 10)
     assert T.load_marked_tdl(view("Text { }\n", "Tesserae: 0.6"), "T_View.tdl") == {"widget": "Text"}  # an unquoted 0.6 is the series too
-    assert T.load_marked_tdl(view("Text { }\n", ""), "T_View.tdl") == {"widget": "Text"}  # the key is optional, as in YAML
+    assert T.load_marked_tdl(view("Text { }\n", ""), "T_View.tdl") == {"widget": "Text"}  # the key is optional
     err = fails("Text { }\n", "no metadata key 'Sheet'", text=view("Text { }\n", "Sheet: x"))
     at(err, 4, 0)
 
@@ -226,7 +202,7 @@ def test_a_syntax_error_from_tess_dl_names_the_tdl_file_line_and_column_and_says
     at(err, 7, 8)
 
 
-def test_a_pair_target_is_read_as_the_for_text_of_the_yaml():
+def test_a_pair_target_is_read_as_the_for_text():
     m = load("Container {\n  Children {\n    For i, it In <| enumerate(items) |> Key <| i |> {\n      Text { }\n    }\n  }\n}\n")
     assert m["children"][0]["for"] == "i, it in enumerate(items)" and m["children"][0]["key"] == "i"
     line = "    For i, it In <| enumerate(items) |> Key <| i |> {"
@@ -279,8 +255,8 @@ def test_a_property_in_children_and_a_wrapper_in_a_map_are_errors_that_say_where
     at(err, 8, 2)
 
 
-def test_a_map_where_a_node_is_expected_and_a_node_where_a_map_is_expected_fail_in_the_node_parser_in_yaml_words():
-    """Both reach the node parser, which says what the YAML loader says."""
+def test_a_map_where_a_node_is_expected_and_a_node_where_a_map_is_expected_fail_in_the_node_parser():
+    """Both reach the node parser."""
     # a block that is no widget, among the children
     text = view("Container {\n  Children {\n    Stlye { Gap: 1 }\n  }\n}\n")
     with pytest.raises(LoadError) as caught:
@@ -293,34 +269,6 @@ def test_a_map_where_a_node_is_expected_and_a_node_where_a_map_is_expected_fail_
         parse_data(T.load_marked_tdl(text, "T_View.tdl"), text, "T_View.tdl")
     assert caught.value.message == "Container: style 'text' is not valid here"
     at(caught.value, 8, 4)
-
-
-def pair(tdl_body, yaml_body):
-    """The `LoadError`s of the same mistake written in TDL and in YAML."""
-    out = []
-    for loader, text, file in ((lambda t, f: T.load_marked_tdl(t, f), view(tdl_body), "T_View.tdl"), (load_marked, yaml_body, "T_View.yaml")):
-        with pytest.raises(LoadError) as caught:
-            parse_data(loader(text, file), text, file)
-        out.append(caught.value)
-    return out
-
-
-@pytest.mark.parametrize("tdl_body, yaml_body", [
-    ("Texxt { }\n", "widget: Texxt\n"),
-    ("Text { Style { Colour: red } }\n", "widget: Text\nstyle:\n  colour: red\n"),
-    ("Text { Max_Linez: 2 }\n", "widget: Text\nmax_linez: 2\n"),
-    ("Text { Name: 2cool }\n", "widget: Text\nname: 2cool\n"),
-    ("Text { Name: a }\nText { }\n", None),
-    ("Container { Children { Text { Name: a }\n Text { Name: a } } }\n", "widget: Container\nchildren:\n  - {widget: Text, name: a}\n  - {widget: Text, name: a}\n"),
-    ("Text { Handlers { On_Clik: save } }\n", "widget: Text\nhandlers:\n  on_clik: save\n"),
-    ("Container { Children { Text { Key_Only: 1 } } }\n", "widget: Container\nchildren:\n  - {widget: Text, key_only: 1}\n"),
-])
-def test_a_mistake_the_node_parser_finds_has_the_same_message_and_hint_as_in_yaml(tdl_body, yaml_body):
-    if yaml_body is None:
-        return  # a second root block is tess_dl's own error, tested elsewhere
-    tdl_err, yaml_err = pair(tdl_body, yaml_body)
-    assert (tdl_err.message, tdl_err.hint) == (yaml_err.message, yaml_err.hint)
-    assert tdl_err.file == "T_View.tdl" and yaml_err.file == "T_View.yaml"
 
 
 def test_the_nearest_name_hint_and_the_position_of_the_mistake_are_in_the_tdl_file():
@@ -377,15 +325,6 @@ def test_load_tdl_file_reads_a_file_and_names_it_in_errors(tmp_path):
     assert str(caught.value).startswith("Broken_View.tdl:6:") and "never closed" in str(caught.value)
 
 
-def test_the_converter_refuses_what_it_cannot_write_back_exactly():
-    with pytest.raises(ConvertError, match="not lower snake_case"):
-        yaml_to_tdl("widget: Text\nmaxLines: 1\n", "X")
-    with pytest.raises(ConvertError, match="no step form"):
-        yaml_to_tdl("widget: Button\nhandlers:\n  on_click: |\n    if a:\n      b()\n", "X")
-    with pytest.raises(ConvertError, match="cannot be written unquoted"):
-        yaml_to_tdl("widget: Text\ntext: 'a, {{ b }}'\n", "X")
-
-
 def test_the_snake_case_conversion_is_exact_both_ways():
     for snake in ("max_lines", "a11y", "typography_role", "on_click", "value_min", "x"):
         assert T.snake_case(T.title_case(snake)) == snake
@@ -413,7 +352,7 @@ def test_a_quoted_string_is_positioned_at_its_text_a_slot_and_a_word_at_their_st
     text = view('Text {\n  Name: "2cool"\n  Label: <| x |>\n  Other: word\n}\n')
     m = T.load_marked_tdl(text, "T_View.tdl")
     lines = text.splitlines()
-    assert m.val_at["name"] == (7, lines[6].index("2cool"))  # YAML marks a quoted string after its quote too
+    assert m.val_at["name"] == (7, lines[6].index("2cool"))  # a quoted string is marked at its text
     assert m.val_at["label"] == (8, lines[7].index("<|")) and m.val_at["other"] == (9, lines[8].index("word"))
     assert m.key_at["name"] == (7, 2) and m.at == (6, 0)
     with pytest.raises(LoadError) as caught:

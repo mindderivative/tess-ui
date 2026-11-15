@@ -1,6 +1,6 @@
 """`TokenList`, the model and the control behind the token button: a list of theme tokens given as data, searchable, with a cursor.
 
-`TokenList` has no window: it keeps the tokens, the search and the cursor, and answers keys. `TokenListControl` is `widget: TokenList` in `TokenButton_View.yaml`, a control that draws nothing (see
+`TokenList` has no window: it keeps the tokens, the search and the cursor, and answers keys. `TokenListControl` is `widget: TokenList` in `TokenButton_View.tdl`, a control that draws nothing (see
 `tess_ui.mind`). The tokens are data the app hands over, each a mapping `{name, ref, kind, value, doc}`: `name` is what a person looks for (`color.primary`), `ref` is the text a pick writes
 (`$color.primary`; `$` and the name when it is left out), `kind` says what the value is (`colour` or `color` for a colour, anything else for text), `value` is the token's value and `doc` a line about
 it. `groups` is the same tokens in named sets, `[{name, tokens}]`, which come after the plain ones and give each token a `group`; `preferred` names (or refs) are listed first, in that order.

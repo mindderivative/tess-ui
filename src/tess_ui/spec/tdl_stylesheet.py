@@ -1,7 +1,7 @@
-"""The TDL front end for stylesheets: a `*_Stylesheet.tdl` read into the mapping with positions that `nodes.load_marked` makes of a `*_Stylesheet.yaml`.
+"""The TDL front end for stylesheets: a `*_Stylesheet.tdl` read into a mapping with positions.
 
 Piece 4 of `design/tdl-switch-plan.md`, the shape in `design/tdl-views.md` ("What piece 4 decided"). `load_marked_tdl_stylesheet(text, file)` returns the `PMap`
-`{styles: [rule, ...]}` that `RuleSheet.of` takes as it takes the YAML one, with the same position maps (`at`, `key_at`, `val_at`, `item_at`), so every
+`{styles: [rule, ...]}` that `RuleSheet.of` takes, with position maps (`at`, `key_at`, `val_at`, `item_at`), so every
 error a stylesheet can have keeps its wording and now points into the `.tdl` file. The file is:
 
 ```
@@ -121,7 +121,7 @@ class _SheetFront(_Front):
 
 
 def load_marked_tdl_stylesheet(text: str, file: str = "<stylesheet>") -> PMap:
-    """Reads the TDL stylesheet in `text` into the mapping with positions that `nodes.load_marked` makes of YAML, for `RuleSheet.of`.
+    """Reads the TDL stylesheet in `text` into a mapping with positions, for `RuleSheet.of`.
     A syntax error, a key that is not `Title_Case` or a block that is not where a stylesheet has it is a `LoadError` at its line and column in the file;
     a mistake in what a rule says (a widget without that property, a state that does not exist) is `RuleSheet.of`'s, with its wording."""
     text = text.removeprefix(_BOM)

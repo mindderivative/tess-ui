@@ -154,19 +154,14 @@ def test_a_view_with_no_window_is_as_before(tmp_path):
     assert app.window.get("title") != "Notes" and not view._docks
 
 
-# legacy syntax: deleted with spec/expand.py at the cutover (App.build_view / View(path) read YAML only today; there is no TDL path for them)
-def test_a_binding_that_needs_a_viewmodel_waits_for_one(tmp_path):
-    import yaml
-
-    from tess_ui import Signal
+def test_a_binding_that_needs_a_viewmodel_waits_for_one():
+    from tess_ui import Signal, View
 
     page = {"id": "root", "kind": "Container", "style": {"width": 200, "height": 100},
             "children": [{"id": "shown", "kind": "Text", "text": {"content": "", "typography_role": "body_large"},
                           "style": {"foreground": "on_surface"}, "bindings": {"text": "{{ label.get() }}"}}]}
-    path = tmp_path / "Home_View.yaml"
-    path.write_text(yaml.safe_dump(page), encoding="utf-8")
     app = App(width=200, height=100, theme_seed=SEED)
-    view = app.build_view(path)  # an app, and no ViewModel yet: not an error, the binding is for the ViewModel to wire
+    view = View(page, window=app.window)  # an app, and no ViewModel yet: not an error, the binding is for the ViewModel to wire
     app.register("Home", view, None)
     app.show("Home")
 

@@ -278,7 +278,6 @@ def test_the_text_input_primitive_is_the_bare_input(tmp_path):
 def test_the_shipped_view_validates_against_the_widget_schema_all_the_way_down():
     import json
     import jsonschema
-    from pathlib import Path
 
     from tess_ui import shipped
     from tess_ui.spec import widgets
@@ -320,14 +319,6 @@ def test_the_old_builder_draws_a_placeholder_a_password_and_a_multiline_field_to
         bad_spec = {**spec, "children": [{**spec["children"][0], "text": {**spec["children"][0]["text"], **bad}}]}
         with pytest.raises(ValueError, match=message):
             View(bad_spec, theme_seed=(103, 80, 164, 255))
-
-
-def test_the_old_text_field_kind_becomes_the_text_input_primitive_when_migrated():
-    from tess_ui.spec.translate import Translator
-
-    new = Translator().translate({"id": "root", "kind": "Container", "children": [
-        {"id": "f", "kind": "TextField", "text": {"content": "hi", "font_family": "Roboto", "font_size": 14}, "style": {"background": "#FFFFFF"}}]})
-    assert new["children"][0]["widget"] == "TextInput" and new["children"][0]["text"] == "hi"
 
 
 def test_lowering_leaves_out_what_only_the_renderer_acts_on():

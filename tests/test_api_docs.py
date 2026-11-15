@@ -41,6 +41,6 @@ def test_every_public_name_has_a_description():
 def test_every_name_the_package_exports_is_on_the_page():
     page = PAGE.read_text(encoding="utf-8")
     headings = set(re.findall(r"^### `(\w+)`", page, re.MULTILINE))
-    assert set(tess_ui.__all__) <= headings | {"register_font", "configure_logging", "untrack", "batch", "instantiate"}
-    for name in ("batch", "untrack", "instantiate", "register_font", "configure_logging"):
+    assert set(tess_ui.__all__) <= headings | {"register_font", "configure_logging", "untrack", "batch"}
+    for name in ("batch", "untrack", "register_font", "configure_logging"):
         assert f"### `{name}`" in page

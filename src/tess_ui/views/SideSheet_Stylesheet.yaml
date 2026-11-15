@@ -1,6 +1,0 @@
-tesserae: 0.6
-# The look of the standard side sheet: a `surface` column.
-styles:
-  - widget: SideSheet
-    style:
-      background: surface

@@ -1,6 +1,6 @@
 """The node model: a view file in the 0.5.0 syntax, read into validated `Node`s (spec sections 2, 3, 5 and 14; phase 3 of #209).
 
-`parse_view(text, file)` reads one `*_View.yaml` (YAML with positions kept), checks every key of every node against the spec, checks each
+`parse_view(text, file)` reads one `*_View.tdl` (read into mappings with positions kept), checks every key of every node against the spec, checks each
 property against its widget's declaration, compiles every `{{ }}` expression and handler through `tess_ui.expr`, and gives every node a
 stable id (its path from the root: the node's `name`, else `children[2]`). The first problem is a `LoadError` that names the file, line and
 column, says what is wrong and, where it can, what to write instead.
@@ -16,16 +16,15 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterator, Optional
 
-import yaml
 
 from tess_ui import a11y as a11y_module
-from tess_ui.spec import marker, placement, sizes
+from tess_ui.spec import placement, sizes
 from tess_ui.expr import Expr, ExprError, NestedTemplate, Origin, Statements, compile_expr, compile_statements, compile_template, is_action_name, timer_handlers
 from tess_ui.spec import widgets as registry
 from tess_ui.spec.widgets import Property, PropertyError, WidgetDecl, decl_from_params, is_expression, style_fields_of
-from tess_ui.project import looks_like, tdl_wrong_kind
+from tess_ui.project import looks_like, tdl_wrong_kind, yaml_refused
 
-__all__ = ["EVENTS", "ForSpec", "Handler", "LoadError", "Node", "ViewDoc", "load_marked", "parse_data", "parse_view", "read_marked"]
+__all__ = ["EVENTS", "ForSpec", "Handler", "LoadError", "Node", "ViewDoc", "parse_data", "parse_view", "read_marked"]
 
 #: What `visible:` is when a widget does not declare a property of that name: a bool (or an expression), like any property.
 VISIBLE = Property("bool", name="visible", doc="Shown while true; while false it is hidden and takes no room.")
@@ -99,7 +98,7 @@ def _describe(value: Any) -> str:
     return repr(value)
 
 
-# -- YAML with positions ---------------------------------------------------------------------------------------------------
+# -- mappings with positions ---------------------------------------------------------------------------------------------------
 
 
 class PMap(dict):
@@ -115,54 +114,6 @@ class PSeq(list):
 
     at: Position
     item_at: list[Position]
-
-
-def _mark(node: yaml.Node) -> Position:
-    column = node.start_mark.column
-    if isinstance(node, yaml.ScalarNode) and node.style in ("'", '"'):
-        column += 1  # the text of a quoted string starts after the quote
-    return node.start_mark.line + 1, column
-
-
-def load_marked(text: str, file: str = "<view>") -> Any:
-    """Parses one YAML document into plain values, mappings as `PMap` and lists as `PSeq`. YAML errors and duplicate keys are
-    `LoadError`s."""
-    scanned = marker.scan(text)
-    if scanned.problem:  # the first line comes before the YAML: a file for another line may not parse as this one
-        raise LoadError(scanned.problem, file=file, line=scanned.line, column=0, text=text)
-    loader = yaml.SafeLoader(text)
-    try:
-        root = loader.get_single_node()
-    except yaml.YAMLError as exc:
-        mark = getattr(exc, "problem_mark", None) or getattr(exc, "context_mark", None)
-        line, column = (mark.line + 1, mark.column) if mark else (1, 0)
-        problem = getattr(exc, "problem", None) or str(exc)
-        raise LoadError(f"YAML: {problem}", file=file, line=line, column=column, text=text) from None
-
-    def convert(node: yaml.Node) -> Any:
-        if isinstance(node, yaml.MappingNode):
-            out = PMap()
-            out.at, out.key_at, out.val_at = _mark(node), {}, {}
-            for key_node, value_node in node.value:
-                key = loader.construct_object(key_node, deep=True)
-                if isinstance(key, bool) and isinstance(key_node, yaml.ScalarNode):
-                    key = key_node.value  # YAML 1.1 reads the key `on` as true; a key is the text that was written
-                if key in out:
-                    raise LoadError(f"duplicate key '{key}'", file=file, line=key_node.start_mark.line + 1,
-                                    column=key_node.start_mark.column, text=text)
-                out[key] = convert(value_node)
-                out.key_at[key], out.val_at[key] = _mark(key_node), _mark(value_node)
-            return out
-        if isinstance(node, yaml.SequenceNode):
-            seq = PSeq()
-            seq.at, seq.item_at = _mark(node), []
-            for item in node.value:
-                seq.append(convert(item))
-                seq.item_at.append(_mark(item))
-            return seq
-        return loader.construct_object(node, deep=True)
-
-    return None if root is None else marker.strip(convert(root)) if scanned.found else convert(root)
 
 
 # -- the model -------------------------------------------------------------------------------------------------------------
@@ -374,8 +325,7 @@ class _Parser:
     def universal(self, node: Node, key: str, value: Any, vat: Position, where: Position, depth: int) -> None:
         if key == "name":
             if not isinstance(value, str) or not _NAME.match(value):
-                hint = "YAML reads yes, no, on and off as true and false: put the name in quotes" if isinstance(value, bool) else None
-                raise self.fail(vat, f"a name is letters, digits and '_' and does not start with a digit, got {value!r}", hint)
+                raise self.fail(vat, f"a name is letters, digits and '_' and does not start with a digit, got {value!r}")
             node.name = value
         elif key == "slot":
             if not isinstance(value, str) or not _NAME.match(value):
@@ -459,11 +409,9 @@ class _Parser:
 
     def style(self, node: Node, value: Any, vat: Position) -> None:
         if isinstance(value, str):
-            what = "a style file (`*_Style.yaml`) is not part of the view language: " if value.endswith((".yaml", ".yml")) else ""
-            raise self.fail(vat, f"'style:' takes a mapping of style fields; {what}write the fields here, or give the node `classes:` and a rule in a "
-                                 "stylesheet" + (" (`tesserae migrate-yaml` writes the file's fields in)" if what else ""))
+            raise self.fail(vat, "'style:' takes a mapping of style fields; write the fields here, or give the node `classes:` and a rule in a stylesheet")
         if not isinstance(value, PMap):
-            raise self.fail(vat, f"'style:' takes a mapping or a style file name, got {_describe(value)}")
+            raise self.fail(vat, f"'style:' takes a mapping of style fields, got {_describe(value)}")
         allowed = style_fields_of(node.decl)
         for key, item in value.items():
             if key not in allowed:
@@ -610,14 +558,13 @@ def _check_names(parser: _Parser) -> None:
 
 
 def read_marked(text: str, file: str = "<view>", *, resolver: Optional[Callable[[str], Optional[WidgetDecl]]] = None) -> Any:
-    """The mapping with positions of the view file `text`, read by its suffix: the TDL front end for a `.tdl` file (`resolver` as `parse_view`'s), the YAML one
-    for any other name. A TDL file whose root says it is a stylesheet or a theme is refused with the hint that names the file to give it."""
-    if not file.endswith(".tdl"):
-        return load_marked(text, file)
-    from tess_ui.spec.flavour import require_tdl
+    """The mapping with positions of the TDL view file `text` (`resolver` as `parse_view`'s). A file named `*.yaml` is refused, saying that YAML is no longer
+    read; a TDL file whose root says it is a stylesheet or a theme is refused with the hint that names the file to give it."""
+    gone = yaml_refused(file)
+    if gone is not None:
+        raise LoadError(gone, file=file, line=1, column=0, text=text)
     from tess_ui.spec.tdl import load_marked_tdl
 
-    require_tdl(file)
     wrong = tdl_wrong_kind(text, "view", file)
     if wrong is not None:
         raise LoadError("a view's root block is a widget, and this file's is not", file=file, line=wrong[1], column=wrong[2], hint=wrong[0], text=text)
@@ -626,14 +573,14 @@ def read_marked(text: str, file: str = "<view>", *, resolver: Optional[Callable[
 
 def parse_view(text: str, file: str = "<view>", *, resolver: Optional[Callable[[str], Optional[WidgetDecl]]] = None,
                view_name: Optional[str] = None) -> ViewDoc:
-    """Reads the view in `text`, YAML or (for a file named `*.tdl`) TDL. `resolver` maps a widget name that is not built in to its declaration (a view with
+    """Reads the TDL view in `text`. `resolver` maps a widget name that is not built in to its declaration (a view with
     `params:`)."""
     return parse_data(read_marked(text, file, resolver=resolver), text, file, resolver=resolver, view_name=view_name)
 
 
 def parse_data(data: Any, text: str, file: str = "<view>", *, resolver: Optional[Callable[[str], Optional[WidgetDecl]]] = None,
                view_name: Optional[str] = None) -> ViewDoc:
-    """Reads a view that is already a mapping with positions: what `load_marked` makes of YAML text and `tdl.load_marked_tdl` of TDL text.
+    """Reads a view that is already a mapping with positions: what `tdl.load_marked_tdl` makes of TDL text.
     `text` is only the file's text, for error messages."""
     parser = _Parser(text, file, resolver)
     if not isinstance(data, PMap):

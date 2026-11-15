@@ -160,15 +160,9 @@ Every overlay has `open()`, `close()`, `is_open`, `on_close(fn)` and
 
 ## A dialog with a view of its own
 
-`ViewDialog(window, "Settings_View.yaml", width=480, height=320)` is a `Dialog` whose content is a view file: its
-file, or its name in a project, with its ViewModel if it has one (`arguments={"who": "Ada"}` goes to the constructor) and without one
-if it hasn't. `dialog.content` is the view and `dialog.viewmodel` its ViewModel. A `TitleBar` with `Buttons: [dismiss]` at
-the top of the view is a header with a close button, and a `surface.dismiss` handler on anything closes the dialog.
-
-`ViewDialog` is for a view in the older syntax (`kind:`), read with the older loader, and given a TDL view it refuses it
-with a message that says what to write instead. A dialog written in TDL is a modal `Overlay` in a view, as above: its content is the
-view you call by name, `Open` is bound to a Signal, and a `surface.dismiss` handler closes it. A called view has no ViewModel of its own, so
-the `arguments` that `ViewDialog` hands to a ViewModel's constructor are the Overlay's content's params, or names the view's ViewModel serves.
+A dialog written in TDL is a modal `Overlay` in a view: its content is the view you call by name, `Open` is bound to a Signal, and a
+`surface.dismiss` handler closes it. A `TitleBar` with `Buttons: [dismiss]` at the top of the called view is a header with a close button. A called view has no
+ViewModel of its own, so what the dialog needs reaches it as the call's params, or as names the view's ViewModel serves.
 
 `surface.dismiss` closes the nearest overlay the widget is in. In a view that is the nearest `Overlay` up the tree, closed as a press outside it
 would: the layer hides, a bound `Open` goes false, and `On_Dismiss` runs. A button in a view the Overlay calls dismisses it too, and in nested
@@ -181,7 +175,6 @@ does (`dismiss_surface(node)` is the same from Python), and does nothing if ther
 | --- | --- | --- | --- | --- |
 | `Menu` | below its anchor (flipped above if it won't fit), or at a point | closes | closes | no |
 | `Dialog` | centred over a scrim | -- | closes | yes |
-| `ViewDialog` | centred over a scrim, showing a view | -- | closes | yes |
 | `FileDialog` (a view) | centred over a scrim, a panel for choosing files and folders | closes | closes | yes |
 | `SideSheet` | the window's end, over a scrim, sliding in | -- | closes | yes |
 | `NavigationDrawer` | the window's start, over a scrim, sliding in | -- | closes | yes |

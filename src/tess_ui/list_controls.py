@@ -1,7 +1,7 @@
 """`ListModel`, the model and the control behind the list editor: a list of items of one kind that rows add to, change, remove and move.
 
 `ListModel` has no window: it holds the items, each with an identity that stays with it when it is moved (so a view keeps its row), and does the edits. `ListModelControl` is `widget: ListModel` in
-`ListEditor_View.yaml` (see `tess_ui.mind`), a control that draws nothing. The view builds a row for each of `rows` with the widget of the item kind and sends what a row does as a command:
+`ListEditor_View.tdl` (see `tess_ui.mind`), a control that draws nothing. The view builds a row for each of `rows` with the widget of the item kind and sends what a row does as a command:
 `set <place> <text>` (the new value of the item, as text), `add`, `remove <place>`, `up <place>` and `down <place>`. Each command that changes the list writes the new list to `value` and
 tells `on_input`.
 

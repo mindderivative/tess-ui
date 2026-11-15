@@ -220,12 +220,3 @@ def test_reconcile_adds_and_removes_the_interaction():
     view.reconcile(_spec(_rect("btn")))
     assert view.interaction("btn") is None
     assert view.node("btn").children() == []
-
-
-def test_a_removed_component_drops_its_interactions():
-    host, window = _built(_rect("slot", width=300, height=200))
-    component = host.instantiate(None, host.node("slot"), spec=_spec(_rect("btn", handlers={"on_click": "go"})))
-    node = component.node("btn")
-    assert node in interaction._INTERACTIVE
-    component.remove()
-    assert node not in interaction._INTERACTIVE

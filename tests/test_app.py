@@ -1,7 +1,6 @@
 """Real, repeatable coverage for `tess_ui.App` -- registration,
 name-collision handling, `show()`'s own real "first call opens, later
-calls switch" behavior, and `load()`'s own real `*_View.tdl`/
-`*_ViewModel.py` naming-convention enforcement -- mirroring `tess_re`'s own
+calls switch" behavior -- mirroring `tess_re`'s own
 established pytest conventions (`tmp_path` for a throwaway view file, no
 `App.run()` in these tests -- `tess_re`'s own `test_tracing.py` documents
 the real reason a second real render-loop call in the same process is
@@ -9,49 +8,11 @@ best avoided; the one live end-to-end proof lives in
 `examples/counter/app.py`/`examples/multi_screen/app.py`).
 """
 
-import importlib.util
 import sys
 
 import pytest
 
 from tess_ui import App, Signal, View, ViewModel
-
-
-def write_view(tmp_path, text, name="view.tdl"):
-    path = tmp_path / name
-    path.write_text(text)
-    return str(path)
-
-
-def load_viewmodel_class(tmp_path, filename, class_name):
-    """Writes a real, importable `*ViewModel.py`-shaped module to disk
-    and imports it for real -- `App.load()`'s own naming check reads a
-    class's *actual* defining file via `inspect.getfile`, so a class
-    merely defined inline in this test module (whose own filename is
-    `test_app.py`, not `*_ViewModel.py`) can't stand in for the real
-    thing the way `SimpleVM` below does for the non-`load()` tests.
-    """
-    path = tmp_path / filename
-    path.write_text(
-        f"from tess_ui import Signal, ViewModel\n\n\n"
-        f"class {class_name}(ViewModel):\n"
-        f"    def __init__(self, view):\n"
-        f"        self.value = Signal(0)\n"
-        f"        super().__init__(view)\n"
-    )
-    spec = importlib.util.spec_from_file_location(path.stem, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return getattr(module, class_name)
-
-
-SIMPLE_VIEW = """---
-TDL: 0.2
-Name: Counter
----
-Rect { Style { Width: 40, Height: 20, Background: "#112233" } }
-"""
 
 
 def simple_view(width=40, height=20, background="#112233"):
@@ -211,33 +172,6 @@ def test_a_code_only_app_draws_frames_in_a_real_window(tmp_path, with_a_node):
     if report.read_text() == "0":
         pytest.skip("no display reachable -- App.run() rendered no frames")
     assert int(report.read_text()) >= 5
-
-
-def test_load_rejects_a_view_file_missing_the_required_suffix(tmp_path):
-    view_path = write_view(tmp_path, SIMPLE_VIEW, name="Counter.tdl")
-    vm_cls = load_viewmodel_class(tmp_path, "Counter_ViewModel.py", "CounterViewModel")
-
-    app = App()
-    with pytest.raises(ValueError, match=r"_View\.\w+ naming convention"):
-        app.load(view_path, vm_cls)
-
-
-def test_load_rejects_a_viewmodel_file_missing_the_required_suffix(tmp_path):
-    view_path = write_view(tmp_path, SIMPLE_VIEW, name="Counter_View.tdl")
-    vm_cls = load_viewmodel_class(tmp_path, "counter_vm.py", "CounterViewModel")
-
-    app = App()
-    with pytest.raises(ValueError, match="_ViewModel.py"):
-        app.load(view_path, vm_cls)
-
-
-def test_load_rejects_mismatched_view_and_viewmodel_prefixes(tmp_path):
-    view_path = write_view(tmp_path, SIMPLE_VIEW, name="Counter_View.tdl")
-    vm_cls = load_viewmodel_class(tmp_path, "Settings_ViewModel.py", "SettingsViewModel")
-
-    app = App()
-    with pytest.raises(ValueError, match="prefix"):
-        app.load(view_path, vm_cls)
 
 
 def _ticks(fake_tre):

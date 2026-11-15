@@ -107,7 +107,7 @@ See [Component stylesheets](../stylesheets/index.md).
 
 ## See also
 
-- [Repeater](../guide/repeater.md)
+- [Lists](../guide/lists.md)
 - [Effects](../guide/effects.md)
 - [Python API reference](../api/python.md)
 - [TDL reference](../api/tdl.md)

@@ -1,11 +1,7 @@
-"""M29 Phase 4: themes and stylesheets as data. Tesserae reads theme and
-stylesheet YAML files itself and hands the dicts to the `*_spec=`
-arguments -- `stylesheet_spec=`/`default_theme_spec=`/
-`custom_theme_spec=` on `View(...)` and `App(...)`, and the theme two on
-`View.set_theme`/`App.set_theme_specs`. Since M37-M38 Tesserae's own
-cascade and `tess_ui.Theme` validate them (the schema `tess_re`'s had:
-`seed`, `dark`, `colors`, `styles`, `components`, `typography`), so this
-module only reads, parses, and checks fonts.
+"""Themes and stylesheets as data. Tesserae reads theme and stylesheet TDL files itself and hands the dicts to the `*_spec=` arguments --
+`stylesheet_spec=`/`default_theme_spec=`/`custom_theme_spec=` on `View(...)` and `App(...)`, and the theme two on `View.set_theme`/`App.set_theme_specs`.
+Tesserae's own cascade and `tess_ui.Theme` validate them (`seed`, `dark`, `colors`, `styles`, `components`, `typography`), so this module only reads,
+parses, and checks fonts.
 """
 
 from __future__ import annotations
@@ -13,66 +9,37 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Iterator
 
-import yaml
-
 from tess_ui.fonts import check_font_families
-from tess_ui.project import looks_like
+from tess_ui.project import KINDS, looks_like, tdl_wrong_kind, yaml_refused
 from tess_ui.spec import marker
-from tess_ui.spec.expand import (
-    STYLE_SUFFIX, STYLESHEET_SUFFIX, THEME_SUFFIX, _expand_includes, _normalize_scalars, kind_of_file,
-)
+from tess_ui.spec.tdl_stylesheet import load_marked_tdl_stylesheet
+from tess_ui.spec.tdl_theme import load_theme_tdl, plain
 
 __all__ = ["load_stylesheet", "load_theme"]
 
+_KIND_OF = {KINDS["stylesheet"][0]: "a stylesheet", KINDS["theme"][0]: "a theme"}
 
-def _read_tdl(path: Path, text: str, what: str, suffix: str | None) -> Any:
-    """The plain mapping of a TDL theme (`suffix` is the theme's) or stylesheet file; a root block that says it is another kind is refused with the name to give."""
-    from tess_ui.project import tdl_wrong_kind
-    from tess_ui.spec.flavour import require_tdl
-    from tess_ui.spec.tdl_stylesheet import load_marked_tdl_stylesheet
-    from tess_ui.spec.tdl_theme import load_theme_tdl, plain
 
-    require_tdl(path)
-    theme = suffix == THEME_SUFFIX
-    wrong = tdl_wrong_kind(text, "theme" if theme else "stylesheet", path.name)
+def _load_mapping(path: str | Path, what: str, kind: str) -> dict[str, Any]:
+    """The plain mapping of the TDL theme or stylesheet file `path`, read as `kind` (`"theme"` or `"stylesheet"`); a root block that says it is another kind
+    is refused with the name to give it."""
+    path = Path(path)
+    gone = yaml_refused(path)
+    if gone is not None:
+        raise ValueError(gone)
+    suffix = KINDS[kind][0]
+    named = next((word for end, word in _KIND_OF.items() if path.name.endswith(end)), None)
+    if named is not None and not path.name.endswith(suffix):
+        raise ValueError(f"{path}: loaded as {what}, but its name says it's {named} (*{KINDS['stylesheet'][0]} is a stylesheet, *{KINDS['theme'][0]} a theme)")
+    text = path.read_text(encoding="utf-8")
+    marker.note_if_missing(text, str(path))
+    wrong = tdl_wrong_kind(text, kind, path.name)
     if wrong is not None:
         raise ValueError(f"{path}:{wrong[1]}: {wrong[0]}")
-    return load_theme_tdl(text, str(path)) if theme else plain(load_marked_tdl_stylesheet(text, str(path)))
-
-
-def _load_mapping(path: str | Path, what: str, suffix: str | None = None) -> dict[str, Any]:
-    path = Path(path)
-    kind = kind_of_file(path.name)
-    if suffix is not None and kind is not None and not path.name.endswith((suffix, suffix.removesuffix(".yaml") + ".tdl")):
-        raise ValueError(f"{path}: loaded as {what}, but its name says it's {kind} ("
-                         f"*{STYLE_SUFFIX} is one node's style, *{STYLESHEET_SUFFIX} a stylesheet, *{THEME_SUFFIX} a theme)")
-    text = path.read_text(encoding="utf-8")
-    if path.suffix == ".tdl":
-        marker.note_if_missing(text, str(path))
-        data: Any = _read_tdl(path, text, what, suffix)
-    else:
-        scanned = marker.scan(text)
-        if scanned.problem:
-            raise ValueError(f"{path}:{scanned.line}: {scanned.problem}")
-        marker.note_if_missing(text, str(path))
-        try:
-            data = marker.strip(yaml.safe_load(text))
-        except yaml.YAMLError as exc:
-            raise ValueError(f"{path}: invalid YAML: {exc}") from exc
-    if data is None:
-        return {}
+    data = load_theme_tdl(text, str(path)) if kind == "theme" else plain(load_marked_tdl_stylesheet(text, str(path)))
     if not isinstance(data, dict):
         raise ValueError(f"{path}: {what} must be a mapping, got {type(data).__name__}")
-    rules = data.get("styles")
-    if isinstance(rules, list) and any(isinstance(r, dict) and isinstance(r.get("style"), str) for r in rules):
-        # M75: a rule's `style:` can name a `*_Style.yaml` file, next to this one
-        from tess_ui.spec.expand import ComponentError
-
-        try:
-            data = {**data, "styles": _expand_includes(rules, path.parent, [path.resolve()], set())}
-        except ComponentError as exc:
-            raise ValueError(f"{path}: {exc}") from None
-    return _normalize_scalars(data)
+    return data
 
 
 def theme_font_families(theme: dict[str, Any]) -> Iterator[str]:
@@ -97,7 +64,7 @@ def view_font_families(spec: Any) -> Iterator[str]:
 
 def load_theme(path: str | Path) -> dict[str, Any]:
     """Reads a theme file (`*_Theme.tdl`) into the dict `tess_re`'s
-    `default_theme_spec=`/`custom_theme_spec=` take, for `load_view` or
+    `default_theme_spec=`/`custom_theme_spec=` take, for `View(...)` or
     for switching themes later:
 
     ```python
@@ -107,7 +74,7 @@ def load_theme(path: str | Path) -> dict[str, Any]:
     Warns (`tess_ui.fonts.FontFallbackWarning`) if its `Typography`
     names a font family that isn't available.
     """
-    theme = _load_mapping(path, "a theme", THEME_SUFFIX)
+    theme = _load_mapping(path, "a theme", "theme")
     from tess_ui.spec.cascade import check_theme
 
     try:
@@ -121,7 +88,7 @@ def load_theme(path: str | Path) -> dict[str, Any]:
 def load_stylesheet(path: str | Path) -> dict[str, Any]:
     """Reads a stylesheet file (`*_Stylesheet.tdl`) into the dict `tess_re`'s
     `stylesheet_spec=` takes. A file whose keys say it is a view or a theme is refused, naming the file to give it."""
-    sheet = _load_mapping(path, "a stylesheet", STYLESHEET_SUFFIX)
+    sheet = _load_mapping(path, "a stylesheet", "stylesheet")
     hint = looks_like(sheet, "stylesheet", Path(path).name)
     if hint:
         raise ValueError(f"{path}: {hint}")

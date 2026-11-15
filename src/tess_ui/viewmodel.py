@@ -174,7 +174,7 @@ class Bindings:
                 made = entry.cls()  # type: ignore[misc]
             except TypeError as exc:
                 raise BindingError(f"{entry.label()} could not be made without arguments ({exc}); a ViewModel that serves named views "
-                                   "takes none (the 0.4.x form, ViewModel(view), is bound by app.load)") from None
+                                   "takes none") from None
             if entry.factory:
                 return made
             entry.instance = made

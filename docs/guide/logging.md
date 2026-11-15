@@ -35,7 +35,7 @@ any handler you added yourself. Call it once: each call adds a handler, so a sec
 
 | Level | Message |
 |---|---|
-| `DEBUG` | a screen loaded (`app.load`), a screen shown (`app.show`), the traceback of a failed hot reload |
+| `DEBUG` | a screen shown (`app.show`), the traceback of a failed hot reload |
 | `INFO` | hot reload started (`hot reload on: watching N screen(s) and M theme/stylesheet file(s)`), and what it watches; hot reload off in a built app (there are no source files); a screen it does not watch; each view reloaded; each theme or stylesheet file applied; the app switching between light and dark or between standard and high contrast |
 | `WARNING` | a `Link` whose `href` is refused (only `http`, `https`, `mailto` and `tel` are opened); a property the user edits given one bare name that cannot be written back (`Main_View.tdl:5:42: Checkbox checked is given 'flag', which is a ViewModel attribute that is not a Signal: the user's edit is not written back (one-way)`), once for each place in a file; Python warnings such as `FontFallbackWarning`, when `configure_logging` captures them (below) |
 | `ERROR` | a hot reload that failed, naming the file and the error; a hot-reload watcher that stopped |
@@ -50,7 +50,7 @@ When a background reload fails, from a TDL error, an unknown widget,
 or a spec or stylesheet `tess_re` rejects, Tesserae logs one `ERROR` line
 naming the file. The traceback is logged at `DEBUG`, so a typo doesn't
 print a stack trace unless you ask for one. The screen stays as it was,
-and the app and the watcher keep running. `ViewWatcher.poll()`, which
+and the app and the watcher keep running. A watcher's `poll()`, which
 your own loop calls, still raises instead.
 
 ## Warnings

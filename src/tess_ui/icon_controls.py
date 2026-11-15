@@ -1,7 +1,7 @@
 """`IconBrowser`, the model and the control behind the icon picker: the curated icons of `tess_ui.icons`, and the SVG and PNG files of an optional folder, as a searchable grid.
 
-`IconBrowser` has no window: it lists, searches, keeps a cursor in the grid and answers keys. `IconBrowserControl` is `widget: IconBrowser` in `IconPickerPanel_View.yaml` and
-`IconPicker_View.yaml`, a control that draws nothing (see `tess_ui.mind`): it holds a browser, hands the view the grid as rows of cells, and reads the previews of the files
+`IconBrowser` has no window: it lists, searches, keeps a cursor in the grid and answers keys. `IconBrowserControl` is `widget: IconBrowser` in `IconPickerPanel_View.tdl` and
+`IconPicker_View.tdl`, a control that draws nothing (see `tess_ui.mind`): it holds a browser, hands the view the grid as rows of cells, and reads the previews of the files
 that are in view (and no others) when the view scrolls to them.
 
 The grid is a list of rows `{key, cells}` (the key changes with each search, so a view makes new rows rather than patching old ones); a cell is `{index, name, kind, icon, svg, frame}`: `kind` is `glyph` (`icon` names a built-in icon), `svg` (`svg` is the file's text), `png` (`frame` is `(rgba, width, height)`) or `file` (a

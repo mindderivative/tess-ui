@@ -288,13 +288,6 @@ theme.duration("medium2")              # 300 (ms)
 the widget uses its own MD3 default. MD3's easing and duration tokens are all there; `emphasized` is MD3's
 single-curve form, `(0.2, 0, 0, 1)`.
 
-### Style files
-
-A `*_Style.yaml` file holds one node's `style:` (its fields under a `style:` key, and an optional `id:`), and a node of a view in
-the older syntax can name it (`style: row_Style.yaml`) so several nodes share it. A TDL view refuses one, naming the
-line: write the fields in `Style`, or in a rule that several nodes match through a class or a widget name. `tesserae migrate-yaml` writes a
-style file's fields into each node that named it.
-
 ### Files and checking
 
 `load_theme` and `load_stylesheet` read a file into the dict the app takes; `App(custom_theme=)` and `App(stylesheet=)` do it for you,
@@ -327,9 +320,8 @@ form or the other. An unknown key in a theme file is found when the file is read
 - `App.dark` *(property)*: Whether the app is showing its dark scheme right now.
 - `App.dark_mode` *(property)*: `"system"` (following the OS), or the app's fixed `True`/`False`.
 - `App.set_dark(dark: bool | str) -> None`: `True`/`False` fixes the app dark or light, re-theming every screen in place; `"system"` goes back to following the OS from its next switch.
-- `App.set_theme_specs(default_theme_spec: Any, custom_theme_spec: Any) -> None`: Re-themes the running app in place: every view `build_view()`/`load()` made.
-- `App.set_stylesheet_spec(stylesheet_spec: dict[str, Any] | None) -> None`: Replaces the app's default stylesheet in place: every view `build_view()`/`load()` made with the default -- not one given its own `stylesheet=` -- is re-styled, and views built later use it too.
-- `App.build_view(view_path: str | Path, *, stylesheet: str | Path | None = None, stylesheet_spec: dict[str, Any] | None = None) -> Any`: Builds a view with this app's theme and stylesheet, without registering it -- for a screen given to `register()`, e.g. one whose `ViewModel` needs the `app` itself.
+- `App.set_theme_specs(default_theme_spec: Any, custom_theme_spec: Any) -> None`: Re-themes the running app in place: every view the app made.
+- `App.set_stylesheet_spec(stylesheet_spec: dict[str, Any] | None) -> None`: Replaces the app's default stylesheet in place: every view the app made is re-styled, and views built later use it too.
 
 ### On a view
 
@@ -364,7 +356,7 @@ A resolved theme. Build one with `Theme.resolve(...)`.
 
 ### Loading files
 
-- `load_theme(path: str | Path) -> dict[str, Any]`: Reads a theme file (`*_Theme.tdl`) into the dict `tess_re`'s `default_theme_spec=`/`custom_theme_spec=` take, for `load_view` or for switching themes later:
+- `load_theme(path: str | Path) -> dict[str, Any]`: Reads a theme file (`*_Theme.tdl`) into the dict `tess_re`'s `default_theme_spec=`/`custom_theme_spec=` take, for `View(...)` or for switching themes later:
 - `load_stylesheet(path: str | Path) -> dict[str, Any]`: Reads a stylesheet file (`*_Stylesheet.tdl`) into the dict `tess_re`'s `stylesheet_spec=` takes.
 
 ### Tokens

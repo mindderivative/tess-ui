@@ -1,6 +1,6 @@
 """Stylesheet rules: the looks of widgets, by widget, variant, part and state (spec section 10; phase 6 of #209).
 
-A stylesheet (`<Name>_Stylesheet.yaml`) is a list of rules:
+A stylesheet (`<Name>_Stylesheet.tdl`) is a list of rules, shown here as the mapping it is read into:
 
 ```yaml
 styles:
@@ -28,7 +28,7 @@ from typing import Any, Callable, Collection, Iterable, Optional
 
 from tess_ui.expr import ExprError, Origin, compile_template
 from tess_ui.spec import marker, placement, sizes, widgets as registry
-from tess_ui.spec.nodes import LoadError, load_marked
+from tess_ui.spec.nodes import LoadError
 from tess_ui.spec.widgets import style_fields_of
 from tess_ui.project import looks_like
 
@@ -231,18 +231,17 @@ def _template(value: Any, file: str, at: tuple[int, int], text: str) -> Any:
 
 
 def load_rule_sheet(path: Any, parts_of: Optional[Callable[[str], Optional[Collection[str]]]] = None) -> RuleSheet:
-    """Reads a stylesheet file in the rule shape, by its suffix (`.tdl`: the TDL front end; else YAML); `parts_of` as for `RuleSheet.of`."""
+    """Reads a TDL stylesheet file in the rule shape; `parts_of` as for `RuleSheet.of`. A file named `*.yaml` is refused, saying that YAML is no longer read."""
+    from tess_ui.project import tdl_wrong_kind, yaml_refused
+    from tess_ui.spec.tdl_stylesheet import load_marked_tdl_stylesheet
+
     file = Path(path)
+    gone = yaml_refused(file)
+    if gone is not None:
+        raise LoadError(gone, file=str(file), line=1, column=0)
     text = file.read_text(encoding="utf-8")
     marker.note_if_missing(text, str(file))
-    if file.suffix == ".tdl":
-        from tess_ui.project import tdl_wrong_kind
-        from tess_ui.spec.flavour import require_tdl
-        from tess_ui.spec.tdl_stylesheet import load_marked_tdl_stylesheet
-
-        require_tdl(file)
-        wrong = tdl_wrong_kind(text, "stylesheet", file.name)
-        if wrong is not None:
-            raise LoadError("a stylesheet's root block is `Styles`, and this file's is not", file=str(file), line=wrong[1], column=wrong[2], hint=wrong[0], text=text)
-        return RuleSheet.of(load_marked_tdl_stylesheet(text, str(file)), str(file), text.removeprefix("\ufeff"), parts_of)
-    return RuleSheet.of(load_marked(text, str(file)), str(file), text, parts_of)
+    wrong = tdl_wrong_kind(text, "stylesheet", file.name)
+    if wrong is not None:
+        raise LoadError("a stylesheet's root block is `Styles`, and this file's is not", file=str(file), line=wrong[1], column=wrong[2], hint=wrong[0], text=text)
+    return RuleSheet.of(load_marked_tdl_stylesheet(text, str(file)), str(file), text.removeprefix("\ufeff"), parts_of)

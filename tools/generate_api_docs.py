@@ -31,9 +31,7 @@ THEME_MARKS = ("<!-- api:begin (written by tools/generate_api_docs.py) -->", "<!
 SECTIONS = (
     ("tess_ui.app", "App", "The entry point: screens, one window, the loop.", ("App",)),
     ("tess_ui.reactive", "Reactivity", "Signals, computed values, effects and the ViewModel base class."),
-    ("tess_ui.view", "Views and components", "A loaded `*_View.tdl`, and an embedded instance of one."),
-    ("tess_ui.component", "Embedding", "A component with a ViewModel of its own, inside a view.", ("instantiate",)),
-    ("tess_ui.repeater", "Repeater", "A list signal kept in step with a list of components.", ("Repeater",)),
+    ("tess_ui.view", "Views", "A built view: a spec of nodes, reconciled and wired."),
     ("tess_ui.project", "Projects", "A project's files, found by name.", ("Project", "ProjectError")),
     ("tess_ui.theme", "Themes", "A resolved MD3 theme, read from code."),
     ("tess_ui.tokens", "Tokens", "MD3's colour, type, shape and motion tokens."),
@@ -268,7 +266,7 @@ def theme_block() -> tuple[str, list[str]]:
 
     missing: list[str] = []
     out = ["### On the app", ""]
-    out += _members(App, ("theme", "dark", "dark_mode", "set_dark", "set_theme_specs", "set_stylesheet_spec", "build_view"), missing)
+    out += _members(App, ("theme", "dark", "dark_mode", "set_dark", "set_theme_specs", "set_stylesheet_spec"), missing)
     out += ["", "### On a view", ""] + _members(View, ("theme", "set_theme", "set_stylesheet"), missing) + [""]
     out += _describe_class(Theme, "tess_ui.Theme", missing)
     out += ["### Loading files", ""]

@@ -4,7 +4,7 @@ import pytest
 
 from tess_ui.expr import Template
 from tess_ui.spec import widgets as W
-from tess_ui.spec.nodes import EVENTS, LoadError, load_marked, parse_view
+from tess_ui.spec.nodes import EVENTS, LoadError, parse_view
 from tess_ui.spec.widgets import Property, WidgetDecl
 
 
@@ -87,7 +87,6 @@ def test_style_takes_universal_fields_a_widgets_extras_and_expressions():
     err = fails("Container { Style { Widht: 100 } }", "Container: style 'widht' is not valid here")
     assert "did you mean 'width'" in str(err)
     fails("Container { Style: [1] }", "'style:' takes a mapping")
-    fails('Container { Style: "row_Style.yaml" }', "a style file (`*_Style.yaml`) is not part of the view language")
     fails("Container { Style: row }", "'style:' takes a mapping of style fields; write the fields here")
     assert node("Text { Style { Foreground: on_surface } }").style["foreground"] == "on_surface"  # an extra of the widgets that draw text
     err = fails("Container { Style { Foreground: red } }", "Container: style 'foreground' is not valid here")

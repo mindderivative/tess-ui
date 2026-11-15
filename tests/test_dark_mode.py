@@ -8,34 +8,30 @@ window's own `tess_re` theme is never set: nothing reads it. OS switches are
 simulated with `window.simulate("color_scheme", dark=...)`.
 """
 
-import importlib.util
-import sys
-
 import pytest
 
 from helpers import window_unthemed
-from tess_ui import App, tokens
+from tess_ui import App, Signal, View, ViewModel, tokens
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 LIGHT, DARK = tokens.color_scheme(SEED, False)["primary"], tokens.color_scheme(SEED, True)["primary"]
-# legacy syntax: deleted with spec/expand.py at the cutover (`app.load(path)` reads YAML only, see test_composed_windows)
-VIEW = ('id: root\nkind: Container\nchildren:\n'
-        '  - {id: box, kind: Rect, style: {width: 10, height: 10, background: primary}}\n'
-        '  - {id: label, kind: Text, text: {content: "", font_family: Roboto, font_size: 14}, style: {foreground: on_surface, width: 50, height: 20}, bindings: {text: "{{ title.get() }}"}}\n')
+SPEC = {"id": "root", "kind": "Container", "children": [
+    {"id": "box", "kind": "Rect", "style": {"width": 10, "height": 10, "background": "primary"}},
+    {"id": "label", "kind": "Text", "text": {"content": "", "font_family": "Roboto", "font_size": 14},
+     "style": {"foreground": "on_surface", "width": 50, "height": 20}, "bindings": {"text": "{{ title.get() }}"}}]}
+
+
+class HomeViewModel(ViewModel):
+    def __init__(self, view):
+        self.title = Signal("live")
+        super().__init__(view)
 
 
 def _load(app, tmp_path, prefix="Home"):
-    view = tmp_path / f"{prefix}_View.yaml"
-    view.write_text(VIEW)
-    vm = tmp_path / f"{prefix}_ViewModel.py"
-    vm.write_text(f"from tess_ui import Signal, ViewModel\n\n\nclass {prefix}ViewModel(ViewModel):\n"
-                  f"    def __init__(self, view):\n        self.title = Signal('live')\n        super().__init__(view)\n")
-    spec = importlib.util.spec_from_file_location(vm.stem, vm)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    view_obj, _ = app.load(view, getattr(module, f"{prefix}ViewModel"))
-    return view_obj
+    """A view of the spec above, with its ViewModel, registered with the app under `prefix`."""
+    view = View(SPEC, window=app.window)
+    app.register(prefix, view, HomeViewModel(view))
+    return view
 
 
 def _screen(view):

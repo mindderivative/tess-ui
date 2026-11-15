@@ -8,15 +8,12 @@ views end to end -- `push_frame` rejects a frame whose byte length
 doesn't match its size, so a clean load means `tess_re` accepted the frame.
 """
 
-import importlib.util
-import sys
 from pathlib import Path
 
 import pytest
-import tess_re
 from PIL import Image
 
-from tess_ui import App, View, instantiate
+from tess_ui import App
 from tess_ui.images import decode_image
 from tess_ui.spec import ComponentError
 from tess_ui.spec.images import extract_images
@@ -163,53 +160,3 @@ def test_a_view_decodes_images_into_image_nodes(tmp_path: Path):
 def test_a_view_with_a_missing_image_is_a_component_error(tmp_path: Path):
     with pytest.raises(ComponentError, match=r"widget 'root.img'.*cannot read"):
         _gallery(tmp_path).open_view("Gallery")
-
-
-# `instantiate()` still reads a component's file as YAML (src/tess_ui/component.py, spec/expand.py): this test keeps the 0.4 text until
-# `instantiate` takes TDL (it then becomes `IMAGE_VIEW` above, in `Tile_View.tdl`, and `Parent_View.tdl`).
-IMAGE_FRAGMENT_VIEW = """
-id: root
-kind: Container
-style: {width: 200, height: 200}
-children:
-  - id: img
-    component: Image
-    with: {src: assets/rb.png, width: 100, height: 100, fit: cover}
-"""
-
-
-def test_instantiate_decodes_a_components_images(tmp_path: Path):
-    """An embedded component's images are decoded by Tesserae too, and the
-    spec its host builds has no `src:` left."""
-    _png(tmp_path / "assets" / "rb.png")
-    parent_path = tmp_path / "Parent_View.yaml"
-    parent_path.write_text(
-        "id: root\nkind: Container\nstyle: {width: 300, height: 300}\n"
-        "children:\n  - {id: slot, kind: Container, style: {width: 250, height: 250}}\n"
-    )
-    item_path = tmp_path / "Tile_View.yaml"
-    item_path.write_text(IMAGE_FRAGMENT_VIEW)
-    vm_path = tmp_path / "Tile_ViewModel.py"
-    vm_path.write_text("from tess_ui import ViewModel\n\n\nclass TileViewModel(ViewModel):\n    pass\n")
-
-    module_spec = importlib.util.spec_from_file_location("Tile_ViewModel", vm_path)
-    module = importlib.util.module_from_spec(module_spec)
-    sys.modules[module_spec.name] = module
-    module_spec.loader.exec_module(module)
-
-    view = View(str(parent_path))
-    calls = []
-
-    original = view.instantiate
-
-    def recording(path, into, spec=None, frames=None):
-        calls.append((spec, frames))
-        return original(path, into, spec=spec, frames=frames)
-
-    view.instantiate = recording
-    component, _ = instantiate(view, item_path, module.TileViewModel, view.node("slot"))
-
-    assert component.node("img").get("pixel_width") == 2
-    spec, frames = calls[0]
-    assert spec["children"][0]["image"] == {"fit": "cover"}
-    assert set(frames) == {"img"}

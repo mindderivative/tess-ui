@@ -4,7 +4,7 @@ owns exactly one of, per the user's own explicit design requirement:
 switching of current views without needing to bootstrap each
 view/viewModel."
 
-Owns a registry of named `(View, ViewModel)` pairs -- each `*_View.yaml`
+Owns a registry of named `(View, ViewModel)` pairs -- each `*_View.tdl`
 + `*_ViewModel.py` file pair a real app registers once, up front -- and
 exactly one live `tess_re.Window`, created with the `App`. Screens are built
 into it by Tesserae; `App.show(name)` attaches that screen's root
@@ -18,10 +18,8 @@ life of the `App`.
 from __future__ import annotations
 
 import os
-import re
 import sys
 import time
-import weakref
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
@@ -32,17 +30,16 @@ from tess_re import Window
 
 from tess_ui.follow import alive, app_of, register_app, register_window, retheme
 from tess_ui.listeners import Listeners, listen_window
-from tess_ui.naming import check_naming_convention
-from tess_ui.project import Project, is_name, resolve_embedded, resolve_view, view_stem
+from tess_ui.project import Project, is_name, view_stem
 from tess_ui import focusring as _focusring, ripple as _ripple
 from tess_ui.spec.window import window_of
-from tess_ui.window_view import Frame, WindowViewModel
+from tess_ui.window_view import Frame
 from tess_ui import tokens
 from tess_ui.reactive import Computed, Effect, Signal, batch
-from tess_ui.spec import ViewWatcher, load_stylesheet, load_theme
+from tess_ui.spec import load_stylesheet, load_theme
 from tess_ui.view import View as TesseraeView
 from tess_ui.viewmodel import Bindings, check_view
-from tess_ui.spec.watch import ComponentWatcher, FileWatcher
+from tess_ui.spec.watch import ComposedWatcher, FileWatcher
 
 #: How often `run(keepalive=True)` ticks, in seconds: about 50 times a second,
 #: which costs about half a percent of one core while a window is idle.
@@ -108,15 +105,9 @@ class _Registered:
 
 @dataclass
 class _Built:
-    """A view `App.build_view()` made -- one a theme or stylesheet reload
-    reaches."""
+    """A view the app made -- one a theme or stylesheet reload reaches."""
 
     view: Any
-    #: `True` if it was given its own stylesheet (file or dict) instead
-    #: of the app's default.
-    own_stylesheet: bool = False
-    #: That own stylesheet's file, resolved, if it came from one.
-    stylesheet_file: Path | None = None
 
 
 def _os_dark(window: Any) -> bool | None:
@@ -185,15 +176,6 @@ def _file_or_spec(owner: str, file_arg: str, file: Any, spec: Any, loader: Any) 
     return loader(file) if file is not None else spec
 
 
-def _is_window_file(path: Any) -> bool:
-    """Whether the view file at `path` has `kind: Window` as its root (a top-level `kind:` line)."""
-    try:
-        text = Path(path).read_text(encoding="utf-8")
-    except OSError:
-        return False
-    return re.search(r"^kind:\s*Window\s*(#.*)?$", text, re.M) is not None
-
-
 def _script_folder() -> Path:
     """The folder of the script that runs (`app.py`), or the current folder."""
     script = getattr(sys.modules.get("__main__"), "__file__", None)
@@ -210,19 +192,17 @@ class App:
 
     M30: the theme is app-wide -- `theme_seed=`, `dark=`,
     `default_theme=`/`custom_theme=` (file paths) or their `*_spec=`
-    dict forms apply to every screen `build_view()`/`load()` builds. The
+    dict forms apply to every view the app opens. The
     theme is Tesserae's (`tess_ui.Theme`, `app.theme`); since M42 the
     window's own `tess_re` theme is never set or read, as nothing `tess_re` draws
     uses it any more.
 
     `stylesheet=`/`stylesheet_spec=` here is the default stylesheet for
-    every screen; `load(stylesheet=...)` replaces it for one screen (a
-    stylesheet is genuinely per-`View` in `tess_re`).
+    every screen.
 
     The theme and default stylesheet files are read once, here, by
     Tesserae (so a `FontFallbackWarning` fires once, not once per
-    screen); a screen's own `load(stylesheet=...)` file is read when it
-    loads. `tess_re` only ever gets the dicts.
+    screen). `tess_re` only ever gets the dicts.
     """
 
     def __init__(
@@ -244,7 +224,6 @@ class App:
         search: Any = (),
         recursive: bool = False,
         borderless: bool = False,
-        window_view: str | Path | None = None,
         resize_border: int | None = None,
         min_width: int = 0,
         min_height: int = 0,
@@ -291,13 +270,11 @@ class App:
         self._custom_theme_spec = _file_or_spec("App", "custom_theme", custom_theme, custom_theme_spec, load_theme)
         #: The theme files, for `run(hot_reload=True)` to watch (M31).
         self._theme_files = {"default": default_theme, "custom": custom_theme}
-        #: Every view `build_view()` made -- the ones a reload reaches.
+        #: Every view the app made -- the ones a reload reaches.
         self._built: list[_Built] = []
         self._stylesheet_spec = _file_or_spec("App", "stylesheet", stylesheet, stylesheet_spec, load_stylesheet)
         #: The default stylesheet's file, for `run(hot_reload=True)`.
         self._stylesheet_file = stylesheet
-        #: Each screen's own stylesheet file -> the dict `tess_re` last accepted.
-        self._own_sheets: dict[Path, Any] = {}
         self._registered: dict[str, _Registered] = {}
         #: The navigation history (M66): each entry a screen's name and its
         #: params, and the index of the one showing (-1 before the first).
@@ -388,7 +365,7 @@ class App:
             if os_dark is not None:
                 self._dark = os_dark
         self._current: str | None = None
-        #: The window view (`kind: Window`) once one is loaded: its `Frame` (0.4.4)
+        #: The window view (a `Window` root) once one is opened: its `Frame` (0.4.4)
         self._frame: Any = None
         self._windows: dict[str, Any] = {}
         self._guards: dict[str, list[Callable[[dict[str, Any]], Any]]] = {}
@@ -416,10 +393,6 @@ class App:
         self.bindings = Bindings()
         self._opened: dict[str, Any] = {}
         self._watchers: list[Any] = []
-        self._component_watchers: dict[Path, Any] = {}
-        #: Every component `tess_ui.instantiate` made on this window, in any
-        #: view (M61); weakly held, so removed ones drop out.
-        self._instances: weakref.WeakSet[Any] = weakref.WeakSet()
         self._window.on("color_scheme", self._on_color_scheme)
         # the window's display options: the engine's (`tess_re` 0.5.4)
         self._set_window(dpi_scaling=bool(dpi_scaling), present_mode=present_mode, glyph_cache=bool(glyph_cache))
@@ -443,8 +416,6 @@ class App:
 
             set_system_fonts(True)
         self._transparent = bool(transparent)
-        if window_view is not None:  # the app's window, in YAML: `kind: Window` (0.4.4)
-            self.load(window_view)
 
     def _set_window(self, **options: Any) -> None:
         """Sets window options, naming the option and the app when the platform can't do it."""
@@ -726,7 +697,7 @@ class App:
         logger.info("switched to the {} scheme", "dark" if dark else "light")
 
     def _retheme(self, old: dict[str, Any], new: dict[str, Any]) -> None:
-        """Re-themes every view `build_view()` made, then every widget
+        """Re-themes every view the app made, then every widget
         following the app, from the `old` theme arguments to `new`;
         if one fails, the ones done go back to `old` and it re-raises."""
         from tess_ui.theme import Theme
@@ -770,7 +741,7 @@ class App:
 
     def set_theme_specs(self, default_theme_spec: Any, custom_theme_spec: Any) -> None:
         """Re-themes the running app in place: every view
-        `build_view()`/`load()` made. Both theme dicts
+        the app made. Both theme dicts
         are the complete new selection (`None` for none), as in `tess_re`,
         where each `set_theme` call is a fresh choice, not a patch; the
         seed and light/dark stay as they are. Bound values stay
@@ -788,8 +759,7 @@ class App:
 
     def set_stylesheet_spec(self, stylesheet_spec: dict[str, Any] | None) -> None:
         """Replaces the app's default stylesheet in place:
-        every view `build_view()`/`load()` made with the default -- not
-        one given its own `stylesheet=` -- is re-styled, and views built
+        every view the app made is re-styled, and views built
         later use it too. `None` means no stylesheet. Bound values stay
         live (`tess_re` M91). If `tess_re` rejects it, it raises and every screen
         keeps its old stylesheet. Call it on the event-loop thread;
@@ -813,54 +783,11 @@ class App:
                 view.set_stylesheet(stylesheet_spec=spec)
 
         _apply_all(
-            [b.view for b in self._built if not b.own_stylesheet or isinstance(b.view, ComposedView)],
+            [b.view for b in self._built],
             lambda view: restyle(view, stylesheet_spec, rules_now, rules_before),
             lambda view: restyle(view, previous, rules_before, rules_now),
         )
         self._stylesheet_spec = stylesheet_spec
-
-    def _set_own_stylesheet(self, path: Path, stylesheet_spec: dict[str, Any]) -> None:
-        """A screen's own stylesheet file changed: re-style the views
-        built with it."""
-        previous = self._own_sheets.get(path)
-        _apply_all(
-            [b.view for b in self._built if b.stylesheet_file == path],
-            lambda view: view.set_stylesheet(stylesheet_spec=stylesheet_spec),
-            lambda view: view.set_stylesheet(stylesheet_spec=previous),
-        )
-        self._own_sheets[path] = stylesheet_spec
-
-    def build_view(
-        self,
-        view_path: str | Path,
-        *,
-        stylesheet: str | Path | None = None,
-        stylesheet_spec: dict[str, Any] | None = None,
-    ) -> Any:
-        """Builds a view with this app's theme and stylesheet, without
-        registering it -- for a screen given to `register()`, e.g. one
-        whose `ViewModel` needs the `app` itself. `stylesheet=`/
-        `stylesheet_spec=` replace the app's default stylesheet for this
-        view. `load()` builds its views through this too.
-        """
-        view_path = self._named("view", view_path)
-        stylesheet = self._named("stylesheet", stylesheet)
-        sheet = _file_or_spec("App.build_view", "stylesheet", stylesheet, stylesheet_spec, load_stylesheet)
-        built = _Built(None, own_stylesheet=sheet is not None)
-        if stylesheet is not None:
-            built.stylesheet_file = Path(stylesheet).resolve()
-            self._own_sheets[built.stylesheet_file] = sheet
-        if sheet is None:
-            sheet = self._stylesheet_spec
-        kwargs = self._view_theme()
-        if sheet is not None:
-            kwargs["stylesheet_spec"] = sheet
-        try:
-            built.view = TesseraeView(Path(view_path), window=self._window, project=self.project, **kwargs)
-        except ValueError:
-            raise
-        self._built.append(built)
-        return built.view
 
     def bind(self, target: Any = None, *, factory: Any = None, views: Any = None) -> None:
         """Serves named views with a ViewModel: `bind(DataViewModel)` makes the one instance when its first view opens,
@@ -928,7 +855,7 @@ class App:
         self.register(key, opened, opened.handle.viewmodel)
         self._built.append(_Built(opened))
         self._opened[key] = opened
-        if window_of(opened.spec) is not None:  # a `widget: Window` root is the app's window, as `kind: Window` is for `load`
+        if window_of(opened.spec) is not None:  # a `Window` root is the app's window
             self._adopt_window_view(key, opened)
         return opened
 
@@ -1031,18 +958,14 @@ class App:
         -- a real, load-bearing collision a caller should know about
         immediately, not silently overwrite.
 
-        The caller builds `view`, so the caller themes it: build it with
-        `app.build_view("Foo_View.yaml")` to give it this app's theme and
-        stylesheet. A view built any other way keeps whatever theme
-        it was built with. A view built from a file keeps it (`view.path`),
-        so `run(hot_reload=True)` watches it as it does a `load()`ed one
-.
+        The caller builds `view` (a `View` of a spec, or one `open_view` made), so the caller themes it: a view
+        built any other way keeps whatever theme it was built with.
         """
         if name in self._registered:
             raise ValueError(f"a view named {name!r} is already registered")
         if not isinstance(view, TesseraeView):
             raise TypeError(
-                f"App.register({name!r}): the view must be a tesserae View (e.g. from app.build_view()), "
+                f"App.register({name!r}): the view must be a tesserae View (e.g. one `View(spec)` built), "
                 f"got {type(view).__name__}"
             )
         view.move_to(self._window)  # a view built on its own is rebuilt in this app's window
@@ -1052,51 +975,8 @@ class App:
         """`ref` as a path: a bare name (`"Main"`) is found in the project, a path is left as it is."""
         return self.project.find(kind, ref) if is_name(ref) else ref
 
-    def load(
-        self,
-        view_path: str | Path,
-        viewmodel_cls: type | None = None,
-        name: str | None = None,
-        *,
-        stylesheet: str | Path | None = None,
-        stylesheet_spec: dict[str, Any] | None = None,
-    ) -> tuple[Any, Any]:
-        """Loads a `*_View.yaml` + `*_ViewModel.py` pair and registers it.
-
-        `view_path` is a path, or a name found in the project (`app.load("Main")` is `Views/Main_View.yaml`).
-        `viewmodel_cls` is the ViewModel class; left out, it is found by the view's name (`Main_ViewModel.py`,
-        class `MainViewModel`, beside the view or in `ViewModels/`). The pair must follow the
-        [naming convention](naming-convention.md): the same prefix, checked here, so a mismatch fails at load
-        and not later when a handler name doesn't resolve.
-
-        `name` defaults to that prefix (`"Main"`); it is only needed if two pairs would share it. The view is
-        built with `build_view`, with the app's theme and its default stylesheet, or this screen's own
-        `stylesheet=` / `stylesheet_spec=` (a path or a name).
-
-        Returns the `(view, viewmodel)` pair, for code that wants a node to click in a test or a Signal to
-        read back.
-        """
-        if viewmodel_cls is None and _is_window_file(self._named("view", view_path)):  # a window view needs none (0.4.4)
-            path, found = resolve_embedded(self.project, view_path)
-            viewmodel_cls = found if found is not None else WindowViewModel
-            prefix = view_stem(path)
-            if found is not None:
-                check_naming_convention(path, found)
-            view_path = path
-        else:
-            view_path, viewmodel_cls = resolve_view(self.project, view_path, viewmodel_cls)
-            prefix = check_naming_convention(view_path, viewmodel_cls)
-
-        view = self.build_view(view_path, stylesheet=stylesheet, stylesheet_spec=stylesheet_spec)
-        viewmodel = viewmodel_cls(view)
-        self.register(name or prefix, view, viewmodel)
-        if window_of(view.spec) is not None:
-            self._adopt_window_view(name or prefix, view)
-        logger.debug("loaded {!r} from {}", name or prefix, view_path)
-        return view, viewmodel
-
     def _adopt_window_view(self, name: str, view: Any) -> None:
-        """A loaded `kind: Window` view becomes the app's frame: it sets the OS window, and is mounted in it for good."""
+        """An opened `Window` view becomes the app's frame: it sets the OS window, and is mounted in it for good."""
         if self._frame is not None:
             raise ValueError(f"the app already has a window view ({self._frame.name!r}); {name!r} is a second: "
                              "an app has one window")
@@ -1657,13 +1537,7 @@ class App:
         for name, registered in self._registered.items():
             if registered.view in self._opened.values() or hasattr(registered.view, "record"):  # watched with its view, or a routed call: a node of its window's view
                 continue
-            # M48: a screen built from a file -- by `load()` or `build_view()`,
-            # then `register()` -- keeps that file as `view.path`
-            path = getattr(registered.view, "path", None)
-            if path is not None:
-                watchers.append(ViewWatcher(registered.view, path, project=self.project))
-            else:
-                logger.info("hot reload: screen {!r} isn't watched -- it was built from a spec, not a file", name)
+            logger.info("hot reload: screen {!r} isn't watched -- it was built from a spec, not a file", name)
         if self._stylesheet_file is not None:
             path = Path(self._stylesheet_file).resolve()
             watchers.append(
@@ -1672,19 +1546,6 @@ class App:
                     lambda path=path: load_stylesheet(path),
                     _from_file(path, "re-styled the screens using the default stylesheet", self.set_stylesheet_spec),
                     name="stylesheet",
-                )
-            )
-        for path in self._own_sheets:
-            watchers.append(
-                FileWatcher(
-                    [path],
-                    lambda path=path: load_stylesheet(path),
-                    _from_file(
-                        path,
-                        "re-styled the screens loaded with this stylesheet",
-                        lambda spec, path=path: self._set_own_stylesheet(path, spec),
-                    ),
-                    name=f"stylesheet:{path.name}",
                 )
             )
         theme_files = [f for f in self._theme_files.values() if f is not None]
@@ -1700,74 +1561,24 @@ class App:
         for watcher in watchers:
             watcher.start(handle)
         self._hot_handle, self._watchers = handle, watchers
-        for path in sorted({c.path.resolve() for c in self._live_components()}):
-            self.watch_component(path)
-        views = sum(isinstance(w, ViewWatcher) and not isinstance(w, ComponentWatcher) for w in watchers)
+        views = sum(isinstance(w, ComposedWatcher) for w in watchers)
         logger.info(
             "hot reload on: watching {} screen(s) and {} theme/stylesheet file(s)",
             views,
-            sum(len(w.files) for w in watchers if not isinstance(w, ViewWatcher)),
+            sum(len(w.files) for w in watchers if not isinstance(w, ComposedWatcher)),
         )
         return watchers
 
     def _composed_watcher(self, opened: Any) -> Any:
         from tess_ui.shipped import SHIPPED
-        from tess_ui.spec.watch import ComposedWatcher
-
         return ComposedWatcher(opened, opened.source, self._composed_docs, lambda library, doc: self._composed_rules(library, doc=doc)[0], shipped=SHIPPED,
                                 sheet_files=lambda library, used: library.sheets_of(used, self._app_sheet_file())[1])
 
     def _stop_watchers(self) -> None:
-        """Stops every hot-reload watcher, including component watchers
-        started while the app ran; a later `instantiate` watches nothing."""
+        """Stops every hot-reload watcher."""
         for watcher in self._watchers:
             watcher.stop()
-        self._hot_handle, self._watchers, self._component_watchers = None, [], {}
-
-    def _live_components(self, path: Path | None = None) -> list[Any]:
-        """Every live component built from a file (`tess_ui.instantiate`)
-        in the app's screens and views, nested ones included -- or only
-        those built from `path` -- and, since M61, in any other view
-        on the app's window, as `instantiate` registered them."""
-        views = [r.view for r in self._registered.values() if hasattr(r.view, "_prune_components")] + [b.view for b in self._built]  # a routed call (`_Screen`) is a node of its window's view, which is in `_built`
-        views += [f for f in self._followers if isinstance(f, TesseraeView)]
-        found: list[Any] = []
-        seen: set[int] = set()
-        stack = list(views)
-        while stack:
-            view = stack.pop()
-            view._prune_components()
-            for component in view._components:
-                if id(component) in seen:
-                    continue
-                seen.add(id(component))
-                stack.append(component)
-                if component.path is not None and (path is None or component.path.resolve() == path):
-                    found.append(component)
-        for component in list(self._instances):  # M61: in a view the app doesn't otherwise know
-            if id(component) in seen or not component._follow_alive():
-                continue
-            seen.add(id(component))
-            if component.path is not None and (path is None or component.path.resolve() == path):
-                found.append(component)
-        return found
-
-    def watch_component(self, path: str | Path) -> None:
-        """While `run(hot_reload=True)` runs, watches a component file and
-        reloads every live instance of it on change;
-        `tess_ui.instantiate` calls it, so a component first added while
-        the app runs is watched too. Once per file; outside hot reload,
-        nothing happens."""
-        if self._hot_handle is None:
-            return
-        path = Path(path).resolve()
-        if path in self._component_watchers:
-            return
-        watcher = ComponentWatcher(path, lambda path=path: self._live_components(path), project=self.project)
-        watcher.start(self._hot_handle)
-        self._component_watchers[path] = watcher
-        self._watchers.append(watcher)
-        logger.info("hot reload: watching component {} ({} instance(s))", path.name, len(self._live_components(path)))
+        self._hot_handle, self._watchers = None, []
 
     def _apply_theme_files(self, specs: tuple[Any, Any]) -> None:
         self.set_theme_specs(*specs)
@@ -1787,26 +1598,16 @@ class App:
         display it returns at once; a window whose GPU can't be set up
         raises `RuntimeError` (`tess_re` 0.4.0).
 
-        `hot_reload=True` watches every screen built from a file --
-        by `load()`, or by `build_view()` and given to `register()`
-        -- its view file and everything it was built from, and reloads it
-        in place while the app runs, its ViewModel and bindings kept. Each
-        screen gets a `ViewWatcher` on a background thread (`watchfiles`),
-        which hands its reloads to the event loop through `tess_re`'s
-        thread-safe `App.thread_handle()`. A failed reload is
-        logged; the app keeps running. A screen built from a spec
-        dict has no file, so it isn't watched, and the log says so. A
-        component built with `tess_ui.instantiate` is watched by its file
-        too, one watcher for all its live instances, including ones added
-        while the app runs.
+        `hot_reload=True` watches every view opened with `open_view` or `open_window` -- its view file and everything it was built from -- and
+        reloads it in place while the app runs, its ViewModel and bindings kept. Each view gets a `ComposedWatcher` on a background thread
+        (`watchfiles`), which hands its reloads to the event loop through `tess_re`'s thread-safe `App.thread_handle()`. A failed reload is
+        logged; the app keeps running. A screen built from a spec dict has no file, so it isn't watched, and the log says so.
 
         M31: the theme files given to `App(default_theme=, custom_theme=)`
         are watched too. An edit re-reads them on the watcher thread and
-        re-themes every screen `build_view()`/`load()` made with
-        `set_theme_specs`. So are stylesheet files: the
-        default from `App(stylesheet=)` (re-applied, with
-        `set_stylesheet_spec`, to every screen using it) and each screen's
-        own `stylesheet=` file (re-applied to the screens built with it).
+        re-themes every view the app made with
+        `set_theme_specs`. So is the default stylesheet file from
+        `App(stylesheet=)` (re-applied, with `set_stylesheet_spec`, to every view).
 
         `keepalive` (0.3.1, #77) keeps the window ticking about 50 times a
         second (a number is the seconds between ticks), for code that wants

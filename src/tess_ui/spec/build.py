@@ -61,7 +61,6 @@ _NODE_KEYS = frozenset({
     "id", "kind", "classes", "style", "text", "checked", "selected", "value", "hour", "minute",
     "image", "icon", "svg", "canvas", "scroll", "overlay", "virtual", "track", "stop_indicator", "buffer", "error", "icons", "ticks", "value_indicator", "vertical", "size", "low", "high", "thickness", "two_bar", "contained", "wavy", "bindings", "handlers", "two_way", "interaction", "a11y", "a11y_literal", "group", "children",
     "component_of",  # the fragment a node is the root of (M57): its theme `components:` entry
-    "embed",  # a `view:` node, made a container (0.4.4): the view to build into it and its `with:`
     "window",  # a root `kind: Window`, made a container (0.4.4): the OS window's title, borderless, sizes
     "dock", "dock_panel", "split_handle",  # a Dock, a DockPanel and the handle between split panels, made containers (0.4.4)
     "min", "max", "step",  # a SpinBox's (M58)
@@ -203,30 +202,19 @@ def build_with(
     return _build(ctx, spec, built, parent)
 
 
-_shipped: dict[str, dict[str, Any]] = {}
+_shipped: list[dict[str, Any]] = []
 
 
 def shipped_default_theme() -> dict[str, Any]:
-    """`tess_re`'s shipped default theme (Tesserae's copy), from `default_theme.tdl`, or `default_theme.yaml` when the shipped files are asked for in YAML
-    (`tess_ui.spec.flavour`)."""
-    from tess_ui.spec.flavour import shipped_flavour
-
-    flavour = shipped_flavour()
-    if flavour not in _shipped:
+    """`tess_re`'s shipped default theme (Tesserae's copy), from `default_theme.tdl`."""
+    if not _shipped:
         from pathlib import Path
 
-        path = Path(__file__).parent / f"default_theme.{flavour}"
-        if flavour == "tdl":
-            from tess_ui.spec.tdl_theme import load_theme_tdl
+        from tess_ui.spec.tdl_theme import load_theme_tdl
 
-            _shipped[flavour] = load_theme_tdl(path.read_text(encoding="utf-8"), str(path))
-        else:
-            import yaml
-
-            from tess_ui.spec import marker
-
-            _shipped[flavour] = marker.strip(yaml.safe_load(path.read_text(encoding="utf-8")))
-    return _shipped[flavour]
+        path = Path(__file__).parent / "default_theme.tdl"
+        _shipped.append(load_theme_tdl(path.read_text(encoding="utf-8"), str(path)))
+    return _shipped[0]
 
 
 def _did_you_mean(unknown: Any, known: Any) -> str:

@@ -1,6 +1,6 @@
 """`ChordRecorder`, the control behind the key-chord field: it draws nothing, records a key press as a chord, and reads a chord that was typed.
 
-It is `widget: ChordRecorder` in `KeyChordField_View.yaml` (see `tess_ui.mind`). The view holds a button that has the keyboard focus while a chord is being recorded and sends each key it
+It is `widget: ChordRecorder` in `KeyChordField_View.tdl` (see `tess_ui.mind`). The view holds a button that has the keyboard focus while a chord is being recorded and sends each key it
 hears as the command `key <name> <modifiers>`; a text field holds the chord as text (`draft`) and sends `typed <text>` when the person commits it. What the control does:
 
 - Not recording, Enter and Space start recording (the view's button also starts it by a press, writing `recording`).

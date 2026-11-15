@@ -11,8 +11,7 @@ finds them in a [project](projects.md):
 |`Tasks_Stylesheet.tdl`|a stylesheet of rules|`Tasks`: `App(stylesheet="Tasks")`|
 
 The part before the suffix is the **name**, and it is CamelCase. A view, a theme and a stylesheet are TDL files (`.tdl`), read by the TDL language 0.2: slots are written
-`<| |>`, and a file in an older TDL language, or one that writes a slot as `{{ }}`, is refused with the line. A project written in YAML is moved with
-`tesserae migrate-tdl` ([Migrating](../migration.md#to-0601)).
+`<| |>`, and a file in an older TDL language, or one that writes a slot as `{{ }}`, is refused with the line. A YAML file is not read: [Migrating from YAML](../migration.md#migrating-from-yaml) says how to move a project.
 Which ViewModel serves which view is not decided by the file
 names but by a second name, the view's **bind key**, the `Name` of its root node:
 
@@ -117,12 +116,3 @@ for `Button` are not used for it: its look is then your own `Style` and the rule
 A name that is the same everywhere is a name nobody has to look up: the view, its ViewModel, its route and its tests all say
 `Counter`. A project that follows it can open and join screens with the names alone, and a mismatch is caught when the view
 opens, not later when a handler does nothing.
-
-## Views in the older syntax
-
-A view written in the older syntax (`kind:` and `id:`, in a YAML file) is paired by file name alone: `app.load("Counter")` checks that `Counter_View.yaml` and the
-`Counter_ViewModel.py` that defines the ViewModel class (found with `inspect.getfile`, not a string you pass) have the same
-prefix, and raises `ValueError` immediately if the view does not end in `_View.yaml`, the ViewModel's file does not end in
-`_ViewModel.py`, or the prefixes differ. `instantiate` does the same check for an embedded component
-(`tess_ui.naming.check_naming_convention` is the shared code); `App.register` and a `Component` built by hand take what you
-give them. `tesserae migrate-yaml` moves such a project to the names above ([Migrating](../migration.md)).

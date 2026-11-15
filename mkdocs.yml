@@ -66,7 +66,7 @@ nav:
       - Reactivity: guide/reactivity.md
       - Components & Embedding: guide/components.md
       - Component Fragments: guide/component-fragments.md
-      - Repeater (Lists): guide/repeater.md
+      - Lists: guide/lists.md
       - Widgets in Python: guide/widget-catalog.md
       - Interaction & Accessibility: guide/interaction.md
       - Controls: guide/controls.md
