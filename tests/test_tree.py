@@ -5,8 +5,19 @@ import pytest
 from tess_ui import App, Signal, ViewModel, tokens
 from tess_ui.shipped import shipped_views
 
-NODES = """[{value: docs, label: Documents, icon: folder, children: [{value: a, label: Letter}, {value: b, label: Reports, children: [{value: q, label: Q1}, {value: r, label: Q2}]}]},
-        {value: pics, label: Pictures, children: [{value: p, label: Holiday}]}, {value: readme, label: Readme, icon: file}]"""
+NODES = """Nodes {
+  Item {
+    Value: docs
+    Label: Documents
+    Icon: folder
+    Children {
+      Item { Value: a, Label: Letter }
+      Item { Value: b, Label: Reports, Children { Item { Value: q, Label: Q1 } Item { Value: r, Label: Q2 } } }
+    }
+  }
+  Item { Value: pics, Label: Pictures, Children { Item { Value: p, Label: Holiday } } }
+  Item { Value: readme, Label: Readme, Icon: file }
+}"""
 
 
 class VM(ViewModel):
@@ -20,17 +31,23 @@ class VM(ViewModel):
 
 def opened(tmp_path, props=""):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    lines = "\n    ".join(props.split(", ")) if props else ""
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{flex_direction: vertical, align_content: top_left, width: 400, height: 600}}
-children:
-  - widget: Tree
-    name: t
-    nodes: {NODES}
-    expanded: "{{{{ open }}}}"
-    selected: "{{{{ sel }}}}"
-    {lines}
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Align_Content: top_left, Width: 400, Height: 600 }}
+  Children {{
+    Tree {{
+      Name: t
+      {NODES}
+      Expanded: <| open |>
+      Selected: <| sel |>
+      {props}
+    }}
+  }}
+}}
 """)
     app = App(root=tmp_path, width=400, height=600)
     app.bind(VM)
@@ -158,17 +175,27 @@ def test_right_opens_a_branch_and_left_closes_it(tmp_path):
 
 
 def test_a_compact_tree_has_40_pixel_rows(tmp_path):
-    view, _ = opened(tmp_path, "compact: true")
+    view, _ = opened(tmp_path, "Compact: true")
     assert row(view, "docs").get("layout_height") == 40.0 and row(view, "docs", "a").get("layout_y") == row(view, "docs").get("layout_y") + 40
 
 
 def test_a_disabled_row_does_not_respond(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text("""name: main
-widget: Container
-style: {width: 300, height: 300}
-children:
-  - {widget: Tree, name: t, nodes: [{value: x, label: X, disabled: true}, {value: y, label: Y}], selected: "{{ sel }}"}
+    (tmp_path / "Views" / "Main_View.tdl").write_text("""---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Width: 300, Height: 300 }
+  Children {
+    Tree {
+      Name: t
+      Nodes { Item { Value: x, Label: X, Disabled: true } Item { Value: y, Label: Y } }
+      Selected: <| sel |>
+    }
+  }
+}
 """)
     app = App(root=tmp_path)
     app.bind(VM)
@@ -182,11 +209,20 @@ children:
 
 def test_a_tree_with_nothing_bound_still_opens_and_chooses(tmp_path):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{width: 400, height: 500}}
-children:
-  - {{widget: Tree, name: t, nodes: {NODES}}}
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Width: 400, Height: 500 }}
+  Children {{
+    Tree {{
+      Name: t
+      {NODES}
+    }}
+  }}
+}}
 """)
     app = App(root=tmp_path)
     app.bind(VM)

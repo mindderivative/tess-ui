@@ -6,9 +6,35 @@ from tess_ui import Signal, ViewModel
 from tess_ui.spec.nodes import parse_view
 from tess_ui.viewmodel import BindingError, Bindings, check_view, declared_views, open_view
 
-PIE = "name: data_pie\nwidget: Container\nchildren:\n  - {widget: Text, name: total, text: '{{ len(rows) }} slices'}\n"
-LIST = ("name: data_list\nwidget: Container\nstate: {open: false}\nchildren:\n  - for: r in rows\n    key: r.id\n    widget: Text\n    name: row\n"
-        "    text: '{{ r.label }}'\n    handlers: {on_click: pick}\n")
+PIE = """---
+TDL: 0.2
+Name: data_pie
+---
+Container {
+  Name: data_pie
+  Children {
+    Text { Name: total, Text: <| len(rows) |> slices }
+  }
+}
+"""
+LIST = """---
+TDL: 0.2
+Name: data_list
+---
+Container {
+  Name: data_list
+  State { Open: false }
+  Children {
+    For r In <| rows |> Key <| r.id |> {
+      Text {
+        Name: row
+        Text: <| r.label |>
+        Handlers { On_Click: pick }
+      }
+    }
+  }
+}
+"""
 
 
 class DataViewModel(ViewModel):
@@ -30,8 +56,13 @@ def reset():
     DataViewModel.made = 0
 
 
+def tdl(root, name="x"):
+    """The TDL file text of a view whose root block is `root` (the file is `<name>_View.tdl`)."""
+    return f"---\nTDL: 0.2\nName: {name}\n---\n{root}"
+
+
 def doc(source, name="x"):
-    return parse_view(source, f"{name}_View.yaml")
+    return parse_view(source if source.startswith("---") else tdl(source, name), f"{name}_View.tdl")
 
 
 def test_declared_views_reads_a_list_or_a_single_string():
@@ -87,12 +118,12 @@ def test_bind_a_factory_makes_one_viewmodel_per_view_instance():
 def test_an_unnamed_view_and_a_view_no_viewmodel_serves_are_not_bound():
     bindings = Bindings()
     bindings.bind(DataViewModel)
-    static = open_view(doc("widget: Container\nchildren:\n  - {widget: Text, name: t, text: hello}"), bindings)
+    static = open_view(doc("Container { Children { Text { Name: t, Text: hello } } }\n"), bindings)
     assert static.viewmodel is None and static.name is None and DataViewModel.made == 0
-    other = open_view(doc("name: elsewhere\nwidget: Text\ntext: hi"), bindings)
+    other = open_view(doc("Text { Name: elsewhere, Text: hi }\n"), bindings)
     assert other.viewmodel is None
     with pytest.raises(Exception, match="'rows' is not defined"):
-        open_view(doc("name: elsewhere\nwidget: Text\ntext: '{{ len(rows) }}'"), bindings)  # it reads a name nothing gives it
+        open_view(doc("Text { Name: elsewhere, Text: <| len(rows) |> }\n"), bindings)  # it reads a name nothing gives it
 
 
 def test_binding_errors_are_said_plainly():
@@ -118,7 +149,7 @@ def test_binding_errors_are_said_plainly():
     bound = Bindings()
     bound.bind(NeedsView)
     with pytest.raises(BindingError, match="takes none"):
-        open_view(doc("name: needs\nwidget: Text\ntext: x"), bound)
+        open_view(doc("Text { Name: needs, Text: x }\n"), bound)
 
 
 def test_views_override_names_a_factory_function_serves():
@@ -211,9 +242,18 @@ def test_the_old_viewmodel_form_still_attaches_to_a_view():
 
 
 def test_the_contract_lists_every_name_and_action_a_view_uses_that_the_viewmodel_lacks():
-    view = doc("name: v\nwidget: Container\nstate: {n: 0}\nchildren:\n  - {widget: Text, text: '{{ title }} {{ n }}', handlers: {on_click: save}}\n"
-               "  - {for: r in rows, key: r.id, widget: Rect, handlers: {on_click: 'n = n + 1; open(r.id)'}}\n"
-               "  - {widget: Rect, handlers: {on_click: window.close}}\n", "v")
+    view = doc("""Container {
+  Name: v
+  State { N: 0 }
+  Children {
+    Text { Text: <| title |> <| n |>, Handlers { On_Click: save } }
+    For r In <| rows |> Key <| r.id |> {
+      Rect { Handlers { On_Click { Set { Target: n, Value: <| n + 1 |> } Call { Action: "open", Args: [<| r.id |>] } } } }
+    }
+    Rect { Handlers { On_Click: window.close } }
+  }
+}
+""", "v")
 
     class Full:
         title = "t"
@@ -236,17 +276,17 @@ def test_the_contract_lists_every_name_and_action_a_view_uses_that_the_viewmodel
     assert any("'save' is not a method of Partial" in p for p in problems)
     assert any("'open' is not a method of Partial" in p for p in problems)
     assert not any("'n'" in p or "'r'" in p or "window" in p for p in problems)  # state, loop variables and built-in actions are not the ViewModel's
-    assert problems[0].startswith("v_View.yaml:") and ":error" not in problems[0]
+    assert problems[0].startswith("v_View.tdl:") and ":error" not in problems[0]
 
 
 def test_a_view_that_needs_names_says_it_has_no_viewmodel():
-    view = doc("widget: Text\ntext: '{{ count }}'", "x")
-    assert check_view(view, None) == ["x_View.yaml:1:1: 'count' is not defined: this view has no ViewModel"]
-    assert check_view(doc("widget: Text\ntext: hello"), None) == []
+    view = doc("Text { Text: <| count |> }\n", "x")
+    assert check_view(view, None) == ["x_View.tdl:5:1: 'count' is not defined: this view has no ViewModel"]
+    assert check_view(doc("Text { Text: hello }\n"), None) == []
 
 
 def test_expects_declares_names_and_types_the_viewmodel_must_have():
-    view = doc("expects: {count: int, rows: list, title: str, add: handler, on: bool, ratio: float}\nwidget: Text\ntext: x")
+    view = doc("Text {\n  Expects { Count: int, Rows: list, Title: str, Add: handler, On: bool, Ratio: float }\n  Text: x\n}\n")
 
     class Good:
         count = Signal(3)
@@ -272,10 +312,15 @@ def test_expects_declares_names_and_types_the_viewmodel_must_have():
                      "'ratio' should be float", "expects 'title', which Bad does not define"):
         assert expected in problems, problems
     assert "expects 'count': this view has no ViewModel" in " ".join(check_view(view, None))
-    assert "unknown type 'colour'" in " ".join(check_view(doc("expects: {a: colour}\nwidget: Text\ntext: x"), type("V", (), {"a": 1})()))
+    assert "unknown type 'colour'" in " ".join(check_view(doc("Text { Expects { A: colour }, Text: x }\n"), type("V", (), {"a": 1})()))
 
 
 def test_reserved_names_are_not_the_viewmodels_to_provide():
-    view = doc("widget: Container\nchildren:\n  - {widget: Text, text: '{{ app.current_screen }}', handlers: {on_change: 'q = event.value'}}\n"
-               "  - {widget: Rect, if: 'hovered or focused or pressed'}\n", "r")
+    view = doc("""Container {
+  Children {
+    Text { Text: <| app.current_screen |>, Handlers { On_Change { Set { Target: q, Value: <| event.value |> } } } }
+    If <| hovered or focused or pressed |> { Rect { } }
+  }
+}
+""", "r")
     assert check_view(view, type("V", (), {"q": Signal("")})()) == []

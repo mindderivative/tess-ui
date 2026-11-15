@@ -23,22 +23,29 @@ class VM(ViewModel):
         self.words = Signal("")
 
 
-def opened(tmp_path, props="duration: 125"):
+def opened(tmp_path, props="Duration: 125"):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    lines = "\n    ".join(props.split("; ")) if props else ""
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{width: 500, height: 500, align_content: top_left}}
-children:
-  - widget: VideoPlayer
-    name: vp
-    frame: "{{{{ frame }}}}"
-    playing: "{{{{ playing }}}}"
-    position: "{{{{ position }}}}"
-    muted: "{{{{ muted }}}}"
-    buffering: "{{{{ wait }}}}"
-    caption: "{{{{ words }}}}"
-    {lines}
+    lines = "\n      ".join(props.split("; ")) if props else ""
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Width: 500, Height: 500, Align_Content: top_left }}
+  Children {{
+    VideoPlayer {{
+      Name: vp
+      Frame: <| frame |>
+      Playing: <| playing |>
+      Position: <| position |>
+      Muted: <| muted |>
+      Buffering: <| wait |>
+      Caption: <| words |>
+      {lines}
+    }}
+  }}
+}}
 """)
     app = App(root=tmp_path, width=500, height=500)
     app.bind(VM)
@@ -59,7 +66,7 @@ def test_it_is_shipped():
 
 
 def test_the_picture_is_the_size_asked_and_the_controls_are_under_it(tmp_path):
-    view, _ = opened(tmp_path, "duration: 125; width: 400; height: 225")
+    view, _ = opened(tmp_path, "Duration: 125; Width: 400; Height: 225")
     stage, controls = view.node("root.vp.stage"), view.node("root.vp.controls")
     assert stage.get("layout_width") == 400.0 and stage.get("layout_height") == 225.0
     assert controls.get("layout_y") >= stage.get("layout_y") + 225.0
@@ -127,7 +134,7 @@ def test_buffering_shows_a_ring_and_a_caption_a_band(tmp_path):
 
 
 def test_the_seek_slider_is_off_without_a_duration(tmp_path):
-    view, _ = opened(tmp_path, "duration: 0")
+    view, _ = opened(tmp_path, "Duration: 0")
     assert view.node("root.vp.controls.seek").get("disabled") is True
 
 
@@ -143,7 +150,7 @@ def test_space_plays_m_mutes_and_the_arrows_step(tmp_path):
 
 
 def test_the_arrows_step_position_and_stay_inside_the_video(tmp_path):
-    view, vm = opened(tmp_path, "duration: 120; step: 10")
+    view, vm = opened(tmp_path, "Duration: 120; Step: 10")
     view.node("root.vp.controls.seek").focus()
     view.window.simulate("key_down", key="arrow_right")
     settle(view)

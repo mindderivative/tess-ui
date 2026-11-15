@@ -6,11 +6,9 @@ Decoding stays the app's.
 """
 
 import pytest
-import yaml
 
 import tess_ui
 from tess_ui import Signal, View
-from tess_ui.spec import expand_components_to_spec
 from tess_ui.widgets import video
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
@@ -70,20 +68,6 @@ def test_a_bad_frame_or_a_frame_on_something_else_is_named():
     with pytest.raises(ValueError, match="only an Image takes a frame"):
         _view({"id": "t", "kind": "Rect", "style": {"width": 1, "height": 1, "background": "#000000"},
                "bindings": {"frame": "{{ frame.get() }}"}})
-
-
-def test_the_video_fragment_with_and_without_a_frame_binding():
-    spec = expand_components_to_spec(yaml.safe_dump({"id": "v", "component": "Video", "with": {
-        "width": 64, "height": 36, "frame": "{{ frame.get() }}"}}))
-    assert spec["bindings"] == {"frame": "{{ frame.get() }}"} and spec["kind"] == "Image"
-    view = View({"id": "root", "kind": "Container", "children": [spec]}, theme_seed=SEED)
-    player = Player(view)
-    assert _shown(view.node("v")) == _frame(2, 2, 10) and view.node("v").get("a11y_hidden") is True
-    player.frame.set(_frame(1, 1, 5))
-    assert _shown(view.node("v")) == _frame(1, 1, 5)
-    blank = expand_components_to_spec(yaml.safe_dump({"id": "v", "component": "Video",
-                                                      "with": {"width": 64, "height": 36}}))
-    assert "bindings" not in blank  # no frame: blank until code pushes one
 
 
 def test_the_video_widget_shares_the_frame_check():

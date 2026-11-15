@@ -1,18 +1,26 @@
-"""M29 Phase 3: `ViewWatcher` -- Tesserae-owned hot reload by polling
-file modification times, replacing `tess_re`'s own `poll_reload`.
+"""M29 Phase 3: hot reload by polling file modification times -- a view opened with `app.open_view` is watched by a `ComposedWatcher` (a `ViewWatcher`),
+which reloads it when a file it was read from changes.
 
 Every edit here bumps the file's mtime explicitly (`_edit`), so the
 tests don't depend on how finely the filesystem records timestamps.
 """
 
 import os
-import re
 from pathlib import Path
 
 import pytest
 from PIL import Image
 
-from tess_ui.spec import ComponentError, ViewWatcher, load_view
+from tess_ui import App, Signal, ViewModel
+from tess_ui.spec.watch import ComposedWatcher
+
+
+class VM(ViewModel):
+    views = "home"
+
+    def __init__(self):
+        super().__init__()
+        self.title = Signal("live")
 
 
 def _write(path: Path, text: str) -> Path:
@@ -31,13 +39,18 @@ def _edit(path: Path, text: str) -> None:
     _bump_mtime(path, before)
 
 
+def _view(name: str, body: str, header: str = "") -> str:
+    """The TDL of `name`'s file: a Container that holds `body` (the TDL of its children, indented four spaces)."""
+    return f"---\nTDL: 0.2\nName: {name}\n---\nContainer {{\n{header}  Children {{\n{body}  }}\n}}\n"
+
+
+def _label(content: str, width: int = 100, text: str | None = None) -> str:
+    text = content if text is None else text
+    return f"    Text {{ Name: label, Text: {text}, Typography_Role: body_large, Style {{ Width: {width}, Height: 20, Foreground: on_surface }} }}\n"
+
+
 def _text_view(content: str, extra_children: str = "") -> str:
-    return (
-        "id: root\nkind: Container\nchildren:\n"
-        f"  - {{id: label, kind: Text, text: {{content: {content}, font_family: Roboto, font_size: 16}},"
-        ' style: {width: 100, height: 20, foreground: "#000000"}}\n'
-        + extra_children
-    )
+    return _view("Home", _label(content) + extra_children)
 
 
 def _png(path: Path, color=(255, 0, 0)) -> Path:
@@ -46,10 +59,18 @@ def _png(path: Path, color=(255, 0, 0)) -> Path:
     return path
 
 
-def _watched(tmp_path: Path, text: str, **kwargs):
-    view_path = _write(tmp_path / "Home_View.yaml", text)
-    view = load_view(view_path, **kwargs)
-    return view_path, view, ViewWatcher(view, view_path, **kwargs)
+def _watched(tmp_path: Path, text: str, *, viewmodel: bool = False):
+    view_path = _write(tmp_path / "Views" / "Home_View.tdl", text)
+    app = App(root=tmp_path)
+    if viewmodel:
+        app.bind(VM)
+    view = app.open_view("Home")
+    return view_path, view, ComposedWatcher(view, view.source, app._composed_docs, lambda library, doc: app._composed_rules(library, doc=doc)[0])
+
+
+def _text(view, name: str):
+    view.window.advance(16)
+    return view.node(f"root.{name}").get("text")
 
 
 def test_poll_reports_no_change_until_a_file_changes(tmp_path: Path):
@@ -60,57 +81,43 @@ def test_poll_reports_no_change_until_a_file_changes(tmp_path: Path):
 
 def test_editing_the_view_file_reconciles_the_live_view(tmp_path: Path):
     view_path, view, watcher = _watched(tmp_path, _text_view("Hello"))
-    label = view.node("label")
+    label = view.node("root.label")
 
     _edit(view_path, _text_view("Goodbye"))
 
     assert watcher.poll() is True
-    assert view.node("label").get("text") == "Goodbye"
-    assert label.get("text") == "Goodbye"  # same node, updated in place
+    assert _text(view, "label") == "Goodbye"
+    assert view.node("root.label") is label  # same node, updated in place
     assert watcher.poll() is False
 
 
-def test_editing_an_included_file_reloads(tmp_path: Path):
-    part = _write(tmp_path / "parts" / "footer.yaml", _text_view("v1").replace("id: root", "id: footer", 1))
-    _, view, watcher = _watched(
-        tmp_path, "id: page\nkind: Container\nchildren:\n  - include: parts/footer.yaml\n"
-    )
+def test_editing_a_view_it_calls_reloads(tmp_path: Path):
+    part = _write(tmp_path / "Views" / "Footer_View.tdl", _view("Footer", _label("v1")))
+    _, view, watcher = _watched(tmp_path, _view("Home", "    Footer { Name: foot }\n"))
     assert part.resolve() in watcher.files
 
-    _edit(part, _text_view("v2").replace("id: root", "id: footer", 1))
+    _edit(part, _view("Footer", _label("v2")))
 
     assert watcher.poll() is True
-    assert view.node("label").get("text") == "v2"
+    assert _text(view, "foot.label") == "v2"
 
 
-def test_editing_a_component_fragment_reloads(tmp_path: Path):
-    frags = tmp_path / "frags"
-    fragment = _write(
-        frags / "Greeting_Component.yaml",
-        "params: [width]\nid: root\nkind: Text\n"
-        'text: {content: "Hi", font_family: Roboto, font_size: 16}\n'
-        'style: {width: "{{ width }}", height: 20, foreground: "#000000"}\n',
-    )
-    _, view, watcher = _watched(
-        tmp_path,
-        "id: page\nkind: Container\nchildren:\n  - {id: greet, component: Greeting, with: {width: 80}}\n",
-        component_dirs=[frags],
-    )
-    assert fragment.resolve() in watcher.files
+def test_editing_a_view_with_params_that_is_called_with_a_value_reloads(tmp_path: Path):
+    greeting = _write(tmp_path / "Views" / "Greeting_View.tdl", _view("Greeting", _label("Hi", width=0, text='"Hi"').replace("Width: 0", "Width: <| width |>"),
+                                                                     header="  Params { Width { Type: int, Default: 10 } }\n"))
+    _, view, watcher = _watched(tmp_path, _view("Home", "    Greeting { Name: greet, Width: 80 }\n"))
+    assert greeting.resolve() in watcher.files
 
-    _edit(fragment, fragment.read_text().replace('"Hi"', '"Hello there"'))
+    _edit(greeting, greeting.read_text().replace('"Hi"', '"Hello there"'))
 
     assert watcher.poll() is True
-    assert view.node("greet").get("text") == "Hello there"
+    assert _text(view, "greet.label") == "Hello there"
+    assert view.node("root.greet.label").get("width") == 80.0
 
 
 def test_changing_an_image_file_reloads(tmp_path: Path):
-    image = _png(tmp_path / "logo.png")
-    _, _, watcher = _watched(
-        tmp_path,
-        "id: root\nkind: Container\nchildren:\n"
-        "  - {id: logo, kind: Image, image: {src: logo.png}, style: {width: 20, height: 20}}\n",
-    )
+    image = _png(tmp_path / "Views" / "logo.png")
+    _, _, watcher = _watched(tmp_path, _view("Home", "    Image { Name: logo, Src: logo.png, Style { Width: 20, Height: 20 } }\n"))
     assert image.resolve() in watcher.files
 
     before = image.stat().st_mtime_ns
@@ -120,16 +127,16 @@ def test_changing_an_image_file_reloads(tmp_path: Path):
     assert watcher.poll() is True  # re-decoded and pushed without error
 
 
-def test_a_newly_added_include_is_watched_after_reload(tmp_path: Path):
+def test_a_newly_called_view_is_watched_after_reload(tmp_path: Path):
     view_path, view, watcher = _watched(tmp_path, _text_view("Hello"))
-    rect = 'id: extra\nkind: Rect\nstyle: {{width: {n}, height: {n}, background: "#112233"}}\n'
-    part = _write(tmp_path / "extra.yaml", rect.format(n=5))
+    rect = '---\nTDL: 0.2\nName: Extra\n---\nRect {{ Style {{ Width: {n}, Height: {n}, Background: "#112233" }} }}\n'
+    part = _write(tmp_path / "Views" / "Extra_View.tdl", rect.format(n=5))
     assert part.resolve() not in watcher.files
 
-    _edit(view_path, _text_view("Hello", "  - include: extra.yaml\n"))
+    _edit(view_path, _text_view("Hello", "    Extra { Name: extra }\n"))
     assert watcher.poll() is True
     assert part.resolve() in watcher.files
-    assert view.node("extra") is not None
+    assert view.node("root.extra") is not None
 
     _edit(part, rect.format(n=9))
     assert watcher.poll() is True
@@ -138,54 +145,31 @@ def test_a_newly_added_include_is_watched_after_reload(tmp_path: Path):
 def test_a_broken_edit_raises_once_then_recovers(tmp_path: Path):
     view_path, view, watcher = _watched(tmp_path, _text_view("Hello"))
 
-    _edit(view_path, "id: root\nkind: Container\nchildren:\n  - {id: x, component: NoSuchThing}\n")
-    with pytest.raises(ComponentError, match="unknown component 'NoSuchThing'"):
+    _edit(view_path, _text_view("Hello", "    NoSuchThing { Name: x }\n"))
+    with pytest.raises(Exception, match="no widget named 'NoSuchThing'"):
         watcher.poll()
     assert watcher.poll() is False  # same broken state: no repeat error
-    assert view.node("label").get("text") == "Hello"  # view left as it was
+    assert _text(view, "label") == "Hello"  # view left as it was
 
     _edit(view_path, _text_view("Fixed"))
     assert watcher.poll() is True
-    assert view.node("label").get("text") == "Fixed"
+    assert _text(view, "label") == "Fixed"
 
 
-def test_a_spec_tre_rejects_is_reported_naming_the_view_file(tmp_path: Path):
-    view_path, _, watcher = _watched(tmp_path, _text_view("Hello"))
-    _edit(view_path, "id: root\nkind: NotARealKind\n")
-    with pytest.raises(ValueError, match=rf"^{re.escape(str(view_path))}: .*NotARealKind"):
+def test_a_view_the_engine_rejects_is_reported_and_the_view_stays(tmp_path: Path):
+    view_path, view, watcher = _watched(tmp_path, _text_view("Hello"))
+    _edit(view_path, _text_view("Hello").replace("Typography_Role: body_large, ", ""))
+    with pytest.raises(ValueError, match=r"Text requires text\.font_family \(or text\.typography_role\)"):
         watcher.poll()
+    assert _text(view, "label") == "Hello"
 
 
 def test_a_reload_that_edits_a_bound_node_keeps_its_live_value(tmp_path: Path):
-    """M32: `tess_re` 0.3.3 (M91, `tess_re` issue #8) re-applies bindings after
-    `reconcile`. Before it, editing any property of a bound node made the
-    node show its YAML placeholder until its `Signal` next changed."""
-    import importlib.util, sys
+    """M32: editing any property of a bound node used to make the node show its placeholder until its `Signal` next changed."""
+    view_path, view, watcher = _watched(tmp_path, _view("Home", _label("placeholder", text="<| title |>"), header="  Name: home\n"), viewmodel=True)
+    assert _text(view, "label") == "live"
 
-    view_path = _write(tmp_path / "Live_View.yaml", _bound_view(width=100))
-    vm_path = _write(
-        tmp_path / "Live_ViewModel.py",
-        "from tess_ui import Signal, ViewModel\n\n\nclass LiveViewModel(ViewModel):\n"
-        "    def __init__(self, view):\n        self.label = Signal('live')\n        super().__init__(view)\n",
-    )
-    spec = importlib.util.spec_from_file_location(vm_path.stem, vm_path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-
-    view = load_view(view_path)
-    module.LiveViewModel(view)
-    watcher = ViewWatcher(view, view_path)
-    assert view.node("label").get("text") == "live"
-
-    _edit(view_path, _bound_view(width=140))  # touches the bound node itself
+    _edit(view_path, _view("Home", _label("placeholder", width=140, text="<| title |>"), header="  Name: home\n"))  # touches the bound node itself
     assert watcher.poll() is True
-    assert view.node("label").get("text") == "live"  # not the placeholder
-
-
-def _bound_view(width: int) -> str:
-    return (
-        "id: root\nkind: Container\nchildren:\n"
-        f"  - {{id: label, kind: Text, text: {{content: placeholder, font_family: Roboto, font_size: 16}},"
-        f' style: {{width: {width}, height: 20, foreground: "#000000"}}, bindings: {{text: "{{{{ label.get() }}}}"}}}}\n'
-    )
+    assert _text(view, "label") == "live"  # not the placeholder
+    assert view.node("root.label").get("width") == 140.0
