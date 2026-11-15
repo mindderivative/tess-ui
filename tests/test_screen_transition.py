@@ -185,12 +185,11 @@ from test_routed_views import _app as routed_app, _shown, project  # noqa: E402,
 
 
 def test_the_routed_screens_of_a_window_view_change_the_same_way(project):
-    _, home, settings = project
     app, view = routed_app(project)
     app.transition = "fade_through"
     app.navigate_to("")
     app.window.advance(16)
-    main, other = view.node("main"), view.node("settings")
+    main, other = view.node("root.screens.main"), view.node("root.screens.settings")
     app.navigate_to("settings")
     assert _shown(view) == {"main": True, "settings": True} and other.get("opacity") == 0.0  # both there while it plays
     assert main.get("position") == "absolute"

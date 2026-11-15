@@ -2,7 +2,6 @@
 and the spring easing."""
 
 import pytest
-import yaml
 
 from tess_ui import App, Theme, View, ViewModel
 from tess_ui.spec import richtext
@@ -88,16 +87,8 @@ def test_runs_and_selectable_are_for_a_text(kind, text):
 
 def test_runs_change_with_the_spec():
     app, view, node = _view({"runs": ["a ", {"text": "b", "weight": 700}]})
-    view.reload(yaml.safe_load("""
-id: root
-kind: Container
-style: {width: 300, height: 100}
-children:
-  - id: t
-    kind: Text
-    text: {content: plain, typography_role: body_large}
-    style: {foreground: on_surface}
-""")) if hasattr(view, "reload") else None
+    view.reload({"id": "root", "kind": "Container", "style": {"width": 300, "height": 100}, "children": [
+        {"id": "t", "kind": "Text", "text": {"content": "plain", "typography_role": "body_large"}, "style": {"foreground": "on_surface"}}]}) if hasattr(view, "reload") else None
     assert node.get("text") in ("a b", "plain")
 
 
