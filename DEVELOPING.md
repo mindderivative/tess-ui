@@ -87,13 +87,18 @@ once**, run the test file with an isolated bytecode cache (`PYTHONPYCACHEPREFIX=
 - The board is the GitHub project "Tesserae UI Framework" (owner `mindderivative`, number 2): Backlog → Ready → In progress → In review → **Done only when the maintainer says so**. Move items with `python3 tools/board.py 124=review 125=done`; comment on the issue with what was built, how it was tested, and what was not built or not checked.
 - Report outcomes as they are: say what was not run or not seen.
 
-## 6. A release (each step waits for the maintainer's word)
+## 6. A release (continuous delivery; the maintainer's word starts it, one approval ends it)
 
-1. Release commit "Tesserae X" (version in `pyproject.toml`, the changelog heading), push the branch, fast-forward `main`, push it, wait for CI on that commit (Linux, Windows, macOS; two runs plus Deploy Docs).
-2. `gh release create vX --target <sha> --prerelease --title "Tesserae X" --notes-file <changelog section>`.
-3. The Release workflow stops at the `pypi` environment: the maintainer approves it.
-4. Check PyPI (`https://pypi.org/pypi/tesserae-ui/json`; the index lags a few minutes), install `tesserae-ui==X` in a scratch venv with a smoke test, add a `LOG.md` entry.
-5. Push the log, promote the release (`gh release edit vX --prerelease=false --latest`), move the issues to Done.
+A release is a commit on `main` whose `pyproject.toml` version has no tag yet. `.github/workflows/release.yml` does the rest when CI finishes green on that commit:
+
+1. The maintainer says to release. Release commit "Tesserae X" on a branch (version in `pyproject.toml`, the `## X` heading of `docs/changelog.md`, a `LOG.md` entry; `python3 tools/check_version.py --expect X --pypi`), a pull request marked `[full-ci]` (the ruleset needs the PR and the `CI result` check), merged when green.
+2. CI runs on the merge commit. When it is green the Release workflow's `plan` job sees an untagged version and goes on; for an already tagged version it does nothing (the run summary says so).
+3. `build` checks the dependencies and the changelog, builds the sdist and wheel, installs the wheel from PyPI's dependencies and runs the whole suite and four examples against it.
+4. `publish` waits at the `pypi` environment: **the maintainer approves it** (Actions, the run, Review deployments). The agent never approves it.
+5. `github-release` waits for the index, installs `tesserae-ui==X` in a clean environment and imports it, then creates the tag `vX` on the release commit and the GitHub Release (notes = the changelog section, wheel and sdist attached, marked latest).
+6. Afterwards: the `Tesserae` memory entity, the board (`tools/board.py move N Done --approved`).
+
+A run that failed after CI was green is retried with "Run workflow" on Release (`workflow_dispatch`): the upload skips files already on PyPI and the Release is created only if it does not exist. The workflow's own token creates the tag and the Release, so they start no other workflow.
 
 ### What CI runs
 

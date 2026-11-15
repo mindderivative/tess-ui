@@ -1,49 +1,118 @@
+# Continuous delivery of Tesserae to PyPI (`tesserae-ui`, issue #15). No TestPyPI, by decision.
+#
+# A release is a commit on `main` whose `pyproject.toml` version has no tag yet. When CI finishes green on such a
+# commit this workflow checks it, builds and tests the wheel, publishes it to PyPI, installs the published package
+# in a clean environment, and only then creates the tag and the GitHub Release (notes from `docs/changelog.md`,
+# the wheel and sdist attached, marked latest). Nothing is done by hand after the release commit is merged.
+#
+# - Trigger: CI completed on `main` (a push, not a pull request), or a manual run (`workflow_dispatch`: a retry of a
+#   release that failed after its CI was green). A green push whose version already has a tag does nothing: the
+#   `plan` job says so in the run summary and the rest is skipped. It does not use the `release: published` trigger
+#   of earlier releases (tesserae's variant in the gh-cicd skill): the release is now created at the end of this
+#   workflow, and a release created with the workflow's own token does not start another workflow.
+# - One-time setup, by the maintainer (done): a Trusted Publisher on PyPI for this repo, workflow `release.yml`,
+#   environment `pypi`; the `pypi` environment with the maintainer as the required reviewer. His approval of the
+#   `pypi` environment is the one human step and stays on purpose: the agent never approves it.
+# - The build job checks everything before anything leaves: no dependency is PyPI's unrelated `tre` (the engine
+#   publishes as `tesserae-engine`, tre#19), the changelog has the version's section, and the built wheel passes the
+#   suite and runs the examples.
+# - Re-running is safe: the upload skips files already on PyPI, and the Release is created only if it does not exist.
 name: Release
 
-# Publishes Tesserae to PyPI as `tesserae-ui` (issue #15) when a GitHub
-# Release is published. Trusted publishing (OIDC): PyPI's publisher for
-# `tesserae-ui` names this repository, this file (`release.yml`) and the
-# `pypi` environment, so no API token is stored anywhere. The `pypi`
-# environment is where a required reviewer can hold each upload.
-#
-# The build job checks everything before anything leaves: the release tag
-# matches `pyproject.toml`'s version, no dependency is PyPI's unrelated
-# `tre` (the engine publishes as `tesserae-engine`, tre#19), and the built
-# wheel passes the suite and runs the examples.
-
 on:
-  release:
-    types: [published]
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+# Never cancel a release.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  plan:
+    name: Is this version released?
+    # A green CI run on a push to main, or a manual run.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      release: ${{ steps.plan.outputs.release }}
+      version: ${{ steps.plan.outputs.version }}
+      sha: ${{ steps.plan.outputs.sha }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Read the version and look for its tag
+        id: plan
+        env:
+          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v$version" > /dev/null 2>&1; then
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            echo "v$version is already tagged: nothing to release." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            echo "Releasing v$version from $SHA." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  build:
+    name: Check, test and build
+    needs: plan
+    if: needs.plan.outputs.release == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.plan.outputs.sha }}
+          fetch-depth: 1
+          persist-credentials: false
           path: tesserae
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.14"
 
-      - name: Check the tag and the dependencies
+      - name: The version, the dependencies and the changelog agree
         working-directory: tesserae
         env:
-          TAG: ${{ github.event.release.tag_name }}
+          VERSION: ${{ needs.plan.outputs.version }}
         run: |
           python - <<'EOF'
           import os, re, sys, tomllib
 
           project = tomllib.load(open("pyproject.toml", "rb"))["project"]
-          tag = os.environ["TAG"].removeprefix("v")
-          if tag != project["version"]:
-              sys.exit(f"the release tag {os.environ['TAG']!r} doesn't match pyproject's version {project['version']!r}")
+          version = project["version"]
+          if os.environ["VERSION"] != version:
+              sys.exit(f"the planned version {os.environ['VERSION']!r} is not pyproject's {version!r}")
           names = [re.split(r"[\s<>=!~;\[(]", d, maxsplit=1)[0].lower().replace("_", "-") for d in project["dependencies"]]
           if "tre" in names:
               sys.exit("pyproject still depends on 'tre': on PyPI that's an unrelated regex library. "
                        "Depend on 'tesserae-engine' (tre#19) before publishing.")
-          print(f"releasing {project['name']} {project['version']}; dependencies {names}")
+          if not re.search(rf"^## {re.escape(version)}( |$)", open("docs/changelog.md", encoding="utf-8").read(), re.M):
+              sys.exit(f"docs/changelog.md has no '## {version}' section: the release notes come from it")
+          print(f"releasing {project['name']} {version}; dependencies {names}")
           EOF
 
       - name: Build the sdist and wheel
@@ -54,7 +123,7 @@ jobs:
           twine check --strict dist/*
 
       - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y mesa-vulkan-drivers libfontconfig1-dev
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers libfontconfig1-dev
 
       # From PyPI: the wheel's dependencies, `tesserae-engine` included, as a
       # user's `pip install tesserae-ui` would get them. The installed wheel
@@ -62,11 +131,13 @@ jobs:
       - name: Install the built wheel
         run: pip install tesserae/dist/*.whl pytest jsonschema pyyaml  # jsonschema: tests/test_schema.py and tests/test_widget_schema.py; pyyaml: the tests read YAML (the package does not)
 
-      # tess-re's source, only for the real font file tests/test_themes.py reads.
-      - uses: actions/checkout@v4
+      # tess-re's source, only for the real font file tests/test_themes.py reads. The tag is the engine pin: change it with the pin.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: mindderivative/tess-re
           ref: v0.6.8
+          fetch-depth: 1
+          persist-credentials: false
           path: tess-re
 
       - name: Test the built wheel
@@ -80,23 +151,86 @@ jobs:
             python examples/$example/app.py
           done
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: dist
           path: tesserae/dist/
+          retention-days: 7   # outlives the wait for the maintainer's approval of the pypi environment
+          if-no-files-found: error
 
-  publish:
-    needs: build
-    runs-on: ubuntu-latest
+  pypi:
+    name: Publish to PyPI
+    needs: [plan, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     environment:
       name: pypi
-      url: https://pypi.org/p/tesserae-ui
+      url: https://pypi.org/project/tesserae-ui/
     permissions:
-      id-token: write  # trusted publishing: PyPI accepts this job's OIDC token instead of an API token
+      id-token: write   # Trusted Publishing: the only permission this job has
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          skip-existing: true   # a re-run after a later job failed must not fail on the files already there
+
+  github-release:
+    name: Check the published package, tag and release
+    needs: [plan, pypi]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write   # the tag and the Release
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
+      SHA: ${{ needs.plan.outputs.sha }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.plan.outputs.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: dist
           path: dist/
 
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      # The index lags a few minutes behind an upload: wait for it, then install the published package in a clean
+      # environment, as a user would, before calling the release done.
+      - name: The published package installs
+        run: |
+          python -m venv /tmp/published
+          installed=false
+          for attempt in $(seq 1 30); do
+            if /tmp/published/bin/pip install --quiet "tesserae-ui==$VERSION"; then installed=true; break; fi
+            echo "tesserae-ui $VERSION is not installable yet (attempt $attempt)"; sleep 20
+          done
+          [ "$installed" = true ] || { echo "tesserae-ui $VERSION did not appear on PyPI"; exit 1; }
+          cd /tmp
+          /tmp/published/bin/python -I -c "
+          import importlib.metadata as m, os, tess_ui
+          assert m.version('tesserae-ui') == os.environ['VERSION'], m.version('tesserae-ui')
+          assert 'site-packages' in tess_ui.__file__, tess_ui.__file__
+          import tess_ui.widgets, tess_ui.overlays
+          print('tesserae-ui', m.version('tesserae-ui'), 'engine', m.version('tesserae-engine'))
+          "
+
+      - name: The changelog section of this version is the release notes
+        run: |
+          awk -v v="$VERSION" '$1 == "##" && $2 == v {on=1; next} /^## / && on {exit} on' docs/changelog.md > notes.md
+          test -s notes.md || { echo "docs/changelog.md has no section for $VERSION"; exit 1; }
+
+      - name: Tag and publish the GitHub Release
+        run: |
+          if gh release view "v$VERSION" > /dev/null 2>&1; then
+            echo "v$VERSION already has a release"
+          else
+            gh release create "v$VERSION" dist/* --target "$SHA" --title "Tesserae $VERSION" --notes-file notes.md --latest
+          fi
