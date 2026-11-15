@@ -1,6 +1,7 @@
 """T-034 (1): the icon picker -- `IconBrowser` (the model), the `IconBrowser` control, and the `IconPicker` view inline and in a popup, over `tmp_path` folders and a fake file system.
 Nothing here reads outside `tmp_path`."""
 
+import json
 import struct
 import zlib
 
@@ -62,22 +63,28 @@ class VM(ViewModel):
         self.log.append(self.icon.get())
 
 
-CALL = '{widget: IconPicker, name: ip, value: "{{ icon }}", on_change: changed%s}'
-POPUP = '{widget: IconPicker, name: ip, popup: true, open: "{{ pop }}", value: "{{ icon }}", on_change: changed%s}'
+CALL = "IconPicker { Name: ip, Value: <| icon |>, On_Change: changed%s }"
+POPUP = "IconPicker { Name: ip, Popup: true, Open: <| pop |>, Value: <| icon |>, On_Change: changed%s }"
 
 
 def opened(tmp_path, call=CALL, options="", dark=False, size=(460, 600), sheet=None):
     (tmp_path / "Views").mkdir(parents=True, exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""tesserae: 0.6
-name: main
-widget: Container
-style: {{flex_direction: vertical, gap: 16, padding: 16, width: {size[0]}, height: {size[1]}}}
-children:
-  - {call % options}
-  - {{widget: Rect, name: elsewhere, style: {{width: 80, height: 80, background: surface_variant}}}}
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Gap: 16, Padding: 16, Width: {size[0]}, Height: {size[1]} }}
+  Children {{
+    {call % options}
+    Rect {{ Name: elsewhere, Style {{ Width: 80, Height: 80, Background: surface_variant }} }}
+  }}
+}}
 """)
     if sheet:
-        (tmp_path / "Views" / "Main_Stylesheet.yaml").write_text(sheet)
+        (tmp_path / "Views" / "Main_Stylesheet.tdl").write_text(sheet)
     app = App(root=tmp_path, width=size[0], height=size[1], theme_seed=(0x67, 0x50, 0xA4, 0xFF), dark=dark)
     app.bind(VM)
     view = app.open_view("Main")
@@ -401,7 +408,7 @@ def test_the_grid_is_in_the_tab_order_after_the_search_field(tmp_path):
 
 
 def test_the_names_a_screen_reader_hears(tmp_path):
-    view, vm = opened(tmp_path, options=", label: Pick one")
+    view, vm = opened(tmp_path, options=", Label: \"Pick one\"")
     box = node(view, "list_group.list_box")
     assert box.get("role") == "list" and box.get("label") == "Pick one icons"
     index = ctl(view).browser.index_of("home")
@@ -413,7 +420,7 @@ def test_the_names_a_screen_reader_hears(tmp_path):
 
 
 def test_disabled_it_changes_nothing(tmp_path):
-    view, vm = opened(tmp_path, options=", disabled: true")
+    view, vm = opened(tmp_path, options=", Disabled: true")
     control = ctl(view)
     assert control.disabled.get()
     press(view, cell(view, int(shown(view)[0])))
@@ -426,7 +433,7 @@ def test_disabled_it_changes_nothing(tmp_path):
 
 def test_the_folder_is_read_when_the_grid_is_listed_and_a_file_is_read_only_when_its_row_is_in_view(tmp_path, disk):
     base = folder(tmp_path, names=[f"i{n:03d}.svg" for n in range(120)])
-    view, vm = opened(tmp_path, options=f', icons_folder: "{base}"')
+    view, vm = opened(tmp_path, options=f", Icons_Folder: {json.dumps(str(base))}")
     assert disk.listed == [str(base)]
     control = ctl(view)
     assert control.count.get() == 120 + len(icons.ICONS)
@@ -469,7 +476,7 @@ class Fake:
 def test_a_thousand_files_build_only_the_rows_in_view_and_one_that_cannot_be_read_is_a_file_glyph(tmp_path, monkeypatch):
     fake = Fake(1000)
     monkeypatch.setattr(filesystem, "_default", fake)
-    view, vm = opened(tmp_path, options=', icons_folder: "/elsewhere"')
+    view, vm = opened(tmp_path, options=", Icons_Folder: \"/elsewhere\"")
     control = ctl(view)
     assert control.count.get() == 1000 + len(icons.ICONS) and fake.listed == 1
     assert len(shown(view)) <= 104
@@ -483,7 +490,7 @@ def test_a_thousand_files_build_only_the_rows_in_view_and_one_that_cannot_be_rea
 
 def test_a_popup_reads_nothing_until_it_opens(tmp_path, disk):
     base = folder(tmp_path)
-    view, vm = opened(tmp_path, POPUP, options=f', icons_folder: "{base}"')
+    view, vm = opened(tmp_path, POPUP, options=f", Icons_Folder: {json.dumps(str(base))}")
     assert disk.listed == [] and not view._shown_layers
     assert view._built.controls["root.ip.swatch"].current.get()["name"] == "home"
     press(view, view.node("root.ip.field.trigger"))
@@ -492,7 +499,7 @@ def test_a_popup_reads_nothing_until_it_opens(tmp_path, disk):
 
 
 def test_the_button_shows_the_icon_and_its_name_and_says_so_to_a_screen_reader(tmp_path):
-    view, vm = opened(tmp_path, POPUP, options=", label: Symbol")
+    view, vm = opened(tmp_path, POPUP, options=", Label: Symbol")
     trigger = view.node("root.ip.field.trigger")
     assert trigger.get("role") == "button" and trigger.get("label") == "Symbol: home" and trigger.get("expanded") is False
     assert view.node("root.ip.field.trigger_text").get("text") == "home"
@@ -505,7 +512,7 @@ def test_the_button_shows_the_icon_and_its_name_and_says_so_to_a_screen_reader(t
 
 def test_the_button_of_a_file_icon_shows_the_file(tmp_path):
     base = folder(tmp_path, names=("logo.svg", "badge.png"))
-    view, vm = opened(tmp_path, POPUP, options=f', icons_folder: "{base}"')
+    view, vm = opened(tmp_path, POPUP, options=f", Icons_Folder: {json.dumps(str(base))}")
     vm.icon.set("logo.svg")
     settle(view, 6)
     assert "root.ip.field.trigger_svg" in view._built.nodes and "root.ip.field.trigger_icon" not in view._built.nodes
@@ -539,7 +546,7 @@ def test_a_pick_closes_the_popup_and_writes_the_value(tmp_path):
 
 
 def test_a_pick_leaves_the_popup_open_when_it_says_not_to_close(tmp_path):
-    view, vm = opened(tmp_path, POPUP, options=", close_on_pick: false")
+    view, vm = opened(tmp_path, POPUP, options=", Close_On_Pick: false")
     press(view, view.node("root.ip.field.trigger"))
     press(view, cell(view, ctl(view, True).browser.index_of("cog"), True))
     assert vm.icon.get() == "cog" and vm.pop.get() is True and view._shown_layers
@@ -612,7 +619,7 @@ def test_pressing_the_button_again_closes_it(tmp_path):
 
 
 def test_a_disabled_popup_does_not_open(tmp_path):
-    view, vm = opened(tmp_path, POPUP, options=", disabled: true")
+    view, vm = opened(tmp_path, POPUP, options=", Disabled: true")
     press(view, view.node("root.ip.field.trigger"))
     assert vm.pop.get() is False and not view._shown_layers
 
@@ -643,11 +650,16 @@ def _collect_reentrant(monkeypatch):
     return errors
 
 
-STATE_RULES = """tesserae: 0.6
-styles:
-  - {widget: IconPicker, state: focused, style: {opacity: 0.99}}
-  - {widget: IconPicker, state: hovered, style: {opacity: 0.98}}
-  - {widget: IconPicker, state: pressed, style: {opacity: 0.97}}
+STATE_RULES = """---
+TDL: 0.2
+Name: Main
+Tesserae: "0.6"
+---
+Styles {
+  Rule { Widget: IconPicker, State: focused, Style { Opacity: 0.99 } }
+  Rule { Widget: IconPicker, State: hovered, Style { Opacity: 0.98 } }
+  Rule { Widget: IconPicker, State: pressed, Style { Opacity: 0.97 } }
+}
 """
 
 
@@ -675,7 +687,7 @@ def test_a_pick_with_a_state_rule_on_the_root_raises_no_reentrant_write(tmp_path
 
 def test_an_unknown_property_of_the_picker_is_named(tmp_path):
     with pytest.raises(LoadError, match="colour"):
-        opened(tmp_path, call="{widget: IconPicker, name: ip, colour: red%s}")
+        opened(tmp_path, call="IconPicker { Name: ip, Colour: red%s }")
 
 
 def test_the_picked_cell_and_the_cursor_cell_are_drawn_in_the_themes_colours_in_light_and_dark(tmp_path):

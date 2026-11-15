@@ -57,10 +57,9 @@ CODE_ONLY = PRELUDE + textwrap.dedent('''
 ''')
 
 HOT_RELOAD = PRELUDE + textwrap.dedent('''
-    path = folder / "Counter_View.yaml"
-    app = App(width=360, height=160, title="idle hot reload")
-    view = app.build_view(path)
-    app.register("Counter", view, None)
+    path = folder / "Views" / "Counter_View.tdl"
+    app = App(root=folder, width=360, height=160, title="idle hot reload")
+    view = app.open_view("Counter")
     app.show("Counter")
     handle = app.thread_handle()
 
@@ -73,7 +72,7 @@ HOT_RELOAD = PRELUDE + textwrap.dedent('''
             time.sleep(1.5)
             handle.call_soon(lambda: probe("before"))
             time.sleep(0.5)
-            path.write_text(path.read_text().replace("width: auto", "width: 100%"))
+            path.write_text(path.read_text().replace("Width: auto", "Width: 100%"))
             time.sleep(3.0)
             handle.call_soon(lambda: probe("after"))
             time.sleep(0.5)
@@ -85,21 +84,25 @@ HOT_RELOAD = PRELUDE + textwrap.dedent('''
     app.run(hot_reload=True)
 ''')
 
-VIEW = """id: root
-kind: Container
-style: {flex_direction: vertical, width: auto, height: 100%, padding: 16, background: "#444444"}
-children:
-  - id: label
-    kind: Text
-    text: {content: "Count: 0", font_family: Roboto, font_size: 20}
-    style: {foreground: "#FFFFFF"}
+VIEW = """---
+TDL: 0.2
+Name: Counter
+Tesserae: "0.6"
+---
+Container {
+  Style { Flex_Direction: vertical, Width: auto, Height: 100%, Padding: 16, Background: "#444444" }
+  Children {
+    Text { Name: label, Text: "Count: 0", Font_Family: Roboto, Font_Size: 20, Style { Foreground: "#FFFFFF" } }
+  }
+}
 """
 
 
 def _run(tmp_path: Path, source: str, mode: str, timeout: float) -> tuple[subprocess.CompletedProcess | None, str]:
     script = tmp_path / "idle_window.py"
     script.write_text(source)
-    (tmp_path / "Counter_View.yaml").write_text(VIEW)
+    (tmp_path / "Views").mkdir(exist_ok=True)
+    (tmp_path / "Views" / "Counter_View.tdl").write_text(VIEW)
     try:
         done = subprocess.run([sys.executable, str(script), str(tmp_path), mode], capture_output=True, text=True,
                               timeout=timeout)  # on a timeout, `run` kills the window
@@ -129,7 +132,7 @@ def test_a_thread_reaches_an_idle_window_with_the_keepalive_too(tmp_path):
 
 
 def test_hot_reload_applies_an_edit_to_an_idle_window(tmp_path):
-    """The user's report: `width: auto` -> `100%` on a window left alone."""
+    """The user's report: `Width: auto` -> `100%` on a window left alone."""
     done, result = _run(tmp_path, HOT_RELOAD, "default", timeout=60)
     assert done is not None, "the window stayed starved: the reload never arrived (tess_re before 0.5.1?)"
     assert done.returncode == 0, done.stderr

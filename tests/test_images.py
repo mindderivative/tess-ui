@@ -16,9 +16,9 @@ import pytest
 import tess_re
 from PIL import Image
 
-from tess_ui import View, instantiate
+from tess_ui import App, View, instantiate
 from tess_ui.images import decode_image
-from tess_ui.spec import ComponentError, load_view
+from tess_ui.spec import ComponentError
 from tess_ui.spec.images import extract_images
 
 RED_BLUE = b"\xff\x00\x00\xff" + b"\x00\x00\xff\xff"
@@ -130,6 +130,43 @@ def test_extract_images_undecodable_file_names_the_widget(tmp_path: Path):
 
 # -- end to end --------------------------------------------------------
 
+IMAGE_VIEW = """---
+TDL: 0.2
+Name: Gallery
+Tesserae: "0.6"
+---
+Container {
+  Style { Width: 200, Height: 200 }
+  Children {
+    Image { Name: img, Src: assets/rb.png, Fit: cover, Style { Width: 100, Height: 100 } }
+  }
+}
+"""
+
+
+def _gallery(root: Path):
+    (root / "Views").mkdir(exist_ok=True)
+    (root / "Views" / "Gallery_View.tdl").write_text(IMAGE_VIEW)
+    return App(root=root)
+
+
+def test_a_view_decodes_images_into_image_nodes(tmp_path: Path):
+    """Tesserae decodes the file and builds its pixels into a `tess_re`
+    `image` node (M37); `tess_re` is given no path."""
+    _png(tmp_path / "Views" / "assets" / "rb.png")
+    node = _gallery(tmp_path).open_view("Gallery").node("root.img")
+    rgba, width, height = decode_image(tmp_path / "Views" / "assets" / "rb.png")
+    assert (node.get("pixel_width"), node.get("pixel_height"), node.get("fit")) == (width, height, "cover")
+    assert node.get("rgba") == rgba
+
+
+def test_a_view_with_a_missing_image_is_a_component_error(tmp_path: Path):
+    with pytest.raises(ComponentError, match=r"widget 'root.img'.*cannot read"):
+        _gallery(tmp_path).open_view("Gallery")
+
+
+# `instantiate()` still reads a component's file as YAML (src/tess_ui/component.py, spec/expand.py): this test keeps the 0.4 text until
+# `instantiate` takes TDL (it then becomes `IMAGE_VIEW` above, in `Tile_View.tdl`, and `Parent_View.tdl`).
 IMAGE_FRAGMENT_VIEW = """
 id: root
 kind: Container
@@ -139,35 +176,6 @@ children:
     component: Image
     with: {src: assets/rb.png, width: 100, height: 100, fit: cover}
 """
-
-
-def test_load_view_decodes_images_into_image_nodes(tmp_path: Path):
-    """Tesserae decodes the file and builds its pixels into a `tess_re`
-    `image` node (M37); `tess_re` is given no path."""
-    _png(tmp_path / "assets" / "rb.png")
-    view_path = tmp_path / "Gallery_View.yaml"
-    view_path.write_text(IMAGE_FRAGMENT_VIEW)
-    node = load_view(view_path).node("img")
-    rgba, width, height = decode_image(tmp_path / "assets" / "rb.png")
-    assert (node.get("pixel_width"), node.get("pixel_height"), node.get("fit")) == (width, height, "cover")
-    assert node.get("rgba") == rgba
-
-
-def test_load_view_decodes_a_hand_written_image_too(tmp_path: Path):
-    _png(tmp_path / "rb.png")
-    view_path = tmp_path / "Hand_View.yaml"
-    view_path.write_text(
-        "id: root\nkind: Container\nchildren:\n"
-        "  - {id: pic, kind: Image, image: {src: rb.png}, style: {width: 20, height: 10}}\n"
-    )
-    assert load_view(view_path).node("pic") is not None
-
-
-def test_load_view_missing_image_is_a_component_error(tmp_path: Path):
-    view_path = tmp_path / "Broken_View.yaml"
-    view_path.write_text(IMAGE_FRAGMENT_VIEW)
-    with pytest.raises(ComponentError, match=r"widget 'img'.*cannot read"):
-        load_view(view_path)
 
 
 def test_instantiate_decodes_a_components_images(tmp_path: Path):

@@ -4,7 +4,8 @@ import pytest
 
 from tess_ui import App, Signal, ViewModel
 from tess_ui.spec.mask import Mask
-from tess_ui.spec.nodes import LoadError, parse_view
+from tess_ui.spec.nodes import LoadError, parse_data
+from tess_ui.spec.tdl import load_marked_tdl
 
 PHONE = "(###) ###-####"
 
@@ -61,8 +62,8 @@ class VM(ViewModel):
 
 def opened(tmp_path, field):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {flex_direction: vertical, width: 400, height: 200}\nchildren:\n" + field)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(
+        "---\nTDL: 0.2\nName: main\n---\nContainer {\n  Name: main\n  Style { Flex_Direction: vertical, Width: 400, Height: 200 }\n  Children {\n" + field + "  }\n}\n")
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")
@@ -78,27 +79,32 @@ def type_into(view, node, text):
 
 
 def test_typing_into_a_masked_input_formats_it_and_the_signal_gets_the_formatted_text(tmp_path):
-    view, vm = opened(tmp_path, f"  - {{widget: TextInput, name: i, text: '{{{{ phone }}}}', mask: '{PHONE}', typography_role: body_large, "
-                                "style: {width: 200, height: 30, foreground: '#000000', background: '#FFFFFF'}}\n")
+    view, vm = opened(tmp_path, f'    TextInput {{ Name: i, Text: <| phone |>, Mask: "{PHONE}", Typography_Role: body_large, '
+                                'Style { Width: 200, Height: 30, Foreground: "#000000", Background: "#FFFFFF" } }\n')
     node = view.node("root.i")
     type_into(view, node, "5551234567")
     assert node.get("text") == "(555) 123-4567" and vm.phone.get() == "(555) 123-4567"
 
 
 def test_a_text_field_takes_a_mask_through(tmp_path):
-    view, vm = opened(tmp_path, f"  - {{widget: TextField, name: f, label: Phone, text: '{{{{ phone }}}}', mask: '{PHONE}'}}\n")
+    view, vm = opened(tmp_path, f'    TextField {{ Name: f, Label: Phone, Text: <| phone |>, Mask: "{PHONE}" }}\n')
     node = view.node("root.f.box.body.input")
     type_into(view, node, "5551234")
     assert node.get("text") == "(555) 123-4" and vm.phone.get() == "(555) 123-4"
 
 
 def test_an_input_without_a_mask_is_as_before(tmp_path):
-    view, vm = opened(tmp_path, "  - {widget: TextField, name: f, label: Phone, text: '{{ phone }}'}\n")
+    view, vm = opened(tmp_path, "    TextField { Name: f, Label: Phone, Text: <| phone |> }\n")
     type_into(view, view.node("root.f.box.body.input"), "abc-123")
     assert vm.phone.get() == "abc-123"
 
 
+def parse_tdl(root):
+    text = f"---\nTDL: 0.2\nName: T\n---\n{root}\n"
+    return parse_data(load_marked_tdl(text, "T_View.tdl"), text, "T_View.tdl")
+
+
 def test_a_bad_mask_is_a_load_error():
     with pytest.raises(LoadError, match="has no slot"):
-        parse_view("widget: TextInput\nmask: '---'\n", "T_View.yaml")
-    parse_view("widget: TextInput\nmask: ''\n", "T_View.yaml")
+        parse_tdl("TextInput { Mask: \"---\" }")
+    parse_tdl("TextInput { Mask: \"\" }")
