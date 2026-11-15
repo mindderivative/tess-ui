@@ -10,9 +10,9 @@ class VM(ViewModel):
     views = "main"
 
 
-def opened(tmp_path, body, head_style="width: 300, height: 200, flex_direction: vertical"):
+def opened(tmp_path, body, head_style="Width: 300, Height: 200, Flex_Direction: vertical"):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"name: main\nwidget: Container\nstyle: {{{head_style}}}\nchildren:\n" + body)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"---\nTDL: 0.2\nName: main\nTesserae: \"0.6\"\n---\nContainer {{\n  Name: main\n  Style {{ {head_style} }}\n  Children {{\n{body}  }}\n}}\n")
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")
@@ -22,15 +22,16 @@ def opened(tmp_path, body, head_style="width: 300, height: 200, flex_direction: 
 
 
 def test_the_full_width_minus_a_gutter_is_flex_fill_with_margins(tmp_path):
-    view = opened(tmp_path, "  - {widget: Rect, name: a, style: {height: 20, background: primary, flex: expand_horizontal, margin: {left: 8, right: 8}}}\n")
+    view = opened(tmp_path, "    Rect { Name: a, Style { Height: 20, Background: primary, Flex: expand_horizontal, Margin { Left: 8, Right: 8 } } }\n")
     a = view.node("root.a")
     assert (a.get("layout_x"), a.get("layout_width")) == (8.0, 284.0)  # 100% - 16, from 8
 
 
 def test_two_columns_with_a_gutter_are_two_fills_and_a_gap(tmp_path):
-    body = ("  - widget: Container\n    name: row\n    style: {height: 20, gap: 16}\n    children:\n"
-            "      - {widget: Rect, name: l, style: {height: 20, flex: fill, background: primary}}\n"
-            "      - {widget: Rect, name: r, style: {height: 20, flex: fill, background: secondary}}\n")
+    body = ("    Container {\n      Name: row\n      Style { Height: 20, Gap: 16 }\n      Children {\n"
+            "        Rect { Name: l, Style { Height: 20, Flex: fill, Background: primary } }\n"
+            "        Rect { Name: r, Style { Height: 20, Flex: fill, Background: secondary } }\n"
+            "      }\n    }\n")
     view = opened(tmp_path, body)
     left, right = view.node("root.row.l"), view.node("root.row.r")
     assert (left.get("layout_width"), right.get("layout_width")) == (142.0, 142.0)  # 50% - 8 each, the parent's 300 less the gap, halved
@@ -38,15 +39,16 @@ def test_two_columns_with_a_gutter_are_two_fills_and_a_gap(tmp_path):
 
 
 def test_the_rest_of_the_row_after_a_fixed_part_is_a_fill(tmp_path):
-    body = ("  - widget: Container\n    name: row\n    style: {height: 20}\n    children:\n"
-            "      - {widget: Rect, name: fixed, style: {width: 80, height: 20, background: primary}}\n"
-            "      - {widget: Rect, name: rest, style: {height: 20, flex: fill, background: secondary}}\n")
+    body = ("    Container {\n      Name: row\n      Style { Height: 20 }\n      Children {\n"
+            "        Rect { Name: fixed, Style { Width: 80, Height: 20, Background: primary } }\n"
+            "        Rect { Name: rest, Style { Height: 20, Flex: fill, Background: secondary } }\n"
+            "      }\n    }\n")
     view = opened(tmp_path, body)
     assert view.node("root.row.rest").get("layout_width") == 220.0  # 100% - 80
 
 
 def test_the_recipes_follow_the_parent_when_it_changes(tmp_path):
-    view = opened(tmp_path, "  - {widget: Rect, name: a, style: {height: 20, background: primary, flex: expand_horizontal, margin: {left: 8, right: 8}}}\n")
+    view = opened(tmp_path, "    Rect { Name: a, Style { Height: 20, Background: primary, Flex: expand_horizontal, Margin { Left: 8, Right: 8 } } }\n")
     view.node("root").set(width=200.0)
     view.window.advance(32)
     assert view.node("root.a").get("layout_width") == 184.0  # still the parent less 16: layout does it, not a number set once

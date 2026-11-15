@@ -22,23 +22,35 @@ class VM(ViewModel):
     views = "main"
 
 
-VIEW = """name: main
-widget: Container
-style: {flex_direction: vertical, width: 400, height: 300}
-children:
-  - widget: Text
-    name: kind
-    text: "{{ app.width_class }} {{ app.height_class }} {{ app.window_width }}"
-    typography_role: body_large
-    style: {foreground: on_surface}
-  - {widget: Container, name: rail, if: "app.width_class != 'compact'", style: {width: 80, height: 40, background: primary}}
-  - {widget: Container, name: bar, if: "app.width_class == 'compact'", style: {width: 80, height: 40, background: secondary}}
+VIEW = """---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {
+  Name: main
+  Style { Flex_Direction: vertical, Width: 400, Height: 300 }
+  Children {
+    Text {
+      Name: kind
+      Text: <| app.width_class |> <| app.height_class |> <| app.window_width |>
+      Typography_Role: body_large
+      Style { Foreground: on_surface }
+    }
+    If <| app.width_class != 'compact' |> {
+      Container { Name: rail, Style { Width: 80, Height: 40, Background: primary } }
+    }
+    If <| app.width_class == 'compact' |> {
+      Container { Name: bar, Style { Width: 80, Height: 40, Background: secondary } }
+    }
+  }
+}
 """
 
 
 def opened(tmp_path, **kwargs):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(VIEW)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(VIEW)
     app = App(root=tmp_path, **kwargs)
     app.bind(VM)
     view = app.open_view("Main")
@@ -85,7 +97,7 @@ def test_a_viewmodel_that_has_its_own_app_keeps_it(tmp_path):
         app = type("Mine", (), {"width_class": "mine", "height_class": "mine", "window_width": 1})()
 
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(VIEW.replace("if: \"app.width_class != 'compact'\"", "if: \"True\"").replace("if: \"app.width_class == 'compact'\"", "if: \"False\""))
+    (tmp_path / "Views" / "Main_View.tdl").write_text(VIEW.replace("If <| app.width_class != 'compact' |>", "If <| True |>").replace("If <| app.width_class == 'compact' |>", "If <| False |>"))
     app = App(root=tmp_path)
     app.bind(Own)
     view = app.open_view("Main")

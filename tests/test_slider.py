@@ -24,8 +24,9 @@ class VM(ViewModel):
 
 def opened(tmp_path, body, **kwargs):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {flex_direction: vertical, align_content: top_left, width: 300, height: 200}\nchildren:\n" + body)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(
+        '---\nTDL: 0.2\nName: main\nTesserae: "0.6"\n---\n'
+        "Container {\n  Name: main\n  Style { Flex_Direction: vertical, Align_Content: top_left, Width: 300, Height: 200 }\n  Children {\n" + body + "\n  }\n}\n")
     app = App(root=tmp_path, **kwargs)
     app.bind(VM)
     view = app.open_view("Main")
@@ -35,7 +36,7 @@ def opened(tmp_path, body, **kwargs):
     return view, app.bindings.viewmodel_for("main")
 
 
-SLIDER = '  - {widget: Slider, name: s, min: 0, max: 100, value: "{{ volume }}", style: {width: 220}%s}\n'
+SLIDER = "Slider { Name: s, Min: 0, Max: 100, Value: <| volume |>, Style { Width: 220 }%s }"
 
 
 def control(view):
@@ -85,7 +86,7 @@ def test_dragging_moves_the_value_and_a_bound_signal_follows_while_it_goes(tmp_p
 
 
 def test_on_input_hears_every_step_of_a_drag_and_on_change_only_the_end(tmp_path):
-    body = SLIDER % ', handlers: {on_input: moving, on_change: committed}'
+    body = SLIDER % ', Handlers { On_Input: moving, On_Change: committed }'
     view, vm = opened(tmp_path, body)
     drag(view, [0.2, 0.4, 0.6, 0.9])
     assert len(vm.live) >= 4 and vm.live[-1] == pytest.approx(90.0)
@@ -93,13 +94,13 @@ def test_on_input_hears_every_step_of_a_drag_and_on_change_only_the_end(tmp_path
 
 
 def test_a_step_snaps_the_value(tmp_path):
-    view, vm = opened(tmp_path, SLIDER % ", step: 10")
+    view, vm = opened(tmp_path, SLIDER % ", Step: 10")
     drag(view, [0.37])
     assert vm.volume.get() == 40.0
 
 
 def test_the_keys_step_page_and_go_to_the_ends(tmp_path):
-    view, vm = opened(tmp_path, SLIDER % ", step: 10")
+    view, vm = opened(tmp_path, SLIDER % ", Step: 10")
     view.node("root.s").focus()
     view.window.simulate("key_down", key="arrow_right")
     assert vm.volume.get() == 40.0
@@ -112,7 +113,7 @@ def test_the_keys_step_page_and_go_to_the_ends(tmp_path):
 
 
 def test_a_screen_reader_can_increment_and_set(tmp_path):
-    view, vm = opened(tmp_path, SLIDER % ", step: 10")
+    view, vm = opened(tmp_path, SLIDER % ", Step: 10")
     view.window.simulate("a11y_action", view.node("root.s"), action="increment")
     assert vm.volume.get() == 40.0
     view.window.simulate("a11y_action", view.node("root.s"), action="set_value", value=75.0)
@@ -128,7 +129,7 @@ def test_following_a_signal_moves_the_handle(tmp_path):
 
 
 def test_ticks_mark_each_step_and_colour_the_ones_reached(tmp_path):
-    view, _ = opened(tmp_path, SLIDER % ", step: 25, ticks: true")
+    view, _ = opened(tmp_path, SLIDER % ", Step: 25, Ticks: true")
     c = control(view)
     assert len(c.tick_marks) == 5
     reached = [m.get("fill") for m in c.tick_marks]
@@ -137,12 +138,12 @@ def test_ticks_mark_each_step_and_colour_the_ones_reached(tmp_path):
 
 
 def test_no_step_no_ticks(tmp_path):
-    view, _ = opened(tmp_path, SLIDER % ", ticks: true")
+    view, _ = opened(tmp_path, SLIDER % ", Ticks: true")
     assert control(view).tick_marks == []
 
 
 def test_the_value_bubble_shows_while_dragging_and_on_keyboard_focus_only(tmp_path):
-    view, vm = opened(tmp_path, SLIDER % ", value_indicator: true, step: 10")
+    view, vm = opened(tmp_path, SLIDER % ", Value_Indicator: true, Step: 10")
     c = control(view)
     assert c.bubble.get("visible") is False
     node = view.node("root.s")
@@ -153,7 +154,7 @@ def test_the_value_bubble_shows_while_dragging_and_on_keyboard_focus_only(tmp_pa
 
 
 def test_the_value_bubble_shows_on_keyboard_focus_and_goes_when_focus_leaves(tmp_path):
-    view, _ = opened(tmp_path, (SLIDER % ", value_indicator: true, step: 10") + "  - {widget: Checkbox, name: x}\n")
+    view, _ = opened(tmp_path, (SLIDER % ", Value_Indicator: true, Step: 10") + "\nCheckbox { Name: x }")
     c = control(view)
     view.window.simulate("key_down", key="tab")
     view.window.advance(16)
@@ -171,34 +172,34 @@ def test_without_value_indicator_there_is_never_a_bubble(tmp_path):
 
 
 def test_disabled_is_dimmed_and_does_not_move(tmp_path):
-    view, vm = opened(tmp_path, SLIDER % ", disabled: true")
+    view, vm = opened(tmp_path, SLIDER % ", Disabled: true")
     drag(view, [0.9])
     view.window.simulate("key_down", key="end")
     assert vm.volume.get() == 30.0 and not view.node("root.s").get("focusable")
 
 
 def test_the_label_names_it_and_the_colour_is_the_foreground(tmp_path):
-    view, _ = opened(tmp_path, SLIDER.replace("style: {width: 220}", "style: {width: 220, foreground: '#CC3300'}") % ", label: Volume")
+    view, _ = opened(tmp_path, SLIDER.replace("Style { Width: 220 }", 'Style { Width: 220, Foreground: "#CC3300" }') % ", Label: Volume")
     assert view.node("root.s").get("label") == "Volume" and control(view).handle.get("fill") == (0xCC, 0x33, 0x00, 255)
 
 
 def test_a_range_with_no_room_is_an_error_naming_the_widget(tmp_path):
     with pytest.raises(Exception, match="max > min"):
-        opened(tmp_path, '  - {widget: Slider, name: s, min: 5, max: 5}\n')
+        opened(tmp_path, "Slider { Name: s, Min: 5, Max: 5 }")
 
 
 def test_the_default_range_is_zero_to_one(tmp_path):
-    view, _ = opened(tmp_path, "  - {widget: Slider, name: s, value: 0.5, style: {width: 220}}\n")
+    view, _ = opened(tmp_path, "Slider { Name: s, Value: 0.5, Style { Width: 220 } }")
     assert (view.node("root.s").get("value_min"), view.node("root.s").get("value_max")) == (0.0, 1.0)
 
 
 def test_on_input_on_something_that_is_not_a_slider_says_so(tmp_path):
     with pytest.raises(Exception, match="on_input is for a Slider"):
-        opened(tmp_path, '  - {widget: Container, name: c, handlers: {on_input: moving}}\n')
+        opened(tmp_path, "Container { Name: c, Handlers { On_Input: moving } }")
 
 
 def test_a_key_is_one_input_and_one_change_and_a_key_that_moves_nothing_is_neither(tmp_path):
-    body = SLIDER % ', step: 10, handlers: {on_input: moving, on_change: committed}'
+    body = SLIDER % ', Step: 10, Handlers { On_Input: moving, On_Change: committed }'
     view, vm = opened(tmp_path, body)
     view.node("root.s").focus()
     view.window.simulate("key_down", key="arrow_right")
@@ -209,22 +210,22 @@ def test_a_key_is_one_input_and_one_change_and_a_key_that_moves_nothing_is_neith
 
 
 def test_a_range_can_start_below_zero(tmp_path):
-    view, vm = opened(tmp_path, '  - {widget: Slider, name: s, min: -50, max: 50, value: 0, style: {width: 220}}\n')
+    view, vm = opened(tmp_path, "Slider { Name: s, Min: -50, Max: 50, Value: 0, Style { Width: 220 } }")
     c = control(view)
     assert c.handle.get("translate_x") == pytest.approx(c._span / 2)
     assert (view.node("root.s").get("value_min"), view.node("root.s").get("value_max")) == (-50.0, 50.0)
 
 
 def test_moving_within_one_step_is_not_a_new_input(tmp_path):
-    view, vm = opened(tmp_path, SLIDER % ", step: 10, handlers: {on_input: moving}")
+    view, vm = opened(tmp_path, SLIDER % ", Step: 10, Handlers { On_Input: moving }")
     drag(view, [0.5, 0.51, 0.52, 0.49])
     assert vm.live == [50.0]  # the press set it to 50; the small moves stayed on the same step
 
 
 def test_a_flex_expanded_slider_maps_the_pointer_with_its_laid_out_width(tmp_path):
     """#252: the span was the width at build (220), so a press in the middle of a slider laid out at 300 read the wrong value."""
-    view, vm = opened(tmp_path, '  - widget: Container\n    name: row\n    style: {flex_direction: horizontal, width: 300, height: 48}\n    children:\n'
-                      '      - {widget: Slider, name: s, min: 0, max: 100, value: "{{ volume }}", style: {width: 120, flex: expand_horizontal}}\n')
+    view, vm = opened(tmp_path, "Container { Name: row, Style { Flex_Direction: horizontal, Width: 300, Height: 48 }, Children {\n"
+                      "Slider { Name: s, Min: 0, Max: 100, Value: <| volume |>, Style { Width: 120, Flex: expand_horizontal } } } }")
     node = view.node("root.row.s")
     laid = node.get("layout_width")
     assert laid > 250  # it did expand past the built 120
@@ -238,8 +239,8 @@ def test_a_flex_expanded_slider_maps_the_pointer_with_its_laid_out_width(tmp_pat
 
 
 def test_a_flex_expanded_slider_moves_its_tick_marks_and_its_handle_with_the_laid_out_width(tmp_path):
-    view, vm = opened(tmp_path, '  - widget: Container\n    name: row\n    style: {flex_direction: horizontal, width: 300, height: 48}\n    children:\n'
-                      '      - {widget: Slider, name: s, min: 0, max: 100, step: 25, ticks: true, value: "{{ volume }}", style: {width: 120, flex: expand_horizontal}}\n')
+    view, vm = opened(tmp_path, "Container { Name: row, Style { Flex_Direction: horizontal, Width: 300, Height: 48 }, Children {\n"
+                      "Slider { Name: s, Min: 0, Max: 100, Step: 25, Ticks: true, Value: <| volume |>, Style { Width: 120, Flex: expand_horizontal } } } }")
     c = view._built.controls["root.row.s"]
     laid = view.node("root.row.s").get("layout_width")
     view.window.simulate("resize", width=300, height=200)  # headless `advance` lays out but draws no frame; the slider looks on a frame or a resize
@@ -258,13 +259,13 @@ def test_a_slider_with_its_built_width_is_left_alone(tmp_path):
 # -- #250: Expressive sizes, stood up, an inset icon ---------------------------------------------------------------------------
 
 
-def sized(tmp_path, extra, style="width: 220"):
-    return opened(tmp_path, '  - {widget: Slider, name: s, min: 0, max: 100, value: "{{ volume }}", %s, style: {%s}}\n' % (extra, style))
+def sized(tmp_path, extra, style="Width: 220"):
+    return opened(tmp_path, "Slider { Name: s, Min: 0, Max: 100, Value: <| volume |>, %s, Style { %s } }" % (extra, style))
 
 
 @pytest.mark.parametrize("size,track,handle", [("xs", 16, 44), ("s", 24, 44), ("m", 40, 52), ("l", 56, 68), ("xl", 96, 108)])
 def test_an_expressive_size_has_a_thick_track_and_a_thin_handle(tmp_path, size, track, handle):
-    view, _ = sized(tmp_path, f"size: {size}")
+    view, _ = sized(tmp_path, f"Size: {size}")
     c = control(view)
     assert c.active.get("layout_height") == track and c.inactive.get("layout_height") == track
     assert (c.handle.get("layout_width"), c.handle.get("layout_height")) == (4.0, handle)
@@ -272,7 +273,7 @@ def test_an_expressive_size_has_a_thick_track_and_a_thin_handle(tmp_path, size, 
 
 
 def test_an_expressive_track_is_two_pieces_a_gap_from_the_handle(tmp_path):
-    view, _ = sized(tmp_path, "size: m")
+    view, _ = sized(tmp_path, "Size: m")
     c = control(view)
     centre = c._edge + 0.3 * c._span  # the value is 30
     assert c.active.get("layout_x") == 0.0
@@ -282,7 +283,7 @@ def test_an_expressive_track_is_two_pieces_a_gap_from_the_handle(tmp_path):
 
 
 def test_an_expressive_slider_still_maps_the_pointer_over_its_own_span(tmp_path):
-    view, vm = sized(tmp_path, "size: l")
+    view, vm = sized(tmp_path, "Size: l")
     node, c = view.node("root.s"), control(view)
     view.window.simulate("pointer_down", node, x=c._edge + 0.8 * c._span, y=30)
     view.window.simulate("pointer_up", x=node.get("layout_x") + c._edge + 0.8 * c._span, y=node.get("layout_y") + 30)
@@ -291,14 +292,14 @@ def test_an_expressive_slider_still_maps_the_pointer_over_its_own_span(tmp_path)
 
 def test_a_size_that_is_not_one_is_refused_and_an_icon_needs_room(tmp_path):
     with pytest.raises(LoadError):
-        sized(tmp_path, "size: huge")
-    for extra in ("icon: volume_high", "size: xs, icon: volume_high"):
+        sized(tmp_path, "Size: huge")
+    for extra in ("Icon: volume_high", "Size: xs, Icon: volume_high"):
         with pytest.raises(Exception, match="inset icon needs a size"):
             sized(tmp_path, extra)
 
 
 def test_an_inset_icon_sits_at_the_start_of_the_track_and_takes_the_colour_of_what_is_under_it(tmp_path):
-    view, vm = sized(tmp_path, "size: l, icon: volume_high")
+    view, vm = sized(tmp_path, "Size: l, Icon: volume_high")
     c = control(view)
     assert (c.icon.get("layout_width"), c.icon.get("layout_height")) == (24.0, 24.0)
     assert c.icon.get("layout_x") == pytest.approx((56 - 24) / 2) and c.icon.get("fill") == role(view, "on_primary")  # at 30 the active piece covers it
@@ -308,7 +309,7 @@ def test_an_inset_icon_sits_at_the_start_of_the_track_and_takes_the_colour_of_wh
 
 
 def test_a_vertical_slider_is_tall_and_its_bottom_is_the_minimum(tmp_path):
-    view, vm = sized(tmp_path, "vertical: true", style="height: 200")
+    view, vm = sized(tmp_path, "Vertical: true", style="Height: 200")
     node, c = view.node("root.s"), control(view)
     assert (node.get("layout_width"), node.get("layout_height")) == (48.0, 200.0)
     assert (c.inactive.get("layout_width"), c.inactive.get("layout_height")) == (4.0, c._span)
@@ -318,7 +319,7 @@ def test_a_vertical_slider_is_tall_and_its_bottom_is_the_minimum(tmp_path):
 
 
 def test_a_vertical_slider_reads_the_pointers_height_from_the_bottom(tmp_path):
-    view, vm = sized(tmp_path, "vertical: true", style="height: 200")
+    view, vm = sized(tmp_path, "Vertical: true", style="Height: 200")
     node, c = view.node("root.s"), control(view)
     y = 200 - (c._edge + 0.7 * c._span)  # 70% of the way up
     view.window.simulate("pointer_down", node, x=24, y=y)
@@ -330,7 +331,7 @@ def test_a_vertical_slider_reads_the_pointers_height_from_the_bottom(tmp_path):
 
 
 def test_a_vertical_slider_is_stepped_by_the_up_and_down_keys(tmp_path):
-    view, vm = sized(tmp_path, "vertical: true, step: 10", style="height: 200")
+    view, vm = sized(tmp_path, "Vertical: true, Step: 10", style="Height: 200")
     node = view.node("root.s")
     view.window.simulate("focus", node)
     view.window.simulate("key_down", node, key="arrow_up")
@@ -341,7 +342,7 @@ def test_a_vertical_slider_is_stepped_by_the_up_and_down_keys(tmp_path):
 
 
 def test_a_vertical_slider_puts_its_ticks_and_bubble_beside_the_track(tmp_path):
-    view, _ = sized(tmp_path, "vertical: true, step: 25, ticks: true, value_indicator: true", style="height: 200")
+    view, _ = sized(tmp_path, "Vertical: true, Step: 25, Ticks: true, Value_Indicator: true", style="Height: 200")
     c = control(view)
     assert len(c.tick_marks) == 5
     assert c.tick_marks[0].get("layout_y") + 1.0 == pytest.approx(200 - c._edge) and c.tick_marks[-1].get("layout_y") + 1.0 == pytest.approx(c._edge)
@@ -349,8 +350,7 @@ def test_a_vertical_slider_puts_its_ticks_and_bubble_beside_the_track(tmp_path):
 
 
 def test_a_flex_expanded_vertical_slider_takes_its_laid_out_height(tmp_path):
-    view, vm = opened(tmp_path, '  - widget: Slider\n    name: s\n    min: 0\n    max: 100\n    vertical: true\n    value: "{{ volume }}"\n'
-                      '    style: {height: 80, flex: expand_vertical}\n')
+    view, vm = opened(tmp_path, "Slider { Name: s, Min: 0, Max: 100, Vertical: true, Value: <| volume |>, Style { Height: 80, Flex: expand_vertical } }")
     c, node = control(view), view.node("root.s")
     laid = node.get("layout_height")
     assert laid > 150

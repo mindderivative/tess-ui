@@ -22,13 +22,15 @@ def _project(tmp_path, view, style="style: {width: 77, height: 5, background: er
 
 
 def test_a_view_that_names_a_style_file_is_refused_where_it_says_so(tmp_path):
-    _project(tmp_path, "name: style\nwidget: Container\nchildren:\n  - {widget: Container, name: a, style: row_Style.yaml}\n")
+    (tmp_path / "Views").mkdir()
+    (tmp_path / "Views" / "Style_View.tdl").write_text(
+        '---\nTDL: 0.2\nName: style\nTesserae: "0.6"\n---\nContainer {\n  Name: style\n  Children {\n    Container { Name: a, Style: row_Style.yaml }\n  }\n}\n')
     app = App(root=tmp_path)
     app.bind(VM)
     with pytest.raises(LoadError) as caught:
         app.open_view("Style")
     text = str(caught.value)
-    assert "Style_View.yaml:4" in text and "style file" in text and "migrate-yaml" in text
+    assert "Style_View.tdl:9" in text and "style file" in text and "migrate-yaml" in text
 
 
 def test_the_migration_writes_the_files_fields_into_the_node(tmp_path, capsys):

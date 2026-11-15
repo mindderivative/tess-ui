@@ -33,26 +33,35 @@ def opened(tmp_path, props="", view_props=""):
     (tmp_path / "Views").mkdir(exist_ok=True)
     lines = "\n    ".join(props.split(", ")) if props else ""
     vlines = "\n    ".join(view_props.split(", ")) if view_props else ""
-    results_line = "results: []" if "results: []" in view_props else 'results: "{{ results }}"'
-    vlines = vlines.replace("results: []", "")
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{flex_direction: vertical, align_content: top_left, width: 700, height: 600, padding: 20}}
-children:
-  - widget: SearchBar
-    name: bar
-    query: "{{{{ q }}}}"
-    active: "{{{{ active }}}}"
-    style: {{width: 360}}
-    {lines}
-  - widget: SearchView
-    name: sv
-    open: "{{{{ active }}}}"
-    anchor: bar
-    query: "{{{{ q }}}}"
-    {results_line}
-    chosen: "{{{{ chosen }}}}"
-    {vlines}
+    results_line = "Results: []" if "Results: []" in view_props else "Results: <| results |>"
+    vlines = vlines.replace("Results: []", "")
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Align_Content: top_left, Width: 700, Height: 600, Padding: 20 }}
+  Children {{
+    SearchBar {{
+      Name: bar
+      Query: <| q |>
+      Active: <| active |>
+      Style {{ Width: 360 }}
+      {lines}
+    }}
+    SearchView {{
+      Name: sv
+      Open: <| active |>
+      Anchor: bar
+      Query: <| q |>
+      {results_line}
+      Chosen: <| chosen |>
+      {vlines}
+    }}
+  }}
+}}
 """)
     app = App(root=tmp_path, width=700, height=600)
     app.bind(VM)
@@ -151,7 +160,7 @@ def test_a_clear_button_shows_once_there_is_text_and_empties_it(tmp_path):
 
 
 def test_enter_calls_on_search(tmp_path):
-    view, vm = opened(tmp_path, "on_search: found")
+    view, vm = opened(tmp_path, "On_Search: found")
     type_text(view, "cat")
     view.window.simulate("key_down", key="Enter")
     settle(view, 4)
@@ -159,7 +168,7 @@ def test_enter_calls_on_search(tmp_path):
 
 
 def test_a_trailing_icon_shows_while_the_field_is_empty_and_runs_its_handler(tmp_path):
-    view, vm = opened(tmp_path, "trailing_icon: microphone, on_trailing: mic")
+    view, vm = opened(tmp_path, "Trailing_Icon: microphone, On_Trailing: mic")
     assert "root.bar.trailing" in view._built.specs
     view.window.simulate("click", node=bar(view, "trailing"))
     assert vm.log == ["mic"]
@@ -168,13 +177,13 @@ def test_a_trailing_icon_shows_while_the_field_is_empty_and_runs_its_handler(tmp
 
 
 def test_an_avatar_is_a_30_pixel_circle_at_the_end(tmp_path):
-    view, _ = opened(tmp_path, "avatar_text: JD")
+    view, _ = opened(tmp_path, "Avatar_Text: JD")
     av = bar(view, "avatar")
     assert (av.get("layout_width"), av.get("layout_height")) == (30.0, 30.0) and av.get("fill") == role(view, "primary_container")
 
 
 def test_a_menu_button_leads_and_runs_on_leading(tmp_path):
-    view, vm = opened(tmp_path, "leading_icon: menu, on_leading: menu")
+    view, vm = opened(tmp_path, "Leading_Icon: menu, On_Leading: menu")
     assert bar(view, "leading").get("label") == "Menu"
     view.window.simulate("click", node=bar(view, "leading"))
     assert "menu" in vm.log
@@ -228,6 +237,6 @@ def test_the_number_of_results_is_announced_politely(tmp_path):
 
 
 def test_no_results_and_nothing_typed_shows_no_message(tmp_path):
-    view, vm = opened(tmp_path, view_props="results: []")
+    view, vm = opened(tmp_path, view_props="Results: []")
     activate(view)
     assert vm.q.get() == "" and "root.sv.panel.none" not in view._built.specs and "root.sv.panel.rows" not in view._built.specs
