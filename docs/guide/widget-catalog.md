@@ -2,18 +2,18 @@
 
 `tess_ui.widgets` builds MD3 (Material Design 3) widgets from Python: one
 function per widget, called against a live `Window`. Use it when a widget
-is created at run time. For a widget in a view, write `widget: Button` (or
-any other [component view](component-fragments.md)) in the YAML instead.
+is created at run time. For a widget in a view, write `Button { }` (or
+any other [component view](component-fragments.md)) in the TDL instead.
 
-Every widget, with its look and its YAML, has a page under
+Every widget, with its look and its TDL, has a page under
 [Components](../components/index.md). Every function's signature is in the
 [Python API](../api/python.md).
 
-The YAML and Python forms are separate. `widget: Button` in a view is the
-view Tesserae ships (`Button_View.yaml`), with its properties (`label`,
-`variant`, `size`, ...); `button(window, ...)` builds the same Material 3
+The TDL and Python forms are separate. `Button { }` in a view is the
+view Tesserae ships (`Button_View.tdl`), with its properties (`Label`,
+`Variant`, `Size`, ...); `button(window, ...)` builds the same Material 3
 button from Tesserae's own definition for Python, with the arguments of the
-function. A `Button_View.yaml` of your own changes the first, not the
+function. A `Button_View.tdl` of your own changes the first, not the
 second.
 
 ```python
@@ -97,19 +97,27 @@ count.content.set("3 notes")
 `dialog`, `snackbar`, `menu`, `tooltip` and `popover`, and `side_sheet(..., modal=True)`, return
 overlays with `open()` and `close()` (`side_sheet` without `modal` is a plain panel widget you place yourself). See [Overlays](overlays.md).
 
-## Code or YAML
+## Code or TDL
 
-| | `tess_ui.widgets` | [`widget: Name`](component-fragments.md) |
+| | `tess_ui.widgets` | [`Name { }` in a view](component-fragments.md) |
 | --- | --- | --- |
-| Called from | Python (a ViewModel, setup code) | a `*_View.yaml` |
-| Style | imperative: `button(window, ...)` | declarative: `widget: Button` |
+| Called from | Python (a ViewModel, setup code) | a `*_View.tdl` |
+| Style | imperative: `button(window, ...)` | declarative: `Button { ... }` |
 | Runtime data | plain function arguments | any expression, and it follows the data |
 
 Reach for a view first when a widget is part of a layout: it keeps the
-screen declarative, and `for:` and `if:` already make widgets from data and
+screen declarative, and `For` and `If` already make widgets from data and
 add or remove them as it changes. Reach for `tess_ui.widgets` when the
 widget has to be made by code, such as one that only some code path
 builds, or one added to a window that is not built from a view.
+
+## `list_` and `For`
+
+`list_` takes pre-built `Node`s and lays them out. In a view, a list is a
+container of `ListItem` calls, and
+[`For`](component-fragments.md#repeating-a-view-for) writes the one call
+once and builds a row for each element of the data, adding and removing
+rows as the data changes.
 
 ## `list_` and `for:`
 

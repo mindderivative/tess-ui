@@ -1,88 +1,137 @@
 # Overlays
 
 An overlay is a layer over the window: a dialog, a menu, a snackbar, a side sheet. There are two ways to make one.
-In a view, a `widget: Overlay` shows its children while its `open` is true. From Python, `tess_ui.overlays` has MD3's
+In a view, an `Overlay` shows its children while its `Open` is true. From Python, `tess_ui.overlays` has MD3's
 dialogs, menus, snackbars, tooltips, popovers, side sheets and modal navigation drawers, ready made, built from Tesserae's
 fragments and shown with `tess_re`'s layers.
 
 ## An Overlay in a view
 
-`widget: Overlay` takes no room where it is written. Its children are drawn in a layer over the window while `open` is
-true. Bind `open` to a Signal (or a `state:` name) and the layer follows it, and the user's Escape or outside press writes
+An `Overlay` takes no room where it is written. Its children are drawn in a layer over the window while `Open` is
+true. Bind `Open` to a Signal (or a `State` name) and the layer follows it, and the user's Escape or outside press writes
 `false` back:
 
-```yaml
-widget: Container
-name: page
-state: {confirm: false}
-style: {flex_direction: vertical, width: 400, height: 300, padding: 20}
-children:
-  - {widget: Button, name: delete, label: Delete, handlers: {on_click: "confirm = True"}}
-  - widget: Overlay
-    open: "{{ confirm }}"
-    modal: true
-    children:
-      - widget: Container
-        name: dialog
-        style: {flex_direction: vertical, gap: 16, padding: 24, width: 312, background: surface_container_high, corner_radius: 28}
-        a11y: {role: dialog, label: Delete this file}
-        children:
-          - {widget: Text, text: "Delete this file?", typography_role: headline_small, style: {foreground: on_surface}}
-          - widget: Container
-            style: {flex_direction: horizontal, gap: 8, align_content: right}
-            children:
-              - {widget: Button, name: cancel, label: Cancel, variant: text, handlers: {on_click: "confirm = False"}}
-              - {widget: Button, name: confirm_it, label: Delete, variant: text, handlers: {on_click: "confirm = False; delete_file()"}}
+```tdl
+Container {
+  Name: page
+  State { Confirm: false }
+  Style { Flex_Direction: vertical, Width: 400, Height: 300, Padding: 20 }
+  Children {
+    Button {
+      Name: delete
+      Label: Delete
+      Handlers { On_Click { Set { Target: confirm, Value: <| True |> } } }
+    }
+    Overlay {
+      Open: <| confirm |>
+      Modal: true
+      Children {
+        Container {
+          Name: dialog
+          Style { Flex_Direction: vertical, Gap: 16, Padding: 24, Width: 312, Background: surface_container_high, Corner_Radius: 28 }
+          A11y { Role: dialog, Label: "Delete this file" }
+          Children {
+            Text { Text: "Delete this file?", Typography_Role: headline_small, Style { Foreground: on_surface } }
+            Container {
+              Style { Flex_Direction: horizontal, Gap: 8, Align_Content: right }
+              Children {
+                Button {
+                  Name: cancel
+                  Label: Cancel
+                  Variant: text
+                  Handlers { On_Click { Set { Target: confirm, Value: <| False |> } } }
+                }
+                Button {
+                  Name: confirm_it
+                  Label: Delete
+                  Variant: text
+                  Handlers {
+                    On_Click {
+                      Set { Target: confirm, Value: <| False |> }
+                      Call { Action: delete_file }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
 ```
 
 | Property | What it does |
 | --- | --- |
-| `open` | Whether it is showing. Two-way. With an `open` that is not a Signal, a layer the user closed stays closed until `open` goes false. |
-| `anchor` | The `name` of a node in this view to sit against, or `parent` for the node it is written inside. |
-| `placement` | `below` (the default), `above`, `start` or `end` of the anchor, or a corner: `top_start`, `top_end`, `bottom_start`, `bottom_end`, `center`. The sides flip or shift to fit; the corners do not, and a corner puts the middle of the overlay on that point of the anchor (use `offset` to move it). |
-| `offset` | `[dx, dy]` in pixels from the placement. |
-| `flip` | `true` (the default) moves a side placement to the other side when it does not fit; `false` keeps it. |
-| `modal` | A scrim (the `scrim` colour at 32%) over the whole window, blocking input to what is under it and keeping Tab inside. It follows the window's size and centres its children unless the style places them (`align_content`). A press on the scrim closes a dismissible modal; a press on its content does not. |
-| `dismissible` | `true` (the default): Escape and a press outside close it. `false` turns both off. |
-| `focus_first` | When it opens, the focus moves to the first thing in it that can take it (a menu's first row). |
-| `timeout` | Closes it that many milliseconds after it opens, unless the pointer is over it. 0, the default, never. |
-| `handlers` | `on_dismiss` runs when Escape, a press outside, its `timeout` or `surface.dismiss` closes it; writing `false` to `open` from code does not run it. |
+| `Open` | Whether it is showing. Two-way. With an `Open` that is not a Signal, a layer the user closed stays closed until `Open` goes false. |
+| `Anchor` | The `Name` of a node in this view to sit against, or `parent` for the node it is written inside. |
+| `Placement` | `below` (the default), `above`, `start` or `end` of the anchor, or a corner: `top_start`, `top_end`, `bottom_start`, `bottom_end`, `center`. The sides flip or shift to fit; the corners do not, and a corner puts the middle of the overlay on that point of the anchor (use `Offset` to move it). |
+| `Offset` | `[dx, dy]` in pixels from the placement. |
+| `Flip` | `true` (the default) moves a side placement to the other side when it does not fit; `false` keeps it. |
+| `Modal` | A scrim (the `scrim` colour at 32%) over the whole window, blocking input to what is under it and keeping Tab inside. It follows the window's size and centres its children unless the style places them (`Align_Content`). A press on the scrim closes a dismissible modal; a press on its content does not. |
+| `Dismissible` | `true` (the default): Escape and a press outside close it. `false` turns both off. |
+| `Focus_First` | When it opens, the focus moves to the first thing in it that can take it (a menu's first row). |
+| `Timeout` | Closes it that many milliseconds after it opens, unless the pointer is over it. 0, the default, never. |
+| `Handlers` | `On_Dismiss` runs when Escape, a press outside, its `Timeout` or `surface.dismiss` closes it; writing `false` to `Open` from code does not run it. |
 
-Without an `anchor` and not modal, the layer sits at its own `x` and `y` in the window (the top left unless its style says).
-Focus goes back to where it was when the layer closes. To close it from inside, write `false` to the Signal `open` is bound
-to, as the Cancel button does. The `style:` of the Overlay sizes and paints the layer; put the dialog itself in a child with
+Without an `Anchor` and not modal, the layer sits at its own `X` and `Y` in the window (the top left unless its style says).
+Focus goes back to where it was when the layer closes. To close it from inside, write `false` to the Signal `Open` is bound
+to, as the Cancel button does. The `Style` of the Overlay sizes and paints the layer; put the dialog itself in a child with
 its own size and background.
 
 A menu against a button, closed by the same Signal:
 
-```yaml
-widget: Container
-state: {menu_open: false}
-style: {flex_direction: vertical, padding: 20, width: 300, height: 240}
-children:
-  - {widget: Button, name: trigger, label: Options, handlers: {on_click: "menu_open = not menu_open"}}
-  - widget: Overlay
-    open: "{{ menu_open }}"
-    anchor: trigger
-    placement: below
-    focus_first: true
-    style: {width: 160, background: surface_container}
-    children:
-      - widget: Container
-        name: rename
-        style: {height: 40, padding: 12, align_content: left}
-        handlers: {on_click: "menu_open = False; rename()"}
-        children:
-          - {widget: Text, text: Rename, typography_role: label_large, style: {foreground: on_surface}}
-      - widget: Container
-        name: remove
-        style: {height: 40, padding: 12, align_content: left}
-        handlers: {on_click: "menu_open = False; remove()"}
-        children:
-          - {widget: Text, text: Delete, typography_role: label_large, style: {foreground: on_surface}}
+```tdl
+Container {
+  State { Menu_Open: false }
+  Style { Flex_Direction: vertical, Padding: 20, Width: 300, Height: 240 }
+  Children {
+    Button {
+      Name: trigger
+      Label: Options
+      Handlers { On_Click { Set { Target: menu_open, Value: <| not menu_open |> } } }
+    }
+    Overlay {
+      Open: <| menu_open |>
+      Anchor: trigger
+      Placement: below
+      Focus_First: true
+      Style { Width: 160, Background: surface_container }
+      Children {
+        Container {
+          Name: rename
+          Style { Height: 40, Padding: 12, Align_Content: left }
+          Handlers {
+            On_Click {
+              Set { Target: menu_open, Value: <| False |> }
+              Call { Action: rename }
+            }
+          }
+          Children {
+            Text { Text: Rename, Typography_Role: label_large, Style { Foreground: on_surface } }
+          }
+        }
+        Container {
+          Name: remove
+          Style { Height: 40, Padding: 12, Align_Content: left }
+          Handlers {
+            On_Click {
+              Set { Target: menu_open, Value: <| False |> }
+              Call { Action: remove }
+            }
+          }
+          Children {
+            Text { Text: Delete, Typography_Role: label_large, Style { Foreground: on_surface } }
+          }
+        }
+      }
+    }
+  }
+}
 ```
 
-[The View Language](view-language.md#overlays) has the rest, and a `tooltip:` on any node is the lighter way to show a hint
+[The View Language](view-language.md#overlays) has the rest, and a `Tooltip` on any node is the lighter way to show a hint
 ([Tooltips](view-language.md#tooltips)).
 
 ## Overlays from Python
@@ -113,18 +162,18 @@ Every overlay has `open()`, `close()`, `is_open`, `on_close(fn)` and
 
 `ViewDialog(window, "Settings_View.yaml", width=480, height=320)` is a `Dialog` whose content is a view file: its
 file, or its name in a project, with its ViewModel if it has one (`arguments={"who": "Ada"}` goes to the constructor) and without one
-if it hasn't. `dialog.content` is the view and `dialog.viewmodel` its ViewModel. A `TitleBar` with `buttons: [dismiss]` at
+if it hasn't. `dialog.content` is the view and `dialog.viewmodel` its ViewModel. A `TitleBar` with `Buttons: [dismiss]` at
 the top of the view is a header with a close button, and a `surface.dismiss` handler on anything closes the dialog.
 
-`ViewDialog` is for a view in the older syntax (`kind:`), read with the older loader, and given one in the current language (`widget:`) it refuses it
-with a message that says what to write instead. A dialog in the current language is a modal `widget: Overlay` in a view, as above: its content is the
-view you call by name, `open` is bound to a Signal, and a `surface.dismiss` handler closes it. A called view has no ViewModel of its own, so
+`ViewDialog` is for a view in the older syntax (`kind:`), read with the older loader, and given a TDL view it refuses it
+with a message that says what to write instead. A dialog written in TDL is a modal `Overlay` in a view, as above: its content is the
+view you call by name, `Open` is bound to a Signal, and a `surface.dismiss` handler closes it. A called view has no ViewModel of its own, so
 the `arguments` that `ViewDialog` hands to a ViewModel's constructor are the Overlay's content's params, or names the view's ViewModel serves.
 
-`surface.dismiss` closes the nearest overlay the widget is in. In a view that is the nearest `widget: Overlay` up the tree, closed as a press outside it
-would: the layer hides, a bound `open` goes false, and `on_dismiss` runs. A button in a view the Overlay calls dismisses it too, and in nested
-Overlays it is the inner one. With no `widget: Overlay` around, it closes the overlay made by `tess_ui.overlays` that the view is in, as its `close()`
-does (`dismiss_surface(node)` is the same from Python), and does nothing if there is none. Writing `false` to `open` still closes an Overlay.
+`surface.dismiss` closes the nearest overlay the widget is in. In a view that is the nearest `Overlay` up the tree, closed as a press outside it
+would: the layer hides, a bound `Open` goes false, and `On_Dismiss` runs. A button in a view the Overlay calls dismisses it too, and in nested
+Overlays it is the inner one. With no `Overlay` around, it closes the overlay made by `tess_ui.overlays` that the view is in, as its `close()`
+does (`dismiss_surface(node)` is the same from Python), and does nothing if there is none. Writing `false` to `Open` still closes an Overlay.
 
 ## Which closes how
 
@@ -192,18 +241,21 @@ modal overlay keeps Tab inside it.
 
 ## A dialog for choosing files
 
-`widget: FileDialog` is a view Tesserae ships: a modal `Overlay` for choosing a file to open, a folder and a name to save under, or a folder, inside the app and with
-no window of the operating system. It is opened and closed like the `Dialog` above, by a Signal bound to `open`:
+A `FileDialog` is a view Tesserae ships: a modal `Overlay` for choosing a file to open, a folder and a name to save under, or a folder, inside the app and with
+no window of the operating system. It is opened and closed like the `Dialog` above, by a Signal bound to `Open`:
 
-```yaml
-- widget: FileDialog
-  open: "{{ choosing }}"
-  mode: open                 # or save, or folder
-  start: ~/Documents
-  filters: [{label: TDL files, patterns: ["*.tdl"]}]
-  value: "{{ plan }}"        # the chosen path, written when OK is pressed
-  on_accept: load_plan
-  on_cancel: stay
+```tdl
+FileDialog {
+  Open: <| choosing |>
+  Mode: open                 # or save, or folder
+  Start: "~/Documents"
+  Filters {
+    Item { Label: "TDL files", Patterns: ["*.tdl"] }
+  }
+  Value: <| plan |>          # the chosen path, written when OK is pressed
+  On_Accept: load_plan
+  On_Cancel: stay
+}
 ```
 
 From Python, `tess_ui.file_dialog.FileDialogRequest(self)` in a ViewModel makes the names a `FileDialog` call binds and opens it with `show(mode=..., on_accept=fn)`, which

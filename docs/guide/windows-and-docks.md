@@ -1,62 +1,65 @@
 # Windows, Docks and Embedded Views
 
-An app's whole frame can be written in the same YAML as any other view: the window, its title bar, a dock of panels, and the
+An app's whole frame can be written in the same TDL as any other view: the window, its title bar, a dock of panels, and the
 screens inside it, each a view of its own.
 
 | You want | Write |
 | --- | --- |
-| The OS window, its title and its size | [`widget: Window`](#the-window) at the root of `Window_View.yaml` |
-| A title bar of your own | [`title_bar:`](#the-title-bar) on the window, or `widget: TitleBar` anywhere |
-| Another view shown inside this one | [a call](#embedded-views): `widget: Name` |
-| Screens you navigate between | [a call with `route:`](#routed-views) |
-| Panels around the content, in tabs, that the user can drag | [`widget: Dock`](#docks) with `widget: DockPanel` |
+| The OS window, its title and its size | [`Window`](#the-window) at the root of `Window_View.tdl` |
+| A title bar of your own | [`Title_Bar`](#the-title-bar) on the window, or a `TitleBar` anywhere |
+| Another view shown inside this one | [a call](#embedded-views): `Name { }` |
+| Screens you navigate between | [a call with `Route`](#routed-views) |
+| Panels around the content, in tabs, that the user can drag | [`Dock`](#docks) with `DockPanel` |
 | A second window | [`app.open_window`](#several-windows) |
 
 `tesserae new notes --window` makes a project with a window, a rail and routed screens ([The `tesserae` command](cli.md)), and
 `examples/window_dock/` in the repository is a studio with all of it: a title bar, a rail, docked panels, routed screens and a status
-bar, in one `Window_View.yaml`. Both are written in the language on this page.
+bar, in one `Window_View.tdl`. Both are written in the language on this page.
 
 ## The window
 
-`widget: Window` is the root of a `Window_View.yaml`. There is one per app, it can't be nested inside another view, and it
+A `Window` is the root of a `Window_View.tdl`. There is one per app, it can't be nested inside another view, and it
 needs no ViewModel.
 
-```yaml
-name: window
-widget: Window
-title: Notes                # required: the OS window's title
-borderless: true            # no OS title bar or borders: the title bar below is the window's
-min_width: 480
-min_height: 320
-style: {width: 960, height: 600, background: surface, flex_direction: vertical}   # the window's size, and what it is painted with
-title_bar: {title: Notes, icon: home, buttons: [minimize, maximize, close]}
-children:
-  - widget: Text
-    name: content
-    text: Hello
-    typography_role: headline_small
-    style: {foreground: on_surface}
+```tdl
+Window {
+  Name: window
+  Title: Notes                # required: the OS window's title
+  Borderless: true            # no OS title bar or borders: the title bar below is the window's
+  Min_Width: 480
+  Min_Height: 320
+  Style { Width: 960, Height: 600, Background: surface, Flex_Direction: vertical }   # the window's size, and what it is painted with
+  Title_Bar { Title: Notes, Icon: home, Buttons: [minimize, maximize, close] }
+  Children {
+    Text {
+      Name: content
+      Text: Hello
+      Typography_Role: headline_small
+      Style { Foreground: on_surface }
+    }
+  }
+}
 ```
 
 ```python
 app = App(title="Notes", root=HERE, theme_seed=(0x67, 0x50, 0xA4, 0xFF))
-app.open_view("Window")      # Views/Window_View.yaml
+app.open_view("Window")      # Views/Window_View.tdl
 app.run()
 ```
 
-- `style:`'s `width` and `height` are the window's size, and `background` its fill. The rest of `style:` lays out the content: the
-  content is a column when you write `flex_direction: vertical` (a title bar above a body), and a row otherwise (a rail beside the
+- `Style`'s `Width` and `Height` are the window's size, and `Background` its fill. The rest of `Style` lays out the content: the
+  content is a column when you write `Flex_Direction: vertical` (a title bar above a body), and a row otherwise (a rail beside the
   screens).
-- `borderless: true` is the same as `App(borderless=True)`: the OS window has no title bar or borders, and the title bar is
+- `Borderless: true` is the same as `App(borderless=True)`: the OS window has no title bar or borders, and the title bar is
   the window's.
-- A window with a `title_bar:` that isn't `borderless` has a plain header: the OS draws the window's own buttons, so the bar has none of
-  its own unless it lists some in `buttons:`.
-- The window's other keys are `min_width`, `min_height`, `remember`, `fullscreen`, `maximized`, `transparent`, `blur_behind` and
-  `click_through`. The yes/no options (`fullscreen`, `maximized`, ...) are applied only when written, so one the user changed is not undone by a later
-  edit. `transparent`, `blur_behind` and `click_through` are fixed before the window opens, and the platform may refuse one and
-  say so ([Window Options](window-options.md)). `remember: true` (or a name) keeps the window's size, its place where the platform lets
+- A window with a `Title_Bar` that isn't `Borderless` has a plain header: the OS draws the window's own buttons, so the bar has none of
+  its own unless it lists some in `Buttons`.
+- The window's other keys are `Min_Width`, `Min_Height`, `Remember`, `Fullscreen`, `Maximized`, `Transparent`, `Blur_Behind` and
+  `Click_Through`. The yes/no options (`Fullscreen`, `Maximized`, ...) are applied only when written, so one the user changed is not undone by a later
+  edit. `Transparent`, `Blur_Behind` and `Click_Through` are fixed before the window opens, and the platform may refuse one and
+  say so ([Window Options](window-options.md)). `Remember: true` (or a name) keeps the window's size, its place where the platform lets
   an app say (not Wayland) and whether it is maximized between runs.
-- `app.open_view("Window")` is what an app opens as its frame. A Window is the app's one window: another `widget: Window` inside a
+- `app.open_view("Window")` is what an app opens as its frame. A Window is the app's one window: another `Window` inside a
   view is an error. A window view is opened with `open_view`; `app.load` and `App(window_view=)` are for views in the older syntax.
 - The ids of everything in it are paths from the root: a `Dock` named `dock` that is a child of the window is `root.dock`.
 
@@ -66,32 +69,33 @@ title bar's buttons still work.
 
 ## The title bar
 
-`title_bar:` on a window, and `widget: TitleBar` anywhere, make the same bar: it drags the window, maximizes on a
-double-click, and holds the icon and title, your own `children`, and the buttons. Its buttons need no ViewModel method:
+`Title_Bar` on a window, and a `TitleBar` anywhere, make the same bar: it drags the window, maximizes on a
+double-click, and holds the icon and title, your own `Children`, and the buttons. Its buttons need no ViewModel method:
 `window.minimize`, `window.maximize`, `window.restore`, `window.toggle_maximized` and `window.close` are handlers anyone
-can use, on any node, in any view (`handlers: {on_click: window.close}`).
+can use, on any node, in any view (`Handlers { On_Click: window.close }`).
 
 A dialog or a sheet takes one too, with a close button that dismisses it:
 
-```yaml
-- widget: TitleBar
-  name: bar
-  title: Rename
-  buttons: [dismiss]
+```text
+TitleBar {
+  Name: bar
+  Title: Rename
+  Buttons: [dismiss]
+}
 ```
 
-`surface.dismiss` is the handler behind it. It closes the overlay the bar is in, the nearest one up the tree (a `widget: Overlay` of the view, else one made by
+`surface.dismiss` is the handler behind it. It closes the overlay the bar is in, the nearest one up the tree (an `Overlay` of the view, else one made by
 `tess_ui.overlays`), and does nothing when the bar is in none. [Custom Title Bars](custom-title-bars.md) has the rest.
 
 ## Embedded views
 
 Another view is shown where it is called, as a part of this one:
 
-```yaml
-- {widget: Left, name: left, size: 3, style: {width: 220}}      # Left_View.yaml, found by name
+```text
+Left { Name: left, Size: 3, Style { Width: 220 } }      # Left_View.tdl, found by name
 ```
 
-It takes the keys of any call: the view's params (`size: 3`), `name`, `style`, `classes`, `a11y`, `handlers`, `route` and the rest. A view
+It takes the keys of any call: the view's params (`Size: 3`), `Name`, `Style`, `Classes`, `A11y`, `Handlers`, `Route` and the rest. A view
 found by name is in `Views/` (or a folder the app searches, [Projects](projects.md)) or is one of the views Tesserae ships. Its ids sit under the
 call's name (`root.left`), and the host's theme and stylesheet apply to it.
 
@@ -101,47 +105,53 @@ rather than call.
 
 ## Routed views
 
-Give a call a `route:` in the window view and it is a screen of the app:
+Give a call a `Route` in the window view and it is a screen of the app:
 
-```yaml
-name: window
-widget: Window
-title: Notes
-style: {width: 900, height: 600}
-children:
-  - widget: NavigationRailScreens
-    name: nav
-    items:
-      - {label: Notes, icon: home, screen: Main}
-      - {label: Settings, icon: settings, screen: Settings}
-  - widget: Container
-    name: screens
-    style: {flex: fill}
-    children:
-      - {widget: Main, name: main, route: "", style: {flex: fill}}
-      - {widget: Settings, name: settings, route: settings, style: {flex: fill}}
+```tdl
+Window {
+  Name: window
+  Title: Notes
+  Style { Width: 900, Height: 600 }
+  Children {
+    NavigationRailScreens {
+      Name: nav
+      Items {
+        Item { Label: Notes, Icon: home, Screen: Main }
+        Item { Label: Settings, Icon: settings, Screen: Settings }
+      }
+    }
+    Container {
+      Name: screens
+      Style { Flex: fill }
+      Children {
+        Main { Name: main, Route: "", Style { Flex: fill } }
+        Settings { Name: settings, Route: settings, Style { Flex: fill } }
+      }
+    }
+  }
+}
 ```
 
 - The screen's name is the name of the view it calls: `app.navigate("Settings")`, `app.navigate_to("settings")` (by route),
   `app.show("Settings")` and `app.screen("Settings")` all work.
 - Only the current screen shows; the others are hidden, out of the layout, with their state kept.
-- `handlers: {on_click: navigate.Settings}` goes to a screen from any node, `navigate.back` and `navigate.forward` move in the history, and
+- `Handlers { On_Click: navigate.Settings }` goes to a screen from any node, `navigate.back` and `navigate.forward` move in the history, and
   `app.current_screen` is a value a binding can read.
 - `navigate_to('Note', {'id': 3})` goes to a screen by name with params, and `navigate_route('notes/' + str(id))` goes to a route by its
-  path. A route can read params from the path (`route: "notes/{id:int}"`), and the screen showing reads the ones it was reached with as
-  `app.params` (`{{ app.params.get('id') }}`). Going back or forward restores each step's params, and `show()` clears them.
+  path. A route can read params from the path (`Route: "notes/{id:int}"`), and the screen showing reads the ones it was reached with as
+  `app.params` (`<| app.params.get('id') |>`). Going back or forward restores each step's params, and `show()` clears them.
 - `NavigationRailScreens` is a rail whose destinations navigate and fill while their screen is current.
-- A `route:` only means something in the window view: elsewhere it is ignored, and the view is not a screen. A view can be routed once.
+- A `Route` only means something in the window view: elsewhere it is ignored, and the view is not a screen. A view can be routed once.
 - The app's `transition` plays between screens ([The View Language](view-language.md#moving-between-screens)).
 
-A route can be a mapping, `route: {path: admin, guard: signed_in, redirect: "", lazy: true}`:
+A route can be a block, `Route { Path: admin, Guard: signed_in, Redirect: "", Lazy: true }`:
 
 | Key | Meaning |
 | --- | --- |
-| `path` | the route (`""` for the home screen) |
-| `guard` | an expression read when the app goes to the screen; false keeps the app where it is. `show()` is a jump and skips it |
-| `redirect` | a route to go to when the guard says no |
-| `lazy` | the view is built when the screen is first reached, then kept |
+| `Path` | the route (`""` for the home screen) |
+| `Guard` | an expression read when the app goes to the screen; false keeps the app where it is. `show()` is a jump and skips it |
+| `Redirect` | a route to go to when the guard says no |
+| `Lazy` | the view is built when the screen is first reached, then kept |
 
 A routed call inside a routed call is a nested screen, with its path under its parent's.
 
@@ -149,9 +159,9 @@ Call `app.navigate_to("")` after opening the window; nothing shows until a scree
 
 ## Several windows
 
-`app.window` is the main window. `app.open_window("Prefs")` builds `Prefs_View.yaml` in a new OS window and returns its `AppWindow` (also
-`app.windows`, `app.window_of("Prefs")`, `app.close_window("Prefs")`: a window is found by its view's name, and opening one whose name is already open raises `ValueError`). The view's `widget: Window` root gives that window its title, size,
-minimum size, `borderless` and flags (without one it is 480 by 320). The view has the ViewModel that serves its name, and the app's theme,
+`app.window` is the main window. `app.open_window("Prefs")` builds `Prefs_View.tdl` in a new OS window and returns its `AppWindow` (also
+`app.windows`, `app.window_of("Prefs")`, `app.close_window("Prefs")`: a window is found by its view's name, and opening one whose name is already open raises `ValueError`). The view's `Window` root gives that window its title, size,
+minimum size, `Borderless` and flags (without one it is 480 by 320). The view has the ViewModel that serves its name, and the app's theme,
 stylesheet and `app`. From a handler: `open_window('Prefs')`, and `open_window('Prefs', True)` for a modal one.
 
 ```python
@@ -172,49 +182,56 @@ prefs.center()                                 # where the system lets an app pl
 
 ## Docks
 
-`widget: Dock` holds `widget: DockPanel`s around the content. Each panel says where it docks with `zone:`, a style field:
+A `Dock` holds `DockPanel`s around the content. Each panel says where it docks with `Zone`, a style field:
 
-```yaml
-- widget: Dock
-  name: dock
-  style: {flex: fill}
-  children:
-    - widget: DockPanel
-      name: files
-      title: Files                          # the panel's tab, when its zone has several
-      closable: true                        # a close button on the tab
-      style: {zone: left, width: 220}
-      children:
-        - {widget: FileTree, name: tree}
-    - widget: DockPanel
-      name: editor
-      title: Editor
-      style: {zone: center}
-      children: [...]
-    - widget: DockPanel
-      name: output
-      title: Output
-      style: {zone: bottom, height: 160}
-      children: [...]
+```text
+Dock {
+  Name: dock
+  Style { Flex: fill }
+  Children {
+    DockPanel {
+      Name: files
+      Title: Files                          # the panel's tab, when its zone has several
+      Closable: true                        # a close button on the tab
+      Style { Zone: left, Width: 220 }
+      Children {
+        FileTree { Name: tree }
+      }
+    }
+    DockPanel {
+      Name: editor
+      Title: Editor
+      Style { Zone: center }
+      Children { }                          # the editor's content
+    }
+    DockPanel {
+      Name: output
+      Title: Output
+      Style { Zone: bottom, Height: 160 }
+      Children { }                          # the output's content
+    }
+  }
+}
 ```
 
-- The zones are `left`, `right`, `top`, `bottom` and `center`. A left or right zone's size is its panel's `width`; a top or
-  bottom one's is its `height`.
+- The zones are `left`, `right`, `top`, `bottom` and `center`. A left or right zone's size is its panel's `Width`; a top or
+  bottom one's is its `Height`.
 - Panels in one zone are its tabs. A panel alone has no tab strip. The user drags a tab to another zone, and drags the handles
   between zones to resize them.
-- A `DockPanel` inside a `DockPanel` is a split of it: side by side (the parent's `flex_direction: horizontal`, the default)
-  or top and bottom (`vertical`), with a handle between the halves. A half with a `width` (or `height`) of its own keeps it, and
+- A `DockPanel` inside a `DockPanel` is a split of it: side by side (the parent's `Flex_Direction: horizontal`, the default)
+  or top and bottom (`vertical`), with a handle between the halves. A half with a `Width` (or `Height`) of its own keeps it, and
   the others share what is left. A panel has either splits or content, not both. Each half is a small zone of its own: a tab
-  strip over it, with a tab for the half's own content (titled by the `DockPanel`'s `title:`, else its name).
-- `zone:` is an error on anything but a `DockPanel` in a `Dock`; a window has one `Dock`.
+  strip over it, with a tab for the half's own content (titled by the `DockPanel`'s `Title`, else its name).
+- `Zone` is an error on anything but a `DockPanel` in a `Dock`; a window has one `Dock`.
 - A panel's content is whatever its children are, including a call of a view of your own (`FileTree` above).
-- A panel with `closable: true` has a close button on its tab. A Dock's `closed` (a list, two-way) holds the names of the closable panels
+- A panel with `Closable: true` has a close button on its tab. A Dock's `Closed` (a list, two-way) holds the names of the closable panels
   that are shut:
 
-```yaml
-- widget: Dock
-  name: dock
-  closed: "{{ shut }}"          # a list Signal of panel names
+```text
+Dock {
+  Name: dock
+  Closed: <| shut |>          # a list Signal of panel names
+}
 ```
 
   The close button adds its panel's `name` to `shut`; taking a name out opens the panel again, as the last tab of its zone; putting a
@@ -250,7 +267,7 @@ dock.move("root.dock.outline", "root.dock.editor.source")   # into a half, from 
 ```
 
 `layout()` records the halves too, so the arrangement the user made survives a restart: `halves` has, for each half, the titles of the
-panels in it and the tab it shows (`None`: its own content), and `made` has, for each half of the YAML that the user split, the tree
+panels in it and the tab it shows (`None`: its own content), and `made` has, for each half of the view that the user split, the tree
 of the splits, as plain data you can write to a file:
 
 ```python
@@ -262,10 +279,10 @@ of the splits, as plain data you can write to a file:
 
 `restore()` takes the user's splits apart (the panels in them go back to their zones), makes the ones in the layout and puts the panels
 in their halves. A split's `size` is its first part's width (`x`) or height (`y`). Halves and titles this dock does not have are
-skipped, and a split none of whose panels come back is not made. A half of the YAML is found by its id, so renaming one in the file means
+skipped, and a split none of whose panels come back is not made. A half of the view is found by its id, so renaming one in the file means
 a saved layout no longer finds it.
 
-Not supported: dragging a half's own content (what the YAML put in it) to another place, and tabs of a zone or a half cannot be put in a
+Not supported: dragging a half's own content (what the view put in it) to another place, and tabs of a zone or a half cannot be put in a
 different order.
 
 The docks you build in Python, without a view, are in [Docking from Python](docking.md).

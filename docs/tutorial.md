@@ -67,10 +67,10 @@ A task is more than a line of text: it has a checkbox and a remove button. That 
 - `tasks` holds one dictionary for each task, and is the single source of truth. Each change replaces the
   list, which is how a view notices it. The `Key` is the task's `id`, so a row that stays is kept as it is.
 - A view cannot read the names of the view that calls it, so what it needs comes in as a param:
-  `task` is the data. `on_toggle` and `on_remove` are `handler` params: the caller writes what to do (`remove(task.id)`
+  `task` is the data. `On_Toggle` and `On_Remove` are `handler` params: the caller writes what to do (`remove(task.id)`
   is written in the caller's names) and the row runs it by name.
 - A row removes itself by changing the list; nobody tears the row down by hand.
-- A `Checkbox` shows `checked` and runs `on_change` when the user changes it. Its `checked` here is a plain
+- A `Checkbox` shows `Checked` and runs `On_Change` when the user changes it. Its `Checked` here is a plain
   expression, so it is one-way, and the ViewModel makes the change.
 
 See [Components & Embedding](guide/components.md) and [Component Views](guide/component-fragments.md).
@@ -133,11 +133,11 @@ other kind of component.
 ```
 
 - `Stat { ... }` finds `Stat_View.tdl` by its name. Its params are `Label` and `Value`.
-- `value` is an expression written where the view is called, so each stat keeps up with its `Computed`. (A text
+- `Value` is an expression written where the view is called, so each stat keeps up with its `Computed`. (A text
   property takes a string, so the `Computed`s return strings.)
 - Its look is rules for `Stat` in the app's stylesheet: one for the view's root and one for each named part
   (`Part: value`).
-- A view has no state of its own unless it says `state:`, and no ViewModel of its own: it reads its params, then the
+- A view has no state of its own unless it says `State`, and no ViewModel of its own: it reads its params, then the
   names of the ViewModel that serves the view at the top. `TaskItem` and `Stat` are the same kind of thing, a
   repeated *look* or a repeated *piece*; the behaviour stays in the one ViewModel.
 
@@ -172,7 +172,7 @@ share state: the app owns it, and any ViewModel reads it as `self.state`.
   `SettingsViewModel` is made with the state and holds the Signal as `name`. `app.bind(SettingsViewModel(state))` binds the
   instance you made; `app.bind(TasksViewModel)` has Tesserae make its one instance.
 - `app.navigate("Settings")` is a step the user can go back from, and `app.back()` goes back. The Back
-  button's `disabled` is bound to `app.can_go_back`, so it greys out when there is nowhere to go.
+  button's `Disabled` is bound to `app.can_go_back`, so it greys out when there is nowhere to go.
 - `app.route(...)` names screens by strings, so `python app.py settings` opens on Settings.
 - `app.set_dark(...)` switches every screen between light and dark, in place.
 
@@ -220,5 +220,5 @@ See [Windows, Docks & Embedded Views](guide/windows-and-docks.md) and [Custom Ti
 - Edit a view or a theme file while the app runs with `app.run(hot_reload=True)` and the window changes at once, your tasks kept: see
   [Hot Reload](guide/hot-reload.md) for what it watches.
 - `tesserae build --check` turns the app into one executable: [Releasing Your App](guide/releasing.md).
-- Browse the [components](components/index.md), and the [YAML](api/yaml.md) and
+- Browse the [components](components/index.md), and the [TDL](api/tdl.md) and
   [Python](api/python.md) references.

@@ -46,7 +46,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"
       # Linux runners have no display: a virtual one, software Vulkan, and
       # the keyboard library winit loads for a window (desktops have these).
       - if: runner.os == 'Linux'
@@ -100,13 +100,13 @@ building any path from it:
 ```python
 HERE = Path(__file__).parent
 app = App(root=HERE)                       # views, themes and stylesheets are found by name from here
-app.open_view(HERE / "Home_View.yaml")     # or by path
+app.open_view(HERE / "Home_View.tdl")     # or by path
 ```
 
 Keep doing that. In a built app, `__file__` is inside the folder the
 executable unpacks itself into, where every bundled file is, so these
 paths work wherever it's run from. A path relative to the *current*
-folder (`Path("Home_View.yaml")`) works when you run `python app.py`
+folder (`Path("Home_View.tdl")`) works when you run `python app.py`
 from the app's folder, and fails in a built app run from anywhere else;
 `--check` runs from an empty folder to catch exactly that.
 

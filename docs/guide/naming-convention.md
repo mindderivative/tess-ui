@@ -3,26 +3,25 @@
 A screen is a `<Name>_View.tdl` and a `<Name>_ViewModel.py`. The names are how Tesserae joins them, and how it
 finds them in a [project](projects.md):
 
-| File | What it is | Its name is |
+|File|What it is|Its name is|
 |---|---|---|
-| `Counter_View.tdl` | a view | `Counter`: what `app.open_view("Counter")` and `widget: Counter` say |
-| `Counter_ViewModel.py` | its ViewModel, the class `CounterViewModel` | `Counter`: what `app.project.viewmodel("Counter")` finds |
-| `Brand_Theme.tdl` | a theme | `Brand`: `App(custom_theme="Brand")` |
-| `Tasks_Stylesheet.tdl` | a stylesheet of rules | `Tasks`: `App(stylesheet="Tasks")` |
+|`Counter_View.tdl`|a view|`Counter`: what `app.open_view("Counter")` and a `Counter { }` call say|
+|`Counter_ViewModel.py`|its ViewModel, the class `CounterViewModel`|`Counter`: what `app.project.viewmodel("Counter")` finds|
+|`Brand_Theme.tdl`|a theme|`Brand`: `App(custom_theme="Brand")`|
+|`Tasks_Stylesheet.tdl`|a stylesheet of rules|`Tasks`: `App(stylesheet="Tasks")`|
 
-The part before the suffix is the **name**, and it is CamelCase. A view, a theme and a stylesheet may be written in TDL (`.tdl`) or in YAML (`.yaml`), and
-a name finds either: `Counter` is `Counter_View.tdl` or `Counter_View.yaml`. When one folder holds both, the `.tdl` is the file, and a note in the log says once that the YAML twin
-is ignored. A file is read by its suffix, so a `.tdl` file is always TDL (language 0.2, slots written `<| |>`): a file in an older TDL language, or one that writes a slot as `{{ }}`, is refused with the line.
+The part before the suffix is the **name**, and it is CamelCase. A view, a theme and a stylesheet are TDL files (`.tdl`), read by the TDL language 0.2: slots are written
+`<| |>`, and a file in an older TDL language, or one that writes a slot as `{{ }}`, is refused with the line. A project written in YAML is moved with
+`tesserae migrate-tdl` ([Migrating](../migration.md#to-0601)).
 Which ViewModel serves which view is not decided by the file
-names but by a second name, the view's **bind key**:
+names but by a second name, the view's **bind key**, the `Name` of its root node:
 
-```text
+```text title="Counter_View.tdl"
 ---
 TDL: 0.2
 Name: Counter
 Tesserae: "0.6"
 ---
-# Counter_View.tdl
 Container {
   Name: Counter          # the bind key
 }
@@ -40,7 +39,7 @@ app.open_view("Counter")
 ```
 
 Keep the bind key equal to the file's name, so one name finds the view, the ViewModel and the screen
-(`app.show("Counter")`, `app.navigate("Counter")`). A view with no `name:` is not bound to any ViewModel, and is
+(`app.show("Counter")`, `app.navigate("Counter")`). A view whose root has no `Name` is not bound to any ViewModel, and is
 registered under its file's name.
 
 ## What is checked
@@ -49,66 +48,68 @@ registered under its file's name.
   `CounterViewModel`. A file with no such class is an error that lists the classes it does have.
 - **A name no ViewModel has.** Every name a view reads and every action a handler calls is looked up when the view
   opens, and a miss is an error that names the file, line and column and the nearest name:
-  `Counter_View.yaml:5:43: 'cont' is not defined (did you mean 'count')`.
+  `Counter_View.tdl:5:43: 'cont' is not defined (did you mean 'count')`.
 - **A mismatched pair.** A ViewModel whose `views` names a view that does not exist, because the keys differ in case or
   spelling, is reported by `app.check()`:
   `CounterViewModel serves the view 'counter', but no view has that name`. The view itself then has no ViewModel, and
   fails on the first name it needs. `assert app.check() == []` in a test is the cheap way to keep the two in step.
 - **Two ViewModels for one view.** `app.bind` refuses the second.
 - **A file that is not where its name is looked for.** `app.open_view("Extra")` with the file in `Themes/` is an error that says where it is and what to do:
-  `found Themes/Extra_View.yaml: views are read from Views/ (or add Themes to App(search=[...]))`. The same name under another kind's suffix is named as what it is
-  (`found Views/Brand_View.yaml, a view, not a theme`). See [Projects](projects.md#a-name-in-the-wrong-place).
-- **A file whose content is another kind.** A `*_View.yaml` that holds `styles:` or a theme's `seed:`, a `*_Stylesheet.yaml` or `*_Theme.yaml` that holds `widget:`, a stylesheet that holds a
-  theme's keys: the error says what the file looks like and what to name it (`this looks like a stylesheet: name it Brand_Stylesheet.yaml`). It is a hint from the file's root keys, not a ruling:
-  a file that looks like none of the three keeps its plain message.
+  `found Themes/Extra_View.tdl: views are read from Views/ (or add Themes to App(search=[...]))`. The same name under another kind's suffix is named as what it is
+  (`found Views/Brand_View.tdl, a view, not a theme`). See [Projects](projects.md#a-name-in-the-wrong-place).
+- **A file whose content is another kind.** The kind of a TDL file is the word its root block starts with: `Styles` is a stylesheet, `Theme` a theme, any other word a view.
+  A `*_View.tdl` that starts with `Styles` or `Theme`, or a `*_Stylesheet.tdl` or `*_Theme.tdl` that starts with a widget, is an error that says what the file looks like and what to name it
+  (`this looks like a stylesheet: name it Brand_Stylesheet.tdl`), pointing at the root word. It is a hint from the root word, not a ruling.
 
 ## Stylesheet and theme files
 
-More names say what a YAML file is:
+More names say what a TDL file is:
 
-| Suffix | What it holds | Used by |
+|Suffix|What it holds|Used by|
 |---|---|---|
-| `*_Stylesheet.yaml` | a stylesheet: a `styles:` list of rules that name a `widget` | `App(stylesheet=)`, `load_stylesheet` |
-| `*_Theme.yaml` | a theme: `seed:`, `colors:`, `typography:`, `components:` | `App(default_theme=, custom_theme=)`, `load_theme` |
-| `*_Style.yaml` | one node's style, kept in `Styles/` | the older syntax; the current language refuses it |
-| `*_Component.yaml` | a fragment of the older syntax, kept in `Components/` | `app.load` |
+|`*_Stylesheet.tdl`|a stylesheet: a `Styles` block of `Rule` blocks that name a `Widget`|`App(stylesheet=)`, `load_stylesheet`|
+|`*_Theme.tdl`|a theme: `Seed`, `Colors`, `Typography`, `Components`|`App(default_theme=, custom_theme=)`, `load_theme`|
 
-A file named for one kind and loaded as another is refused, naming what its name says it is: `load_theme("card_Stylesheet.yaml")`,
-say (`load_theme` and `load_stylesheet` are in `tess_ui.spec.themes`). A theme or stylesheet file with neither suffix (`themes/Brand.yaml`) still loads; the suffixes are recommended, not required.
+A file named for one kind and loaded as another is refused, naming what its name says it is: `load_theme("card_Stylesheet.tdl")`,
+say (`load_theme` and `load_stylesheet` are in `tess_ui.spec.themes`). A theme or stylesheet file with neither suffix (`themes/Brand.tdl`) still loads; the suffixes are recommended, not required.
 
-## The first line
+## The metadata block
 
-Every view, stylesheet and theme starts with the line it was written for, and comments come after it:
+Every view, stylesheet and theme starts with a metadata block between two `---` lines, and comments and the root block come after it:
 
-```yaml
-tesserae: 0.6
+```text
+---
+TDL: 0.2
+Name: Card
+Tesserae: "0.6"
+---
 # A card for one subject.
-name: Card
-widget: Container
+Container {
+  Name: Card
+}
 ```
 
-`tesserae: 0.6` is the release series of Tesserae: the first two numbers of its version. It is read before anything else in the file, so Tesserae knows a file is one of its own and
-which language it is in, and a person reading it knows too. It has to be the **first line** (a byte order mark and Windows line endings are fine), and nothing in the file
-treats it as a property or a rule.
+- `TDL` is the language the file is written in. Tesserae reads `0.2`; a file that says `TDL: 0.1` (whose slots are `{{ }}`) is refused at that line.
+- `Name` is the file's own name (a view's, a stylesheet's, a theme's): `Card` for `Card_View.tdl`. It is not the root node's `Name`, which is the bind key.
+- `Tesserae` is the release series of Tesserae: the first two numbers of its version, written as a quoted string. It is read before anything else in the file, so Tesserae knows a file is one of its own, and a person reading
+  it knows too. Nothing in the file treats it as a property or a rule.
 
-| What the file has | What happens |
-| --- | --- |
-| `tesserae: 0.6` on line 1 | it loads |
-| `tesserae:` anywhere else, under a comment, a blank line or `---` | an error that names the line it is on: move it to line 1 |
-| a value that is not a release series (a whole version with three numbers, `yes`, nothing) | an error: write `tesserae: 0.6` |
-| a newer series | an error: the file was written for a newer Tesserae, so upgrade |
-| an older series | an error: run `tesserae migrate-yaml` |
-| no `tesserae:` line | it loads, and the log says once, at the info level, that the file has none. The line is optional for now, and a later series will ask for it |
+|What the file has|What happens|
+|---|---|
+|`Tesserae: "0.6"`|it loads|
+|a value that is not a release series (a whole version with three numbers, `yes`, nothing)|an error: write `Tesserae: "0.6"`|
+|a newer series|an error: the file was written for a newer Tesserae, so upgrade|
+|an older series|an error that says which series it was written for|
+|no `Tesserae` entry|it loads, and the log says once, at the info level, that the file has none. The entry is optional for now, and a later series will ask for it|
 
-`tesserae new`, `tesserae add screen` and `tesserae migrate-yaml` write it, and so does every file Tesserae ships. A mapping you read from such a file yourself
-(`yaml.safe_load`) and give to `App(stylesheet_spec=...)` or `custom_theme_spec=` may keep the key: the checks ignore it. The files of the older syntax have none, which is how they
-are told apart. An editor's schema modeline cannot sit under the line: see [Editor Support](editor-support.md#or-one-file-at-a-time).
+`tesserae new` and `tesserae add screen` write it, and so does every file Tesserae ships. A mapping you read from a file yourself and give to
+`App(stylesheet_spec=...)` or `custom_theme_spec=` may keep a `tesserae` key: the checks ignore it.
 
 ## The views Tesserae ships
 
-Tesserae's own components are views of the same kind: `Button_View.yaml` with its rules in `Button_Stylesheet.yaml`, in the
-package. A view of yours named `Button` (a file `Views/Button_View.yaml`) is found first and replaces it, and the shipped rules
-for `Button` are not used for it: its look is then your own `style:` and the rules in your app's stylesheet. See
+Tesserae's own components are views of the same kind: `Button_View.tdl` with its rules in `Button_Stylesheet.tdl`, in the
+package. A view of yours named `Button` (a file `Views/Button_View.tdl`) is found first and replaces it, and the shipped rules
+for `Button` are not used for it: its look is then your own `Style` and the rules in your app's stylesheet. See
 [Stylesheets](../stylesheets/index.md).
 
 ## Why a convention at all?
@@ -119,7 +120,7 @@ opens, not later when a handler does nothing.
 
 ## Views in the older syntax
 
-A view written with `kind:` and `id:` is paired by file name alone: `app.load("Counter")` checks that `Counter_View.yaml` and the
+A view written in the older syntax (`kind:` and `id:`, in a YAML file) is paired by file name alone: `app.load("Counter")` checks that `Counter_View.yaml` and the
 `Counter_ViewModel.py` that defines the ViewModel class (found with `inspect.getfile`, not a string you pass) have the same
 prefix, and raises `ValueError` immediately if the view does not end in `_View.yaml`, the ViewModel's file does not end in
 `_ViewModel.py`, or the prefixes differ. `instantiate` does the same check for an embedded component

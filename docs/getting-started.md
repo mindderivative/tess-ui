@@ -8,7 +8,7 @@ that Tesserae's tests run.
 
 ## Install
 
-You need Python 3.12 or newer and a desktop session with a graphics driver the
+You need Python 3.14 or newer and a desktop session with a graphics driver the
 engine can use (on Linux, Vulkan; see [Installation](installation.md) if a
 window won't open).
 
@@ -148,9 +148,9 @@ things a little differently:
 **Declaratively** the state lives in a ViewModel. The view says which one by its
 `Name: Counter`, and the ViewModel says which views it serves with `views =
 "Counter"`; `app.bind(CounterViewModel)` joins them. Its `Signal` holds the
-count; the label's `text: "Count: {{ count }}"` keeps showing it, and
-`handlers:` calls `increment` on a click. A Signal reads as its value in a view,
-so `{{ count }}` follows it.
+count; the label's `Text: Count: <| count |>` keeps showing it, and
+`Handlers { On_Click: increment }` calls `increment` on a click. A Signal reads as its value in a view,
+so `<| count |>` follows it.
 
 **Imperatively** the state is a variable and you are the view: `button.on("click",
 count)` runs `count`, which sets the label with `label.set(text=...)`.
@@ -181,4 +181,4 @@ path from the root, using each `Name`).
   its files in standard folders.
 - [Apps & Screens](guide/apps-and-screens.md), [Layout](guide/layout.md) and
   [Themes](themes/index.md).
-- [Components](components/index.md): every MD3 component, with its YAML.
+- [Components](components/index.md): every MD3 component, with its TDL.

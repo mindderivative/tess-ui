@@ -23,7 +23,7 @@ logger.info("starting")      # your own messages use the same logger
 The output looks like:
 
 ```
-12:48:27.553 | INFO     | tess_ui.spec.watch - reloaded /path/to/Home_View.yaml
+12:48:27.553 | INFO     | tess_ui.spec.watch - reloaded /path/to/Home_View.tdl
 ```
 
 `configure_logging` replaces loguru's default stderr handler and leaves
@@ -37,7 +37,7 @@ any handler you added yourself. Call it once: each call adds a handler, so a sec
 |---|---|
 | `DEBUG` | a screen loaded (`app.load`), a screen shown (`app.show`), the traceback of a failed hot reload |
 | `INFO` | hot reload started (`hot reload on: watching N screen(s) and M theme/stylesheet file(s)`), and what it watches; hot reload off in a built app (there are no source files); a screen it does not watch; each view reloaded; each theme or stylesheet file applied; the app switching between light and dark or between standard and high contrast |
-| `WARNING` | a view file in the older syntax, once per file (it still loads: `tesserae migrate-yaml` moves it); a `Link` whose `href` is refused (only `http`, `https`, `mailto` and `tel` are opened); a property the user edits given one bare name that cannot be written back (`Main_View.yaml:5:42: Checkbox checked is given 'flag', which is a ViewModel attribute that is not a Signal: the user's edit is not written back (one-way)`), once for each place in a file; Python warnings such as `FontFallbackWarning`, when `configure_logging` captures them (below) |
+| `WARNING` | a `Link` whose `href` is refused (only `http`, `https`, `mailto` and `tel` are opened); a property the user edits given one bare name that cannot be written back (`Main_View.tdl:5:42: Checkbox checked is given 'flag', which is a ViewModel attribute that is not a Signal: the user's edit is not written back (one-way)`), once for each place in a file; Python warnings such as `FontFallbackWarning`, when `configure_logging` captures them (below) |
 | `ERROR` | a hot reload that failed, naming the file and the error; a hot-reload watcher that stopped |
 
 Each message carries the Tesserae module it came from (`tess_ui.app`,
@@ -46,7 +46,7 @@ no ViewModel has, is an exception that names the file, line and column; the one 
 
 ## Failed hot reloads
 
-When a background reload fails, from a YAML error, an unknown widget,
+When a background reload fails, from a TDL error, an unknown widget,
 or a spec or stylesheet `tess_re` rejects, Tesserae logs one `ERROR` line
 naming the file. The traceback is logged at `DEBUG`, so a typo doesn't
 print a stack trace unless you ask for one. The screen stays as it was,

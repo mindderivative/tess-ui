@@ -1,27 +1,36 @@
 # Repeater (Lists)
 
-A list on screen is a `for:` in a view. For a list that changes, the node repeats for each element and a `key:` says which
+A list on screen is a `For` in a view. For a list that changes, the node repeats for each element and a `Key` says which
 element each built node belongs to:
 
-```yaml
-name: main
-widget: Container
-style: {flex_direction: vertical, width: 300, gap: 4}
-children:
-  - widget: Rect
-    name: add
-    style: {width: 80, height: 30, background: primary}
-    handlers: {on_click: add}
-  - widget: Container
-    for: item in items
-    key: item.id
-    name: row
-    state: {done: false}
-    style: {height: 30, gap: 8}
-    children:
-      - {widget: Checkbox, name: box, checked: "{{ done }}"}
-      - {widget: Text, name: title, text: "{{ item.title }}", typography_role: body_large, style: {foreground: on_surface}}
-      - {widget: Rect, name: remove, style: {width: 24, height: 24, background: error}, handlers: {on_click: "remove(item.id)"}}
+```tdl
+Container {
+  Name: main
+  Style { Flex_Direction: vertical, Width: 300, Gap: 4 }
+  Children {
+    Rect {
+      Name: add
+      Style { Width: 80, Height: 30, Background: primary }
+      Handlers { On_Click: add }
+    }
+    For item In <| items |> Key <| item.id |> {
+      Container {
+        Name: row
+        State { Done: false }
+        Style { Height: 30, Gap: 8 }
+        Children {
+          Checkbox { Name: box, Checked: <| done |> }
+          Text { Name: title, Text: <| item.title |>, Typography_Role: body_large, Style { Foreground: on_surface } }
+          Rect {
+            Name: remove
+            Style { Width: 24, Height: 24, Background: error }
+            Handlers { On_Click { Call { Action: remove, Args: [<| item.id |>] } } }
+          }
+        }
+      }
+    }
+  }
+}
 ```
 
 ```python
@@ -39,10 +48,10 @@ class MainViewModel(ViewModel):
         self.items.update(lambda items: [i for i in items if i["id"] != id])
 ```
 
-When the list is replaced, nodes whose key stays are kept (with their `state:`), new keys are built, removed keys are gone, and the order
+When the list is replaced, nodes whose key stays are kept (with their `State`), new keys are built, removed keys are gone, and the order
 follows the list. A list changed in place is not noticed: replace it, as `update` does. Each row has its own
-`state:` and its own handlers, in which the loop variable (`item`) is in scope. Every row is built; for thousands of equal rows use a
-`VirtualList` instead ([Long lists](view-language.md#long-lists)). The rest of `for:` is in
+`State` and its own handlers, in which the loop variable (`item`) is in scope. Every row is built; for thousands of equal rows use a
+`VirtualList` instead ([Long lists](view-language.md#long-lists)). The rest of `For` is in
 [Repeating, choosing and remembering](view-language.md#repeating-choosing-and-remembering).
 
 ## Repeater, from Python
@@ -50,7 +59,7 @@ follows the list. A list changed in place is not noticed: replace it, as `update
 `Repeater` is the Python form of the same thing for a view written in the older syntax (`kind:` and `id:`, loaded by the
 compatibility loader): it keeps one `Component` and `ViewModel` alive for each item of a list `Signal`, matched by a key, and does the add and
 remove bookkeeping that [`instantiate` and `Component.remove()`](components.md#views-in-the-older-syntax) otherwise need by hand. It
-refuses a view written with `widget:`; `tesserae migrate-yaml` moves a project over, after which a `for:` replaces it
+refuses a view written in TDL; `tesserae migrate-yaml` moves a project over, after which a `For` replaces it
 ([Migrating](../migration.md)). Its signature is in the [Python API](../api/python.md).
 
 ```python
@@ -73,7 +82,7 @@ items.update(lambda lst: [i for i in lst if i != id])  # removes one
 | `key` | the item itself | for items that are dicts or dataclasses: a function returning a stable, hashable key |
 | `args` | `lambda item: (item,)` | what is forwarded to `viewmodel_cls(component, *args)`: override it for a ViewModel that needs more than the item |
 
-`examples/todo_list/` in the repository is the same list written in the current language: the view builds one row for each item by `for:` and `key:`
+`examples/todo_list/` in the repository is the same list written in TDL: the view builds one row for each item by `For` and `Key`
 (see [Components & Embedding](components.md)), and the ViewModel changes the one `items` list.
 
 ## What it does and doesn't do
@@ -100,5 +109,5 @@ repeater[key]               # (component, viewmodel) for one key
 
 ## In a scrolling list
 
-Put the container the `Repeater` fills, or a node with a `for:`, inside a `ScrollView`: see
+Put the container the `Repeater` fills, or a node with a `For`, inside a `ScrollView`: see
 [Layout](layout.md#scrolling).

@@ -62,7 +62,7 @@ done
 
 `tools/component_docs.yaml` is the source of `docs/components/*.md`; do not edit those pages by hand.
 
-Every shipped YAML file, example and whole-file docs block starts with `tesserae: 0.6` (`src/tess_ui/spec/marker.py`: `LINE`, the first two parts of the version). A new series changes `LINE`, and `python3 tools/stamp_language.py --write` moves every one of those files; `tests/test_language_marker.py` fails while any lacks it.
+Every shipped view, stylesheet and theme, example and whole-file docs block carries `Tesserae: "0.6"` in its metadata block (`src/tess_ui/spec/marker.py`: `LINE`, the first two parts of the version). A new series changes `LINE`, and `python3 tools/stamp_language.py --write` moves every one of those files; `tests/test_language_marker.py` fails while any lacks it.
 
 ### Mutation checks
 
@@ -71,7 +71,7 @@ once**, run the test file with an isolated bytecode cache (`PYTHONPYCACHEPREFIX=
 
 ## 4. How the project is laid out
 
-- `src/tess_ui/views/` — the shipped views: `<Name>_View.yaml` (structure, params) and `<Name>_Stylesheet.yaml` (looks, by widget/variant/size/part/state).
+- `src/tess_ui/views/` — the shipped views: `<Name>_View.tdl` (structure, params) and `<Name>_Stylesheet.tdl` (looks, by widget/variant/size/part/state).
 - `src/tess_ui/spec/` — the view language: `nodes.py` (parser), `compose.py` (composition, route records), `lower.py` (to the builder's spec), `build.py`, `effects.py`, `transition.py`.
 - `src/tess_ui/composed.py` — the live view: wires handlers, overlays, timers, focus groups, frames, measures. `app.py` — the app; `appwindows.py` — more windows.
 - `design/yaml-language.md` — the language, and a log of why each component needed what it did. `design/component-order.md` — the build order of the 0.5.0 components.

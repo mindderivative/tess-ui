@@ -81,7 +81,7 @@ A task row is a view of its own, in the same folder as the screen:
 --8<-- "examples/tutorial_project/step2/ViewModels/Main_ViewModel.py"
 ```
 
-- `widget: TaskItem` finds `Views/TaskItem_View.tdl` by its name, wherever the view that calls it is. The flat version
+- `TaskItem { }` finds `Views/TaskItem_View.tdl` by its name, wherever the view that calls it is. The flat version
   needs `search=["."]` to say where its views are.
 - The row has no ViewModel: it takes the task and two handlers as params, and `Main`'s ViewModel does the work.
 
@@ -110,7 +110,7 @@ Themes and stylesheets each have a folder, and the app names them:
 ```
 
 - `custom_theme="Brand"` is `Themes/Brand_Theme.tdl`, and `stylesheet="Tasks"` is `Styles/Tasks_Stylesheet.tdl`.
-- The stylesheet holds rules for your own views (`widget: TaskItem`) and for ones Tesserae ships (`widget: Button`,
+- The stylesheet holds rules for your own views (`Widget: TaskItem`) and for ones Tesserae ships (`Widget: Button`,
   here a tertiary button), over the shipped look.
 
 ## 4. A view of your own
@@ -168,8 +168,8 @@ pair; [The `tesserae` command](guide/cli.md) says what it makes), then fill them
 
 ## 6. A custom window
 
-The app's frame is one more view, a `widget: Window` file in `Views/`, opened by name. It holds the title bar, a rail, a status
-bar, and the two screens as calls with a `route:`:
+The app's frame is one more view, a `Window` file in `Views/`, opened by name. It holds the title bar, a rail, a status
+bar, and the two screens as calls with a `Route`:
 
 ```text title="Views/Window_View.tdl"
 --8<-- "examples/tutorial_project/step6/Views/Window_View.tdl"
@@ -192,13 +192,13 @@ bar, and the two screens as calls with a `route:`:
 ```
 
 - The rail replaces the Settings button, so the screens lose their Back and Settings buttons.
-- `app.open_view("Window")` opens `Views/Window_View.tdl`. Its `widget: Main` and `widget: Settings` calls, with a
-  `route:`, are the screens: each is registered under its view's name (`Main`, `Settings`), so `app.py` no longer opens
+- `app.open_view("Window")` opens `Views/Window_View.tdl`. Its `Main { }` and `Settings { }` calls, with a
+  `Route`, are the screens: each is registered under its view's name (`Main`, `Settings`), so `app.py` no longer opens
   or routes them.
 - A routed screen has no ViewModel of its own: it reads the names of the one that serves the window, so
   `Main_ViewModel.py` and `Settings_ViewModel.py` are now one, `Window_ViewModel.py`: delete the two old files, which nothing uses any more.
-- The window's `borderless: true` and `title_bar:` make the window's own title bar; the rail is a `NavigationRailScreens` whose
-  `screen:` names the screens.
+- The window's `Borderless: true` and `Title_Bar` make the window's own title bar; the rail is a `NavigationRailScreens` whose
+  `Screen` names the screens.
 
 ## Where next
 
