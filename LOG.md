@@ -3520,3 +3520,7 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 - 10a (#307): views, stylesheets and themes are TDL only. Removed: the 110 shipped `.yaml` twins, `TESS_UI_SHIPPED`, the 0.4.x file pipeline (`App.load`, `build_view`, `View(path)`, `Component`, `instantiate`, `Repeater`, `ViewDialog`), `migrate-yaml` and `migrate-tdl`; a `.yaml` path gets one error that points at the migration page. The repository ruleset now requires the check `CI result`, so the gate job carries that name.
 - 10b: the Python widget factories' 52 used fragments are Python data (`spec/fragments.py`), the expander reads dicts, the 157 YAML files and 27 unused fragments are gone, `pyyaml` is a dev dependency only. The old and new expanders gave identical specs for 178 recorded factory calls plus 104 swept ones before the YAML was deleted. Full suite 8786 passed, 21 skipped.
 - Left for later: moving the Python factories onto the shipped TDL views (their part ids and params differ, so it changes behaviour), piece 11b (TEL), adopting `tesserae-utils`.
+
+## 2026-11-15 Engine 0.6.8
+
+- `tesserae-engine==0.6.8` (PyPI, verified by the maintainer) replaces 0.6.7 in pyproject, both CI checkouts (`ref: v0.6.8`), release.yml, README and DEVELOPING. Full suite on a fresh venv with 0.6.8 under the lavapipe pin: 8696 passed, 23 skipped (the TEL parity tests skip there: `tesserae-el` is not in that venv; piece 11b adds it).
