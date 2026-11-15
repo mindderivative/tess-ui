@@ -95,9 +95,20 @@ def strip(data: Any) -> Any:
     return data
 
 
+_TDL_MARKER = re.compile(r"\A\ufeff?(?:[ \t\r\n]|#[^\n]*)*---[ \t]*\r?\n(?:(?!^---).*\n)*?Tesserae[ \t]*:", re.M)
+
+
 def note_if_missing(text: str, file: str) -> None:
-    """Says once per file that it has no `tesserae: <line>` first line (the key is optional in this line)."""
-    if file in _noted or scan(text).found:
+    """Says once per file that it has no `tesserae: <line>` first line (the key is optional in this line); for a `.tdl` file, no `Tesserae:` in its metadata."""
+    if file in _noted:
+        return
+    if file.endswith(".tdl"):
+        if _TDL_MARKER.match(text):
+            return
+        _noted.add(file)
+        logger.info(f"{file}: no `Tesserae: \"{LINE}\"` in its metadata; it is optional in the {LINE} line and required from the next: write it in the metadata block")
+        return
+    if scan(text).found:
         return
     _noted.add(file)
     logger.info(f"{file}: no `tesserae: {LINE}` on its first line; it is optional in the {LINE} line and required from the next: write it as the file's first line")

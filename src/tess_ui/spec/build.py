@@ -203,21 +203,30 @@ def build_with(
     return _build(ctx, spec, built, parent)
 
 
-_shipped: Optional[dict[str, Any]] = None
+_shipped: dict[str, dict[str, Any]] = {}
 
 
 def shipped_default_theme() -> dict[str, Any]:
-    """`tess_re`'s shipped default theme (Tesserae's copy)."""
-    global _shipped
-    if _shipped is None:
+    """`tess_re`'s shipped default theme (Tesserae's copy), from `default_theme.tdl`, or `default_theme.yaml` when the shipped files are asked for in YAML
+    (`tess_ui.spec.flavour`)."""
+    from tess_ui.spec.flavour import shipped_flavour
+
+    flavour = shipped_flavour()
+    if flavour not in _shipped:
         from pathlib import Path
 
-        import yaml
+        path = Path(__file__).parent / f"default_theme.{flavour}"
+        if flavour == "tdl":
+            from tess_ui.spec.tdl_theme import load_theme_tdl
 
-        from tess_ui.spec import marker
+            _shipped[flavour] = load_theme_tdl(path.read_text(encoding="utf-8"), str(path))
+        else:
+            import yaml
 
-        _shipped = marker.strip(yaml.safe_load((Path(__file__).parent / "default_theme.yaml").read_text(encoding="utf-8")))
-    return _shipped
+            from tess_ui.spec import marker
+
+            _shipped[flavour] = marker.strip(yaml.safe_load(path.read_text(encoding="utf-8")))
+    return _shipped[flavour]
 
 
 def _did_you_mean(unknown: Any, known: Any) -> str:

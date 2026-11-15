@@ -23,9 +23,9 @@ from tess_ui.spec import marker, placement, sizes
 from tess_ui.expr import Expr, ExprError, NestedTemplate, Origin, Statements, compile_expr, compile_statements, compile_template, is_action_name, timer_handlers
 from tess_ui.spec import widgets as registry
 from tess_ui.spec.widgets import Property, PropertyError, WidgetDecl, decl_from_params, is_expression, style_fields_of
-from tess_ui.project import looks_like
+from tess_ui.project import looks_like, tdl_wrong_kind
 
-__all__ = ["EVENTS", "ForSpec", "Handler", "LoadError", "Node", "ViewDoc", "load_marked", "parse_data", "parse_view"]
+__all__ = ["EVENTS", "ForSpec", "Handler", "LoadError", "Node", "ViewDoc", "load_marked", "parse_data", "parse_view", "read_marked"]
 
 #: What `visible:` is when a widget does not declare a property of that name: a bool (or an expression), like any property.
 VISIBLE = Property("bool", name="visible", doc="Shown while true; while false it is hidden and takes no room.")
@@ -608,10 +608,26 @@ def _check_names(parser: _Parser) -> None:
         seen.setdefault(name, []).append(node)
 
 
+def read_marked(text: str, file: str = "<view>", *, resolver: Optional[Callable[[str], Optional[WidgetDecl]]] = None) -> Any:
+    """The mapping with positions of the view file `text`, read by its suffix: the TDL front end for a `.tdl` file (`resolver` as `parse_view`'s), the YAML one
+    for any other name. A TDL file whose root says it is a stylesheet or a theme is refused with the hint that names the file to give it."""
+    if not file.endswith(".tdl"):
+        return load_marked(text, file)
+    from tess_ui.spec.flavour import require_tdl
+    from tess_ui.spec.tdl import load_marked_tdl
+
+    require_tdl(file)
+    wrong = tdl_wrong_kind(text, "view", file)
+    if wrong is not None:
+        raise LoadError("a view's root block is a widget, and this file's is not", file=file, line=wrong[1], column=wrong[2], hint=wrong[0], text=text)
+    return load_marked_tdl(text, file, resolver=resolver)
+
+
 def parse_view(text: str, file: str = "<view>", *, resolver: Optional[Callable[[str], Optional[WidgetDecl]]] = None,
                view_name: Optional[str] = None) -> ViewDoc:
-    """Reads the view in `text`. `resolver` maps a widget name that is not built in to its declaration (a view with `params:`)."""
-    return parse_data(load_marked(text, file), text, file, resolver=resolver, view_name=view_name)
+    """Reads the view in `text`, YAML or (for a file named `*.tdl`) TDL. `resolver` maps a widget name that is not built in to its declaration (a view with
+    `params:`)."""
+    return parse_data(read_marked(text, file, resolver=resolver), text, file, resolver=resolver, view_name=view_name)
 
 
 def parse_data(data: Any, text: str, file: str = "<view>", *, resolver: Optional[Callable[[str], Optional[WidgetDecl]]] = None,

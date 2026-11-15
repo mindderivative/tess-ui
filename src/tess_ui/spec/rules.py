@@ -231,8 +231,18 @@ def _template(value: Any, file: str, at: tuple[int, int], text: str) -> Any:
 
 
 def load_rule_sheet(path: Any, parts_of: Optional[Callable[[str], Optional[Collection[str]]]] = None) -> RuleSheet:
-    """Reads a stylesheet file in the rule shape; `parts_of` as for `RuleSheet.of`."""
+    """Reads a stylesheet file in the rule shape, by its suffix (`.tdl`: the TDL front end; else YAML); `parts_of` as for `RuleSheet.of`."""
     file = Path(path)
     text = file.read_text(encoding="utf-8")
     marker.note_if_missing(text, str(file))
+    if file.suffix == ".tdl":
+        from tess_ui.project import tdl_wrong_kind
+        from tess_ui.spec.flavour import require_tdl
+        from tess_ui.spec.tdl_stylesheet import load_marked_tdl_stylesheet
+
+        require_tdl(file)
+        wrong = tdl_wrong_kind(text, "stylesheet", file.name)
+        if wrong is not None:
+            raise LoadError("a stylesheet's root block is `Styles`, and this file's is not", file=str(file), line=wrong[1], column=wrong[2], hint=wrong[0], text=text)
+        return RuleSheet.of(load_marked_tdl_stylesheet(text, str(file)), str(file), text.removeprefix("\ufeff"), parts_of)
     return RuleSheet.of(load_marked(text, str(file)), str(file), text, parts_of)

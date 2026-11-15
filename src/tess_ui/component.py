@@ -25,7 +25,7 @@ from typing import Any
 
 from tess_ui.follow import app_of
 from tess_ui.naming import check_naming_convention
-from tess_ui.project import project_of, resolve_embedded, resolve_view
+from tess_ui.project import project_of, resolve_embedded, resolve_view, view_stem
 from tess_ui.spec import expand_components_to_spec
 from tess_ui.spec.images import extract_images
 
@@ -74,7 +74,7 @@ def embed(parent: Any, ref: str | Path, into: Any, arguments: dict[str, Any] | N
         if wired:
             component.remove()
             raise ValueError(f"{path}: {', '.join(wired[:3])}{' ...' if len(wired) > 3 else ''} use bindings or handlers, "
-                             f"but there is no {path.name.removesuffix('_View.yaml')}_ViewModel.py for them (a view with "
+                             f"but there is no {view_stem(path)}_ViewModel.py for them (a view with "
                              "no ViewModel is static)")
         if arguments:
             component.remove()

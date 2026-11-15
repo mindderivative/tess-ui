@@ -33,7 +33,7 @@ from tess_re import Window
 from tess_ui.follow import alive, app_of, register_app, register_window, retheme
 from tess_ui.listeners import Listeners, listen_window
 from tess_ui.naming import check_naming_convention
-from tess_ui.project import Project, is_name, resolve_embedded, resolve_view
+from tess_ui.project import Project, is_name, resolve_embedded, resolve_view, view_stem
 from tess_ui import focusring as _focusring, ripple as _ripple
 from tess_ui.spec.window import window_of
 from tess_ui.window_view import Frame, WindowViewModel
@@ -920,7 +920,7 @@ class App:
             watcher = self._composed_watcher(opened)
             watcher.start(self._hot_handle)
             self._watchers.append(watcher)
-        key = name or doc.name or path.name.removesuffix("_View.yaml")
+        key = name or doc.name or view_stem(path)
         if window is not self._window:  # another window's view is not a screen of the main one: it is kept, themed and checked with the rest
             self._built.append(_Built(opened))
             self._opened[key] = opened
@@ -945,7 +945,7 @@ class App:
         register_window(self, win)
         win.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, align_items="flex_start")
         opened = self._open_view(view, name, win)
-        key = name or opened.handle.name or Path(str(view)).name.removesuffix("_View.yaml")
+        key = name or opened.handle.name or view_stem(view)
         if key in self._windows:
             raise ValueError(f"open_window: a window named {key!r} is already open")
         options = window_of(opened.spec) or {}
@@ -1079,7 +1079,7 @@ class App:
         if viewmodel_cls is None and _is_window_file(self._named("view", view_path)):  # a window view needs none (0.4.4)
             path, found = resolve_embedded(self.project, view_path)
             viewmodel_cls = found if found is not None else WindowViewModel
-            prefix = path.name.removesuffix("_View.yaml")
+            prefix = view_stem(path)
             if found is not None:
                 check_naming_convention(path, found)
             view_path = path

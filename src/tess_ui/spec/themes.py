@@ -25,21 +25,40 @@ from tess_ui.spec.expand import (
 __all__ = ["load_stylesheet", "load_theme"]
 
 
+def _read_tdl(path: Path, text: str, what: str, suffix: str | None) -> Any:
+    """The plain mapping of a TDL theme (`suffix` is the theme's) or stylesheet file; a root block that says it is another kind is refused with the name to give."""
+    from tess_ui.project import tdl_wrong_kind
+    from tess_ui.spec.flavour import require_tdl
+    from tess_ui.spec.tdl_stylesheet import load_marked_tdl_stylesheet
+    from tess_ui.spec.tdl_theme import load_theme_tdl, plain
+
+    require_tdl(path)
+    theme = suffix == THEME_SUFFIX
+    wrong = tdl_wrong_kind(text, "theme" if theme else "stylesheet", path.name)
+    if wrong is not None:
+        raise ValueError(f"{path}:{wrong[1]}: {wrong[0]}")
+    return load_theme_tdl(text, str(path)) if theme else plain(load_marked_tdl_stylesheet(text, str(path)))
+
+
 def _load_mapping(path: str | Path, what: str, suffix: str | None = None) -> dict[str, Any]:
     path = Path(path)
     kind = kind_of_file(path.name)
-    if suffix is not None and kind is not None and not path.name.endswith(suffix):
+    if suffix is not None and kind is not None and not path.name.endswith((suffix, suffix.removesuffix(".yaml") + ".tdl")):
         raise ValueError(f"{path}: loaded as {what}, but its name says it's {kind} ("
                          f"*{STYLE_SUFFIX} is one node's style, *{STYLESHEET_SUFFIX} a stylesheet, *{THEME_SUFFIX} a theme)")
     text = path.read_text(encoding="utf-8")
-    scanned = marker.scan(text)
-    if scanned.problem:
-        raise ValueError(f"{path}:{scanned.line}: {scanned.problem}")
-    marker.note_if_missing(text, str(path))
-    try:
-        data = marker.strip(yaml.safe_load(text))
-    except yaml.YAMLError as exc:
-        raise ValueError(f"{path}: invalid YAML: {exc}") from exc
+    if path.suffix == ".tdl":
+        marker.note_if_missing(text, str(path))
+        data: Any = _read_tdl(path, text, what, suffix)
+    else:
+        scanned = marker.scan(text)
+        if scanned.problem:
+            raise ValueError(f"{path}:{scanned.line}: {scanned.problem}")
+        marker.note_if_missing(text, str(path))
+        try:
+            data = marker.strip(yaml.safe_load(text))
+        except yaml.YAMLError as exc:
+            raise ValueError(f"{path}: invalid YAML: {exc}") from exc
     if data is None:
         return {}
     if not isinstance(data, dict):

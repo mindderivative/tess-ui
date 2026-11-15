@@ -214,10 +214,13 @@ def _refuse_current_language(window: Any, ref: str) -> None:
             path = app.project.find("view", ref) if app is not None else path
         except LookupError:
             return  # the older loader says it is not there
-    try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except (OSError, yaml.YAMLError):
-        return  # the older loader says what is wrong with the file
+    if path.suffix == ".tdl":  # a TDL view is always in the current language
+        data: Any = {"widget": True}
+    else:
+        try:
+            data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except (OSError, yaml.YAMLError):
+            return  # the older loader says what is wrong with the file
     if isinstance(data, dict) and "widget" in data:
         raise ValueError(f"{path.name}: ViewDialog shows a view in the older syntax (`kind:`), and this one is in the current language (`widget:`). "
                          "Show it in a modal `widget: Overlay` in a view instead: `open: \"{{ show_settings }}\"`, `modal: true`, the content as its "

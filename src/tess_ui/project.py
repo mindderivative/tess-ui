@@ -2,11 +2,14 @@
 
 A project is a folder with standard places for each kind of file:
 
-    Views/        Name_View.yaml
+    Views/        Name_View.tdl (or Name_View.yaml)
     ViewModels/   Name_ViewModel.py
     Components/   Name_Component.yaml (and Name_Stylesheet.yaml, its look)
-    Themes/       Name_Theme.yaml
-    Styles/       Name_Stylesheet.yaml, Name_Style.yaml
+    Themes/       Name_Theme.tdl (or Name_Theme.yaml)
+    Styles/       Name_Stylesheet.tdl (or Name_Stylesheet.yaml), Name_Style.yaml
+
+A view, a stylesheet and a theme may be written in TDL (`.tdl`) or in YAML (`.yaml`); a name finds either. When one folder holds both
+`Name_View.tdl` and `Name_View.yaml`, the `.tdl` is the file and a note says once that the YAML twin is ignored.
 
 `App(root=...)` is the project's root (the folder `app.py` is in, by default). `search=[...]` adds folders to
 look in, for every kind; `recursive=True` looks through the whole project instead. A name that is in two places
@@ -17,11 +20,15 @@ from __future__ import annotations
 
 import importlib
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Any, Iterable, Iterator, Optional
 
-__all__ = ["KINDS", "Project", "ProjectError", "is_name", "kind_of_keys", "looks_like", "project_of", "resolve_view"]
+from loguru import logger
+
+__all__ = ["KINDS", "Project", "ProjectError", "TDL_SUFFIXES", "is_name", "is_view_file", "kind_of_keys", "kind_of_tdl", "looks_like", "project_of",
+           "resolve_view", "sibling_file", "suffixes", "view_stem"]
 
 #: Each kind of file: the end of its name, and the folders it is kept in.
 KINDS: dict[str, tuple[str, tuple[str, ...]]] = {
@@ -32,10 +39,67 @@ KINDS: dict[str, tuple[str, tuple[str, ...]]] = {
     "stylesheet": ("_Stylesheet.yaml", ("Styles",)),
     "style": ("_Style.yaml", ("Styles",)),
 }
+#: The kinds that may be written in TDL, and the end of their TDL file names (the `KINDS` suffix is the YAML one).
+TDL_SUFFIXES: dict[str, str] = {"view": "_View.tdl", "theme": "_Theme.tdl", "stylesheet": "_Stylesheet.tdl"}
+#: The word a TDL file's root block has, by the kind it makes the file: a stylesheet is `Styles { }`, a theme `Theme { }`, anything else is a view's widget.
+_TDL_ROOTS = {"Styles": "stylesheet", "Theme": "theme"}
+_TDL_META = re.compile(r"\A\ufeff?(?:[ \t\r\n]|#[^\n]*)*---[ \t]*\r?\n.*?^---[ \t]*(?:\r?\n|\Z)", re.S | re.M)
+_TDL_WORD = re.compile(r"(?:[ \t\r\n]|#[^\n]*)*([A-Za-z_][A-Za-z0-9_]*)")
+_NOTED_TWINS: set[Path] = set()
 #: The root keys only a theme has. A theme may hold `styles:` too, so one of these decides before `styles:` does.
 _THEME_KEYS = frozenset({"seed", "dark", "colors", "typography", "components"})
 #: Folders a whole-project search never goes into.
 _SKIPPED = frozenset({"__pycache__", "node_modules", "build", "dist", "site", "site-packages"})
+
+
+def suffixes(kind: str) -> tuple[str, ...]:
+    """The ends a file name of `kind` may have, the one that wins first: `("_View.tdl", "_View.yaml")`; one suffix for a kind that has no TDL form."""
+    tdl = TDL_SUFFIXES.get(kind)
+    return (tdl, KINDS[kind][0]) if tdl else (KINDS[kind][0],)
+
+
+def view_stem(path: str | Path) -> str:
+    """A view file's name without its `_View.tdl` or `_View.yaml` end (`Main`); a name with neither end is its file name as it is."""
+    name = Path(path).name
+    for suffix in suffixes("view"):
+        if name.endswith(suffix):
+            return name.removesuffix(suffix)
+    return name
+
+
+def is_view_file(path: str | Path) -> bool:
+    """Whether `path` is named like a view file, `*_View.tdl` or `*_View.yaml`."""
+    return Path(path).name.endswith(suffixes("view"))
+
+
+def sibling_file(beside: Path, kind: str, name: str) -> Optional[Path]:
+    """The file of `kind` called `name` in the folder of `beside` (the `.tdl` before the `.yaml`), or `None` when there is none."""
+    return next((found for found in (beside.with_name(f"{name}{suffix}") for suffix in suffixes(kind)) if found.is_file()), None)
+
+
+def _tdl_root(text: str) -> Optional[tuple[str, int]]:
+    """The word that heads the root block of the TDL `text` and where it is (an offset), or `None`. Nothing is parsed."""
+    meta = _TDL_META.match(text)
+    word = _TDL_WORD.match(text, meta.end() if meta else 0)
+    return None if word is None else (word[1], word.start(1))
+
+
+def kind_of_tdl(text: str) -> Optional[str]:
+    """What the root block of the TDL `text` says the file is: `"stylesheet"` for `Styles { }`, `"theme"` for `Theme { }`, `"view"` for any other
+    word (a widget); `None` when the text has no root word. Nothing is parsed, so a file that does not read can still be told what it looks like."""
+    root = _tdl_root(text)
+    return None if root is None else _TDL_ROOTS.get(root[0], "view")
+
+
+def tdl_wrong_kind(text: str, is_kind: str, file: str = "") -> Optional[tuple[str, int, int]]:
+    """`(hint, line, column)` when the root block of the TDL `text`, read as `is_kind`, says it is another kind (`this looks like a theme: name it
+    Brand_Theme.tdl`), the line and 0-based column being those of the root word; `None` when it says the same or nothing."""
+    root = _tdl_root(text)
+    hint = looks_like_kind(None if root is None else _TDL_ROOTS.get(root[0], "view"), is_kind, file)
+    if hint is None or root is None:
+        return None
+    start = root[1]
+    return hint, text.count("\n", 0, start) + 1, start - (text.rfind("\n", 0, start) + 1)
 
 
 class ProjectError(LookupError):
@@ -62,13 +126,18 @@ def kind_of_keys(keys: Iterable[Any]) -> Optional[str]:
 def looks_like(keys: Iterable[Any], is_kind: str, file: str = "") -> Optional[str]:
     """`this looks like a stylesheet: name it Brand_Stylesheet.yaml`, for a file read as `is_kind` whose root `keys` say it is another
     kind; `None` when they say nothing or say the same. `file` is the file's name (its part before `_Kind.yaml` is kept, else `<Name>`)."""
-    kind = kind_of_keys(keys)
+    return looks_like_kind(kind_of_keys(keys), is_kind, file)
+
+
+def looks_like_kind(kind: Optional[str], is_kind: str, file: str = "") -> Optional[str]:
+    """`looks_like` for a kind already found (from root keys, or `kind_of_tdl` for a TDL file). The name it suggests ends as the file does: `.tdl` for a TDL
+    file (`Brand_Stylesheet.tdl`), else `.yaml`."""
     if kind is None or kind == is_kind:
         return None
     name = Path(file).name if file else ""
-    suffix = KINDS[is_kind][0]
-    stem = name.removesuffix(suffix) if name.endswith(suffix) else "<Name>"
-    return f"this looks like a {kind}: name it {stem}{KINDS[kind][0]}"
+    as_tdl = name.endswith(".tdl") and kind in TDL_SUFFIXES
+    stem = next((name.removesuffix(s) for s in suffixes(is_kind) if name.endswith(s)), "<Name>")
+    return f"this looks like a {kind}: name it {stem}{TDL_SUFFIXES[kind] if as_tdl else KINDS[kind][0]}"
 
 
 class Project:
@@ -105,13 +174,29 @@ class Project:
     # -- finding --------------------------------------------------------------------------
 
     def _scan(self, kind: str) -> dict[str, list[Path]]:
-        suffix = KINDS[kind][0]
         index: dict[str, list[Path]] = {}
         for folder in self.folders(kind):
-            for path in sorted(folder.glob(f"*{suffix}")):
-                if path.is_file():
-                    index.setdefault(path.name.removesuffix(suffix), []).append(path)
+            kept: dict[str, Path] = {}
+            for suffix in suffixes(kind):  # the `.tdl` first: in one folder it wins over its YAML twin
+                for path in sorted(folder.glob(f"*{suffix}")):
+                    name = path.name.removesuffix(suffix)
+                    if not path.is_file():
+                        continue
+                    if name in kept:
+                        self._note_twin(kept[name], path)
+                    else:
+                        kept[name] = path
+            for name, path in kept.items():
+                index.setdefault(name, []).append(path)
         return index
+
+    @staticmethod
+    def _note_twin(kept: Path, ignored: Path) -> None:
+        """Says once that `ignored`, the YAML twin of the TDL file `kept` in the same folder, is not read."""
+        if ignored not in _NOTED_TWINS:
+            _NOTED_TWINS.add(ignored)
+            logger.info("{} and {} are both here: the .tdl is read, the YAML twin is ignored (remove it, or `tesserae migrate-tdl --remove-source`)",
+                        kept.name, ignored.name)
 
     def index(self, kind: str) -> dict[str, Path]:
         """Every name of `kind` and its file. Raises `ProjectError` for a name in two places."""
@@ -119,7 +204,8 @@ class Project:
         for name, paths in found.items():
             if len(paths) > 1:
                 where = " and ".join(str(p.relative_to(self.root)) if p.is_relative_to(self.root) else str(p) for p in paths)
-                raise ProjectError(f"{name}{KINDS[kind][0]} is in two places, {where}: keep one, or name them differently")
+                end = next(s for s in suffixes(kind) if paths[0].name.endswith(s))
+                raise ProjectError(f"{name}{end} is in two places, {where}: keep one, or name them differently")
         return {name: paths[0] for name, paths in found.items()}
 
     def find(self, kind: str, name: str) -> Path:
@@ -140,10 +226,10 @@ class Project:
         other: list[tuple[Path, str]] = []
         for folder, _, files in self._walk():
             for file in sorted(files):
-                if file == f"{name}{KINDS[kind][0]}":
+                if file in {f"{name}{s}" for s in suffixes(kind)}:
                     exact.append(folder / file)
                 else:
-                    other += [(folder / file, k) for k, (suffix, _) in KINDS.items() if k != kind and file == f"{name}{suffix}"]
+                    other += [(folder / file, k) for k in KINDS if k != kind and file in {f"{name}{s}" for s in suffixes(k)}]
 
         def rel(path: Path) -> str:
             return path.relative_to(self.root).as_posix()
@@ -202,9 +288,9 @@ def resolve_view(project: Optional[Project], ref: str | Path, viewmodel_cls: Opt
     else:
         path = Path(ref)
     if viewmodel_cls is None:
-        prefix = path.name.removesuffix(KINDS["view"][0])
+        prefix = view_stem(path)
         beside = path.with_name(f"{prefix}{KINDS['viewmodel'][0]}")
-        if path.name.endswith(KINDS["view"][0]) and beside.is_file():
+        if is_view_file(path) and beside.is_file():
             viewmodel_cls = load_viewmodel(beside, prefix)
         elif project is not None:
             viewmodel_cls = project.viewmodel(prefix)
@@ -227,9 +313,9 @@ def resolve_embedded(project: Optional[Project], ref: str | Path, base: Optional
         path = Path(ref)
         if base is not None and not path.is_absolute():
             path = base / path
-    if not path.name.endswith(KINDS["view"][0]):
+    if not is_view_file(path):
         return path, None
-    prefix = path.name.removesuffix(KINDS["view"][0])
+    prefix = view_stem(path)
     beside = path.with_name(f"{prefix}{KINDS['viewmodel'][0]}")
     if beside.is_file():
         return path, load_viewmodel(beside, prefix)

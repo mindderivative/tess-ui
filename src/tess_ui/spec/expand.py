@@ -298,8 +298,8 @@ _KIND_OF = {STYLE_SUFFIX: "one node's style", STYLESHEET_SUFFIX: "a stylesheet",
 
 
 def kind_of_file(name: str) -> str | None:
-    """What a file's suffix says it is, or `None` for no convention."""
-    return next((kind for suffix, kind in _KIND_OF.items() if name.endswith(suffix)), None)
+    """What a file's suffix says it is, or `None` for no convention (`*_Stylesheet.tdl` and `*_Theme.tdl` say the same as their YAML forms)."""
+    return next((kind for suffix, kind in _KIND_OF.items() if name.endswith((suffix, suffix.removesuffix(".yaml") + ".tdl")) and (suffix != STYLE_SUFFIX or name.endswith(suffix))), None)
 
 
 def _style_file(owner: str, path: Any) -> str:

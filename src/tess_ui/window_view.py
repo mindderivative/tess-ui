@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from tess_ui.project import view_stem
 from tess_ui.reactive import ViewModel
 
 __all__ = ["Frame", "WindowViewModel"]
@@ -46,7 +47,7 @@ class Frame:
         for node_id, (component, viewmodel, request) in self.view._embedded.items():
             if "route" in request:
                 path = getattr(component, "path", None)
-                screen = path.name.removesuffix("_View.yaml") if path is not None else node_id
+                screen = view_stem(path) if path is not None else node_id
                 if screen in found:
                     raise ValueError(f'widget "{node_id}": the screen {screen!r} is already the routed view '
                                      f'"{found[screen][0]}": a view is routed once')

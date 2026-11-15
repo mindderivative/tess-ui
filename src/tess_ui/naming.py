@@ -11,6 +11,8 @@ from __future__ import annotations
 import inspect
 from pathlib import Path
 
+from tess_ui.project import is_view_file, view_stem
+
 _VIEW_SUFFIX = "_View.yaml"
 _VIEWMODEL_SUFFIX = "_ViewModel.py"
 
@@ -23,12 +25,12 @@ def check_naming_convention(view_path: str | Path, viewmodel_cls: type) -> str:
     `Counter_ViewModel.py`).
     """
     view_path = Path(view_path)
-    if not view_path.name.endswith(_VIEW_SUFFIX):
+    if not is_view_file(view_path):
         raise ValueError(
             f"{view_path.name!r} does not follow the required *{_VIEW_SUFFIX} naming "
             "convention"
         )
-    view_prefix = view_path.name[: -len(_VIEW_SUFFIX)]
+    view_prefix = view_stem(view_path)
 
     viewmodel_file = Path(inspect.getfile(viewmodel_cls))
     if not viewmodel_file.name.endswith(_VIEWMODEL_SUFFIX):
