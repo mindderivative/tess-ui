@@ -23,17 +23,25 @@ class VM(ViewModel):
 
 def opened(tmp_path, props="", show=True, message="Message deleted"):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    lines = "\n    ".join(props.split(", ")) if props else ""
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{width: 600, height: 400}}
-children:
-  - {{widget: Container, name: page, style: {{width: 600, height: 400, background: surface}}}}
-  - widget: Snackbar
-    name: sb
-    open: "{{{{ open }}}}"
-    message: '{message}'
-    {lines}
+    lines = "\n      ".join(props.split(", ")) if props else ""
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {{
+  Name: main
+  Style {{ Width: 600, Height: 400 }}
+  Children {{
+    Container {{ Name: page, Style {{ Width: 600, Height: 400, Background: surface }} }}
+    Snackbar {{
+      Name: sb
+      Open: <| open |>
+      Message: "{message}"
+      {lines}
+    }}
+  }}
+}}
 """)
     app = App(root=tmp_path, width=600, height=400)
     app.bind(VM)
@@ -88,7 +96,7 @@ def test_a_long_message_wraps_to_two_lines_and_the_bar_grows_to_68(tmp_path):
 
 
 def test_it_goes_by_itself_after_the_duration_and_calls_on_close(tmp_path):
-    view, vm = opened(tmp_path, "duration: 1000, on_close: closed")
+    view, vm = opened(tmp_path, "Duration: 1000, On_Close: closed")
     settle(view, 40)  # 640 ms
     assert vm.open.get() is True
     settle(view, 40)
@@ -104,13 +112,13 @@ def test_it_lasts_four_seconds_by_default(tmp_path):
 
 
 def test_a_duration_of_zero_keeps_it_until_it_is_closed(tmp_path):
-    view, vm = opened(tmp_path, "duration: 0")
+    view, vm = opened(tmp_path, "Duration: 0")
     settle(view, 600)
     assert vm.open.get() is True
 
 
 def test_the_pointer_over_it_holds_off_the_close_and_leaving_restarts_the_time(tmp_path):
-    view, vm = opened(tmp_path, "duration: 1000")
+    view, vm = opened(tmp_path, "Duration: 1000")
     x, y = sb(view).get("layout_x") + 10, sb(view).get("layout_y") + 10
     view.window.simulate("pointer_move", x=x, y=y)
     settle(view, 150)
@@ -123,7 +131,7 @@ def test_the_pointer_over_it_holds_off_the_close_and_leaving_restarts_the_time(t
 
 
 def test_the_action_runs_its_handler_and_closes_it(tmp_path):
-    view, vm = opened(tmp_path, "action: Undo, on_action: undone, on_close: closed")
+    view, vm = opened(tmp_path, "Action: Undo, On_Action: undone, On_Close: closed")
     act = sb(view, "bar.action")
     assert act.get("role") == "button" and act.get("label") == "Undo" and sb(view, "bar.action.action_text").get("fill") == role(view, "inverse_primary")
     view.window.simulate("click", node=act)
@@ -132,7 +140,7 @@ def test_the_action_runs_its_handler_and_closes_it(tmp_path):
 
 
 def test_a_close_button_closes_it(tmp_path):
-    view, vm = opened(tmp_path, "closable: true, on_close: closed")
+    view, vm = opened(tmp_path, "Closable: true, On_Close: closed")
     close = sb(view, "bar.close")
     assert close.get("label") == "Close" and sb(view, "bar.close.close_icon").get("fill") == role(view, "inverse_on_surface")
     view.window.simulate("click", node=close)
@@ -141,7 +149,7 @@ def test_a_close_button_closes_it(tmp_path):
 
 
 def test_it_is_not_modal_and_a_press_elsewhere_does_not_close_it(tmp_path):
-    view, vm = opened(tmp_path, "duration: 0")
+    view, vm = opened(tmp_path, "Duration: 0")
     view.window.simulate("pointer_down", x=300, y=100)
     view.window.simulate("key_down", key="escape")
     settle(view, 4)
@@ -155,12 +163,12 @@ def test_it_is_announced_politely_as_an_alert(tmp_path):
 
 
 def test_it_can_be_centred_and_follows_the_window(tmp_path):
-    view, _ = opened(tmp_path, "centered: true")
+    view, _ = opened(tmp_path, "Centered: true")
     assert sb(view).get("layout_x") == (600 - 344) / 2
 
 
 def test_opening_it_again_restarts_the_time(tmp_path):
-    view, vm = opened(tmp_path, "duration: 1000")
+    view, vm = opened(tmp_path, "Duration: 1000")
     settle(view, 45)
     vm.open.set(False)
     settle(view, 4)
@@ -185,16 +193,24 @@ class HostVM(ViewModel):
 
 def host(tmp_path, props=""):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    lines = "\n    ".join(props.split(", ")) if props else ""
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{width: 600, height: 400}}
-children:
-  - widget: SnackbarHost
-    name: h
-    messages: "{{{{ queue }}}}"
-    chosen: "{{{{ chosen }}}}"
-    {lines}
+    lines = "\n      ".join(props.split(", ")) if props else ""
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {{
+  Name: main
+  Style {{ Width: 600, Height: 400 }}
+  Children {{
+    SnackbarHost {{
+      Name: h
+      Messages: <| queue |>
+      Chosen: <| chosen |>
+      {lines}
+    }}
+  }}
+}}
 """)
     app = App(root=tmp_path, width=600, height=400)
     app.bind(HostVM)
@@ -246,7 +262,7 @@ def test_pressing_an_action_reports_its_value_and_moves_on(tmp_path):
 
 
 def test_a_close_button_skips_to_the_next(tmp_path):
-    view, vm = host(tmp_path, "closable: true")
+    view, vm = host(tmp_path, "Closable: true")
     vm.queue.set([{"message": "One", "duration": 0}, {"message": "Two", "duration": 0}])
     settle(view, 6)
     close = next(view.node(k) for k in view._built.specs if k.endswith(".bar.close") and "current" in k)

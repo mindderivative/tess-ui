@@ -5,8 +5,16 @@ import pytest
 from tess_ui import App, Signal, ViewModel, tokens
 from tess_ui.shipped import shipped_views
 
-TABS = "[{value: flights, label: Flights, icon: home}, {value: trips, label: Trips, icon: search, badge: 3}, {value: explore, label: Explore, icon: menu}]"
-PLAIN = "[{value: a, label: One}, {value: b, label: Two}, {value: c, label: Three}]"
+TABS = """Tabs {
+    Item { Value: flights, Label: Flights, Icon: home }
+    Item { Value: trips, Label: Trips, Icon: search, Badge: 3 }
+    Item { Value: explore, Label: Explore, Icon: menu }
+  }"""
+PLAIN = """Tabs {
+    Item { Value: a, Label: One }
+    Item { Value: b, Label: Two }
+    Item { Value: c, Label: Three }
+  }"""
 
 
 class VM(ViewModel):
@@ -20,8 +28,9 @@ class VM(ViewModel):
 
 def opened(tmp_path, widget, **kwargs):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {flex_direction: vertical, align_content: top_left, width: 500, height: 300}\nchildren:\n" + widget)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(
+        '---\nTDL: 0.2\nName: main\nTesserae: "0.6"\n---\n'
+        "Container {\n  Name: main\n  Style { Flex_Direction: vertical, Align_Content: top_left, Width: 500, Height: 300 }\n  Children {\n" + widget + "\n  }\n}\n")
     app = App(root=tmp_path, **kwargs)
     app.bind(VM)
     view = app.open_view("Main")
@@ -31,8 +40,8 @@ def opened(tmp_path, widget, **kwargs):
     return view, app.bindings.viewmodel_for("main")
 
 
-ICONS = f'  - {{widget: Tabs, name: t, tabs: {TABS}, selected: "{{{{ tab }}}}"}}\n'
-BARE = f'  - {{widget: Tabs, name: t, tabs: {PLAIN}, selected: "{{{{ plain }}}}"}}\n'
+ICONS = f"Tabs {{ Name: t, {TABS}, Selected: <| tab |> }}"
+BARE = f"Tabs {{ Name: t, {PLAIN}, Selected: <| plain |> }}"
 
 
 def tab(view, value, node="t"):
@@ -99,7 +108,7 @@ def test_the_primary_indicator_is_three_tall_rounded_on_top_and_under_the_select
 
 
 def test_the_secondary_indicator_is_two_tall_across_the_whole_tab(tmp_path):
-    view, _ = opened(tmp_path, BARE.replace("}\n", ", variant: secondary}\n"))
+    view, _ = opened(tmp_path, BARE.replace("Name: t,", "Name: t, Variant: secondary,"))
     ind = indicator(view)
     assert ind.get("layout_height") == 2.0 and ind.get("layout_width") == 120.0 and ind.get("layout_x") == tab(view, "a").get("layout_x")
     assert ind.get("corner_radius") == 0.0
@@ -154,7 +163,7 @@ def test_an_icon_and_a_badge_sit_in_the_tab(tmp_path):
 
 
 def test_a_tab_width_sets_every_tab(tmp_path):
-    view, _ = opened(tmp_path, BARE.replace("}\n", ", tab_width: 90}\n"))
+    view, _ = opened(tmp_path, BARE.replace("Name: t,", "Name: t, Tab_Width: 90,"))
     assert tab(view, "b").get("layout_width") == 90.0 and indicator(view).get("layout_width") == 66.0
 
 
@@ -167,8 +176,9 @@ def test_tabs_can_change(tmp_path):
             self.tabs = Signal([{"value": "a", "label": "A"}, {"value": "b", "label": "B"}])
 
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {width: 500, height: 200}\nchildren:\n  - {widget: Tabs, name: t, tabs: \"{{ tabs }}\", selected: b}\n")
+    (tmp_path / "Views" / "Main_View.tdl").write_text(
+        '---\nTDL: 0.2\nName: main\nTesserae: "0.6"\n---\n'
+        "Container {\n  Name: main\n  Style { Width: 500, Height: 200 }\n  Children {\n    Tabs { Name: t, Tabs: <| tabs |>, Selected: b }\n  }\n}\n")
     app = App(root=tmp_path)
     app.bind(Dynamic)
     view = app.open_view("Main")
@@ -180,8 +190,8 @@ def test_tabs_can_change(tmp_path):
 
 
 def test_a_panel_is_the_viewers_to_switch(tmp_path):
-    view, vm = opened(tmp_path, BARE + '  - {widget: Container, name: pa, if: "plain == \'a\'", style: {width: 10, height: 10}}\n'
-                                       '  - {widget: Container, name: pb, if: "plain == \'b\'", style: {width: 10, height: 10}}\n')
+    view, vm = opened(tmp_path, BARE + "\nIf <| plain == 'a' |> { Container { Name: pa, Style { Width: 10, Height: 10 } } }"
+                                       "\nIf <| plain == 'b' |> { Container { Name: pb, Style { Width: 10, Height: 10 } } }")
     assert "root.pa" in view._built.specs and "root.pb" not in view._built.specs
     click(view, "b")
     assert "root.pb" in view._built.specs and "root.pa" not in view._built.specs

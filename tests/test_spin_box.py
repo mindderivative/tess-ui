@@ -13,18 +13,26 @@ class VM(ViewModel):
         self.n = Signal(5)
 
 
-def opened(tmp_path, props="", value="{{ n }}", bounds="min: 0\n    max: 10"):
+def opened(tmp_path, props="", value="<| n |>", bounds="Min: 0\n      Max: 10"):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    lines = "\n    ".join(props.split(", ")) if props else ""
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{width: 300, height: 100, align_content: top_left}}
-children:
-  - widget: SpinBox
-    name: sp
-    value: "{value}"
-    {bounds}
-    {lines}
+    lines = "\n      ".join(props.split(", ")) if props else ""
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {{
+  Name: main
+  Style {{ Width: 300, Height: 100, Align_Content: top_left }}
+  Children {{
+    SpinBox {{
+      Name: sp
+      Value: {value}
+      {bounds}
+      {lines}
+    }}
+  }}
+}}
 """)
     app = App(root=tmp_path)
     app.bind(VM)
@@ -63,7 +71,7 @@ def test_a_click_steps_once(tmp_path):
 
 
 def test_holding_a_button_waits_then_repeats_until_it_is_let_go(tmp_path):
-    view, vm = opened(tmp_path, value="{{ n }}")
+    view, vm = opened(tmp_path, value="<| n |>")
     view.window.simulate("pointer_down", node=dec(view))
     run(view, 300)
     assert vm.n.get() == 5  # not yet
@@ -108,7 +116,7 @@ def test_a_short_press_is_only_one_step(tmp_path):
 
 
 def test_page_up_and_page_down_step_by_ten_steps(tmp_path):
-    view, vm = opened(tmp_path, "step: 0.5", bounds="min: -50\n    max: 50")
+    view, vm = opened(tmp_path, "Step: 0.5", bounds="Min: -50\n      Max: 50")
     vm.n.set(0)
     run(view, 32)
     field(view).focus()
@@ -120,7 +128,7 @@ def test_page_up_and_page_down_step_by_ten_steps(tmp_path):
 
 
 def test_wrap_goes_round_the_ends(tmp_path):
-    view, vm = opened(tmp_path, "wrap: true")
+    view, vm = opened(tmp_path, "Wrap: true")
     vm.n.set(10)
     run(view, 32)
     view.window.simulate("click", node=inc(view))
@@ -135,21 +143,21 @@ def test_without_wrap_the_button_at_a_bound_is_disabled(tmp_path):
     run(view, 32)
     assert inc(view).get("disabled") is True
     (tmp_path / "w").mkdir()
-    wrapped, vm2 = opened(tmp_path / "w", "wrap: true")
+    wrapped, vm2 = opened(tmp_path / "w", "Wrap: true")
     vm2.n.set(10)
     run(wrapped, 32)
     assert inc(wrapped).get("disabled") is False
 
 
 def test_decimals_prefix_and_suffix_show_with_the_number(tmp_path):
-    view, vm = opened(tmp_path, "decimals: 1, prefix: '$', suffix: ' kg'")
+    view, vm = opened(tmp_path, "Decimals: 1, Prefix: \"$\", Suffix: \" kg\"")
     assert field(view).get("text") == "$5.0 kg"
     view.window.simulate("click", node=inc(view))
     assert vm.n.get() == 6 and field(view).get("text") == "$6.0 kg"
 
 
 def test_what_is_typed_may_leave_the_affixes_out_or_put_them_in(tmp_path):
-    view, vm = opened(tmp_path, "decimals: 1, suffix: ' kg'")
+    view, vm = opened(tmp_path, "Decimals: 1, Suffix: \" kg\"")
     field(view).focus()
     field(view).set(text="")
     view.window.simulate("input", text="7.5")
@@ -162,7 +170,7 @@ def test_what_is_typed_may_leave_the_affixes_out_or_put_them_in(tmp_path):
 
 
 def test_it_is_named_for_a_screen_reader(tmp_path):
-    view, _ = opened(tmp_path, "label: Quantity")
+    view, _ = opened(tmp_path, "Label: Quantity")
     assert field(view).get("label") == "Quantity"
 
 
@@ -171,17 +179,25 @@ def test_it_is_named_for_a_screen_reader(tmp_path):
 
 def field_app(tmp_path, props=""):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    lines = "\n    ".join(props.split(", ")) if props else ""
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{width: 300, height: 200, align_content: top_left}}
-children:
-  - widget: SpinBoxField
-    name: f
-    value: "{{{{ n }}}}"
-    least: 0
-    most: 10
-    {lines}
+    lines = "\n      ".join(props.split(", ")) if props else ""
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {{
+  Name: main
+  Style {{ Width: 300, Height: 200, Align_Content: top_left }}
+  Children {{
+    SpinBoxField {{
+      Name: f
+      Value: <| n |>
+      Least: 0
+      Most: 10
+      {lines}
+    }}
+  }}
+}}
 """)
     app = App(root=tmp_path)
     app.bind(VM)
@@ -193,7 +209,7 @@ children:
 
 def test_the_field_has_a_label_above_the_spin_box_and_names_it(tmp_path):
     from tess_ui import tokens
-    view, _ = field_app(tmp_path, "label: Quantity")
+    view, _ = field_app(tmp_path, "Label: Quantity")
     label, box = view.node("root.f.label"), view._built.controls["root.f.box"]
     assert label.get("text") == "Quantity" and label.get("fill") == (view._scheme or tokens.BASELINE)["on_surface_variant"]
     assert label.get("layout_y") < box.node.get("layout_y") and box.input.get("label") == "Quantity"
@@ -201,16 +217,16 @@ def test_the_field_has_a_label_above_the_spin_box_and_names_it(tmp_path):
 
 def test_the_supporting_text_is_under_it_and_an_error_replaces_it_in_the_error_colour(tmp_path):
     from tess_ui import tokens
-    view, _ = field_app(tmp_path, "label: Quantity, supporting: Between 0 and 10")
+    view, _ = field_app(tmp_path, "Label: Quantity, Supporting: Between 0 and 10")
     help_ = view.node("root.f.help")
     assert help_.get("text") == "Between 0 and 10" and help_.get("layout_y") > view._built.controls["root.f.box"].node.get("layout_y")
     (tmp_path / "e").mkdir()
-    bad, _ = field_app(tmp_path / "e", "label: Quantity, supporting: Between 0 and 10, error: Too many")
+    bad, _ = field_app(tmp_path / "e", "Label: Quantity, Supporting: Between 0 and 10, Error: Too many")
     assert bad.node("root.f.help").get("text") == "Too many" and bad.node("root.f.help").get("fill") == (bad._scheme or tokens.BASELINE)["error"]
 
 
 def test_the_field_passes_everything_to_the_spin_box_and_writes_the_value_back(tmp_path):
-    view, vm = field_app(tmp_path, "wrap: true, decimals: 1, suffix: ' kg'")
+    view, vm = field_app(tmp_path, "Wrap: true, Decimals: 1, Suffix: \" kg\"")
     box = view._built.controls["root.f.box"]
     assert box.wrap is True and box.decimals == 1 and box.suffix == " kg" and box.input.get("text") == "5.0 kg"
     view.window.simulate("click", node=box.increment)

@@ -16,17 +16,35 @@ class VM(ViewModel):
         self.pct = Signal(None)
 
 
-ITEMS = "[{text: Ready}, {text: 'Ln 4, Col 2', side: end, value: goto, tooltip: Go to line}, {text: UTF-8, side: end, icon: home, value: encoding}, {text: Saved, side: center}]"
+ITEMS = """Items {
+        Item { Text: Ready }
+        Item { Text: "Ln 4, Col 2", Side: end, Value: goto, Tooltip: "Go to line" }
+        Item { Text: UTF-8, Side: end, Icon: home, Value: encoding }
+        Item { Text: Saved, Side: center }
+      }"""
 
 
 def opened(tmp_path, props="", items=ITEMS):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{flex_direction: vertical, width: 500, height: 300}}
-children:
-  - {{widget: Container, name: spacer, style: {{height: 276}}}}
-  - {{widget: StatusBar, name: s, items: {items}, clicked: "{{{{ clicked }}}}"{', ' + props if props else ''}}}
+    props_lines = "\n      ".join(props.split(", ")) if props else ""
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Width: 500, Height: 300 }}
+  Children {{
+    Container {{ Name: spacer, Style {{ Height: 276 }} }}
+    StatusBar {{
+      Name: s
+      {items}
+      Clicked: <| clicked |>
+      {props_lines}
+    }}
+  }}
+}}
 """)
     app = App(root=tmp_path)
     app.bind(VM)
@@ -108,11 +126,18 @@ def test_the_bar_is_announced_politely(tmp_path):
 
 def test_it_follows_the_items_it_is_given(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text("""name: main
-widget: Container
-style: {flex_direction: vertical, width: 500, height: 100}
-children:
-  - {widget: StatusBar, name: s, items: "{{ [{'text': msg}] }}"}
+    (tmp_path / "Views" / "Main_View.tdl").write_text("""---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {
+  Name: main
+  Style { Flex_Direction: vertical, Width: 500, Height: 100 }
+  Children {
+    StatusBar { Name: s, Items: <| [{'text': msg}] |> }
+  }
+}
 """)
     app = App(root=tmp_path)
     app.bind(VM)
@@ -129,21 +154,28 @@ children:
 def test_a_progress_edge_shows_while_busy_or_given_a_value(tmp_path):
     view, vm = opened(tmp_path)
     assert "root.s.edge.bar" not in view._built.specs
-    view2, _ = opened(tmp_path / "b" if (tmp_path / "b").mkdir() is None else tmp_path, "busy: true")
+    view2, _ = opened(tmp_path / "b" if (tmp_path / "b").mkdir() is None else tmp_path, "Busy: true")
     bar = view2.node("root.s.edge.bar")
     assert (bar.get("layout_width"), bar.get("layout_height")) == (500.0, 4.0) and bar.get("layout_y") == 276.0
     (tmp_path / "c").mkdir()
-    view3, _ = opened(tmp_path / "c", "progress: 0.5")
+    view3, _ = opened(tmp_path / "c", "Progress: 0.5")
     assert view3.node("root.s.edge").get("layout_height") == 4.0
 
 
 def test_text_and_width_are_for_a_bar_that_says_one_thing(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text("""name: main
-widget: Container
-style: {flex_direction: vertical, width: 500, height: 100}
-children:
-  - {widget: StatusBar, name: s, text: Ready, width: 300}
+    (tmp_path / "Views" / "Main_View.tdl").write_text("""---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {
+  Name: main
+  Style { Flex_Direction: vertical, Width: 500, Height: 100 }
+  Children {
+    StatusBar { Name: s, Text: Ready, Width: 300 }
+  }
+}
 """)
     app = App(root=tmp_path)
     app.bind(VM)

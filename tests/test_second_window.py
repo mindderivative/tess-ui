@@ -4,35 +4,101 @@ import pytest
 
 from tess_ui import App
 
-MAIN = """name: main
-widget: Container
-style: {width: 300, height: 200, align_content: top_left}
-children:
-  - {widget: Rect, name: open, style: {width: 40, height: 20, background: primary}, handlers: {on_click: "open_window('Prefs')"}}
-  - {widget: Rect, name: open_modal, style: {width: 40, height: 20, background: secondary}, handlers: {on_click: "open_window('Prefs', True)"}}
+MAIN = """---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {
+  Name: main
+  Style { Width: 300, Height: 200, Align_Content: top_left }
+  Children {
+    Rect {
+      Name: open
+      Style { Width: 40, Height: 20, Background: primary }
+      Handlers {
+        On_Click { Call { Action: "open_window", Args: [<| 'Prefs' |>] } }
+      }
+    }
+    Rect {
+      Name: open_modal
+      Style { Width: 40, Height: 20, Background: secondary }
+      Handlers {
+        On_Click { Call { Action: "open_window", Args: [<| 'Prefs' |>, <| True |>] } }
+      }
+    }
+  }
+}
 """
-PREFS = """name: prefs
-widget: Window
-title: Preferences
-min_width: 200
-min_height: 100
-style: {width: 360, height: 240}
-title_bar: {title: Preferences}
-children:
-  - {widget: Text, name: hello, text: Hello, typography_role: body_medium, style: {foreground: on_surface}}
-  - {widget: Rect, name: close, style: {width: 40, height: 20, background: primary}, handlers: {on_click: window.close}}
-  - {widget: Rect, name: grow, style: {width: 40, height: 20, background: error}, handlers: {on_click: window.maximize}}
-  - {widget: Rect, name: more, style: {width: 40, height: 20, background: tertiary}, handlers: {on_click: "open_window('Plain', True)"}}
+PREFS = """---
+TDL: 0.2
+Name: prefs
+Tesserae: "0.6"
+---
+Window {
+  Name: prefs
+  Title: Preferences
+  Min_Width: 200
+  Min_Height: 100
+  Style { Width: 360, Height: 240 }
+  Title_Bar { Title: Preferences }
+  Children {
+    Text {
+      Name: hello
+      Text: Hello
+      Typography_Role: body_medium
+      Style { Foreground: on_surface }
+    }
+    Rect {
+      Name: close
+      Style { Width: 40, Height: 20, Background: primary }
+      Handlers {
+        On_Click: window.close
+      }
+    }
+    Rect {
+      Name: grow
+      Style { Width: 40, Height: 20, Background: error }
+      Handlers {
+        On_Click: window.maximize
+      }
+    }
+    Rect {
+      Name: more
+      Style { Width: 40, Height: 20, Background: tertiary }
+      Handlers {
+        On_Click { Call { Action: "open_window", Args: [<| 'Plain' |>, <| True |>] } }
+      }
+    }
+  }
+}
 """
-PLAIN = "name: plain\nwidget: Container\nstyle: {width: 100, height: 50}\nchildren:\n  - {widget: Text, name: t, text: Plain, typography_role: body_medium, style: {foreground: on_surface}}\n"
+PLAIN = """---
+TDL: 0.2
+Name: plain
+Tesserae: "0.6"
+---
+Container {
+  Name: plain
+  Style { Width: 100, Height: 50 }
+  Children {
+    Text {
+      Name: t
+      Text: Plain
+      Typography_Role: body_medium
+      Style { Foreground: on_surface }
+    }
+  }
+}
+"""
 
 
 @pytest.fixture
 def app(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(MAIN)
-    (tmp_path / "Views" / "Prefs_View.yaml").write_text(PREFS)
-    (tmp_path / "Views" / "Plain_View.yaml").write_text(PLAIN)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(MAIN)
+    (tmp_path / "Views" / "Prefs_View.tdl").write_text(PREFS)
+    (tmp_path / "Views" / "Plain_View.tdl").write_text(PLAIN)
     a = App(root=tmp_path, width=300, height=200, theme_seed=(0x67, 0x50, 0xA4, 0xFF), dark=False)
     a.open_view("Main")
     a.show("main")

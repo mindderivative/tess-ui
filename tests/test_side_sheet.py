@@ -20,20 +20,29 @@ class VM(ViewModel):
 
 def opened(tmp_path, props="", children="", widget="SideSheet", after=""):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    props_lines = "\n    ".join(props.split(", ")) if props else ""
-    kids = children or "      - {widget: Text, name: body, text: Hello, typography_role: body_medium, style: {foreground: on_surface}}\n"
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{flex_direction: horizontal, align_content: top_left, width: 700, height: 400}}
-children:
-  - {{widget: Container, name: main, style: {{flex: fill, height: 100%, background: surface_container}}}}
-  - widget: {widget}
-    name: s
-    open: "{{{{ open }}}}"
-    title: Filters
-    {props_lines}
-    children:
-{kids}{after}""")
+    props_lines = "\n      ".join(props.split(", ")) if props else ""
+    kids = children or "        Text { Name: body, Text: Hello, Typography_Role: body_medium, Style { Foreground: on_surface } }\n"
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: horizontal, Align_Content: top_left, Width: 700, Height: 400 }}
+  Children {{
+    Container {{ Name: main, Style {{ Flex: fill, Height: 100%, Background: surface_container }} }}
+    {widget} {{
+      Name: s
+      Open: <| open |>
+      Title: Filters
+      {props_lines}
+      Children {{
+{kids}{after}      }}
+    }}
+  }}
+}}
+""")
     app = App(root=tmp_path, width=700, height=400)
     app.bind(VM)
     view = app.open_view("Main")
@@ -104,15 +113,15 @@ def test_the_width_eases_rather_than_jumping(tmp_path):
 
 
 def test_the_width_is_held_between_256_and_400(tmp_path):
-    view, _ = opened(tmp_path, "width: 900")
+    view, _ = opened(tmp_path, "Width: 900")
     assert s(view).get("layout_width") == 400.0
     (tmp_path / "n").mkdir()
-    narrow, _ = opened(tmp_path / "n", "width: 100")
+    narrow, _ = opened(tmp_path / "n", "Width: 100")
     assert s(narrow).get("layout_width") == 256.0
 
 
 def test_a_back_button_runs_on_back(tmp_path):
-    view, vm = opened(tmp_path, "back: true, on_back: went_back")
+    view, vm = opened(tmp_path, "Back: true, On_Back: went_back")
     back = s(view, "panel.header.back")
     assert back.get("label") == "Back" and back.get("layout_x") < s(view, "panel.header.title").get("layout_x")
     view.window.simulate("click", node=back)
@@ -120,12 +129,12 @@ def test_a_back_button_runs_on_back(tmp_path):
 
 
 def test_a_sheet_that_is_not_closable_has_no_close_button(tmp_path):
-    view, _ = opened(tmp_path, "closable: false")
+    view, _ = opened(tmp_path, "Closable: false")
     assert "root.s.panel.header.close" not in view._built.specs
 
 
 def test_the_content_is_the_childrens_and_the_actions_sit_at_the_bottom_right(tmp_path):
-    after = "      - {widget: Button, name: apply, slot: actions, label: Apply, variant: filled}\n      - {widget: Button, name: cancel, slot: actions, label: Cancel, variant: text}\n"
+    after = "        Button { Name: apply, Slot: actions, Label: Apply, Variant: filled }\n        Button { Name: cancel, Slot: actions, Label: Cancel, Variant: text }\n"
     view, _ = opened(tmp_path, after=after)
     assert s(view, "body").get("layout_y") >= s(view).get("layout_y") + 56
     apply, cancel = s(view, "apply"), s(view, "cancel")
@@ -134,8 +143,8 @@ def test_the_content_is_the_childrens_and_the_actions_sit_at_the_bottom_right(tm
 
 
 def test_tall_content_scrolls_and_a_line_shows_over_the_actions(tmp_path):
-    kids = "      - {widget: Container, name: tall, style: {width: 100, height: 900}}\n"
-    view, _ = opened(tmp_path, children=kids, after="      - {widget: Button, name: ok, slot: actions, label: OK, variant: text}\n")
+    kids = "        Container { Name: tall, Style { Width: 100, Height: 900 } }\n"
+    view, _ = opened(tmp_path, children=kids, after="        Button { Name: ok, Slot: actions, Label: OK, Variant: text }\n")
     scroller = outer(view, "root.s.panel.content")
     assert scroller.get("layout_height") < 400 and "root.s.panel.line" not in view._built.specs
     view.window.simulate("wheel", node=scroller, delta_x=0.0, delta_y=80.0)
@@ -145,12 +154,19 @@ def test_tall_content_scrolls_and_a_line_shows_over_the_actions(tmp_path):
 
 def test_the_sheet_is_where_it_is_put_so_first_in_the_row_is_the_start_side(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text("""name: main
-widget: Container
-style: {flex_direction: horizontal, align_content: top_left, width: 700, height: 400}
-children:
-  - {widget: SideSheet, name: s, open: true, title: Filters}
-  - {widget: Container, name: main, style: {flex: fill, height: 100%}}
+    (tmp_path / "Views" / "Main_View.tdl").write_text("""---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {
+  Name: main
+  Style { Flex_Direction: horizontal, Align_Content: top_left, Width: 700, Height: 400 }
+  Children {
+    SideSheet { Name: s, Open: true, Title: Filters }
+    Container { Name: main, Style { Flex: fill, Height: 100% } }
+  }
+}
 """)
     app = App(root=tmp_path, width=700, height=400)
     app.bind(VM)
@@ -188,7 +204,7 @@ def test_the_modal_panel_is_surface_container_low_with_16_pixel_corners_on_its_o
 
 
 def test_the_modal_sheet_can_come_from_the_start(tmp_path):
-    view, _ = modal(tmp_path, "side: start")
+    view, _ = modal(tmp_path, "Side: start")
     sheet = s(view, "sheet")
     assert sheet.get("layout_x") == 0.0 and sheet.get("corner_radius") == (0.0, 16.0, 16.0, 0.0)
 
@@ -223,7 +239,7 @@ def test_a_press_inside_the_modal_sheet_does_not_close_it(tmp_path):
 
 
 def test_not_dismissible_ignores_escape_but_the_close_button_still_closes(tmp_path):
-    view, vm = modal(tmp_path, "dismissible: false")
+    view, vm = modal(tmp_path, "Dismissible: false")
     view.window.simulate("key_down", key="escape")
     view.window.simulate("pointer_down", x=5, y=5)
     settle(view, 4)
@@ -234,8 +250,8 @@ def test_not_dismissible_ignores_escape_but_the_close_button_still_closes(tmp_pa
 
 
 def test_the_modal_sheet_has_the_same_header_content_and_actions(tmp_path):
-    after = "      - {widget: Button, name: ok, slot: actions, label: OK, variant: text}\n"
-    view, vm = modal(tmp_path, "back: true, on_back: went_back", after=after)
+    after = "        Button { Name: ok, Slot: actions, Label: OK, Variant: text }\n"
+    view, vm = modal(tmp_path, "Back: true, On_Back: went_back", after=after)
     view.window.simulate("click", node=s(view, "sheet.panel.header.back"))
     assert vm.log == ["back"]
     assert s(view, "body").get("layout_y") >= 56 and s(view, "ok").get("layout_y") > 300

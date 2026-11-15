@@ -5,7 +5,10 @@ import pytest
 from tess_ui import App, Signal, ViewModel, tokens
 from tess_ui.shipped import shipped_views
 
-ITEMS = "[{value: save, label: Save}, {value: copy, label: Save a copy}]"
+ITEMS = """Items {
+        Item { Value: save, Label: Save }
+        Item { Value: copy, Label: "Save a copy" }
+      }"""
 
 
 class VM(ViewModel):
@@ -22,18 +25,26 @@ class VM(ViewModel):
 
 def opened(tmp_path, props=""):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    lines = "\n    ".join(props.split(", ")) if props else ""
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{width: 500, height: 400, align_content: top_left}}
-children:
-  - widget: SplitButton
-    name: sb
-    label: Save
-    items: {ITEMS}
-    chosen: "{{{{ chosen }}}}"
-    on_click: go
-    {lines}
+    lines = "\n      ".join(props.split(", ")) if props else ""
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {{
+  Name: main
+  Style {{ Width: 500, Height: 400, Align_Content: top_left }}
+  Children {{
+    SplitButton {{
+      Name: sb
+      Label: Save
+      {ITEMS}
+      Chosen: <| chosen |>
+      On_Click: go
+      {lines}
+    }}
+  }}
+}}
 """)
     app = App(root=tmp_path, width=500, height=400)
     app.bind(VM)
@@ -122,30 +133,30 @@ def test_escape_closes_the_menu_and_it_can_be_opened_again(tmp_path):
 
 @pytest.mark.parametrize("variant, fill", [("tonal", "secondary_container"), ("elevated", "surface_container_low"), ("filled", "primary")])
 def test_the_variant_goes_to_both_parts(tmp_path, variant, fill):
-    view, _ = opened(tmp_path, f"variant: {variant}")
+    view, _ = opened(tmp_path, f"Variant: {variant}")
     assert main(view).get("fill") == role(view, fill) and trailing(view).get("fill") == role(view, fill)
 
 
 def test_outlined_and_text_parts(tmp_path):
-    view, _ = opened(tmp_path, "variant: outlined")
+    view, _ = opened(tmp_path, "Variant: outlined")
     assert main(view).get("stroke_width") == 1.0 and trailing(view).get("stroke_width") == 1.0
     (tmp_path / "t").mkdir()
-    text, _ = opened(tmp_path / "t", "variant: text")
+    text, _ = opened(tmp_path / "t", "Variant: text")
     assert text.node("root.sb.main").get("fill")[3] == 0 and text.node("root.sb.main").get("stroke_width") == 0.0
 
 
 def test_size_goes_to_both_parts(tmp_path):
-    view, _ = opened(tmp_path, "size: m")
+    view, _ = opened(tmp_path, "Size: m")
     assert main(view).get("layout_height") == 56.0 and trailing(view).get("layout_height") == 56.0
 
 
 def test_an_icon_leads_the_main_part(tmp_path):
-    view, _ = opened(tmp_path, "icon: home")
+    view, _ = opened(tmp_path, "Icon: home")
     assert "root.sb.main.icon" in view._built.specs
 
 
 def test_a_disabled_split_button_does_not_respond_on_either_part(tmp_path):
-    view, vm = opened(tmp_path, "disabled: true")
+    view, vm = opened(tmp_path, "Disabled: true")
     view.window.simulate("click", node=main(view))
     view.window.simulate("click", node=trailing(view))
     settle(view, 6)
@@ -181,7 +192,8 @@ def test_a_press_opens_the_menu_without_moving_the_focus_into_it(tmp_path):
 
 def test_arrow_down_with_no_items_opens_nothing(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text("name: main\nwidget: Container\nstyle: {width: 500, height: 400}\nchildren:\n  - {widget: SplitButton, name: sb, label: Save}\n")
+    (tmp_path / "Views" / "Main_View.tdl").write_text((
+        '---\nTDL: 0.2\nName: main\nTesserae: "0.6"\n---\nContainer {\n  Name: main\n  Style { Width: 500, Height: 400 }\n  Children {\n    SplitButton { Name: sb, Label: Save }\n  }\n}\n'))
     app = App(root=tmp_path, width=500, height=400)
     app.bind(VM)
     view = app.open_view("Main")

@@ -1,4 +1,6 @@
-"""#197: `widget: Svg` -- a document from a file or inline, tinted by the theme through `currentColor`, described by `alt`."""
+"""#197: `Svg` -- a document from a file or inline, tinted by the theme through `currentColor`, described by `alt`."""
+
+import json
 
 import pytest
 
@@ -22,8 +24,9 @@ def opened(tmp_path, body, files=(("square.svg", SQUARE), ("circle.svg", CIRCLE)
     (tmp_path / "Views").mkdir(exist_ok=True)
     for name, text in files:
         (tmp_path / "Views" / name).write_text(text)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {flex_direction: vertical, align_content: top_left, width: 100, height: 100}\nchildren:\n" + body)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(
+        '---\nTDL: 0.2\nName: main\nTesserae: "0.6"\n---\n'
+        "Container {\n  Name: main\n  Style { Flex_Direction: vertical, Align_Content: top_left, Width: 100, Height: 100 }\n  Children {\n" + body + "\n  }\n}\n")
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")
@@ -42,33 +45,33 @@ def alpha_count(view):
 
 
 def test_a_file_is_drawn_and_currentcolor_is_the_foreground(tmp_path):
-    view, _ = opened(tmp_path, "  - {widget: Svg, name: s, src: square.svg, style: {width: 40, height: 20, foreground: primary}}\n")
+    view, _ = opened(tmp_path, "Svg { Name: s, Src: square.svg, Style { Width: 40, Height: 20, Foreground: primary } }")
     node = view.node("root.s")
     assert node.get("svg_color") == role(view, "primary") and "<rect" in node.get("svg") and alpha_count(view) == 40 * 20
 
 
 def test_a_document_can_be_written_inline(tmp_path):
-    view, _ = opened(tmp_path, f"  - widget: Svg\n    name: s\n    content: '{SQUARE}'\n    style: {{width: 40, height: 20, foreground: on_surface}}\n")
+    view, _ = opened(tmp_path, f"Svg {{ Name: s, Content: {json.dumps(SQUARE)}, Style {{ Width: 40, Height: 20, Foreground: on_surface }} }}")
     assert alpha_count(view) == 40 * 20
 
 
 def test_the_tint_follows_the_theme(tmp_path):
-    view, _ = opened(tmp_path, "  - {widget: Svg, name: s, src: square.svg, style: {width: 40, height: 20, foreground: on_surface}}\n")
+    view, _ = opened(tmp_path, "Svg { Name: s, Src: square.svg, Style { Width: 40, Height: 20, Foreground: on_surface } }")
     light = view.node("root.s").get("svg_color")
     assert light == role(view, "on_surface")
 
 
 def test_a_picture_with_alt_is_an_image_and_one_without_is_decorative(tmp_path):
-    view, _ = opened(tmp_path, "  - {widget: Svg, name: a, src: square.svg, alt: A bar, style: {width: 40, height: 20}}\n"
-                               "  - {widget: Svg, name: b, src: square.svg, style: {width: 40, height: 20}}\n"
-                               "  - {widget: Svg, name: c, src: square.svg, style: {width: 40, height: 20}, handlers: {on_click: 'clicked += 1'}}\n")
+    view, _ = opened(tmp_path, "Svg { Name: a, Src: square.svg, Alt: A bar, Style { Width: 40, Height: 20 } }\n"
+                               "Svg { Name: b, Src: square.svg, Style { Width: 40, Height: 20 } }\n"
+                               "Svg { Name: c, Src: square.svg, Style { Width: 40, Height: 20 }, Handlers { On_Click { Set { Target: clicked, Value: <| clicked + 1 |> } } } }")
     a, b, c = (view.node(f"root.{n}") for n in "abc")
     assert (a.get("role"), a.get("label")) == ("img", "A bar") and not a.get("a11y_hidden")
     assert b.get("a11y_hidden") is True and not c.get("a11y_hidden")
 
 
 def test_the_source_follows_a_signal(tmp_path):
-    view, vm = opened(tmp_path, "  - {widget: Svg, name: s, src: '{{ picture }}', style: {width: 40, height: 20, foreground: primary}}\n")
+    view, vm = opened(tmp_path, "Svg { Name: s, Src: <| picture |>, Style { Width: 40, Height: 20, Foreground: primary } }")
     assert "<rect" in view.node("root.s").get("svg")
     vm.picture.set("circle.svg")
     view.window.advance(16)
@@ -79,25 +82,25 @@ def test_one_of_src_and_content_is_needed(tmp_path):
     from tess_ui.spec.nodes import LoadError
 
     with pytest.raises(LoadError, match="give one of 'src', 'content'"):
-        opened(tmp_path, "  - {widget: Svg, name: s}\n")
+        opened(tmp_path, "Svg { Name: s }")
     with pytest.raises(LoadError, match="'src' and 'content' cannot both be given"):
-        opened(tmp_path, f"  - {{widget: Svg, name: s, src: square.svg, content: '{SQUARE}'}}\n")
+        opened(tmp_path, f"Svg {{ Name: s, Src: square.svg, Content: {json.dumps(SQUARE)} }}")
 
 
 def test_a_missing_file_names_the_widget_and_the_file(tmp_path):
     with pytest.raises(Exception, match=r"nowhere\.svg"):
-        opened(tmp_path, "  - {widget: Svg, name: s, src: nowhere.svg, style: {width: 40, height: 20}}\n")
+        opened(tmp_path, "Svg { Name: s, Src: nowhere.svg, Style { Width: 40, Height: 20 } }")
 
 
 def test_a_document_that_is_not_svg_is_an_error_naming_the_widget(tmp_path):
     with pytest.raises(Exception, match=r"s\b"):
-        opened(tmp_path, "  - {widget: Svg, name: s, src: bad.svg, style: {width: 40, height: 20}}\n", files=(("bad.svg", "not a document"),))
+        opened(tmp_path, "Svg { Name: s, Src: bad.svg, Style { Width: 40, Height: 20 } }", files=(("bad.svg", "not a document"),))
 
 
 def test_it_matches_the_python_widgets_drawing(tmp_path):
     from tess_ui.widgets import svg
 
-    view, _ = opened(tmp_path, "  - {widget: Svg, name: s, src: square.svg, style: {width: 40, height: 20, foreground: primary}}\n")
+    view, _ = opened(tmp_path, "Svg { Name: s, Src: square.svg, Style { Width: 40, Height: 20, Foreground: primary } }")
     py_app = App(width=100, height=100)
     py = svg(py_app.window, tmp_path / "Views" / "square.svg", 40, 20, color="primary")
     assert py.node.get("svg") == view.node("root.s").get("svg")

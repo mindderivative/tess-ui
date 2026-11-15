@@ -5,7 +5,12 @@ import pytest
 from tess_ui import App, Signal, ViewModel, tokens
 from tess_ui.shipped import shipped_views
 
-OPTIONS = "[{value: day, label: Day}, {value: week, label: Week, icon: home}, {value: month, label: Month}, {value: year, label: Year, disabled: true}]"
+OPTIONS = """Options {
+        Item { Value: day, Label: Day }
+        Item { Value: week, Label: Week, Icon: home }
+        Item { Value: month, Label: Month }
+        Item { Value: year, Label: Year, Disabled: true }
+      }"""
 
 
 class VM(ViewModel):
@@ -19,8 +24,19 @@ class VM(ViewModel):
 
 def opened(tmp_path, widget, **kwargs):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {flex_direction: vertical, align_content: top_left, width: 400, height: 200, padding: 16}\nchildren:\n" + widget)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Align_Content: top_left, Width: 400, Height: 200, Padding: 16 }}
+  Children {{
+    {widget}
+  }}
+}}
+""")
     app = App(root=tmp_path, **kwargs)
     app.bind(VM)
     view = app.open_view("Main")
@@ -30,8 +46,17 @@ def opened(tmp_path, widget, **kwargs):
     return view, app.bindings.viewmodel_for("main")
 
 
-SINGLE = f"  - {{widget: SegmentedButton, name: sb, options: {OPTIONS}, selected: \"{{{{ view }}}}\"}}\n"
-MULTI = f"  - {{widget: SegmentedButton, name: sb, options: {OPTIONS}, selected: \"{{{{ days }}}}\", multiple: true}}\n"
+SINGLE = f"""SegmentedButton {{
+      Name: sb
+      {OPTIONS}
+      Selected: <| view |>
+    }}"""
+MULTI = f"""SegmentedButton {{
+      Name: sb
+      {OPTIONS}
+      Selected: <| days |>
+      Multiple: true
+    }}"""
 
 
 def seg(view, value):
@@ -102,7 +127,7 @@ def test_a_disabled_segment_is_dimmed_and_cannot_be_chosen(tmp_path):
 
 
 def test_the_whole_thing_disabled(tmp_path):
-    view, vm = opened(tmp_path, SINGLE.replace("}\n", ", disabled: true}\n"))
+    view, vm = opened(tmp_path, SINGLE.replace("Name: sb", "Name: sb\n      Disabled: true"))
     assert all(seg(view, v).get("opacity") == 0.38 for v in ("day", "week", "month"))
     click(view, "day")
     assert vm.view.get() == "week"
@@ -177,9 +202,19 @@ def test_options_can_change(tmp_path):
             self.options = Signal([{"value": "a", "label": "A"}, {"value": "b", "label": "B"}])
 
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {width: 400, height: 100}\nchildren:\n"
-        "  - {widget: SegmentedButton, name: sb, options: \"{{ options }}\", selected: a}\n")
+    (tmp_path / "Views" / "Main_View.tdl").write_text("""---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {
+  Name: main
+  Style { Width: 400, Height: 100 }
+  Children {
+    SegmentedButton { Name: sb, Options: <| options |>, Selected: a }
+  }
+}
+""")
     app = App(root=tmp_path)
     app.bind(Dynamic)
     view = app.open_view("Main")
@@ -219,8 +254,19 @@ def test_a_role_from_a_signal_is_refused_because_a_role_cannot_change(tmp_path):
             self.r = Signal("button")
 
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {width: 100, height: 100}\nchildren:\n  - {widget: Container, name: c, a11y: {role: \"{{ r }}\"}}\n")
+    (tmp_path / "Views" / "Main_View.tdl").write_text("""---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {
+  Name: main
+  Style { Width: 100, Height: 100 }
+  Children {
+    Container { Name: c, A11y { Role: <| r |> } }
+  }
+}
+""")
     app = App(root=tmp_path)
     app.bind(Roles)
     with pytest.raises(LoadError, match="a11y role cannot change while the view is open"):
