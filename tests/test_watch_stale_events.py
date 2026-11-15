@@ -12,10 +12,8 @@ import queue
 import time
 from pathlib import Path
 
-import yaml
-
-from tess_ui.spec.load import load_view
-from tess_ui.spec.watch import FileWatcher, ViewWatcher
+from tess_ui import App
+from tess_ui.spec.watch import ComposedWatcher, FileWatcher
 
 
 class FakeHandle:
@@ -24,6 +22,10 @@ class FakeHandle:
 
     def call_soon(self, fn):
         self.queued.put(fn)
+
+
+def _rect(width: int) -> str:
+    return f"---\nTDL: 0.2\nName: Home\n---\nRect {{ Style {{ Width: {width}, Height: 10, Background: \"#000000\" }} }}\n"
 
 
 def _stale_event(path: Path) -> None:
@@ -48,8 +50,8 @@ def _real_edit_until_queued(handle, path, text, attempts=40):
 
 
 def test_a_file_watcher_skips_an_event_that_changed_nothing(tmp_path):
-    theme = tmp_path / "Brand_Theme.yaml"
-    theme.write_text("styles: []\n", encoding="utf-8")
+    theme = tmp_path / "Brand_Theme.tdl"
+    theme.write_text("---\nTDL: 0.2\nName: Brand\n---\nTheme { Dark: false }\n", encoding="utf-8")
     rebuilt, handle = [], FakeHandle()
     watcher = FileWatcher([theme], lambda: rebuilt.append(theme.read_text(encoding="utf-8")), lambda _: None)
     watcher.start(handle)
@@ -59,8 +61,8 @@ def test_a_file_watcher_skips_an_event_that_changed_nothing(tmp_path):
             _stale_event(theme)
             _settle(0.3)
         assert rebuilt == [] and handle.queued.empty()
-        _real_edit_until_queued(handle, theme, "styles: [{kind: Rect, style: {opacity: 0.5}}]\n")
-        assert rebuilt[-1].startswith("styles: [{kind: Rect")
+        _real_edit_until_queued(handle, theme, "---\nTDL: 0.2\nName: Brand\n---\nTheme { Dark: true }\n")
+        assert rebuilt[-1].endswith("Theme { Dark: true }\n")
         _settle()
         while not handle.queued.empty():  # a real edit can make more than one event
             handle.queued.get()
@@ -74,12 +76,12 @@ def test_a_file_watcher_skips_an_event_that_changed_nothing(tmp_path):
 
 
 def test_a_view_watcher_skips_an_event_that_changed_nothing(tmp_path):
-    view_file = tmp_path / "Home_View.yaml"
-    view_file.write_text(yaml.safe_dump({"id": "root", "kind": "Rect", "style": {"width": 10, "height": 10,
-                                                                                "background": "#000000"}}),
-                         encoding="utf-8")
-    view = load_view(view_file)
-    watcher, handle = ViewWatcher(view, view_file), FakeHandle()
+    (tmp_path / "Views").mkdir()
+    view_file = tmp_path / "Views" / "Home_View.tdl"
+    view_file.write_text(_rect(10), encoding="utf-8")
+    app = App(root=tmp_path)
+    view = app.open_view("Home")
+    watcher, handle = ComposedWatcher(view, view.source, app._composed_docs, lambda library, doc: app._composed_rules(library, doc=doc)[0]), FakeHandle()
     watcher.start(handle)
     try:
         _settle()
@@ -87,9 +89,9 @@ def test_a_view_watcher_skips_an_event_that_changed_nothing(tmp_path):
             _stale_event(view_file)
             _settle(0.3)
         assert handle.queued.empty()
-        apply = _real_edit_until_queued(handle, view_file, yaml.safe_dump(
-            {"id": "root", "kind": "Rect", "style": {"width": 42, "height": 10, "background": "#000000"}}))
+        apply = _real_edit_until_queued(handle, view_file, _rect(42))
         apply()
+        view.window.advance(16)
         assert view.node("root").get("width") == 42.0
     finally:
         watcher.stop()

@@ -6,7 +6,8 @@ import pytest
 from tess_ui import Signal
 from tess_ui.expr import BUILTIN_FUNCTIONS, ExprError, compile_expr, compile_statements, compile_template
 from tess_ui.spec.compose import Composer
-from tess_ui.spec.nodes import LoadError, load_marked, parse_view
+from tess_ui.spec.nodes import LoadError, parse_view
+from tess_ui.spec.tdl_stylesheet import load_marked_tdl_stylesheet
 from tess_ui.spec.rules import RuleSheet
 
 
@@ -28,8 +29,15 @@ def actions(path):
 actions.names = ("copy", "focus", "after", "every")
 
 
-def view(body, root="widget: Container\n"):
-    return parse_view(root + "children:\n" + body, "Main_View.yaml")
+def view(body):
+    """A view whose root Container holds `body` (the TDL of its children, indented four spaces)."""
+    return parse_view(f"---\nTDL: 0.2\nName: Main\n---\nContainer {{\n  Children {{\n{body}  }}\n}}\n", "Main_View.tdl")
+
+
+def click(*steps, name="r"):
+    """A Rect whose `On_Click` runs `steps` (each the TDL of one `Set` or `Call` block)."""
+    lines = "".join(f"          {step}\n" for step in steps)
+    return f"    Rect {{\n      Name: {name}\n      Handlers {{\n        On_Click {{\n{lines}        }}\n      }}\n    }}\n"
 
 
 def composed(body, vm=None, **kwargs):
@@ -65,22 +73,22 @@ def test_a_call_inside_a_comprehension_is_checked_too():
 
 def test_an_unknown_function_in_a_template_names_the_file_and_line():
     with pytest.raises(LoadError) as caught:
-        view("  - widget: Text\n    name: t\n    text: 'a {{ nosuch(1) }} b'\n")
-    assert caught.value.file == "Main_View.yaml" and caught.value.line == 5
+        view("    Text {\n      Name: t\n      Text: a <| nosuch(1) |> b\n    }\n")
+    assert caught.value.file == "Main_View.tdl" and caught.value.line == 9
     assert "'nosuch' is not a function you can call here" in str(caught.value)
 
 
 def test_an_unknown_function_in_an_if_and_a_for_is_a_load_error():
     with pytest.raises(LoadError, match="'nosuch' is not a function"):
-        view("  - {widget: Rect, name: r, if: 'nosuch(count)'}\n")
+        view("    If <| nosuch(count) |> {\n      Rect { Name: r }\n    }\n")
     with pytest.raises(LoadError, match="'nosuch' is not a function"):
-        view("  - {for: i in nosuch(3), key: i, widget: Rect, name: r}\n")
+        view("    For i In <| nosuch(3) |> Key <| i |> {\n      Rect { Name: r }\n    }\n")
 
 
 def test_an_unknown_function_in_a_stylesheet_rule_is_a_load_error():
-    text = "styles:\n  - widget: Text\n    style: {width: '{{ nosuch(1) }}'}\n"
+    text = "---\nTDL: 0.2\nName: S\n---\nStyles {\n  Rule { Widget: Text, Style { Width: <| nosuch(1) |> } }\n}\n"
     with pytest.raises(LoadError, match="'nosuch' is not a function"):
-        RuleSheet.of(load_marked(text, "S_Stylesheet.yaml"), "S_Stylesheet.yaml", text)
+        RuleSheet.of(load_marked_tdl_stylesheet(text, "S_Stylesheet.tdl"), "S_Stylesheet.tdl", text)
 
 
 # -- a handler: found when the view is composed, against what the scope knows ---------------------------------------------
@@ -88,24 +96,25 @@ def test_an_unknown_function_in_a_stylesheet_rule_is_a_load_error():
 
 def test_an_unknown_function_in_a_handler_is_a_load_error_with_the_line():
     with pytest.raises(LoadError) as caught:
-        composed("  - {widget: Rect, name: r, handlers: {on_click: 'count = nosuch(1)'}}\n")
+        composed(click("Set { Target: count, Value: <| nosuch(1) |> }"))
     assert "'nosuch' is not a function or an action you can call here" in str(caught.value)
-    assert caught.value.line == 3
+    assert caught.value.line == 10
 
 
 def test_an_unknown_call_statement_in_a_handler_is_a_load_error_that_offers_near_names():
     with pytest.raises(LoadError) as caught:
-        composed("  - {widget: Rect, name: r, handlers: {on_click: 'bmup(2)'}}\n")
+        composed(click('Call { Action: "bmup", Args: [<| 2 |>] }'))
     assert caught.value.hint == "did you mean 'bump'"
 
 
 def test_a_viewmodel_method_a_builtin_action_and_a_builtin_function_still_load():
     vm = VM()
-    composed("  - {widget: Rect, name: r, handlers: {on_click: 'bump(2); copy(str(count)); count = clamp(count + 1, 0, 5)'}}\n", vm)
+    composed(click('Call { Action: "bump", Args: [<| 2 |>] }', 'Call { Action: "copy", Args: [<| str(count) |>] }',
+                   "Set { Target: count, Value: <| clamp(count + 1, 0, 5) |> }"), vm)
 
 
 def test_without_the_actions_a_handlers_names_cannot_be_judged_so_it_loads():
-    Composer({}, VM()).compose(view("  - {widget: Rect, name: r, handlers: {on_click: 'copy(\"x\")'}}\n"))
+    Composer({}, VM()).compose(view(click('Call { Action: "copy", Args: [<| "x" |>] }')))
 
 
 def test_compile_statements_keeps_the_calls_it_saw():
@@ -118,25 +127,25 @@ def test_compile_statements_keeps_the_calls_it_saw():
 
 def test_an_unknown_action_in_a_timer_text_is_a_load_error():
     with pytest.raises(LoadError, match="'nosuch' is not a function or an action you can call here"):
-        composed("  - {widget: Rect, name: r, handlers: {on_click: 'after(10, \"nosuch()\")'}}\n")
+        composed(click('Call { Action: "after", Args: [<| 10 |>, <| "nosuch()" |>] }'))
 
 
 def test_an_unknown_action_in_an_every_text_is_a_load_error():
     with pytest.raises(LoadError, match="'nosuch' is not a function or an action"):
-        composed("  - {widget: Rect, name: r, handlers: {on_click: 'every(10, \"nosuch()\")'}}\n")
+        composed(click('Call { Action: "every", Args: [<| 10 |>, <| "nosuch()" |>] }'))
 
 
 def test_a_timer_text_inside_a_timer_text_is_checked_too():
-    nested = r"""  - {widget: Rect, name: r, handlers: {on_click: "after(10, 'after(5, \"nosuch()\")')"}}""" + "\n"
+    nested = click('Call { Action: "after", Args: [<| 10 |>, <| \'after(5, "nosuch()")\' |>] }')
     with pytest.raises(LoadError, match="'nosuch' is not a function or an action"):
         composed(nested)
 
 
 def test_a_good_timer_text_loads_and_runs():
-    comp = composed("  - {widget: Rect, name: r, handlers: {on_click: 'after(10, \"count += 1\")'}}\n")
+    comp = composed(click('Call { Action: "after", Args: [<| 10 |>, <| "count += 1" |>] }'))
     assert comp.find("root.r") is not None
 
 
 def test_a_timer_text_that_is_an_action_name_or_not_a_literal_is_left_alone():
-    composed("  - {widget: Rect, name: r, handlers: {on_click: 'after(10, \"copy\")'}}\n")
-    composed("  - {widget: Rect, name: s, handlers: {on_click: 'after(10, bump)'}}\n")
+    composed(click('Call { Action: "after", Args: [<| 10 |>, <| "copy" |>] }'))
+    composed(click('Call { Action: "after", Args: [<| 10 |>, <| bump |>] }', name="s"))

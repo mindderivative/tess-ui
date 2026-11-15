@@ -14,7 +14,6 @@ import tess_re
 
 import reference
 import tess_ui
-from tess_ui.spec import ViewWatcher
 from tess_ui.view import View
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
@@ -410,21 +409,23 @@ def test_set_stylesheet_and_set_theme_restyle_in_place_and_keep_state():
 def test_view_watcher_reloads_a_tesserae_view(tmp_path):
     import os
 
-    from tess_ui.spec.load import build_view_spec
+    from tess_ui import App
+    from tess_ui.spec.watch import ComposedWatcher
 
-    path = tmp_path / "Home_View.yaml"
-    path.write_text("id: root\nkind: Container\nchildren:\n"
-                    "  - {id: label, kind: Text, text: {content: Hi, font_family: Roboto, font_size: 14},"
-                    ' style: {foreground: "#000000", width: 50, height: 20}}\n')
-    spec, frames, _ = build_view_spec(path)
-    view = _view(spec)
-    label = view.node("label")
-    watcher = ViewWatcher(view, path)
+    path = tmp_path / "Views" / "Home_View.tdl"
+    path.parent.mkdir()
+    path.write_text("---\nTDL: 0.2\nName: Home\n---\nContainer {\n  Children {\n"
+                    "    Text { Name: label, Text: Hi, Typography_Role: body_large, Style { Foreground: on_surface, Width: 50, Height: 20 } }\n  }\n}\n")
+    app = App(root=tmp_path)
+    view = app.open_view("Home")
+    label = view.node("root.label")
+    watcher = ComposedWatcher(view, view.source, app._composed_docs, lambda library, doc: app._composed_rules(library, doc=doc)[0])
     before = path.stat().st_mtime_ns
-    path.write_text(path.read_text().replace("content: Hi", "content: Bye"))
+    path.write_text(path.read_text().replace("Text: Hi", "Text: Bye"))
     os.utime(path, ns=(before + 10**9, before + 10**9))
     assert watcher.poll() is True
-    assert view.node("label") == label and label.get("text") == "Bye"
+    view.window.advance(16)
+    assert view.node("root.label") == label and label.get("text") == "Bye"
 
 
 def test_reconcile_keeps_focus_on_an_unchanged_field():

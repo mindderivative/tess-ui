@@ -1,4 +1,4 @@
-"""`ViewWatcher.start(handle)`: event-driven hot reload on a background
+"""`ComposedWatcher.start(handle)` (a `ViewWatcher`): event-driven hot reload on a background
 thread (`watchfiles`), handing each reload to the event loop through
 `tess_re`'s thread-safe `LoopHandle.call_soon` (tess_re M87).
 
@@ -21,7 +21,8 @@ from pathlib import Path
 
 import pytest
 
-from tess_ui.spec import ViewWatcher, load_view
+from tess_ui import App
+from tess_ui.spec.watch import ComposedWatcher
 
 
 class FakeHandle:
@@ -41,10 +42,11 @@ def _write(path: Path, text: str) -> Path:
 
 
 def _text_view(content: str, extra: str = "") -> str:
+    """The view `Home_View.tdl`: a Container with the label, then `extra` (the TDL of more children, indented four spaces)."""
     return (
-        "id: root\nkind: Container\nchildren:\n"
-        f"  - {{id: label, kind: Text, text: {{content: {content}, font_family: Roboto, font_size: 16}},"
-        ' style: {width: 100, height: 20, foreground: "#000000"}}\n' + extra
+        "---\nTDL: 0.2\nName: Home\n---\nContainer {\n  Children {\n"
+        f"    Text {{ Name: label, Text: {content}, Typography_Role: body_large, Style {{ Width: 100, Height: 20, Foreground: on_surface }} }}\n"
+        + extra + "  }\n}\n"
     )
 
 
@@ -60,13 +62,14 @@ def _edit_until_queued(handle: FakeHandle, path: Path, text: str, attempts: int 
 
 @pytest.fixture
 def started(tmp_path: Path):
-    """A loaded view with a started watcher; stopped afterwards."""
+    """An opened view with a started watcher; stopped afterwards."""
     watchers = []
 
     def start(text: str):
-        view_path = _write(tmp_path / "Home_View.yaml", text)
-        view = load_view(view_path)
-        watcher = ViewWatcher(view, view_path)
+        view_path = _write(tmp_path / "Views" / "Home_View.tdl", text)
+        app = App(root=tmp_path, search=[tmp_path / "more"])  # `more/` is a folder views are read from
+        view = app.open_view("Home")
+        watcher = ComposedWatcher(view, view.source, app._composed_docs, lambda library, doc: app._composed_rules(library, doc=doc)[0])
         handle = FakeHandle()
         watcher.start(handle)
         watchers.append(watcher)
@@ -82,20 +85,22 @@ def test_an_edit_is_queued_from_the_watcher_thread_and_applies_on_this_one(start
     assert watcher.running
 
     reload = _edit_until_queued(handle, view_path, _text_view("Goodbye"))
-    assert view.node("label").get("text") == "Hello"  # nothing applied until the loop runs it
+    assert view.node("root.label").get("text") == "Hello"  # nothing applied until the loop runs it
     reload()
 
-    assert view.node("label").get("text") == "Goodbye"
+    view.window.advance(16)
+    assert view.node("root.label").get("text") == "Goodbye"
     assert handle.threads and all(name.startswith("tesserae-watch:") for name in handle.threads)
 
 
-def test_an_included_file_edit_is_picked_up(started, tmp_path: Path):
-    part = _write(tmp_path / "parts" / "footer.yaml", _text_view("v1").replace("id: root", "id: footer", 1))
-    _, view, _, handle = started("id: page\nkind: Container\nchildren:\n  - include: parts/footer.yaml\n")
+def test_an_edit_of_a_view_it_calls_is_picked_up(started, tmp_path: Path):
+    part = _write(tmp_path / "Views" / "Footer_View.tdl", _text_view("v1").replace("Name: Home", "Name: Footer"))
+    _, view, _, handle = started("---\nTDL: 0.2\nName: Home\n---\nContainer {\n  Children {\n    Footer { Name: foot }\n  }\n}\n")
 
-    _edit_until_queued(handle, part, _text_view("v2").replace("id: root", "id: footer", 1))()
+    _edit_until_queued(handle, part, _text_view("v2").replace("Name: Home", "Name: Footer"))()
+    view.window.advance(16)
 
-    assert view.node("label").get("text") == "v2"
+    assert view.node("root.foot.label").get("text") == "v2"
 
 
 def test_a_broken_edit_is_logged_and_the_watcher_carries_on(started, logs):
@@ -103,40 +108,40 @@ def test_a_broken_edit_is_logged_and_the_watcher_carries_on(started, logs):
 
     message = logs.edit_until(
         view_path,
-        "id: root\nkind: Container\nchildren:\n  - {id: x, component: NoSuchThing}\n",
+        _text_view("Hello", "    NoSuchThing { Name: x }\n"),
         "ERROR",
-        "unknown component 'NoSuchThing'",
+        "NoSuchThing",
     )
     assert message.startswith(f"hot reload of {view_path} failed: ")
     logs.wait_for("DEBUG", "traceback")  # logged just after the ERROR, on the watcher thread
     assert handle.queued.empty()  # nothing for the loop to run
     assert watcher.running
-    assert view.node("label").get("text") == "Hello"
+    assert view.node("root.label").get("text") == "Hello"
 
     _edit_until_queued(handle, view_path, _text_view("Fixed"))()
-    assert view.node("label").get("text") == "Fixed"
+    assert view.node("root.label").get("text") == "Fixed"
     assert f"reloaded {view_path}" in logs.messages("INFO")
 
 
 def test_a_reload_tre_rejects_is_logged_on_the_loop(started, logs):
     view_path, view, _, handle = started(_text_view("Hello"))
 
-    rejected = _edit_until_queued(handle, view_path, "id: root\nkind: NotARealKind\n")
+    rejected = _edit_until_queued(handle, view_path, _text_view("Hello").replace("Typography_Role: body_large, ", ""))
     rejected()  # logs instead of raising, so tess_re's loop carries on
 
-    message = logs.wait_for("ERROR", "NotARealKind")
-    assert message.startswith(f"hot reload of {view_path} failed: {view_path}: ")
-    assert view.node("label").get("text") == "Hello"
+    message = logs.wait_for("ERROR", "typography_role")
+    assert message.startswith(f"hot reload of {view_path} failed: ") and "typography_role" in message
+    assert view.node("root.label").get("text") == "Hello"
 
 
 def test_a_new_dependency_in_a_new_directory_is_watched_after_reload(started, tmp_path: Path):
-    rect = 'id: extra\nkind: Rect\nstyle: {{width: {n}, height: {n}, background: "#112233"}}\n'
-    extra = _write(tmp_path / "more" / "extra.yaml", rect.format(n=5))
+    rect = "---\nTDL: 0.2\nName: Extra\n---\nRect {{ Style {{ Width: {n}, Height: {n}, Background: \"#112233\" }} }}\n"
+    extra = _write(tmp_path / "more" / "Extra_View.tdl", rect.format(n=5))
     view_path, view, watcher, handle = started(_text_view("Hello"))
 
-    _edit_until_queued(handle, view_path, _text_view("Hello", "  - include: more/extra.yaml\n"))()
+    _edit_until_queued(handle, view_path, _text_view("Hello", "    Extra { Name: extra }\n"))()
     assert extra.resolve() in watcher.files
-    assert view.node("extra") is not None
+    assert view.node("root.extra") is not None
 
     _edit_until_queued(handle, extra, rect.format(n=9))()
 

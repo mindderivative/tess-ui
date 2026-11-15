@@ -97,7 +97,7 @@ def test_the_frame_follows_dark_mode(app):
     assert not _close(light, dark, 40) and sum(dark[:3]) < sum(light[:3])
 
 
-def test_the_dock_zones_are_where_the_yaml_puts_them(app):
+def test_the_dock_zones_are_where_the_view_puts_them(app):
     dock = app._opened["Window"].dock_host("root.body.dock")
     assert dock.size("left") == 220 and dock.size("right") == 260 and dock.size("bottom") == 160
 

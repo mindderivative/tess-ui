@@ -1,13 +1,13 @@
 """#268: `ViewDialog` reads its view with the older loader. A view in the current language used to fail inside it with `every widget needs an id`; it is now refused up
-front with what to write instead (a modal `widget: Overlay` in a view), by path and by name, and a view in the older syntax still works."""
+front with what to write instead (a modal `widget: Overlay` in a view), by path and by name."""
 
 import pytest
 
 from tess_ui import App
 from tess_ui.overlays import ViewDialog
 
-CURRENT = "name: Settings\nwidget: Container\nchildren:\n  - {widget: Text, name: t, text: hi, typography_role: body_large, style: {foreground: on_surface}}\n"
-OLDER = "id: root\nkind: Container\nchildren:\n  - id: body\n    kind: Text\n    text: {content: Hello, typography_role: body_large}\n    style: {foreground: on_surface}\n"
+CURRENT = ('---\nTDL: 0.2\nName: Settings\n---\nContainer {\n  Name: Settings\n  Children {\n'
+           '    Text { Name: t, Text: hi, Typography_Role: body_large, Style { Foreground: on_surface } }\n  }\n}\n')
 
 
 def _app(tmp_path=None):
@@ -15,40 +15,20 @@ def _app(tmp_path=None):
 
 
 def test_a_current_language_view_by_path_is_refused_and_says_what_to_do(tmp_path):
-    (tmp_path / "Settings_View.yaml").write_text(CURRENT)
+    (tmp_path / "Settings_View.tdl").write_text(CURRENT)
     app = _app()
     with pytest.raises(ValueError) as caught:
-        ViewDialog(app.window, tmp_path / "Settings_View.yaml")
+        ViewDialog(app.window, tmp_path / "Settings_View.tdl")
     text = str(caught.value)
-    assert "Settings_View.yaml" in text and "widget: Overlay" in text and "surface.dismiss" in text and "current language" in text
+    assert "Settings_View.tdl" in text and "widget: Overlay" in text and "surface.dismiss" in text and "current language" in text
 
 
 def test_a_current_language_view_by_name_is_refused_too(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Settings_View.yaml").write_text(CURRENT)
+    (tmp_path / "Views" / "Settings_View.tdl").write_text(CURRENT)
     app = _app(tmp_path)
     with pytest.raises(ValueError, match="widget: Overlay"):
         ViewDialog(app.window, "Settings")
-
-
-def test_a_view_in_the_older_syntax_still_opens_in_it(tmp_path):
-    (tmp_path / "Settings_View.yaml").write_text(OLDER)
-    app = _app()
-    dialog = ViewDialog(app.window, tmp_path / "Settings_View.yaml", width=320, height=200)
-    dialog.open()
-    app.window.advance(16)
-    assert dialog.is_open and dialog.content.node("body").get("text") == "Hello"
-
-
-def test_a_file_that_is_missing_or_broken_still_gets_the_older_loaders_own_message(tmp_path):
-    app = _app()
-    with pytest.raises(Exception) as missing:
-        ViewDialog(app.window, tmp_path / "Nope_View.yaml")
-    assert "widget: Overlay" not in str(missing.value)
-    (tmp_path / "Bad_View.yaml").write_text("widget: [")
-    with pytest.raises(Exception) as broken:
-        ViewDialog(app.window, tmp_path / "Bad_View.yaml")
-    assert "widget: Overlay" not in str(broken.value)
 
 
 def test_the_replacement_the_message_names_works(tmp_path):
@@ -63,10 +43,10 @@ def test_the_replacement_the_message_names_works(tmp_path):
             self.show = Signal(True)
 
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstyle: {width: 300, height: 200, background: surface}\nchildren:\n"
-        "  - widget: Overlay\n    name: dlg\n    open: \"{{ show }}\"\n    modal: true\n    style: {width: 200, height: 100, background: surface_container_high}\n"
-        "    children:\n      - {widget: Button, name: close, label: Close, handlers: {on_click: surface.dismiss}}\n")
+    (tmp_path / "Views" / "Main_View.tdl").write_text(
+        "---\nTDL: 0.2\nName: main\n---\nContainer {\n  Name: main\n  Style { Width: 300, Height: 200, Background: surface }\n  Children {\n"
+        "    Overlay {\n      Name: dlg\n      Open: <| show |>\n      Modal: true\n      Style { Width: 200, Height: 100, Background: surface_container_high }\n"
+        "      Children {\n        Button { Name: close, Label: Close, Handlers { On_Click { Call { Action: \"surface.dismiss\" } } } }\n      }\n    }\n  }\n}\n")
     app = App(root=tmp_path, width=300, height=200)
     app.bind(VM)
     view = app.open_view("Main")
