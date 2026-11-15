@@ -364,8 +364,8 @@ A resolved theme. Build one with `Theme.resolve(...)`.
 
 ### Loading files
 
-- `load_theme(path: str | Path) -> dict[str, Any]`: Reads a theme YAML file into the dict `tess_re`'s `default_theme_spec=`/`custom_theme_spec=` take, for `load_view` or for switching themes later:
-- `load_stylesheet(path: str | Path) -> dict[str, Any]`: Reads a stylesheet YAML file into the dict `tess_re`'s `stylesheet_spec=` takes.
+- `load_theme(path: str | Path) -> dict[str, Any]`: Reads a theme file (`*_Theme.tdl`) into the dict `tess_re`'s `default_theme_spec=`/`custom_theme_spec=` take, for `load_view` or for switching themes later:
+- `load_stylesheet(path: str | Path) -> dict[str, Any]`: Reads a stylesheet file (`*_Stylesheet.tdl`) into the dict `tess_re`'s `stylesheet_spec=` takes.
 
 ### Tokens
 

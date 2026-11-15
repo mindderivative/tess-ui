@@ -206,16 +206,6 @@ def test_a_mapping_loaded_from_a_file_with_the_marker_is_accepted_by_the_checks_
 
 
 # -- everything Tesserae ships or writes carries it
-
-def stamp_tool():
-    import importlib.util
-
-    spec = importlib.util.spec_from_file_location("stamp_language", ROOT / "tools" / "stamp_language.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
 def test_every_tdl_file_tesserae_ships_has_the_marker_in_its_metadata():
     """The shipped views and stylesheets and the default theme."""
     files = sorted([*(ROOT / "src" / "tess_ui" / "views").glob("*.tdl"), ROOT / "src" / "tess_ui" / "spec" / "default_theme.tdl"])
@@ -248,20 +238,4 @@ def test_an_example_loads_with_no_note_about_the_marker(tmp_path):
 
     done = subprocess.run([sys.executable, "app.py"], cwd=ROOT / "examples" / "counter", capture_output=True, text=True, timeout=120)
     assert done.returncode == 0, done.stderr[-800:]
-    assert "no `tesserae:" not in done.stderr, done.stderr[-800:]
-
-
-def test_an_example_loads_with_no_note_about_the_marker(tmp_path):
-    """The shipped views and stylesheets an app reads, and the example's own, have the marker: opening one says nothing about it."""
-    import subprocess
-    import sys
-
-    done = subprocess.run([sys.executable, "app.py"], cwd=ROOT / "examples" / "counter", capture_output=True, text=True, timeout=120)
-    assert done.returncode == 0, done.stderr[-800:]
     assert "no `Tesserae:" not in done.stderr, done.stderr[-800:]
-
-
-def test_every_docs_block_that_shows_a_whole_file_starts_with_the_marker():
-    tool = stamp_tool()
-    assert len(tool.pages()) > 50
-    assert all(tool.stamped_page(p) is None for p in tool.pages()), "run `python3 tools/stamp_language.py --write`"

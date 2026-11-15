@@ -2776,7 +2776,7 @@ Resolves every `include:` and expands every `component:` entry in `yaml_text`, r
 load_stylesheet(path: str | Path) -> dict[str, Any]
 ```
 
-Reads a stylesheet YAML file into the dict `tess_re`'s `stylesheet_spec=` takes. A file whose keys say it is a view or a theme is refused, naming the file to give it.
+Reads a stylesheet file (`*_Stylesheet.tdl`) into the dict `tess_re`'s `stylesheet_spec=` takes. A file whose keys say it is a view or a theme is refused, naming the file to give it.
 
 ### `load_theme`
 
@@ -2784,7 +2784,7 @@ Reads a stylesheet YAML file into the dict `tess_re`'s `stylesheet_spec=` takes.
 load_theme(path: str | Path) -> dict[str, Any]
 ```
 
-Reads a theme YAML file into the dict `tess_re`'s `default_theme_spec=`/`custom_theme_spec=` take, for `load_view` or for switching themes later:
+Reads a theme file (`*_Theme.tdl`) into the dict `tess_re`'s `default_theme_spec=`/`custom_theme_spec=` take, for `load_view` or for switching themes later:
 
 ### `load_view`
 

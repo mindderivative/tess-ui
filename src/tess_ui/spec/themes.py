@@ -96,15 +96,15 @@ def view_font_families(spec: Any) -> Iterator[str]:
 
 
 def load_theme(path: str | Path) -> dict[str, Any]:
-    """Reads a theme YAML file into the dict `tess_re`'s
+    """Reads a theme file (`*_Theme.tdl`) into the dict `tess_re`'s
     `default_theme_spec=`/`custom_theme_spec=` take, for `load_view` or
     for switching themes later:
 
     ```python
-    view.set_theme(custom_theme_spec=load_theme("themes/Dark.yaml"))
+    view.set_theme(custom_theme_spec=load_theme("themes/Dark_Theme.tdl"))
     ```
 
-    Warns (`tess_ui.fonts.FontFallbackWarning`) if its `typography:`
+    Warns (`tess_ui.fonts.FontFallbackWarning`) if its `Typography`
     names a font family that isn't available.
     """
     theme = _load_mapping(path, "a theme", THEME_SUFFIX)
@@ -119,7 +119,7 @@ def load_theme(path: str | Path) -> dict[str, Any]:
 
 
 def load_stylesheet(path: str | Path) -> dict[str, Any]:
-    """Reads a stylesheet YAML file into the dict `tess_re`'s
+    """Reads a stylesheet file (`*_Stylesheet.tdl`) into the dict `tess_re`'s
     `stylesheet_spec=` takes. A file whose keys say it is a view or a theme is refused, naming the file to give it."""
     sheet = _load_mapping(path, "a stylesheet", STYLESHEET_SUFFIX)
     hint = looks_like(sheet, "stylesheet", Path(path).name)
