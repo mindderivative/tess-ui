@@ -5,7 +5,7 @@ import pytest
 
 from tess_ui import Computed, Signal
 from tess_ui.spec import widgets as W
-from tess_ui.expr import ExprError
+from tess_ui.tel import ExprError
 from tess_ui.spec.compose import MAX_DEPTH, Composer, Scope
 from tess_ui.spec.nodes import LoadError, parse_view
 from tess_ui.spec.tdl import load_marked_tdl

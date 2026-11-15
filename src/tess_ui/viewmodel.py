@@ -16,10 +16,9 @@ The ViewModel base class (`tess_ui.ViewModel`) keeps its 0.4.x form, `ViewModel(
 
 from __future__ import annotations
 
-import ast
 from typing import Any, Callable, Iterable, Iterator, Optional
 
-from tess_ui.expr import BUILTIN_FUNCTIONS, Expr, NestedTemplate, Statements, Template
+from tess_ui.tel import BUILTIN_NAMES, Expr, NestedTemplate, Statements, Template
 from tess_ui.reactive import Computed, Signal, untrack
 from tess_ui.spec.compose import Composer, Composition, Instance
 from tess_ui.spec.nodes import Node, ViewDoc
@@ -231,17 +230,9 @@ def open_view(doc: ViewDoc, bindings: Bindings, views: Any = None, *, actions: O
 
 
 def _called_names(statements: Statements) -> Iterator[str]:
-    for statement in statements.body:
-        for call in ast.walk(statement):
-            if isinstance(call, ast.Call):
-                parts = []
-                func = call.func
-                while isinstance(func, ast.Attribute):
-                    parts.append(func.attr)
-                    func = func.value
-                if isinstance(func, ast.Name):
-                    parts.append(func.id)
-                    yield ".".join(reversed(parts))
+    for call in statements.called:
+        if call.callee is not None:
+            yield call.callee
 
 
 def _expressions(node: Node) -> Iterator[tuple[Any, tuple[int, int]]]:
@@ -307,7 +298,7 @@ def check_view(doc: ViewDoc, viewmodel: Any) -> list[str]:
                 reads = set(item.statements.names)
                 calls = list(_called_names(item.statements))
             for name in sorted(reads):
-                if name in local or name in _RESERVED_READS or name in BUILTIN_FUNCTIONS or name in _ACTION_FAMILIES or ("read", name) in seen:
+                if name in local or name in _RESERVED_READS or name in BUILTIN_NAMES or name in _ACTION_FAMILIES or ("read", name) in seen:
                     continue
                 seen.add(("read", name))
                 if viewmodel is None:
@@ -315,7 +306,7 @@ def check_view(doc: ViewDoc, viewmodel: Any) -> list[str]:
                 elif not hasattr(viewmodel, name) or name.startswith("_"):
                     blame(at, f"'{name}' is not defined by {label}")
             for path in calls:
-                if path.split(".")[0] in _ACTION_FAMILIES or path.split(".")[0] in local or path in BUILTIN_FUNCTIONS or ("call", path) in seen:
+                if path.split(".")[0] in _ACTION_FAMILIES or path.split(".")[0] in local or path in BUILTIN_NAMES or ("call", path) in seen:
                     continue
                 seen.add(("call", path))
                 target = viewmodel

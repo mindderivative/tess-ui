@@ -23,9 +23,11 @@ class VM(ViewModel):
 @pytest.fixture(autouse=True)
 def _today_is_some_other_day(monkeypatch):
     """The picker marks today; these tests pick days around 2026-10-09 and must not depend on the day they run. A test that cares sets its own."""
-    from tess_ui import expr
+    import datetime
 
-    monkeypatch.setitem(expr.BUILTIN_FUNCTIONS, "current_date", lambda: "2001-01-01")
+    from tess_ui import tel
+
+    monkeypatch.setattr(tel, "_local_today", lambda: datetime.date(2001, 1, 1))
 
 
 def opened(tmp_path, props="", date="2026-10-09", show=True):
@@ -126,9 +128,11 @@ def test_the_chosen_day_is_a_primary_circle_and_days_of_other_months_are_faint(t
 
 
 def test_today_is_outlined(tmp_path, monkeypatch):
-    from tess_ui import expr
+    import datetime
 
-    monkeypatch.setitem(expr.BUILTIN_FUNCTIONS, "current_date", lambda: "2026-10-14")
+    from tess_ui import tel
+
+    monkeypatch.setattr(tel, "_local_today", lambda: datetime.date(2026, 10, 14))
     view, _ = opened(tmp_path)
     c = view.node("root.dp.panel.grid.day[2026-10-14].circle")
     assert c.get("stroke_width") == 1.0 and c.get("stroke_color") == role(view, "primary")
@@ -194,9 +198,11 @@ def test_days_outside_the_limits_are_disabled_and_do_not_respond(tmp_path):
 
 
 def test_no_date_shows_none_and_starts_on_the_month_of_today(tmp_path, monkeypatch):
-    from tess_ui import expr
+    import datetime
 
-    monkeypatch.setitem(expr.BUILTIN_FUNCTIONS, "current_date", lambda: "2027-02-03")
+    from tess_ui import tel
+
+    monkeypatch.setattr(tel, "_local_today", lambda: datetime.date(2027, 2, 3))
     view, _ = opened(tmp_path, date="")
     assert p(view, "header.chosen").get("text") == "No date" and p(view, "month_bar.month").get("text") == "February 2027"
 
