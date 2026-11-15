@@ -5,10 +5,11 @@ from tess_ui import App
 
 def opened(tmp_path, width=400):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(
-        "name: main\nwidget: Container\nstate: {w: 0, h: 0}\nstyle: {flex_direction: vertical, width: 100%, height: 100%}\nchildren:\n"
-        "  - {widget: Container, name: box, measured_width: '{{ w }}', measured_height: '{{ h }}', style: {width: 100%, height: 50}}\n"
-        "  - {widget: Text, name: t, text: \"{{ str(w) + 'x' + str(h) }}\", typography_role: body_medium, style: {foreground: on_surface}}\n")
+    (tmp_path / "Views" / "Main_View.tdl").write_text(
+        "---\nTDL: 0.2\nName: main\n---\nContainer {\n  Name: main\n  State { W: 0, H: 0 }\n"
+        "  Style { Flex_Direction: vertical, Width: 100%, Height: 100% }\n  Children {\n"
+        "    Container { Name: box, Measured_Width: <| w |>, Measured_Height: <| h |>, Style { Width: 100%, Height: 50 } }\n"
+        "    Text { Name: t, Text: <| str(w) + 'x' + str(h) |>, Typography_Role: body_medium, Style { Foreground: on_surface } }\n  }\n}\n")
     app = App(root=tmp_path, width=width, height=300)
     view = app.open_view("Main")
     app.show("main")

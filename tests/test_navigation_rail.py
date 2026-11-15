@@ -5,7 +5,7 @@ import pytest
 from tess_ui import App, Signal, ViewModel, tokens
 from tess_ui.shipped import shipped_views
 
-ITEMS = "[{value: home, label: Home, icon: home}, {value: search, label: Search, icon: search, badge: 3}, {value: menu, label: Menu, icon: menu}]"
+ITEMS = "Items { Item { Value: home, Label: Home, Icon: home } Item { Value: search, Label: Search, Icon: search, Badge: 3 } Item { Value: menu, Label: Menu, Icon: menu } }"
 
 
 class VM(ViewModel):
@@ -18,11 +18,17 @@ class VM(ViewModel):
 
 def opened(tmp_path, props="", children=""):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{flex_direction: horizontal, align_content: top_left, width: 500, height: 600}}
-children:
-  - {{widget: NavigationRail, name: r, items: {ITEMS}, selected: "{{{{ page }}}}"{', ' + props if props else ''}{', children: [' + children + ']' if children else ''}}}
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: horizontal, Align_Content: top_left, Width: 500, Height: 600 }}
+  Children {{
+    NavigationRail {{ Name: r, {ITEMS}, Selected: <| page |>{', ' + props if props else ''}{', Children { ' + children + ' }' if children else ''} }}
+  }}
+}}
 """)
     app = App(root=tmp_path)
     app.bind(VM)
@@ -65,14 +71,21 @@ class B(ViewModel):
 def screens_app(tmp_path, props=""):
     (tmp_path / "Views").mkdir(exist_ok=True)
     for name in ("a", "b"):
-        (tmp_path / "Views" / f"{name.upper()}_View.yaml").write_text(f"""name: {name}
-widget: Container
-style: {{flex_direction: horizontal, align_content: top_left, width: 500, height: 600}}
-children:
-  - widget: NavigationRailScreens
-    name: r
-    {props}
-    items: [{{screen: a, label: Home, icon: home}}, {{screen: b, label: Settings, icon: search, badge: 2}}]
+        (tmp_path / "Views" / f"{name.upper()}_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: {name}
+---
+Container {{
+  Name: {name}
+  Style {{ Flex_Direction: horizontal, Align_Content: top_left, Width: 500, Height: 600 }}
+  Children {{
+    NavigationRailScreens {{
+      Name: r
+      {props}
+      Items {{ Item {{ Screen: a, Label: Home, Icon: home }} Item {{ Screen: b, Label: Settings, Icon: search, Badge: 2 }} }}
+    }}
+  }}
+}}
 """)
     app = App(root=tmp_path, width=500, height=600)
     app.bind(A)
@@ -153,7 +166,7 @@ def test_one_tab_stop_and_the_arrows_move_and_choose(tmp_path):
 
 
 def test_expanded_it_is_220_wide_with_the_label_beside_the_icon(tmp_path):
-    view, _ = opened(tmp_path, "expanded: true")
+    view, _ = opened(tmp_path, "Expanded: true")
     assert view.node("root.r").get("layout_width") == 220.0
     pill = part(view, "home", "pill")
     assert pill.get("layout_height") == 56.0 and "root.r.destinations.item[home].label" not in view._built.specs
@@ -163,7 +176,8 @@ def test_expanded_it_is_220_wide_with_the_label_beside_the_icon(tmp_path):
 
 
 def test_a_header_and_a_footer_hold_your_own_content(tmp_path):
-    children = "{widget: Container, name: fab, slot: header, style: {width: 56, height: 56, background: primary}}, {widget: Container, name: help, slot: footer, style: {width: 40, height: 40, background: secondary}}"
+    children = ("Container { Name: fab, Slot: header, Style { Width: 56, Height: 56, Background: primary } } "
+                "Container { Name: help, Slot: footer, Style { Width: 40, Height: 40, Background: secondary } }")
     view, _ = opened(tmp_path, children=children)
     fab, help_ = view.node("root.r.fab"), view.node("root.r.help")
     assert fab.get("layout_y") < item(view, "home").get("layout_y") < help_.get("layout_y")
@@ -173,21 +187,27 @@ def test_a_header_and_a_footer_hold_your_own_content(tmp_path):
 def test_the_destinations_can_be_grouped_at_the_centre_or_bottom(tmp_path):
     top, _ = opened(tmp_path)
     (tmp_path / "c").mkdir()
-    centre, _ = opened(tmp_path / "c", "alignment: center")
+    centre, _ = opened(tmp_path / "c", "Alignment: center")
     (tmp_path / "d").mkdir()
-    bottom, _ = opened(tmp_path / "d", "alignment: bottom")
+    bottom, _ = opened(tmp_path / "d", "Alignment: bottom")
     y = [item(v, "home").get("layout_y") for v in (top, centre, bottom)]
     assert y[0] < y[1] < y[2]
 
 
 def test_a_disabled_destination_does_not_respond(tmp_path):
-    items = "[{value: home, label: Home, icon: home, disabled: true}, {value: search, label: Search, icon: search}]"
+    items = "Items { Item { Value: home, Label: Home, Icon: home, Disabled: true } Item { Value: search, Label: Search, Icon: search } }"
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{flex_direction: horizontal, width: 500, height: 600}}
-children:
-  - {{widget: NavigationRail, name: r, items: {items}, selected: "{{{{ page }}}}"}}
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: horizontal, Width: 500, Height: 600 }}
+  Children {{
+    NavigationRail {{ Name: r, {items}, Selected: <| page |> }}
+  }}
+}}
 """)
     app = App(root=tmp_path)
     app.bind(VM)
@@ -222,15 +242,16 @@ def test_a_screens_rail_is_the_same_look_and_has_a_badge(tmp_path):
 
 
 def test_an_expanded_screens_rail(tmp_path):
-    app, a, _ = screens_app(tmp_path, "expanded: true")
+    app, a, _ = screens_app(tmp_path, "Expanded: true")
     assert a.node("root.r").get("layout_width") == 220.0 and a.node("root.r.item[a].pill").get("layout_height") == 56.0
 
 
 def test_one_screen_item_on_its_own(tmp_path):
     (tmp_path / "Views").mkdir()
     for name in ("a", "b"):
-        (tmp_path / "Views" / f"{name.upper()}_View.yaml").write_text(
-            f"name: {name}\nwidget: Container\nstyle: {{width: 200, height: 200}}\nchildren:\n  - {{widget: NavigationRailScreen, name: n, screen: b, label: Go, icon: home}}\n")
+        (tmp_path / "Views" / f"{name.upper()}_View.tdl").write_text(
+            f"---\nTDL: 0.2\nName: {name}\n---\nContainer {{\n  Name: {name}\n  Style {{ Width: 200, Height: 200 }}\n"
+            "  Children { NavigationRailScreen { Name: n, Screen: b, Label: Go, Icon: home } }\n}\n")
     app = App(root=tmp_path, width=200, height=200)
     app.bind(A)
     app.bind(B)
@@ -245,6 +266,6 @@ def test_one_screen_item_on_its_own(tmp_path):
 
 
 def test_an_expanded_rail_has_20_pixels_of_padding_and_44_above_the_first_destination(tmp_path):
-    view, _ = opened(tmp_path, "expanded: true")
+    view, _ = opened(tmp_path, "Expanded: true")
     home = item(view, "home")
     assert home.get("layout_x") == view.node("root.r").get("layout_x") + 20 and home.get("layout_y") == view.node("root.r").get("layout_y") + 44

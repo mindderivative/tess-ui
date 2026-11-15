@@ -17,17 +17,24 @@ class VM(ViewModel):
         self.clicks.set(self.clicks.get() + 1)
 
 
-def opened(tmp_path, props="label: Cut"):
+def opened(tmp_path, props="Label: Cut"):
     (tmp_path / "Views").mkdir(exist_ok=True)
     lines = "\n    ".join(props.split(", "))
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{width: 300, height: 200, align_content: top_left}}
-children:
-  - widget: MenuItem
-    name: mi
-    {lines}
-    handlers: {{on_click: bump}}
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Width: 300, Height: 200, Align_Content: top_left }}
+  Children {{
+    MenuItem {{
+      Name: mi
+      {lines}
+      Handlers {{ On_Click: bump }}
+    }}
+  }}
+}}
 """)
     app = App(root=tmp_path)
     app.bind(VM)
@@ -58,29 +65,29 @@ def test_a_row_is_48_tall_as_wide_as_its_place_with_12_pixels_each_side(tmp_path
 
 
 def test_an_icon_is_24_pixels_with_12_before_the_label(tmp_path):
-    view, _ = opened(tmp_path, "label: Cut, icon: home")
+    view, _ = opened(tmp_path, "Label: Cut, Icon: home")
     icon, label = mi(view, "lead"), mi(view, "label")
     assert (icon.get("layout_width"), icon.get("fill")) == (24.0, role(view, "on_surface_variant")) and label.get("layout_x") == icon.get("layout_x") + 24 + 12
 
 
 def test_trailing_text_sits_at_the_far_end_in_on_surface_variant(tmp_path):
-    view, _ = opened(tmp_path, "label: Cut, trailing_text: Ctrl+X")
+    view, _ = opened(tmp_path, "Label: Cut, Trailing_Text: \"Ctrl+X\"")
     t = mi(view, "trailing")
     assert t.get("text") == "Ctrl+X" and t.get("fill") == role(view, "on_surface_variant")
     assert t.get("layout_x") + t.get("layout_width") == mi(view).get("layout_x") + 300 - 12
 
 
 def test_a_chevron_marks_a_submenu(tmp_path):
-    view, _ = opened(tmp_path, "label: Share, submenu: true")
+    view, _ = opened(tmp_path, "Label: Share, Submenu: true")
     c = mi(view, "chevron")
     assert c.get("layout_x") + 24 == mi(view).get("layout_x") + 300 - 12 and mi(view).get("expanded") is True
 
 
 def test_checked_shows_a_check_unchecked_keeps_the_room_and_null_is_no_check(tmp_path):
-    view, _ = opened(tmp_path, "label: Bold, checked: true")
+    view, _ = opened(tmp_path, "Label: Bold, Checked: true")
     assert mi(view).get("checked") is True and view._built.specs["root.mi.lead"]["icon"] == {"name": "check"}
     (tmp_path / "u").mkdir()
-    off, _ = opened(tmp_path / "u", "label: Bold, checked: false")
+    off, _ = opened(tmp_path / "u", "Label: Bold, Checked: false")
     assert off.node("root.mi.label").get("layout_x") == off.node("root.mi").get("layout_x") + 12 + 24 + 12 and off.node("root.mi").get("checked") is False
     (tmp_path / "n").mkdir()
     none, _ = opened(tmp_path / "n")
@@ -95,6 +102,6 @@ def test_it_is_a_pressable_menu_item_named_by_its_label_that_runs_the_calls_hand
 
 
 def test_a_disabled_item_is_dimmed_and_does_not_respond(tmp_path):
-    view, vm = opened(tmp_path, "label: Cut, disabled: true")
+    view, vm = opened(tmp_path, "Label: Cut, Disabled: true")
     view.window.simulate("click", node=mi(view))
     assert vm.clicks.get() == 0 and mi(view).get("disabled") is True and mi(view).get("opacity") < 0.5

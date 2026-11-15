@@ -130,18 +130,24 @@ class VM(ViewModel):
         self.log.append(list(self.items.get()))
 
 
-CALL = '{widget: ListEditor, name: le, value: "{{ items }}", on_change: changed%s}'
+CALL = "ListEditor { Name: le, Value: <| items |>, On_Change: changed%s }"
 
 
 def opened(tmp_path, call=CALL, options="", items=None, dark=False, size=(560, 420)):
     (tmp_path / "Views").mkdir(parents=True, exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""tesserae: 0.6
-name: main
-widget: Container
-style: {{flex_direction: vertical, gap: 16, padding: 16, width: {size[0]}, height: {size[1]}}}
-children:
-  - {call % options}
-  - {{widget: Rect, name: elsewhere, style: {{width: 80, height: 40, background: surface_variant}}}}
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+Tesserae: "0.6"
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Gap: 16, Padding: 16, Width: {size[0]}, Height: {size[1]} }}
+  Children {{
+    {call % options}
+    Rect {{ Name: elsewhere, Style {{ Width: 80, Height: 40, Background: surface_variant }} }}
+  }}
+}}
 """)
     app = App(root=tmp_path, width=size[0], height=size[1], theme_seed=(0x67, 0x50, 0xA4, 0xFF), dark=dark)
     app.bind(VM)
@@ -314,7 +320,7 @@ def test_the_empty_list_says_so_and_add_makes_the_first_item(tmp_path):
 
 
 def test_min_items_stops_remove_and_says_why_and_max_items_stops_add(tmp_path):
-    view, vm = opened(tmp_path, options=", min_items: 3, max_items: 3")
+    view, vm = opened(tmp_path, options=", Min_Items: 3, Max_Items: 3")
     assert node(view, 0, "remove").get("disabled") is True and view.node("root.le.actions.add").get("disabled") is True
     press(view, node(view, 0, "remove"))
     press(view, view.node("root.le.actions.add"))
@@ -337,7 +343,7 @@ COUNTER = itertools.count(900)
 
 
 def test_a_remove_command_at_the_fewest_says_why(tmp_path):
-    view, vm = opened(tmp_path, options=", min_items: 3")
+    view, vm = opened(tmp_path, options=", Min_Items: 3")
     command(view, "remove 0")
     assert "at least 3 items" in ctl(view).message.get() and view.node("root.le.message_text").get("text") == ctl(view).message.get()
     assert vm.items.get() == ["alpha", "beta", "gamma"]
@@ -347,7 +353,7 @@ def test_a_remove_command_at_the_fewest_says_why(tmp_path):
 
 
 def test_a_number_row_has_a_spin_box_bounded_by_least_and_most_and_an_int_stays_an_int(tmp_path):
-    view, vm = opened(tmp_path, options=", item_kind: number, least: 0, most: 10", items=[1, 2, 3])
+    view, vm = opened(tmp_path, options=", Item_Kind: number, Least: 0, Most: 10", items=[1, 2, 3])
     assert shown_numbers(view) == ["1", "2", "3"] and vm.log == []
     press(view, number(view, 1).increment)
     assert vm.items.get() == [1, 3, 3] and all(isinstance(x, int) for x in vm.items.get()) and vm.log == [[1, 3, 3]]
@@ -365,13 +371,13 @@ def shown_numbers(view):
 
 
 def test_a_number_row_with_a_step_below_one_writes_floats(tmp_path):
-    view, vm = opened(tmp_path, options=", item_kind: number, step: 0.5", items=[1.0])
+    view, vm = opened(tmp_path, options=", Item_Kind: number, Step: 0.5", items=[1.0])
     press(view, number(view, 0).increment)
     assert vm.items.get() == [1.5]
 
 
 def test_a_number_typed_in_the_spin_box_is_written_on_change(tmp_path):
-    view, vm = opened(tmp_path, options=", item_kind: number, least: 0, most: 100", items=[1])
+    view, vm = opened(tmp_path, options=", Item_Kind: number, Least: 0, Most: 100", items=[1])
     box = number(view, 0)
     box.input.focus()
     view.window.simulate("key_down", key="end")
@@ -386,7 +392,7 @@ def flag(view, i):
 
 
 def test_a_bool_row_has_a_switch_and_writes_true_and_false(tmp_path):
-    view, vm = opened(tmp_path, options=", item_kind: bool", items=[True, False])
+    view, vm = opened(tmp_path, options=", Item_Kind: bool", items=[True, False])
     assert [flag(view, i).selected.get() for i in (0, 1)] == [True, False]
     press(view, flag(view, 1).node)
     assert vm.items.get() == [True, True] and vm.log == [[True, True]]
@@ -394,7 +400,7 @@ def test_a_bool_row_has_a_switch_and_writes_true_and_false(tmp_path):
     assert vm.items.get() == [False, True] and all(type(x) is bool for x in vm.items.get())
 
 
-CHOICES = ", item_kind: enum, choices: [{value: low, label: Low}, {value: mid, label: Middle}, {value: high, label: High}]"
+CHOICES = (", Item_Kind: enum, Choices { Item { Value: low, Label: Low } Item { Value: mid, Label: Middle } Item { Value: high, Label: High } }")
 
 
 def test_an_enum_row_is_a_button_that_shows_the_label_and_opens_a_menu_of_the_choices(tmp_path):
@@ -414,7 +420,7 @@ def test_an_enum_value_that_is_not_a_choice_is_shown_as_the_first_and_left_as_it
 
 
 def test_a_colour_row_is_a_swatch_that_opens_the_picker_and_writes_the_colour(tmp_path):
-    view, vm = opened(tmp_path, options=", item_kind: colour", items=["#ff0000", "#00ff00"])
+    view, vm = opened(tmp_path, options=", Item_Kind: colour", items=["#ff0000", "#00ff00"])
     trigger = view.node(f"{row(view, 1)}.cell.colour.trigger")
     assert trigger.get("fill") == (0, 255, 0, 255) and trigger.get("role") == "button"
     press(view, trigger)
@@ -428,13 +434,13 @@ def test_a_colour_row_is_a_swatch_that_opens_the_picker_and_writes_the_colour(tm
 
 
 def test_a_colour_that_is_not_one_is_shown_as_black_and_left_alone(tmp_path):
-    view, vm = opened(tmp_path, options=", item_kind: colour", items=["red"])
+    view, vm = opened(tmp_path, options=", Item_Kind: colour", items=["red"])
     assert view.node(f"{row(view, 0)}.cell.colour.trigger").get("fill") == (0, 0, 0, 255) and vm.items.get() == ["red"] and vm.log == []
 
 
 def test_an_item_kind_that_is_not_one_is_named_and_the_list_is_shown_as_text(tmp_path):
     with pytest.raises(LoadError, match="item_kind"):
-        opened(tmp_path, options=", item_kind: date")
+        opened(tmp_path, options=", Item_Kind: date")
 
 
 # -- the keyboard, a11y, disabled, the look ------------------------------------------------------------------------------------------------
@@ -457,7 +463,7 @@ def test_the_keyboard_reaches_each_widget_in_a_row_and_its_buttons_and_enter_pre
 
 
 def test_the_names_a_screen_reader_hears(tmp_path):
-    view, vm = opened(tmp_path, options=", label: Shortcuts")
+    view, vm = opened(tmp_path, options=", Label: Shortcuts")
     assert view.node("root.le").get("role") == "group" and view.node("root.le").get("label") == "Shortcuts"
     assert view.node("root.le.rows").get("role") == "list" and view.node("root.le.rows").get("label") == "Shortcuts"
     assert view.node(row(view, 1)).get("role") == "listitem" and view.node(row(view, 1)).get("label") == "Shortcuts 2"
@@ -473,7 +479,7 @@ def test_a_removed_row_or_a_new_one_renames_the_others_by_their_place(tmp_path):
 
 
 def test_disabled_it_edits_nothing(tmp_path):
-    view, vm = opened(tmp_path, options=", disabled: true")
+    view, vm = opened(tmp_path, options=", Disabled: true")
     assert ctl(view).disabled.get()
     for part in ("up", "down", "remove"):
         assert node(view, 1, part).get("disabled") is True
@@ -488,7 +494,7 @@ def test_disabled_it_edits_nothing(tmp_path):
 
 def test_an_unknown_property_of_the_editor_is_named(tmp_path):
     with pytest.raises(LoadError, match="colour"):
-        opened(tmp_path, call="{widget: ListEditor, name: le, colour: red%s}")
+        opened(tmp_path, call="ListEditor { Name: le, Colour: red%s }")
 
 
 def test_text_typed_and_not_yet_committed_is_committed_by_pressing_a_button_and_goes_with_its_row(tmp_path):
@@ -528,7 +534,7 @@ def test_an_enum_opens_from_the_keyboard_and_escape_closes_it_and_the_choice_is_
 
 
 def test_a_colour_popup_closes_with_escape_and_changes_nothing(tmp_path):
-    view, vm = opened(tmp_path, options=", item_kind: colour", items=["#ff0000"])
+    view, vm = opened(tmp_path, options=", Item_Kind: colour", items=["#ff0000"])
     press(view, view.node(f"{row(view, 0)}.cell.colour.trigger"))
     assert view._shown_layers
     key(view, "escape", n=6)

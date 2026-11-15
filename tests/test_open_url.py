@@ -55,19 +55,25 @@ class VM(ViewModel):
         self.ok = Signal(None)
 
 
-VIEW = """name: main
-widget: Container
-style: {width: 200, height: 100}
-children:
-  - {widget: Container, name: go, handlers: {on_click: "ok = open_url(site)"}}
-  - {widget: Container, name: mail, handlers: {on_click: "open_url('mailto:hi@example.com')"}}
-  - {widget: Container, name: bad, handlers: {on_click: "open_url('file:///etc/passwd')"}}
+VIEW = """---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Width: 200, Height: 100 }
+  Children {
+    Container { Name: go, Handlers { On_Click { Set { Target: ok, Value: <| open_url(site) |> } } } }
+    Container { Name: mail, Handlers { On_Click { Call { Action: "open_url", Args: [<| 'mailto:hi@example.com' |>] } } } }
+    Container { Name: bad, Handlers { On_Click { Call { Action: "open_url", Args: [<| 'file:///etc/passwd' |>] } } } }
+  }
+}
 """
 
 
 def opened(tmp_path):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(VIEW)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(VIEW)
     app = App(root=tmp_path)
     app.bind(VM)
     view = app.open_view("Main")

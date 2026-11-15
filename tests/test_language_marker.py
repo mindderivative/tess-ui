@@ -1,5 +1,5 @@
-"""#292: every Tesserae YAML file starts with `tesserae: <line>` (the release series, `marker.LINE`), and the loaders check it. In this line it is optional
-(a missing key is a note, a wrong or misplaced one is an error, a file of an older line is refused until `migrate-yaml` moves it); it is meant to be required from a later line."""
+"""#292: every Tesserae TDL file says in its metadata block which release series it was written for (`Tesserae: "0.6"`, `marker.LINE`), and the loaders check it. In this line it is
+optional (a missing key is a note, a wrong one is an error, a file of an older line is refused); it is meant to be required from a later line."""
 
 import tomllib
 from pathlib import Path
@@ -8,16 +8,27 @@ import pytest
 from loguru import logger
 
 from tess_ui.spec import marker
-from tess_ui.spec.nodes import LoadError, load_marked, parse_view
+from tess_ui.spec.nodes import LoadError, parse_data
 from tess_ui.spec.rules import load_rule_sheet
+from tess_ui.spec.tdl import load_marked_tdl
 from tess_ui.spec.themes import load_stylesheet, load_theme
 
 ROOT = Path(__file__).resolve().parent.parent
-VIEW = "widget: Container\nstyle: {width: 10, height: 10}\n"
+BODY = "Container { Style { Width: 10, Height: 10 } }\n"
 
 
-def problem(text):
-    return marker.scan(text).problem
+def doc(body=BODY, series=None, name="A"):
+    """A TDL file's text: the metadata block (with the `Tesserae` line when `series` is given: its text as written) and `body`."""
+    tesserae = f"Tesserae: {series}\n" if series is not None else ""
+    return f"---\nTDL: 0.2\nName: {name}\n{tesserae}---\n{body}"
+
+
+def quoted(series):
+    return f'"{series}"'
+
+
+def parse(text, file="A_View.tdl"):
+    return parse_data(load_marked_tdl(text, file), text, file)
 
 
 def test_the_line_is_the_first_two_parts_of_the_package_version():
@@ -26,111 +37,92 @@ def test_the_line_is_the_first_two_parts_of_the_package_version():
     assert marker.LINE == ".".join(version.split(".")[:2])
 
 
-@pytest.mark.parametrize("text", [
-    f"tesserae: {marker.LINE}\n{VIEW}", f"tesserae: {marker.LINE}   # the line\n{VIEW}", f"tesserae:\t{marker.LINE}\n{VIEW}",
-    f"tesserae: {marker.LINE}\r\n{VIEW}", f"\ufefftesserae: {marker.LINE}\n{VIEW}", f"tesserae: {marker.LINE}", f"tesserae:{marker.LINE}\n{VIEW}",
-])
-def test_a_marker_on_the_first_line_is_found_and_is_fine(text):
-    scanned = marker.scan(text)
-    assert scanned.found and scanned.value == marker.LINE and scanned.problem is None
+@pytest.mark.parametrize("series", [quoted(marker.LINE), marker.LINE, f'"{marker.LINE}"   # the line'])
+def test_a_marker_in_the_metadata_is_fine(series):
+    assert parse(doc(series=series)).root.widget == "Container"
 
 
 def test_no_marker_is_not_a_problem_in_this_line():
-    scanned = marker.scan(VIEW)
-    assert not scanned.found and scanned.problem is None
+    assert parse(doc()).root.widget == "Container"
 
 
-@pytest.mark.parametrize("text, line", [
-    (f"# a header\ntesserae: {marker.LINE}\n{VIEW}", 2), (f"\ntesserae: {marker.LINE}\n{VIEW}", 2), (f"---\ntesserae: {marker.LINE}\n{VIEW}", 2),
-    (f"{VIEW}tesserae: {marker.LINE}\n", 3),
-])
-def test_a_marker_that_is_not_the_first_line_is_an_error_naming_where_it_is(text, line):
-    scanned = marker.scan(text)
-    assert scanned.line == line and "first line" in scanned.problem and f"tesserae: {marker.LINE}" in scanned.problem
-
-
-@pytest.mark.parametrize("value", ["", "abc", "0.5.1", "0", "05", "'0.5'", '"0.5"'])
+@pytest.mark.parametrize("value", ["", "abc", "0.5.1", "0", "05", "0.5."])
 def test_a_value_that_is_not_a_line_says_what_to_write(value):
-    assert f"write `tesserae: {marker.LINE}`" in problem(f"tesserae: {value}\n{VIEW}")
+    with pytest.raises(LoadError) as caught:
+        parse(doc(series=quoted(value)))
+    assert f"write `Tesserae: {marker.LINE}`" in str(caught.value)
 
 
-def test_a_newer_line_says_to_upgrade_and_an_older_one_to_migrate():
-    newer = problem("tesserae: 0.99\n" + VIEW)
-    assert "written for Tesserae 0.99" in newer and "this is" in newer and "upgrade" in newer
-    older = problem("tesserae: 0.4\n" + VIEW)
-    assert "written for Tesserae 0.4" in older and "tesserae migrate-yaml" in older
-    assert "upgrade" in problem("tesserae: 1.0\n" + VIEW)
+def test_a_newer_line_says_to_upgrade_and_an_older_one_is_refused():
+    with pytest.raises(LoadError) as caught:
+        parse(doc(series=quoted("0.99")))
+    assert "written for Tesserae 0.99" in str(caught.value) and "this is" in str(caught.value) and "upgrade" in str(caught.value)
+    with pytest.raises(LoadError) as caught:
+        parse(doc(series=quoted("0.4")))
+    assert "written for Tesserae 0.4" in str(caught.value)
+    with pytest.raises(LoadError) as caught:
+        parse(doc(series=quoted("1.0")))
+    assert "upgrade" in str(caught.value)
 
 
-def test_a_key_further_down_a_mapping_is_not_the_marker():
-    assert not marker.scan("widget: Container\nchildren:\n  - widget: Text\n    tesserae: 0.5\n").found
-    assert problem("widget: Container\nchildren:\n  - widget: Text\n    tesserae: 0.5\n") is None
+def test_a_property_of_a_node_called_tesserae_is_not_the_marker():
+    mapping = load_marked_tdl(doc("Container { Children { Text { Tesserae: \"0.5\" } } }\n"), "A_View.tdl")
+    assert mapping["children"][0]["tesserae"] == "0.5"
 
 
 # -- the loaders
 
-def test_a_view_with_the_marker_loads_as_one_without(tmp_path):
-    with_key = load_marked(f"tesserae: {marker.LINE}\n{VIEW}", "A_View.yaml")
-    without = load_marked(VIEW, "A_View.yaml")
+def test_a_view_with_the_marker_loads_as_one_without():
+    with_key = load_marked_tdl(doc(series=quoted(marker.LINE)), "A_View.tdl")
+    without = load_marked_tdl(doc(), "A_View.tdl")
     assert dict(with_key) == dict(without) and "tesserae" not in with_key and "tesserae" not in with_key.key_at and "tesserae" not in with_key.val_at
 
 
 def test_the_positions_of_everything_else_are_the_same_with_the_marker():
-    """The key is the first line and the rest is where it was written, so an error's line is the file's line."""
-    body = "widget: Container\nchildren:\n  - widget: Text\n    colour: red\n"
+    """The marker is a line of the metadata block, so an error's line in the body is the file's line."""
+    body = "Container {\n  Children {\n    Text { Colour: red }\n  }\n}\n"
     lines = []
-    for text in (f"tesserae: {marker.LINE}\n" + body, body):
+    for text in (doc(body, series=quoted(marker.LINE)), doc(body)):
         with pytest.raises(LoadError) as caught:
-            parse_view(text, "A_View.yaml")
+            parse(text)
         lines.append((caught.value.line, "colour" in str(caught.value)))
-    assert lines[0] == (lines[1][0] + 1, True) and lines[1][1], "each file's own line: the marker is line 1 and shifts nothing but its own position"
+    assert lines[0] == (lines[1][0] + 1, True) and lines[1][1], "each file's own line: the marker is a line of its own and shifts the lines after it by one"
 
 
-def test_a_view_with_a_misplaced_marker_is_a_load_error_at_the_marker():
+def test_a_view_of_another_line_is_a_load_error_at_the_marker():
     with pytest.raises(LoadError) as caught:
-        parse_view(f"# header\ntesserae: {marker.LINE}\n{VIEW}", "A_View.yaml")
-    error = caught.value
-    assert "A_View.yaml:2" in str(error) and "first line" in str(error)
-
-
-def test_a_view_of_another_line_is_a_load_error_at_line_one():
-    with pytest.raises(LoadError) as caught:
-        parse_view("tesserae: 0.99\n" + VIEW, "A_View.yaml")
-    assert "A_View.yaml:1" in str(caught.value) and "upgrade" in str(caught.value)
-
-
-def test_a_view_root_with_the_marker_has_no_unknown_property():
-    doc = parse_view(f"tesserae: {marker.LINE}\n{VIEW}", "A_View.yaml")
-    assert doc.root.widget == "Container"
+        parse(doc(series=quoted("0.99")))
+    assert "A_View.tdl:4" in str(caught.value) and "upgrade" in str(caught.value)
 
 
 def test_a_rule_sheet_file_with_the_marker_loads(tmp_path):
-    path = tmp_path / "A_Stylesheet.yaml"
-    path.write_text(f"tesserae: {marker.LINE}\nstyles:\n  - widget: Text\n    style: {{opacity: 1}}\n", encoding="utf-8")
+    path = tmp_path / "A_Stylesheet.tdl"
+    path.write_text(doc("Styles { Rule { Widget: Text, Style { Opacity: 1 } } }\n", series=quoted(marker.LINE)), encoding="utf-8")
     assert len(load_rule_sheet(path).rules) == 1
 
 
 def test_a_theme_and_a_stylesheet_file_with_the_marker_load_without_it(tmp_path):
-    theme = tmp_path / "A_Theme.yaml"
-    theme.write_text(f"tesserae: {marker.LINE}\nseed: '#6750A4'\n", encoding="utf-8")
+    theme = tmp_path / "A_Theme.tdl"
+    theme.write_text(doc('Theme { Seed: "#6750A4" }\n', series=quoted(marker.LINE)), encoding="utf-8")
     assert load_theme(theme) == {"seed": "#6750A4"}
-    sheet = tmp_path / "A_Stylesheet.yaml"
-    sheet.write_text(f"tesserae: {marker.LINE}\nstyles:\n  - widget: Text\n    style: {{opacity: 1}}\n", encoding="utf-8")
+    sheet = tmp_path / "A_Stylesheet.tdl"
+    sheet.write_text(doc("Styles { Rule { Widget: Text, Style { Opacity: 1 } } }\n", series=quoted(marker.LINE)), encoding="utf-8")
     assert list(load_stylesheet(sheet)) == ["styles"]
 
 
-def test_a_theme_file_with_a_misplaced_marker_is_an_error_naming_the_file(tmp_path):
-    theme = tmp_path / "A_Theme.yaml"
-    theme.write_text(f"seed: '#6750A4'\ntesserae: {marker.LINE}\n", encoding="utf-8")
-    with pytest.raises(ValueError, match=r"A_Theme\.yaml.*first line"):
+@pytest.mark.parametrize("series, said", [('"abc"', "write `Tesserae:"), ('"0.99"', "upgrade")])
+def test_a_theme_file_with_a_wrong_marker_is_an_error_naming_the_file(tmp_path, series, said):
+    theme = tmp_path / "A_Theme.tdl"
+    theme.write_text(doc('Theme { Seed: "#6750A4" }\n', series=series), encoding="utf-8")
+    with pytest.raises(ValueError, match=rf"A_Theme\.tdl.*{said}"):
         load_theme(theme)
 
 
 def test_the_shipped_default_theme_loads_with_its_marker():
     from tess_ui.spec.build import shipped_default_theme
 
-    path = ROOT / "src" / "tess_ui" / "spec" / "default_theme.yaml"
-    assert path.read_text(encoding="utf-8").startswith(f"tesserae: {marker.LINE}\n")
+    path = ROOT / "src" / "tess_ui" / "spec" / "default_theme.tdl"
+    assert f'\nTesserae: "{marker.LINE}"\n' in path.read_text(encoding="utf-8")
     assert "tesserae" not in shipped_default_theme() and "styles" in shipped_default_theme()
 
 
@@ -146,159 +138,55 @@ def notes():
 
 
 def test_a_file_without_the_marker_is_noted_once_and_a_file_with_it_is_not(tmp_path, notes):
-    plain = tmp_path / "A_Theme.yaml"
-    plain.write_text("seed: '#6750A4'\n", encoding="utf-8")
-    keyed = tmp_path / "B_Theme.yaml"
-    keyed.write_text(f"tesserae: {marker.LINE}\nseed: '#6750A4'\n", encoding="utf-8")
+    plain = tmp_path / "A_Theme.tdl"
+    plain.write_text(doc('Theme { Seed: "#6750A4" }\n'), encoding="utf-8")
+    keyed = tmp_path / "B_Theme.tdl"
+    keyed.write_text(doc('Theme { Seed: "#6750A4" }\n', series=quoted(marker.LINE)), encoding="utf-8")
     load_theme(plain)
     load_theme(plain)
     load_theme(keyed)
-    mine = [n for n in notes if "A_Theme.yaml" in n or "B_Theme.yaml" in n]
-    assert len(mine) == 1 and "A_Theme.yaml" in mine[0] and f"tesserae: {marker.LINE}" in mine[0] and "first line" in mine[0]
+    mine = [n for n in notes if "A_Theme.tdl" in n or "B_Theme.tdl" in n]
+    assert len(mine) == 1 and "A_Theme.tdl" in mine[0] and f'Tesserae: \"{marker.LINE}\"' in mine[0] and "metadata" in mine[0]
 
 
 def test_text_given_straight_to_the_parser_is_not_noted(notes):
-    parse_view(VIEW, "A_View.yaml")
-    assert not [n for n in notes if "A_View.yaml" in n]
+    parse(doc())
+    assert not [n for n in notes if "A_View.tdl" in n]
 
 
 def test_the_note_is_for_a_view_read_from_disk_too(tmp_path, notes):
     from tess_ui.shipped import ViewLibrary
 
-    (tmp_path / "Z_View.yaml").write_text("name: Z\n" + VIEW, encoding="utf-8")
-    ViewLibrary({"Z": tmp_path / "Z_View.yaml"}).doc("Z")
-    assert [n for n in notes if "Z_View.yaml" in n and "first line" in n]
+    (tmp_path / "Z_View.tdl").write_text(doc(name="Z"), encoding="utf-8")
+    ViewLibrary({"Z": tmp_path / "Z_View.tdl"}).doc("Z")
+    assert [n for n in notes if "Z_View.tdl" in n and "metadata" in n]
 
 
-# -- migrate-yaml writes the marker on what it translates
-
-def test_migrate_yaml_writes_the_marker_first_in_a_translated_view_and_stylesheet(tmp_path):
-    from tess_ui.migrate import migrate_project
-
-    (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text("# The screen.\nid: root\nkind: Container\nstyle: {width: 100, height: 40}\n", encoding="utf-8")
-    (tmp_path / "Styles").mkdir()
-    (tmp_path / "Styles" / "Look_Stylesheet.yaml").write_text(
-        "# Looks.\nstyles:\n  - kind: Container\n    style: {corner_radius: 4}\n", encoding="utf-8")
-    report = migrate_project(tmp_path, write=True)
-    assert not report.failed
-    view = (tmp_path / "Views" / "Main_View.yaml").read_text(encoding="utf-8")
-    sheet = (tmp_path / "Styles" / "Look_Stylesheet.yaml").read_text(encoding="utf-8")
-    for text in (view, sheet):
-        assert text.startswith(f"tesserae: {marker.LINE}\n# "), text  # the key, then the comments it had
-    parse_view(view, "Main_View.yaml")  # it loads: the key is first
-    assert marker.scan(sheet).found and marker.scan(sheet).problem is None
-
-
-def test_migrate_yaml_leaves_a_current_file_alone_marker_or_not(tmp_path):
-    from tess_ui.migrate import migrate_project
-
-    (tmp_path / "Views").mkdir()
-    keyed = f"tesserae: {marker.LINE}\n{VIEW}"
-    (tmp_path / "Views" / "A_View.yaml").write_text(keyed, encoding="utf-8")
-    (tmp_path / "Views" / "B_View.yaml").write_text(VIEW, encoding="utf-8")
-    report = migrate_project(tmp_path, write=True)
-    assert {r.path.name: r.status for r in report.results} == {"A_View.yaml": "current", "B_View.yaml": "current"}
-    assert (tmp_path / "Views" / "A_View.yaml").read_text(encoding="utf-8") == keyed
-    assert (tmp_path / "Views" / "B_View.yaml").read_text(encoding="utf-8") == VIEW
-
-
-# -- a file of an older line: the loaders refuse it and say `migrate-yaml`, so `migrate-yaml` has to be what fixes it
+# -- a file of an older line is refused by the loaders
 
 PREVIOUS = f"{marker.LINE.split('.')[0]}.{int(marker.LINE.split('.')[1]) - 1}"  # the line before this one
-SHEET = "styles:\n  - {widget: Text, style: {opacity: 1}}\n"
-THEME = "seed: '#6750A4'\n"
-KINDS = [("view", "Views/A_View.yaml", VIEW), ("stylesheet", "Styles/A_Stylesheet.yaml", SHEET), ("theme", "Themes/A_Theme.yaml", THEME)]
+SHEET = "Styles { Rule { Widget: Text, Style { Opacity: 1 } } }\n"
+THEME = 'Theme { Seed: "#6750A4" }\n'
+KINDS = [("view", "Views/A_View.tdl", BODY), ("stylesheet", "Styles/A_Stylesheet.tdl", SHEET), ("theme", "Themes/A_Theme.tdl", THEME)]
 
 
 def load_as(kind, path):
     """Loads `path` the way the app does; an older line is a `ValueError` (a `LoadError` is one) for each of the three."""
     if kind == "view":
-        return parse_view(path.read_text(encoding="utf-8"), path.name)
+        return parse(path.read_text(encoding="utf-8"), path.name)
     return load_rule_sheet(path) if kind == "stylesheet" else load_theme(path)
 
 
 @pytest.mark.parametrize("line", [PREVIOUS, "0.1"])
 @pytest.mark.parametrize("kind, relative, body", KINDS)
-def test_a_file_of_an_older_line_is_refused_and_migrate_yaml_brings_it_forward(tmp_path, kind, relative, body, line):
-    from tess_ui.migrate import migrate_project
-
+def test_a_file_of_an_older_line_is_refused(tmp_path, kind, relative, body, line):
     path = tmp_path / relative
     path.parent.mkdir()
-    old = f"tesserae: {line}\n# kept\n{body}"
-    path.write_text(old, encoding="utf-8")
-    with pytest.raises(ValueError, match="tesserae migrate-yaml"):
+    path.write_text(doc(body, series=quoted(line)), encoding="utf-8")
+    with pytest.raises(ValueError, match=f"written for Tesserae {line}"):
         load_as(kind, path)
-    dry = migrate_project(tmp_path)
-    assert {r.path.name: r.status for r in dry.results} == {path.name: "migrated"}
-    assert path.read_text(encoding="utf-8") == old  # a report writes nothing
-    report = migrate_project(tmp_path, write=True)
-    assert report.written and not report.failed
-    assert path.read_text(encoding="utf-8") == f"tesserae: {marker.LINE}\n# kept\n{body}"  # the first line moved and nothing else
-    load_as(kind, path)  # and the file loads
-
-
-def test_only_the_value_on_the_first_line_changes_a_bom_a_comment_and_windows_line_ends_stay(tmp_path):
-    from tess_ui.migrate import migrate_project
-
-    (tmp_path / "Views").mkdir()
-    path = tmp_path / "Views" / "A_View.yaml"
-    raw = "\ufefftesserae: 0.1  # the line\r\n# header\r\nwidget: Container\r\nstyle: {width: 10, height: 10}\r\n"
-    path.write_bytes(raw.encode("utf-8"))
-    assert migrate_project(tmp_path, write=True).written
-    assert path.read_bytes() == raw.replace("0.1", marker.LINE, 1).encode("utf-8")
-
-
-def test_migrate_yaml_leaves_a_file_of_this_line_a_newer_line_or_no_line_alone(tmp_path):
-    from tess_ui.migrate import migrate_project
-
-    files = {"Views/A_View.yaml": f"tesserae: {marker.LINE}\n{VIEW}", "Views/B_View.yaml": VIEW, "Views/C_View.yaml": f"tesserae: 9.9\n{VIEW}",
-             "Themes/Plain_Theme.yaml": THEME, "Themes/Same_Theme.yaml": f"tesserae: {marker.LINE}\n{THEME}", "Themes/Newer_Theme.yaml": f"tesserae: 9.9\n{THEME}"}
-    for relative, text in files.items():
-        (tmp_path / relative).parent.mkdir(exist_ok=True)
-        (tmp_path / relative).write_text(text, encoding="utf-8")
-    report = migrate_project(tmp_path, write=True)
-    assert [r.path.name for r in report.results if r.status == "migrated"] == []
-    assert {relative: (tmp_path / relative).read_text(encoding="utf-8") for relative in files} == files
-
-
-def test_a_view_that_only_has_its_first_line_moved_gets_no_viewmodel_advice(tmp_path):
-    """The advice is for a view that was translated (`views = ...`, no `view` argument): this one is already in the current language."""
-    from tess_ui.migrate import migrate_project
-
-    (tmp_path / "Views").mkdir()
-    (tmp_path / "ViewModels").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"tesserae: 0.1\nname: Main\n{VIEW}", encoding="utf-8")
-    (tmp_path / "ViewModels" / "Main_ViewModel.py").write_text("class MainViewModel:\n    views = 'Main'\n", encoding="utf-8")
-    report = migrate_project(tmp_path)
-    assert [r.status for r in report.results] == ["migrated"] and report.python == []
-
-
-def test_a_file_with_a_problem_of_its_own_still_gets_its_first_line_moved_and_blocks_nothing(tmp_path):
-    """Only the first line is this command's to change: an unrelated mistake in the file is for the loader to report when the app opens it, and no reason to leave the
-    whole project on the old line."""
-    from tess_ui.migrate import migrate_project
-
-    (tmp_path / "Views").mkdir()
-    broken = tmp_path / "Views" / "Broken_View.yaml"
-    good = tmp_path / "Views" / "Good_View.yaml"
-    broken.write_text("tesserae: 0.1\nwidget: NoSuchWidget\n", encoding="utf-8")
-    good.write_text(f"tesserae: 0.1\n{VIEW}", encoding="utf-8")
-    report = migrate_project(tmp_path, write=True)
-    assert report.written and not report.failed
-    for path in (broken, good):
-        assert path.read_text(encoding="utf-8").startswith(f"tesserae: {marker.LINE}\n")
-
-
-def test_the_command_brings_a_project_of_an_older_line_forward(tmp_path, capsys):
-    from tess_ui import cli
-
-    (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"tesserae: 0.1\n{VIEW}", encoding="utf-8")
-    assert cli.main(["migrate-yaml", str(tmp_path), "--write"]) == 0
-    out = capsys.readouterr().out
-    assert "migrated" in out and "Main_View.yaml" in out and f"tesserae: {marker.LINE}" in out and "written" in out
-    assert (tmp_path / "Views" / "Main_View.yaml").read_text(encoding="utf-8").startswith(f"tesserae: {marker.LINE}\n")
+    path.write_text(doc(body, series=quoted(marker.LINE)), encoding="utf-8")
+    load_as(kind, path)  # the same file on this line loads
 
 
 # -- a dict a user loaded from such a file
@@ -328,34 +216,12 @@ def stamp_tool():
     return module
 
 
-def test_every_yaml_file_tesserae_ships_starts_with_the_marker():
-    """The shipped views and stylesheets, the default theme, the project templates (the examples are TDL now): `python3 tools/stamp_language.py --write` fixes it."""
-    tool = stamp_tool()
-    files = tool.files()
+def test_every_tdl_file_tesserae_ships_has_the_marker_in_its_metadata():
+    """The shipped views and stylesheets and the default theme."""
+    files = sorted([*(ROOT / "src" / "tess_ui" / "views").glob("*.tdl"), ROOT / "src" / "tess_ui" / "spec" / "default_theme.tdl"])
     assert len(files) >= 100, len(files)
-    missing = [str(p.relative_to(ROOT)) for p in files if not p.read_bytes().decode("utf-8").startswith(f"{marker.KEY}: {marker.LINE}")]
-    assert not missing, f"{len(missing)} file(s) lack `tesserae: {marker.LINE}` on line 1: {missing[:5]}"
-    assert all(tool.stamped(p) is None for p in files)
-
-
-def test_the_older_syntax_fragments_have_no_marker_it_is_what_marks_them_as_older():
-    for folder in (ROOT / "src" / "tess_ui" / "spec" / "components", ROOT / "tests" / "older_syntax"):
-        for path in folder.rglob("*.yaml"):
-            assert not marker.scan(path.read_text(encoding="utf-8")).found, path
-
-
-def test_the_stamp_tool_prepends_replaces_and_leaves_alone(tmp_path):
-    tool = stamp_tool()
-    def stamp(text):
-        path = tmp_path / "A_View.yaml"
-        path.write_bytes(text.encode("utf-8"))
-        return tool.stamped(path)
-
-    assert stamp("# header\nwidget: Container\n") == f"tesserae: {marker.LINE}\n# header\nwidget: Container\n"
-    assert stamp("# header\r\nwidget: Container\r\n") == f"tesserae: {marker.LINE}\r\n# header\r\nwidget: Container\r\n"
-    assert stamp("tesserae: 0.4\nwidget: Container\n") == f"tesserae: {marker.LINE}\nwidget: Container\n"
-    assert stamp(f"tesserae: {marker.LINE}  # ok\nwidget: Container\n") is None
-    assert stamp(f"tesserae: {marker.LINE}\nwidget: Container\n") is None
+    missing = [str(p.relative_to(ROOT)) for p in files if f'\nTesserae: "{marker.LINE}"\n' not in p.read_text(encoding="utf-8").split("\n---\n", 1)[0] + "\n"]
+    assert not missing, f"{len(missing)} file(s) lack `Tesserae: \"{marker.LINE}\"` in their metadata: {missing[:5]}"
 
 
 def test_a_new_app_and_a_new_screen_are_written_with_the_marker(tmp_path):
@@ -383,6 +249,16 @@ def test_an_example_loads_with_no_note_about_the_marker(tmp_path):
     done = subprocess.run([sys.executable, "app.py"], cwd=ROOT / "examples" / "counter", capture_output=True, text=True, timeout=120)
     assert done.returncode == 0, done.stderr[-800:]
     assert "no `tesserae:" not in done.stderr, done.stderr[-800:]
+
+
+def test_an_example_loads_with_no_note_about_the_marker(tmp_path):
+    """The shipped views and stylesheets an app reads, and the example's own, have the marker: opening one says nothing about it."""
+    import subprocess
+    import sys
+
+    done = subprocess.run([sys.executable, "app.py"], cwd=ROOT / "examples" / "counter", capture_output=True, text=True, timeout=120)
+    assert done.returncode == 0, done.stderr[-800:]
+    assert "no `Tesserae:" not in done.stderr, done.stderr[-800:]
 
 
 def test_every_docs_block_that_shows_a_whole_file_starts_with_the_marker():
