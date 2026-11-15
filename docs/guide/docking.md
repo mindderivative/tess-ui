@@ -1,7 +1,7 @@
 # Docking from Python
 
 Panels docked around an app's content (a file tree on the left, an inspector on the right, a console at the bottom) that the
-user can drag between zones are a `Dock`. In a view, write one in YAML: [`widget: Dock` and `widget: DockPanel`](windows-and-docks.md#docks)
+user can drag between zones are a `Dock`. In a view, write one as a block: [`Dock { }` and `DockPanel { }`](windows-and-docks.md#docks)
 are zones, tabs, handles and splits, and `view.dock_host(id)` reads and sets their sizes and saves and restores the layout.
 This page is the `Dock` they are built on, for an app that builds its widgets in Python. `tess_re` provides the docking mechanism;
 Tesserae draws it.

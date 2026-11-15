@@ -9,49 +9,73 @@ signatures are in the [Python API](../api/python.md).
 
 ## In a view
 
-In a `*_View.yaml`, these widgets are controls: `Checkbox`, `RadioButton`, `Switch`, `Slider`, `RangeSlider`, `SpinBox`,
+In a `*_View.tdl`, these widgets are controls: `Checkbox`, `RadioButton`, `Switch`, `Slider`, `RangeSlider`, `SpinBox`,
 `LinearProgress`, `CircularProgress`, `LoadingIndicator` and `TimePickerDial`.
 
-```yaml
-widget: Container
-style: {flex_direction: vertical, gap: 8, width: 320, padding: 16}
-children:
-  - widget: Checkbox
-    name: agree
-    label: I agree
-    checked: "{{ agreed }}"                 # one bare reference: the user's change is written back to `agreed`
-    handlers: {on_change: agreement_changed}
-  - {widget: Switch, name: dark, selected: "{{ dark }}"}
-  - {widget: Slider, name: volume, value: "{{ volume }}", min: 0, max: 1, step: 0.1, style: {width: 200}}
-  - {widget: SpinBox, name: quantity, value: "{{ quantity }}", min: 1, max: 9}
-  - {widget: LinearProgress, name: loaded, value: "{{ loaded }}", style: {width: 200}}
+```tdl
+Container {
+  Style { Flex_Direction: vertical, Gap: 8, Width: 320, Padding: 16 }
+  Children {
+    Checkbox {
+      Name: agree
+      Label: "I agree"
+      Checked: <| agreed |>  # one bare reference: the user's change is written back to `agreed`
+      Handlers {
+        On_Change: agreement_changed
+      }
+    }
+    Switch {
+      Name: dark
+      Selected: <| dark |>
+    }
+    Slider {
+      Name: volume
+      Value: <| volume |>
+      Min: 0
+      Max: 1
+      Step: 0.1
+      Style { Width: 200 }
+    }
+    SpinBox {
+      Name: quantity
+      Value: <| quantity |>
+      Min: 1
+      Max: 9
+    }
+    LinearProgress {
+      Name: loaded
+      Value: <| loaded |>
+      Style { Width: 200 }
+    }
+  }
+}
 ```
 
 - **State:** `checked` (Checkbox), `selected` (RadioButton, Switch), `value` (Slider, SpinBox, the progress widgets), `low` and `high`
   (RangeSlider), `hour`, `minute` and `mode` (TimePickerDial), and `disabled` (on every control that has one: not the progress widgets or the dial). Given one bare reference to a
-  Signal or a `state:` name, the property is two-way: the user's changes are written back. Any other expression is one-way.
+  Signal or a `State` name, the property is two-way: the user's changes are written back. Any other expression is one-way.
 - **`on_change`** runs for changes the user makes, never for ones your
   code or a binding makes.
 - **`label`** on a Checkbox, RadioButton or Switch is text beside it that is part of what you press, and what a screen reader calls it. On the
-  others it is what a screen reader calls the control (`a11y: {label: ...}` says the same on any node).
-- **A `Checkbox`** with `checked: null` is neither on nor off (a parent of some checked children). `error: true` draws a Checkbox or RadioButton in the error
-  colours. A `Switch` with `icons: true` shows a check on its handle when on and a cross when off.
-- **A `Slider`** takes `min`, `max` (0 and 1 when left out), `step`, `ticks: true` (a mark at each step, which needs `step`), `value_indicator: true` (a
-  bubble with the value while dragged), `vertical: true` (the bottom is `min`; `height` is its length and `width` the touch target's), `size` (`xs`, `s`, `m`, `l`, `xl`:
+  others it is what a screen reader calls the control (`A11y { Label: ... }` says the same on any node).
+- **A `Checkbox`** with `Checked: null` is neither on nor off (a parent of some checked children). `Error: true` draws a Checkbox or RadioButton in the error
+  colours. A `Switch` with `Icons: true` shows a check on its handle when on and a cross when off.
+- **A `Slider`** takes `min`, `max` (0 and 1 when left out), `step`, `Ticks: true` (a mark at each step, which needs `step`), `Value_Indicator: true` (a
+  bubble with the value while dragged), `Vertical: true` (the bottom is `min`; `height` is its length and `width` the touch target's), `size` (`xs`, `s`, `m`, `l`, `xl`:
   MD3 Expressive's thicker track and thin handle) and, from size `s` up, an `icon` at the start of the track. A `RangeSlider` is a slider with two handles,
   `low` and `high`, and the same keys.
 - **A `SpinBox`** takes `value`, `min`, `max` and `step`, and `decimals` (how many places show), `prefix`, `suffix` and `wrap` (a step past one bound lands on the other,
-  which needs both). A bound `value` is shown kept between the bounds. Its `a11y:` label goes to its text field. It is sized by MD3, two 40 px
-  buttons around a 64 px field (152 px wide), not by `width`; like any box it is stretched across the layout, so give its parent `align_content: left` (or
+  which needs both). A bound `value` is shown kept between the bounds. Its `A11y` label goes to its text field. It is sized by MD3, two 40 px
+  buttons around a 64 px field (152 px wide), not by `width`; like any box it is stretched across the layout, so give its parent `Align_Content: left` (or
   itself `align_self`) to keep that size. Holding a button repeats the step; Page Up and Page Down step by ten.
-- **The progress widgets** take `value` from 0 to 1, or nothing (`value: null`) for a wait with no end. `track` is the colour role behind the indicator, `thickness`
+- **The progress widgets** take `value` from 0 to 1, or nothing (`Value: null`) for a wait with no end. `track` is the colour role behind the indicator, `thickness`
   the bar's height or the ring's width in pixels. A `LinearProgress` also has `buffer` (how much has loaded, 0 to 1), `stop_indicator`, `wavy` and
   `two_bar` (an endless wait sweeps as two bars); a `CircularProgress` has `wavy`; a `LoadingIndicator` has `contained`.
 - **A `TimePickerDial`** has `hour` (0 to 23), `minute` (0 to 59), `mode` (`hour` or `minute`, which hand the face shows and sets) and `auto_advance`
   (`true`: letting go in hour mode moves on to the minutes).
 - **The colour picker's parts** (`ColourArea`, `ColourStrip`, `ColourField`, `ColourSwatches`) are controls too, made for [the colour picker](../components/colour-pickers.md) and usable alone.
   Their `value` is a colour as text, `'#rrggbb'` or `'#rrggbbaa'` when its alpha is below 1, and is two-way; `on_input` runs on every change the user makes while a drag is going.
-  They are sized by `style: {width, height}` (a square of 256 by 176, a strip of 256 by 24, a field of 256 or 58 wide).
+  They are sized by `Style { width, height }` (a square of 256 by 176, a strip of 256 by 24, a field of 256 or 58 wide).
 - **The icon picker's mind** (`IconBrowser`) is a control that draws nothing, made for [the icon picker](../components/icon-pickers.md): it keeps the list, the search and the cursor, and the view reaches it through
   names it binds (`value` and `scroll` are two-way; `grid`, `cursor`, `count`, `current` and `message` are its outputs; `command` asks it to do something). You call `IconPicker`, not this.
 - **The font list's mind** (`FontBrowser`) is a control that draws nothing, made for [the font list](../components/font-lists.md): it asks for the installed families and keeps the search and the cursor; the view
@@ -62,11 +86,11 @@ children:
   through names it binds (`value` is two-way; `rows`, `options`, `count`, `can_add`, `can_remove` and `message` are its outputs; `command` sends it `set`, `add`, `remove`, `up` or `down`). You call `ListEditor`, not this.
 - **The token button's mind** (`TokenList`) is a control that draws nothing, made for [the token button](../components/token-buttons.md): it takes the tokens as data, searches them and keeps the cursor; the view
   reaches it through names it binds (`value`, `query` and `scroll` are two-way; `entries`, `cursor_ref`, `count` and `current` are its outputs; `command` sends it a key or a click). You call `TokenButton`, not this.
-- **Size:** `style: {width, height}` sets the control's touch target;
+- **Size:** `Style { width, height }` sets the control's touch target;
   it's MD3's 48 px when not given. A slider's `width` is its track's
   length, a dial's is its face, and a progress bar's is its track.
 - **Colour:** `foreground` replaces `primary`, the colour of the selected or active parts.
-- **Radio groups:** radio buttons with the same `group:` name exclude
+- **Radio groups:** radio buttons with the same `Group:` name exclude
   each other, and the group is a single Tab stop whose arrow keys move
   the selection.
 - From Python, `view.control("root.agree")` returns the control, and `view.node("root.agree")`

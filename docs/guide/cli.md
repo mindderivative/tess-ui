@@ -73,7 +73,7 @@ tesserae migrate-tdl --write              # writes Views/Name_View.tdl beside ea
 tesserae migrate-tdl Views/Main_View.yaml --write --remove-source   # one file, and deletes its YAML afterwards
 ```
 
-`tesserae migrate-tdl [PATH]` writes each `*_View.yaml` under `PATH` (a file or the project's folder, here by default) as a `*_View.tdl` file beside it, and each `*_Stylesheet.yaml` as a `*_Stylesheet.tdl` (a root `Styles { }` of `Rule { Widget: Button, Variant: filled, Style { Height: 40 } }` blocks, in order; a style field that holds a map is a block of its own: `Padding { Left: 12 }`; themes are skipped for now). A view:
+`tesserae migrate-tdl [PATH]` writes each `*_View.yaml` under `PATH` (a file or the project's folder, here by default) as a `*_View.tdl` file beside it, and each `*_Stylesheet.yaml` as a `*_Stylesheet.tdl` (a root `Styles { }` of `Rule { Widget: Button, Variant: filled, Style { Height: 40 } }` blocks, in order; a style field that holds a map is a block of its own: `Padding { Left: 12 }`; a theme is written below). A view:
 keys in `Title_Case` (`typography_role` is `Typography_Role`), a node a block headed by its widget (`Button { ... }`), `if:` and `for:` as `If` and `For`
 blocks around the node, a handler as `Set` and `Call` steps (`open = not open; on_toggle()` is a `Set { Target: open, Value: <| not open |> }` and a
 `Call { Action: "on_toggle" }`), `{{ expression }}` as `<| expression |>`, and a metadata block with the view's `Name` and the `Tesserae` series.
@@ -92,8 +92,7 @@ A `for:` with a pair target (`for: i, item in enumerate(items)`) is written as i
 from language 0.2). The files are written in TDL 0.2: slots are `<| expr |>`. The command needs `tesserae-dl` 0.2 (`pip install tesserae-ui[tdl]`).
 
 Running it again changes nothing. It never replaces a file that differs without `--write`; the YAML is kept unless `--remove-source` is given with `--write`, and
-then it is deleted only for the files that were written (or already current). Themes (`*_Theme.yaml`) and components are skipped with a note. The
-then it is deleted only for the files that were written (or already current). Stylesheets (`*_Stylesheet.yaml`) and components are skipped with a note. The
+then it is deleted only for the files that were written (or already current). Components (`*_Component.yaml`) are skipped with a note. The
 exit code is 1 if any file failed and 2 for a wrong argument. The command needs the `tess_dl` package (`tesserae-dl`, 0.2), which needs Python 3.14.
 
 A theme (`*_Theme.yaml`, and Tesserae's own `default_theme.yaml`) is written as `*_Theme.tdl` (`default_theme.tdl`) the same way: a root `Theme { }` with `Seed`, `Dark`,

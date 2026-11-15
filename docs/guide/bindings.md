@@ -1,13 +1,14 @@
 # Binding Expressions
 
-A `{{ }}` expression keeps a widget property in step with your ViewModel:
+A `<| |>` expression keeps a widget property in step with your ViewModel:
 
-```yaml
-- widget: Text
-  name: label
-  text: "{{ title }}"
-  typography_role: body_large
-  style: {foreground: on_surface}
+```text
+Text {
+  Name: label
+  Text: <| title |>
+  Typography_Role: body_large
+  Style { Foreground: on_surface }
+}
 ```
 
 The expression is worked out against the ViewModel when the view is
@@ -24,15 +25,15 @@ limits are below.
 A binding can drive text, sizes, colours and other numbers, `checked`
 and `selected`, and `visible`: `false` takes a node out of the
 layout and out of hit-testing, not just out of sight. There is a
-conditional expression: `{{ 'Restore' if app.maximized else 'Maximize' }}`. A value inside a
-`style:` can be an expression too (`style: {width: "{{ size * 2 }}"}`). Text can mix words and
-expressions: `text: "{{ app.state.user }}'s tasks"`.
+conditional expression: `<| 'Restore' if app.maximized else 'Maximize' |>`. A value inside a
+`Style` can be an expression too (`Style { Width: <| size * 2 |> }`). Text can mix words and
+expressions: `Text: <| app.state.user + "'s tasks" |>`.
 
 ## What you can write
 
 | | Examples |
 |---|---|
-| a name | a loop variable, a local `state:`, a param, a ViewModel attribute (`count`, `title`), then `app` |
+| a name | a loop variable, a local `State`, a param, a ViewModel attribute (`count`, `title`), then `app` |
 | an attribute of a value | `user.name`, `pt.x`; a dict reads by attribute too (`row.title`) |
 | indexing and slices | `items[0]`, `table["key"]`, `items[n - 1]`, `name[:3]` |
 | arithmetic | `a + b`, `a - b`, `-a`, `a * b`, `a / b`, `a // b`, `a % b`, `a ** 2` |
@@ -48,10 +49,10 @@ A **Signal or Computed reads as its value**: `count` and `count.get()` are
 the same, and both keep the binding in step when it changes.
 
 A property the user edits (a text field's `text`, a `Checkbox`'s `checked`, a `Slider`'s `value`) is **two-way** when it is given
-one bare reference to a Signal or a local `state:` name: `checked: "{{ done }}"`. The user's edit is written back to `done`. Any
-other expression (`"{{ not done }}"`, `"{{ app.state.user }}"`) is one-way: the widget shows its value, the user's edit stays on screen until the value
+one bare reference to a Signal or a local `State` name: `Checked: <| done |>`. The user's edit is written back to `done`. Any
+other expression (`<| not done |>`, `<| app.state.user |>`) is one-way: the widget shows its value, the user's edit stays on screen until the value
 next changes, and a handler such as `on_change` does the writing. [Two-way properties](view-language.md#two-way-properties) has the whole rule: which
-names a handler may write, what a model param does with each thing a caller gives it, and what `state:` keeps when a view is reloaded.
+names a handler may write, what a model param does with each thing a caller gives it, and what `State` keeps when a view is reloaded.
 
 Names and attributes starting with `_` do not exist for an expression.
 A call is only a built-in function, a method of text, a list or a dict, or
@@ -59,7 +60,7 @@ A call is only a built-in function, a method of text, a list or a dict, or
 (its public attributes), but it cannot be added, compared, formatted or
 iterated by an expression, so its own methods never run from a view.
 
-Every `a11y:` field except `role` and `live` can be bound the same way (`label` must then be text, so write `"{{ n }} unread"`, not `"{{ n }}"`): see [Interaction & Accessibility](interaction.md#bound-fields).
+Every `A11y` field except `role` and `live` can be bound the same way (`label` must then be text, so write `<| n |> unread`, not `<| n |>`): see [Interaction & Accessibility](interaction.md#bound-fields).
 
 ### Video frames
 
@@ -69,15 +70,16 @@ is shown as it arrives, and `None` keeps the last one. Decoding the video
 is the app's: a ViewModel sets a `Signal` of the latest frame, and the
 view pushes it. The latest frame survives a re-theme and a reconcile.
 
-```yaml
-- widget: Image
-  name: screen
-  fit: fill
-  frame: "{{ player_frame }}"
-  style: {width: 640, height: 360}
+```text
+Image {
+  Name: screen
+  Fit: fill
+  Frame: <| player_frame |>
+  Style { Width: 640, Height: 360 }
+}
 ```
 
-`widget: VideoPlayer` is that Image with transport controls under it: `frame`, `playing`, `position`, `duration` and the
+`VideoPlayer { }` is that Image with transport controls under it: `frame`, `playing`, `position`, `duration` and the
 rest are its properties ([Video](../components/video.md) has the list).
 
 ## Python's rules
@@ -100,12 +102,12 @@ A binding that doesn't parse, or fails to evaluate, is an error when the view lo
 gives a hint when there is one:
 
 ```
-Counter_View.yaml:5:43: 'cont' is not defined (did you mean 'count')
+Counter_View.tdl:5:43: 'cont' is not defined (did you mean 'count')
 ```
 
-A function name that does not exist is found when the view loads, with the line, not when the expression runs. In a property, an `if:`,
-a `for:` or a stylesheet rule the only functions are the built-in ones (`clamp`, `min`, `max`, `len`, `format_number`, ...), so
-`{{ clmap(x, 0, 1) }}` is a load error naming `clmap` and offering the near names (`did you mean 'clamp'`). In a handler a call may also be
+A function name that does not exist is found when the view loads, with the line, not when the expression runs. In a property, an `If`,
+a `For` or a stylesheet rule the only functions are the built-in ones (`clamp`, `min`, `max`, `len`, `format_number`, ...), so
+`<| clmap(x, 0, 1) |>` is a load error naming `clmap` and offering the near names (`did you mean 'clamp'`). In a handler a call may also be
 a built-in action (`copy`, `focus`, `after`, `navigate_to`, ...), a method of the ViewModel or a handler parameter; a name that is none of
 these is a load error too (`bmup(2)` offers `bump`). `app.check()` lists every name and action the open views use that their ViewModels
 do not have, without a window.

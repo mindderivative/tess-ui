@@ -7,13 +7,13 @@ opened:
 | --- | --- |
 | a theme: `App(custom_theme=)`, `App(default_theme=)` | every view is re-themed in place ([below](#theme-and-stylesheet-files)) |
 | a view the app opened with `app.load` (the older syntax), and the fragments and images it was built from | the screen is rebuilt in place, its ViewModel and bindings kept |
-| a view the app opened with `app.open_view` or `app.open_window`, any view it calls, and the pictures it draws | the view is composed again in place: its ViewModel, the nodes that keep their name or position, and their `state:` stay ([below](#a-view-written-with-widget-nodes)) |
-| the app's stylesheet of rules (`App(stylesheet=)`, `widget:` rules) | every view opened with `open_view` is composed again under the new rules, its state kept; a sheet with a mistake leaves them as they were |
+| a view the app opened with `app.open_view` or `app.open_window`, any view it calls, and the pictures it draws | the view is composed again in place: its ViewModel, the nodes that keep their name or position, and their `State` stay ([below](#a-view-written-in-blocks)) |
+| the app's stylesheet of rules (`App(stylesheet=)`, `Widget:` rules) | every view opened with `open_view` is composed again under the new rules, its state kept; a sheet with a mistake leaves them as they were |
 
 The log says what is watched when it starts (`hot reload on: watching 2 screen(s) and 2 theme/stylesheet file(s)`), and names a screen it does not watch:
 `hot reload: screen 'Tasks' isn't watched -- it was built from a spec, not a file`.
 
-## A view written with `widget:` nodes
+## A view written in blocks
 
 ```python
 app = App()
@@ -23,16 +23,16 @@ app.show("Counter")
 app.run(hot_reload=True)
 ```
 
-Save `Counter_View.tdl` (or `.yaml`), a view it calls (and the views those call), or a picture it draws, and the window shows the change at once. The view is
+Save `Counter_View.tdl`, a view it calls (and the views those call), or a picture it draws, and the window shows the change at once. The view is
 composed again from the new files and drawn over the old: the ViewModel and its Signals are the same ones, so the counter keeps its count; a node
-that keeps its place (its `name`, or its position, with the `key` of a row under `for:`) keeps its `state:`; a handler is wired again. A view
+that keeps its place (its `name`, or its position, with the `key` of a row under `For`) keeps its `State`; a handler is wired again. A view
 the file starts to call is watched from then on. The views Tesserae ships are not watched. A view opened while the app runs is watched too, and
 so is every window `open_window` opens.
 
-A mistake leaves the window as it was and is logged as an `ERROR` naming the file: invalid YAML, a call with a wrong parameter, a name that is
+A mistake leaves the window as it was and is logged as an `ERROR` naming the file: a syntax error, a call with a wrong parameter, a name that is
 not defined, or a widget the engine rejects. Fix the file and save.
 
-Not reloaded: the Python files (a ViewModel's code is not reloaded), and a `widget: Window`
+Not reloaded: the Python files (a ViewModel's code is not reloaded), and a `Window { }`
 view's window options (its size, title and flags are read when it opens).
 
 ## In an app (the older syntax)
@@ -62,7 +62,7 @@ and hands only the final update to the event loop through
 
 ## When an edit is broken
 
-If a reload fails -- invalid YAML, an unknown component, a widget `tess_re`
+If a reload fails -- a syntax error, an unknown component, a widget `tess_re`
 rejects -- Tesserae logs one `ERROR` line naming the file and the error
 (the traceback is at `DEBUG`), and the screen stays as it was. The app
 and the watcher keep running: fix the file, save, and it reloads. Each
@@ -129,7 +129,7 @@ reloaded /path/to/TodoItem_View.yaml (3 instance(s))
 ## The window view
 
 A `kind: Window` view loaded with `app.load("Window")` is watched like any view, and so is each view it embeds (`view:`). An edit is
-applied in place. (A `widget: Window` view is recomposed like any view opened with `app.open_view` or `app.open_window`: [above](#a-view-written-with-widget-nodes). Its window options are read when it opens.)
+applied in place. (A `Window { }` view is recomposed like any view opened with `app.open_view` or `app.open_window`: [above](#a-view-written-in-blocks). Its window options are read when it opens.)
 
 | Edit | What happens |
 | --- | --- |
@@ -147,8 +147,8 @@ A change that can't be applied is logged as an error and the app keeps running.
 `App.run(hot_reload=True)` also watches the theme files given to
 `App(default_theme=..., custom_theme=)`. When you save one, Tesserae
 re-reads both on the watcher thread, then re-themes every view the app opened
-through `app.set_theme_specs(...)`: a different `seed:`, `colors:` or
-`typography:` shows at once, and bound values stay live. A theme given as a
+through `app.set_theme_specs(...)`: a different `Seed:`, `Colors` or
+`Typography` shows at once, and bound values stay live. A theme given as a
 `*_spec=` dict has no file, so it isn't watched. A broken edit is logged
 at `ERROR` like a failed view reload, and the app keeps its previous theme.
 
@@ -161,7 +161,7 @@ Stylesheet files are watched:
 - **A screen's own stylesheet** from `app.load(..., stylesheet=)`:
   saving it re-styles only the screens loaded with that file.
 
-- **A stylesheet of `widget:` rules** (`App(stylesheet=)`, used by views opened with `app.open_view`): every such view is composed again under the new
+- **A stylesheet of `Widget:` rules** (`App(stylesheet=)`, used by views opened with `app.open_view`): every such view is composed again under the new
   rules, its state kept. A mistake in the sheet is logged as an `ERROR` naming the file, and the views keep their old rules.
 A stylesheet `tess_re` rejects is reported naming the file, and every
 screen keeps its old stylesheet.
@@ -171,7 +171,7 @@ screen keeps its old stylesheet.
 After a theme or stylesheet change, `tess_re` re-applies every binding so
 bound nodes keep their live values. It does this by setting each bound
 value again, so a declared `on_change` handler on a bound node (a
-`Checkbox` with `checked:` bound, a `TextField` with `text:` bound)
+`Checkbox` with `Checked:` bound, a `TextField` with `Text:` bound)
 runs once per reload, even though the value didn't change. The same
 thing happens when a view is first attached and on a view-file reload.
 Write `on_change` handlers so that running one again with the same value

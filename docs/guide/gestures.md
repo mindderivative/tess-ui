@@ -1,20 +1,25 @@
 # Touch, Gestures & Files
 
-Every node can hear touch, gestures and files dropped on it, as handlers on its `handlers:` mapping. A handler is the name of a
-ViewModel method (called with nothing), or statements, in which `event` is the event: `on_pan: "panned(event)"` hands it to a method,
-and `on_pan: "x = x + event.delta_x"` uses it in place. A disabled node's own handlers do not run. See
+Every node can hear touch, gestures and files dropped on it, as handlers in its `Handlers` block. A handler is the name of a
+ViewModel method (called with nothing), or statements, in which `event` is the event: `On_Pan { Call { Action: "panned", Args: [<| event |>] } }` hands it to a method,
+and `On_Pan { Set { Target: x, Value: <| x + event.delta_x |> } }` uses it in place. A disabled node's own handlers do not run. See
 [Handlers](view-language.md#handlers) for what a handler can say.
 
-```yaml
-widget: Container
-name: canvas
-state: {x: 0, y: 0, zoom: 1}
-style: {width: 320, height: 240, background: surface_container}
-handlers:
-  on_tap: "tapped(event)"
-  on_pan: "x = x + event.delta_x; y = y + event.delta_y"
-  on_pinch: "zoom = event.scale"
-  on_file_drop: "opened(event)"
+```tdl
+Container {
+  Name: canvas
+  State { X: 0, Y: 0, Zoom: 1 }
+  Style { Width: 320, Height: 240, Background: surface_container }
+  Handlers {
+    On_Tap { Call { Action: "tapped", Args: [<| event |>] } }
+    On_Pan {
+      Set { Target: x, Value: <| x + event.delta_x |> }
+      Set { Target: y, Value: <| y + event.delta_y |> }
+    }
+    On_Pinch { Set { Target: zoom, Value: <| event.scale |> } }
+    On_File_Drop { Call { Action: "opened", Args: [<| event |>] } }
+  }
+}
 ```
 
 | Handler | Event | The event's fields |
@@ -45,7 +50,7 @@ class MainViewModel(ViewModel):
             self.documents.set([*self.documents.get(), Path(path).read_text()])
 ```
 
-with `on_file_drop: "opened(event)"` in the view.
+with `On_File_Drop { Call { Action: "opened", Args: [<| event |>] } }` in the view.
 
 For a drop anywhere on the window, `app.on_file_drop(handler)`. The OS gives no position to a file drag while it is
 over the window, so the node that hears it is the one under the pointer's last known place. A file drop doesn't work

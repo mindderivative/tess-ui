@@ -12,7 +12,7 @@ app = App(width=960, height=640, title="Notes", theme_seed=(0x67, 0x50, 0xA4, 0x
           borderless=True, min_width=480, min_height=320)
 ```
 
-`borderless=True` takes away the OS's title bar and borders (in a [window view](windows-and-docks.md#the-window), `borderless: true`). The app
+`borderless=True` takes away the OS's title bar and borders (in a [window view](windows-and-docks.md#the-window), `Borderless: true`). The app
 then draws a title bar, and the window is still:
 
 - **moved** by dragging the bar, and maximized by double-clicking it;
@@ -30,35 +30,43 @@ window's actions and the `app.maximized` and `app.active` values a binding can f
 [The window](apps-and-screens.md#the-window), and the [Python API](../api/python.md).
 
 `tesserae new notes --window --custom-title-bar` makes an app like this
-([The `tesserae` command](cli.md)); the window is a [`widget: Window`](windows-and-docks.md) with `borderless: true` and a `title_bar:`
-(the generated `Window_View.yaml` is the window view of this page).
+([The `tesserae` command](cli.md)); the window is a [`Window { }`](windows-and-docks.md) with `Borderless: true` and a `Title_Bar`
+(the generated `Window_View.tdl` is the window view of this page).
 
-## `widget: TitleBar`
+## `TitleBar { }`
 
 The simplest title bar is one node in a view:
 
-```yaml
-name: window
-widget: Window
-title: Notes
-borderless: true
-style: {width: 960, height: 640, flex_direction: vertical}
-children:
-  - widget: TitleBar
-    name: bar
-    title: Notes
-    icon: home                              # optional: an icon name
-    buttons: [minimize, maximize, close]    # the default; any of them, each once
-    children:                               # the app's own, between the title and the buttons
-      - widget: TextInput
-        name: search
-        placeholder: Search
-        typography_role: body_medium
-        style: {width: 200, height: 28, background: surface_container_high}
-  - {widget: Container, name: body, style: {flex: fill}}
+```tdl
+Window {
+  Name: window
+  Title: Notes
+  Borderless: true
+  Style { Width: 960, Height: 640, Flex_Direction: vertical }
+  Children {
+    TitleBar {
+      Name: bar
+      Title: Notes
+      Icon: home  # optional: an icon name
+      Buttons: [minimize, maximize, close]  # the default; any of them, each once
+      Children {  # the app's own, between the title and the buttons
+        TextInput {
+          Name: search
+          Placeholder: Search
+          Typography_Role: body_medium
+          Style { Width: 200, Height: 28, Background: surface_container_high }
+        }
+      }
+    }
+    Container {
+      Name: body
+      Style { Flex: fill }
+    }
+  }
+}
 ```
 
-A window's own `title_bar: {title: Notes, icon: home}` makes the same bar for you; write the node when the bar has children of its own, or sits
+A window's own `Title_Bar { Title: Notes, Icon: home }` makes the same bar for you; write the node when the bar has children of its own, or sits
 somewhere other than the top of the window.
 
 It's a bar that moves the window when it's dragged (from anywhere but
@@ -73,19 +81,24 @@ children keep the names they were given (`bar.search`).
 
 ### In a dialog or a sheet
 
-A `TitleBar` is a header for any surface, not only a window. With `buttons: [dismiss]` it has no window buttons, no room for the
+A `TitleBar` is a header for any surface, not only a window. With `Buttons: [dismiss]` it has no window buttons, no room for the
 OS's controls and no drag region (a press on it doesn't move the window), and its one button closes the dialog or sheet the bar is
 in (`surface.dismiss`), which closes the overlay the bar is in, the nearest one up the tree (see [Overlays](overlays.md)). A bar in no overlay does
-nothing when it is pressed. In a view the overlay is a `widget: Overlay`: the bar's button closes it and writes false to its `open`. `dismiss` is on its own: a bar is for a
+nothing when it is pressed. In a view the overlay is a `Overlay { }`: the bar's button closes it and writes false to its `open`. `dismiss` is on its own: a bar is for a
 window or for a surface.
 
-```yaml
-- {widget: TitleBar, name: bar, title: Settings, icon: settings, buttons: [dismiss]}
+```text
+TitleBar {
+  Name: bar
+  Title: Settings
+  Icon: settings
+  Buttons: [dismiss]
+}
 ```
 
 ### Height and look
 
-It's 40 px high unless its `style: {height: ...}` says otherwise, and
+It's 40 px high unless its `Style { Height: ... }` says otherwise, and
 every part follows, its glyphs staying centred. Its colours are Material
 3 roles (`surface`, `on_surface`): with a `theme_seed=` it follows the theme,
 light and dark, and an app with no theme gets MD3's baseline palette (light). The title, icon and buttons fade
@@ -102,17 +115,22 @@ while the window isn't the focused one, and close's hover is red
 | `title_bar_buttons`, `title_bar_button`, `title_bar_close` | The buttons |
 | `title_bar_glyph` | Each button's glyph |
 
-```yaml
-styles:
-  - classes: [title_bar]
-    style: {background: surface_container}
-  - classes: [title_bar_title]
-    style: {foreground: primary}
+```tdl
+Styles {
+  Rule {
+    Classes: [title_bar]
+    Style { Background: surface_container }
+  }
+  Rule {
+    Classes: [title_bar_title]
+    Style { Foreground: primary }
+  }
+}
 ```
 
 The bar's own look is the cascade's first layer, under every theme and
 stylesheet, so any of them can change it, and an app's own default theme
-doesn't take it away. A `style:` on the bar itself (`style: {height: 48}`) sets its height, and every part follows.
+doesn't take it away. A `Style` on the bar itself (`Style { Height: 48 }`) sets its height, and every part follows.
 
 ### macOS
 
@@ -123,10 +141,11 @@ they take, `(0, 0)` elsewhere and in fullscreen) and
 `app.native_controls` (whether they show) are read-only Computeds, for a
 bar of your own:
 
-```yaml
-- widget: Rect
-  name: inset
-  style: {height: 36, width: "{{ app.titlebar_inset[1] }}", background: transparent}
+```text
+Rect {
+  Name: inset
+  Style { Height: 36, Width: <| app.titlebar_inset[1] |>, Background: transparent }
+}
 ```
 
 ## A bar of your own
@@ -134,34 +153,45 @@ bar of your own:
 A bar of your own is any node marked as the window's drag region, with
 buttons whose handlers are the window's actions:
 
-```yaml
-- widget: Container
-  name: my_bar
-  window_region: drag          # a press here moves the window
-  style: {height: 36, background: surface_container, flex_direction: horizontal, align_content: center}
-  children:
-    - widget: Container
-      name: tabs
-      window_region: none      # not a handle
-      style: {width: 200, height: 30}
-      children: []
-    - widget: Rect
-      name: toggle
-      style: {width: 80, height: 30, background: primary}
-      handlers: {on_click: window.toggle_maximized}
-      children:
-        - widget: Text
-          name: label
-          text: "{{ 'Restore' if app.maximized else 'Maximize' }}"
-          typography_role: label_large
-          style: {foreground: on_primary}
-    - widget: Rect
-      name: close
-      style: {width: 46, height: 30, background: error}
-      handlers: {on_click: window.close}
+```text
+Container {
+  Name: my_bar
+  Window_Region: drag  # a press here moves the window
+  Style { Height: 36, Background: surface_container, Flex_Direction: horizontal, Align_Content: center }
+  Children {
+    Container {
+      Name: tabs
+      Window_Region: none  # not a handle
+      Style { Width: 200, Height: 30 }
+      Children { }
+    }
+    Rect {
+      Name: toggle
+      Style { Width: 80, Height: 30, Background: primary }
+      Handlers {
+        On_Click: window.toggle_maximized
+      }
+      Children {
+        Text {
+          Name: label
+          Text: <| 'Restore' if app.maximized else 'Maximize' |>
+          Typography_Role: label_large
+          Style { Foreground: on_primary }
+        }
+      }
+    }
+    Rect {
+      Name: close
+      Style { Width: 46, Height: 30, Background: error }
+      Handlers {
+        On_Click: window.close
+      }
+    }
+  }
+}
 ```
 
-`window_region: drag` covers the node and everything in it that isn't
+`Window_Region: drag` covers the node and everything in it that isn't
 interactive: a node with a click handler, a focusable one or a text
 field is pressed as usual. `none` keeps a node, and what's in it, from
 moving the window. The handlers are `window.minimize`,
@@ -186,7 +216,7 @@ tracks a press should listen for both events.
 
 In a borderless app, a `top_app_bar` made in code is the title bar: the window's drag region, with the window
 buttons after its trailing icons. `top_app_bar(..., window_controls=)` asks for it or refuses it. In a view, use
-a `widget: TitleBar` or a window's `title_bar:` instead: the `TopAppBar` view is not a title bar.
+a `TitleBar { }` or a window's `Title_Bar` instead: the `TopAppBar` view is not a title bar.
 
 ## The window border
 
@@ -201,16 +231,19 @@ and dark.
 
 `App(window_border=False)`, or `app.window_border = False`, turns it
 off. Its class is `window_border`, so a stylesheet in the older rule shape (rules by `classes`) restyles it. A stylesheet of
-`widget:` rules does not reach it, because the border is not a widget; use `window_border=False` and draw your own edge:
+`Widget:` rules does not reach it, because the border is not a widget; use `window_border=False` and draw your own edge:
 
-```yaml
-styles:
-  - classes: [window_border]
-    style: {border_color: "#FF0000", border_width: 2}   # 0 hides it too
+```tdl
+Styles {
+  Rule {
+    Classes: [window_border]
+    Style { Border_Color: "#FF0000", Border_Width: 2 }  # 0 hides it too
+  }
+}
 ```
 
 Rounded corners and a drawn shadow are not done for you: they need a
-transparent window (`transparent: true` on the `Window`, see
+transparent window (`Transparent: true` on the `Window`, see
 [Window Options](window-options.md)) and a view that draws its own edge.
 
 ## On each platform

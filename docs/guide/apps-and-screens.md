@@ -6,7 +6,7 @@ from Counter_ViewModel import CounterViewModel
 
 app = App(width=240, height=120, title="My App", search=["."])
 app.bind(CounterViewModel)          # CounterViewModel serves the view named "Counter"
-view = app.open_view("Counter")     # Counter_View.yaml, found by name
+view = app.open_view("Counter")     # Counter_View.tdl, found by name
 app.show("Counter")                 # registered under the view's name
 app.run()
 ```
@@ -24,8 +24,8 @@ own `Signal` subscriptions intact, for the whole life of the `App`.
 
 `app.bind(CounterViewModel)` says which ViewModel serves a view, by the names in its `views`. `app.open_view(view, name=None)`
 opens a view against the ViewModel that serves its name and registers it. `view` is a path, or a name found in the
-[project](projects.md) (`"Counter"` is `Views/Counter_View.yaml`, or any folder you gave `search=`); the views it calls are found
-there too. The screen is registered under `name`, which defaults to the view's own `name:` and then to its file's name. It
+[project](projects.md) (`"Counter"` is `Views/Counter_View.tdl`, or any folder you gave `search=`); the views it calls are found
+there too. The screen is registered under `name`, which defaults to the view's own `Name:` and then to its file's name. It
 returns the opened view, and `app.screen(name)` gives the view and its ViewModel afterwards (`None` for a view with no ViewModel).
 
 ```python
@@ -54,7 +54,7 @@ class HomeViewModel(ViewModel):
 ```
 
 Switching screens from inside a handler works even *reentrantly*, from the very handler `App.show` itself is dispatching into. A
-handler can also navigate without Python: `handlers: {on_click: navigate.Settings}`, or `navigate_to('Note', {'id': 3})` for a
+handler can also navigate without Python: `Handlers { On_Click: navigate.Settings }`, or `navigate_to('Note', {'id': 3})` for a
 screen held in a name, below.
 
 `App.register(name, view, viewmodel)` is the lower-level path, for a view you built yourself (`app.build_view(...)`) and a
@@ -87,8 +87,8 @@ class NoteViewModel(ViewModel):
         self.title.set(f"Note {params['id']}")
 ```
 
-A view reads the params of the screen showing as `app.params` (`{{ app.params.get('id') }}`), and can go to a screen without Python:
-`handlers: {on_click: "navigate_to('Note', {'id': 3})"}`, `navigate.Settings`, `navigate.back` and `navigate.forward`.
+A view reads the params of the screen showing as `app.params` (`<| app.params.get('id') |>`), and can go to a screen without Python:
+`On_Click { Call { Action: "navigate_to", Args: [<| 'Note' |>, <| {'id': 3} |>] } }`, `navigate.Settings`, `navigate.back` and `navigate.forward`.
 
 - If `on_navigated` raises, nothing changes: the screen showing and the
   history stay as they were.
@@ -100,7 +100,7 @@ A view reads the params of the screen showing as `app.params` (`{{ app.params.ge
 - `app.can_go_back` and `app.can_go_forward` are `Signal`s. A back
   button binds its `disabled` to one, and is greyed out, skipped by
   Tab and deaf to clicks while there's nowhere to go:
-  `disabled: "{{ not app.can_go_back }}"` (see
+  `Disabled: <| not app.can_go_back |>` (see
   [Disabled](interaction.md#disabled)). `app.back()` itself does nothing,
   and returns `False`, with nowhere to go.
 - **Alt+Left** and **Alt+Right** go back and forward, except in a text
@@ -155,8 +155,8 @@ app = App(width=400, height=300, state=AppState())
 A ViewModel reads and writes it as `self.state` once it is attached to a view on the app's window, and a view reads it through
 `app`, in any view:
 
-```yaml
-text: "{{ app.state.user }}"        # a Signal reads as its value, and the text follows it
+```text
+Text: <| app.state.user |>        # a Signal reads as its value, and the text follows it
 ```
 
 ```python
@@ -207,7 +207,7 @@ app = App(width=960, height=640, title="Notes",
 
 | Option | What it does |
 |---|---|
-| `borderless` | Whether the OS window has no title bar or borders (default `False`). Then the app draws its own title bar; on macOS the title bar stays, transparent, with the traffic lights. A [window view](windows-and-docks.md) sets it with `borderless: true`. |
+| `borderless` | Whether the OS window has no title bar or borders (default `False`). Then the app draws its own title bar; on macOS the title bar stays, transparent, with the traffic lights. A [window view](windows-and-docks.md) sets it with `Borderless: true`. |
 | `resize_border` | How many pixels along each edge resize a borderless window. Unless given, 6 while borderless and 0 otherwise. It is off while maximized or fullscreen, and on macOS, where the OS resizes the window. |
 | `min_width`, `min_height` | The smallest the user can resize the window to (0 for no limit), so a title bar's buttons never crush. |
 | `fullscreen` | Borderless, filling the monitor. |
@@ -223,8 +223,15 @@ app = App(width=960, height=640, title="Notes",
 size classes `app.width_class` (`compact`, `medium`, `expanded`, `large`, `extra_large`) and `app.height_class`, so a layout can
 change as the window is resized:
 
-```yaml
-- {widget: NavigationRailScreens, name: rail, if: "app.width_class != 'compact'", items: [{label: Home, icon: home, screen: Home}]}
+```text
+If <| app.width_class != 'compact' |> {
+  NavigationRailScreens {
+    Name: rail
+    Items {
+      Item { Label: Home, Icon: home, Screen: Home }
+    }
+  }
+}
 ```
 
 ([The View Language](view-language.md#the-window-and-the-app) has the thresholds.)
@@ -240,21 +247,21 @@ state:
   [Computeds](reactivity.md) that follow the window: maximized or not, and
   whether it has the OS's focus. A binding follows them like any Signal:
 
-  ```yaml
-  text: "{{ 'Restore' if app.maximized else 'Maximize' }}"
+  ```text
+  Text: <| 'Restore' if app.maximized else 'Maximize' |>
   ```
 
 ### A title bar
 
 With `borderless=True`, a view draws the title bar, most simply with
-`widget: TitleBar` (an icon, a title, the app's own controls, and the
-window buttons), or a node of its own marked `window_region: drag`. A
+`TitleBar { }` (an icon, a title, the app's own controls, and the
+window buttons), or a node of its own marked `Window_Region: drag`. A
 borderless window also gets a 1 px border. All of it, and macOS's
 traffic lights, is in [Custom Title Bars](custom-title-bars.md).
 
 ## Several windows
 
-`app.window` is the main window. `app.open_window("Prefs")` builds `Prefs_View.yaml` in a new OS window, with the ViewModel that
+`app.window` is the main window. `app.open_window("Prefs")` builds `Prefs_View.tdl` in a new OS window, with the ViewModel that
 serves it, and returns its `AppWindow`; `app.windows`, `app.window_of(name)` and `app.close_window(name)` find and close them, and
 `modal=True` blocks the window it was opened from until the new one closes. A second window has no screens or routes: those belong to
 the main window. [Windows, Docks & Embedded Views](windows-and-docks.md#several-windows) has the rest.

@@ -1,18 +1,21 @@
 # Interaction & Accessibility
 
-A YAML node with an `on_click` handler behaves like an MD3 button,
+A node with an `on_click` handler behaves like an MD3 button,
 whether it's used with a mouse, a keyboard or a screen reader. Tesserae
 draws the feedback itself.
 
-```yaml
-- widget: Rect
-  name: save
-  style: {width: 120, height: 40, background: secondary_container, corner_radius: 20}
-  handlers: {on_click: save}
+```text
+Rect {
+  Name: save
+  Style { Width: 120, Height: 40, Background: secondary_container, Corner_Radius: 20 }
+  Handlers {
+    On_Click: save
+  }
+}
 ```
 
 A `Button` works the same way: give its call the handler,
-`widget: Button` with `handlers: {on_click: save}`
+`Button { }` with `Handlers { On_Click: save }`
 (see [Handlers, bindings and names on a call](component-fragments.md#handlers-bindings-and-names-on-a-call)).
 
 ## The keyboard and assistive technology
@@ -57,31 +60,31 @@ applies to pointer, keyboard (Enter and Space) and simulated clicks.
 
 A child with no handler, such as a label or an icon inside a clickable
 card, doesn't stop the click, so it still reaches the card. A decorative
-layer laid over a button with `pointer_events: none` doesn't either (see
+layer laid over a button with `Pointer_Events: none` doesn't either (see
 [Effects](effects.md)). A disabled
 control does stop the click: nothing fires, and the card doesn't open.
 
 ### Choosing the colour, or turning it off
 
-```yaml
-interaction: false                 # no state layer or ripple
-interaction: on_primary            # a theme role
-interaction: "#FFFFFF"             # or a colour
-interaction: true                  # feedback without an on_click
+```text
+Interaction: false                 # no state layer or ripple
+Interaction: on_primary            # a theme role
+Interaction: "#FFFFFF"             # or a colour
+Interaction: true                  # feedback without an on_click
 ```
 
 On a filled background, give the content's colour, such as `on_primary`
-on `primary`, as MD3 does. The value may be an expression, and `interaction:`
+on `primary`, as MD3 does. The value may be an expression, and `Interaction:`
 on a call goes to the root of the view called (a component that is a button
 by default, such as `Card` with `actionable`, sets it from its params).
-`interaction:` works on `Rect` and `Container` only. A `Text` or `Icon` can't
-hold the layer: `interaction: true` on one is accepted and shows nothing,
+`Interaction:` works on `Rect` and `Container` only. A `Text` or `Icon` can't
+hold the layer: `Interaction: true` on one is accepted and shows nothing,
 so wrap it in a clickable `Container`.
 
 `hovered`, `focused` and `pressed` are also names an expression can read, for
 the nearest widget with `interaction`: `style: {background: "{{ 'primary' if
 hovered else 'surface' }}"}`. A stylesheet rule reaches the same states with
-`state: hovered`, `focus_visible` or `pressed` (see
+`State: hovered`, `focus_visible` or `pressed` (see
 [The View Language](view-language.md#style)).
 
 How a ripple is drawn (a circle node for each press, or one shader) and
@@ -106,22 +109,30 @@ over 375 ms.
 A `Rect`, a `Container` or a widget that declares `disabled` is disabled with
 that key, a plain `true` or an expression:
 
-```yaml
-name: toolbar
-widget: Container
-style: {flex_direction: horizontal, gap: 8}
-children:
-  - widget: Button
-    name: back
-    label: Back
-    variant: tonal
-    handlers: {on_click: go_back}
-    disabled: "{{ not app.can_go_back }}"
-  - widget: Rect
-    name: save
-    style: {width: 120, height: 40, background: primary, corner_radius: 20}
-    handlers: {on_click: save}
-    disabled: true
+```tdl
+Container {
+  Name: toolbar
+  Style { Flex_Direction: horizontal, Gap: 8 }
+  Children {
+    Button {
+      Name: back
+      Label: Back
+      Variant: tonal
+      Handlers {
+        On_Click: go_back
+      }
+      Disabled: <| not app.can_go_back |>
+    }
+    Rect {
+      Name: save
+      Style { Width: 120, Height: 40, Background: primary, Corner_Radius: 20 }
+      Handlers {
+        On_Click: save
+      }
+      Disabled: true
+    }
+  }
+}
 ```
 
 While it's disabled a node:
@@ -138,22 +149,26 @@ a plain one isn't. The state holds through a re-theme, a stylesheet
 change and a reload. A control (`Checkbox`, `Switch`, `SpinBox`, ...)
 takes the same key for its own `disabled`, and draws its own disabled look.
 
-## Labels and roles: `a11y:`
+## Labels and roles: `A11y`
 
-A node's `a11y:` field sets what assistive technology hears:
+A node's `A11y` field sets what assistive technology hears:
 
-```yaml
-- widget: Rect
-  name: save
-  style: {width: 120, height: 40, background: secondary_container, corner_radius: 20}
-  handlers: {on_click: save}
-  a11y: {label: Save}
-- widget: Text
-  name: title
-  text: Settings
-  typography_role: headline_small
-  style: {foreground: on_surface}
-  a11y: {role: heading, level: 1}
+```text
+Rect {
+  Name: save
+  Style { Width: 120, Height: 40, Background: secondary_container, Corner_Radius: 20 }
+  Handlers {
+    On_Click: save
+  }
+  A11y { Label: Save }
+}
+Text {
+  Name: title
+  Text: Settings
+  Typography_Role: headline_small
+  Style { Foreground: on_surface }
+  A11y { Role: heading, Level: 1 }
+}
 ```
 
 | Field | What it does |
@@ -168,7 +183,7 @@ A node's `a11y:` field sets what assistive technology hears:
 | `checked` | `true` or `false` on something that is on or off; `null` is neither. |
 | `value`, `value_min`, `value_max`, `value_step` | A number and its range, for something that has one (a progress bar, a custom slider). |
 | `pressed`, `invalid`, `busy`, `description`, `current`, `value_now`, `value_text` | The rest of a widget's state: a toggle button's `pressed` (`true`, `false` or `mixed`), a field that failed validation, a loading widget, a longer description, the current page or step, and a number with its spoken form. See [Accessibility](view-language.md#accessibility). |
-| `describedby`, `controls` | The `name:` of another node of the view (or a list of them) that describes this one, or that this one controls. |
+| `describedby`, `controls` | The `Name:` of another node of the view (or a list of them) that describes this one, or that this one controls. |
 
 On a TextField, the fields apply to its input; on a control (a
 checkbox, a switch and so on), to the control, which sets its own
@@ -177,21 +192,23 @@ Anything else that does not fit is an error that names the widget.
 
 ### Bound fields
 
-Every field but `role`, `live`, `describedby` and `controls` can be an expression (a binding), and it is kept up to date as what it reads changes (a `label` must come out as text, so write `"{{ n }} unread"`, not `"{{ n }}"`):
+Every field but `role`, `live`, `describedby` and `controls` can be an expression (a binding), and it is kept up to date as what it reads changes (a `label` must come out as text, so write `<| n |> unread`, not `<| n |>`):
 
-```yaml
-- widget: Text
-  name: inbox_status
-  text: Inbox
-  typography_role: body_medium
-  style: {foreground: on_surface}
-  a11y: {label: "Inbox, {{ unread }} unread", live: polite}
-- widget: Container
-  name: details
-  a11y: {hidden: "{{ collapsed }}"}
+```text
+Text {
+  Name: inbox_status
+  Text: Inbox
+  Typography_Role: body_medium
+  Style { Foreground: on_surface }
+  A11y { Label: <| 'Inbox, ' + str(unread) + ' unread' |>, Live: polite }
+}
+Container {
+  Name: details
+  A11y { Hidden: <| collapsed |> }
+}
 ```
 
-A label made of text and values is one expression, as for any text (`"Inbox, {{ unread }} unread"`). A label must come out a
+A label made of text and values is one expression, as for any text (`<| 'Inbox, ' + str(unread) + ' unread' |>`; text around a slot that holds a comma or a brace is written as one slot). A label must come out a
 string, `hidden`, `expanded`, `selected` and `checked` true or false, a `value` a number, and `level` a whole number from 1; `None` clears
 a label, a level, a state or a number (not `hidden`). A wrong value is an error naming the widget and field. `live` is how a node's
 changes are announced, so it is set once and is not an expression; a `role` may be worked out from a view's params, but is fixed while the
@@ -212,8 +229,8 @@ undo = a11y.on_action(slider, {
 ```
 
 `describe` checks every field before setting any of them. It takes the
-YAML fields above plus `disabled`; `describedby` and `controls` name other
-nodes of a view, so they are written in the view's `a11y:` and `describe`
+`A11y` fields above plus `disabled`; `describedby` and `controls` name other
+nodes of a view, so they are written in the view's `A11y` and `describe`
 refuses them. `on_action` routes the
 requests a screen reader can make: `increment`, `decrement`, `expand`,
 `collapse`, `scroll_into_view` and `set_value`. Activating (clicking)
@@ -225,7 +242,7 @@ and clicks. Tesserae's [controls](controls.md) make it behave: a disabled contro
 can't be focused or used, and draws in MD3's disabled colours.
 
 `bind` keeps a widget's `label`, `hidden`, `level`, `expanded`, `selected`, `checked`, `value` (with its range) or any of the other states
-(`pressed`, `invalid`, `busy`, `description`, `current`, `value_now`, `value_text`) up to date, as a bound YAML field does. Each is a `Signal`, a `Computed`, a
+(`pressed`, `invalid`, `busy`, `description`, `current`, `value_now`, `value_text`) up to date, as a bound field does. Each is a `Signal`, a `Computed`, a
 function of no arguments or a plain value:
 
 ```python
@@ -241,7 +258,7 @@ and `live` aren't bindable: set them once with `describe`.
 
 ## Not yet covered
 
-- Among plain YAML nodes, only `Rect` and `Container` get the state
+- Among plain nodes, only `Rect` and `Container` get the state
   layer, ripple and focus ring. The MD3 controls (checkbox, switch and
   so on) have their own ([Controls](controls.md)).
 - The ring is placed when focus arrives. A node that resizes while it
