@@ -1479,7 +1479,7 @@ tree_node(
 ) -> Widget
 ```
 
-A tree row, indented 16 px plus 24 per `depth`, `role="treeitem"` at `level` `depth + 1`. A branch has a chevron (pointing right, down when `.expanded`), toggled by a click, Enter or Space, and set by the right and left arrows.
+A tree row, indented by its `depth`, `role="treeitem"` at `level` `depth + 1`. A branch has a chevron (pointing right, down when `.expanded`), toggled by a click, Enter or Space, and set by the right and left arrows.
 
 ### `video`
 
@@ -1785,7 +1785,7 @@ class Dialog(
 ) -> None  # extends Overlay
 ```
 
-MD3's basic dialog (from its fragment): a `surface_container_high` panel with 28 px corners, a `headline_small` headline, `body_medium` supporting text, and text-button `actions` (`(label, fn)`, right- aligned, each closing it after calling `fn`), over a scrim. Modal: focus moves into it, and Escape closes it.
+MD3's basic dialog: a `surface_container_high` panel with 28 px corners, a `headline_small` headline, `body_medium` supporting text, and text-button `actions` (`(label, fn)`, right- aligned, each closing it after calling `fn`), over a scrim. The actions are the shipped `Button`'s.
 
 Also has everything `Overlay` has.
 

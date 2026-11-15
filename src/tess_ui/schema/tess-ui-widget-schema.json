@@ -714,6 +714,18 @@
               }
             ],
             "description": "The children are the host, and the mark sits on its top right corner."
+          },
+          "flat": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "The root is the mark itself, with no wrapper: for a badge a Python widget places and styles. Not with `Anchored`; `Show` is not read."
           }
         },
         "required": [
@@ -745,7 +757,8 @@
             "value",
             "limit",
             "show",
-            "anchored"
+            "anchored",
+            "flat"
           ]
         }
       }
@@ -1661,6 +1674,18 @@
             ],
             "description": "Whether the card is chosen (the caller decides when)."
           },
+          "bare": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "Only the surface: no picture and no body, and nothing is clipped, so a Python widget's own nodes can be added straight into the card."
+          },
           "disabled": {
             "anyOf": [
               {
@@ -1708,6 +1733,7 @@
             "media_height",
             "actionable",
             "selected",
+            "bare",
             "disabled"
           ]
         }
@@ -15611,6 +15637,18 @@
             ],
             "description": "What the trailing icon does."
           },
+          "trailing_icons": {
+            "anyOf": [
+              {
+                "type": "array"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "More icons at the end, each an icon name (a Python widget wires each one itself). They show while nothing is typed, after `trailing_icon`."
+          },
           "avatar_text": {
             "anyOf": [
               {
@@ -15682,6 +15720,7 @@
             "on_leading",
             "trailing_icon",
             "on_trailing",
+            "trailing_icons",
             "avatar_text",
             "on_search",
             "disabled"
@@ -22287,6 +22326,18 @@
               }
             ],
             "description": "No button responds."
+          },
+          "bare": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{"
+              }
+            ],
+            "description": "No items and no group: only the bar, for a Python widget that adds its own nodes straight into it."
           }
         },
         "required": [
@@ -22329,7 +22380,8 @@
             "fit",
             "max_length",
             "hidden",
-            "disabled"
+            "disabled",
+            "bare"
           ]
         }
       }

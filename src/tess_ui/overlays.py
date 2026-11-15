@@ -33,13 +33,14 @@ from typing import Any, Callable, Optional
 from tess_ui import a11y
 from tess_ui.listeners import handled, listen_window
 from tess_ui.theme import Theme
-from tess_ui.widgets._composed import Widget, fragment
+from tess_ui.widgets._composed import Widget
+from tess_ui.widgets._views import Call
 from tess_ui import motion
 
 __all__ = ["Dialog", "Menu", "NavigationDrawer", "Overlay", "Popover", "SearchView", "SideSheet", "Snackbar",
            "Tooltip", "dismiss_surface"]
 
-#: MD3's scrim: black at 32%, as the fragments' own.
+#: MD3's scrim: black at 32%.
 SCRIM = "#00000052"
 
 #: The overlays that are showing or could show, by their node's hash, so a node inside one can find it (`dismiss_surface`).
@@ -157,10 +158,11 @@ class Overlay:
 
 
 class Dialog(Overlay):
-    """MD3's basic dialog (from its fragment): a `surface_container_high`
+    """MD3's basic dialog: a `surface_container_high`
     panel with 28 px corners, a `headline_small` headline, `body_medium`
     supporting text, and text-button `actions` (`(label, fn)`, right-
-    aligned, each closing it after calling `fn`), over a scrim. Modal:
+    aligned, each closing it after calling `fn`), over a scrim. The
+    actions are the shipped `Button`'s. Modal:
     focus moves into it, and Escape closes it. `role="dialog"`."""
 
     modal = True
@@ -170,20 +172,20 @@ class Dialog(Overlay):
                  theme: Optional[Theme] = None) -> None:
         self.actions = list(actions or [])
         name = "dialog"
-
-        def edit(spec: dict[str, Any]) -> None:
-            panel = spec["children"][0]
-            if self.actions:
-                buttons = [fragment("ButtonText", {"label": label, "width": 72, "height": 40, "corner_radius": 20},
-                                    f"{name}.panel.action{i}") for i, (label, _) in enumerate(self.actions)]
-                panel["children"].append({"id": f"{name}.panel.actions", "kind": "Container",
-                                          "style": {"flex_direction": "horizontal", "align_content": "top_right",
-                                                    "gap": 8}, "children": buttons})
-
-        widget = Widget(window, "Dialog", {"headline": headline, "text": text, "width": width, "height": height,
-                                           "scrim_width": 1, "scrim_height": 1},
-                        theme=theme, edit=edit, name=name, attach=False,
-                        interactive={f"panel.action{i}": None for i in range(len(self.actions))})
+        content = [Call("Text", "headline", {"text": headline, "typography_role": "headline_small"}, {"foreground": "on_surface"}),
+                   Call("Text", "body", {"text": text, "typography_role": "body_medium"},
+                        {"foreground": "on_surface_variant", "flex": "expand_vertical"})]
+        if self.actions:
+            content.append(Call("Container", "actions", style={"flex_direction": "horizontal", "align_content": "top_right", "gap": 8}, children=[
+                Call("Button", f"action{i}", {"label": label, "variant": "text", "size": "s"}, interaction="primary")
+                for i, (label, _) in enumerate(self.actions)]))
+        call = Call("Container", style={"width": 1, "height": 1, "background": SCRIM, "align_content": "center"}, children=[
+            Call("Container", "panel", style={"flex_direction": "vertical", "width": width, "height": height, "background": "surface_container_high",
+                                              "corner_radius": "extra_large", "elevation": "level_3", "padding": 24, "gap": 16}, children=content)])
+        widget = Widget(window, call=call, components={None: "dialog"}, theme=theme, name=name, attach=False,
+                        parts={"headline": "panel.headline", "body": "panel.body", "actions": "panel.actions",
+                               **{f"panel.action{i}": f"panel.actions.action{i}" for i in range(len(self.actions))},
+                               **{f"panel.action{i}.label": f"panel.actions.action{i}.label" for i in range(len(self.actions))}})
         super().__init__(window, widget)
         panel = widget.part("panel")
         a11y.describe(panel, role="dialog", label=headline)
@@ -214,21 +216,13 @@ class Menu(Overlay):
             raise ValueError("a menu needs at least one item")
         name = "menu"
         labels = [item if isinstance(item, tuple) else None for item in items]
-        children = []
-        for i, entry in enumerate(labels):
-            if entry is not None:
-                spec = fragment("MenuItem", {"label": entry[0], "width": width}, f"{name}.item{i}")
-                spec["style"].update(height=48, padding={"left": 12, "right": 12, "top": 0, "bottom": 0})
-                children.append(spec)
-            else:
-                children.append({"id": f"{name}.item{i}", "kind": "Container", "style": {"width": width}})
-        spec = {"id": name, "kind": "Container",
-                "style": {"width": width, "flex_direction": "vertical", "background": "surface_container",
-                          "corner_radius": "extra_small", "elevation": "level_2",
-                          "padding": {"left": 0, "right": 0, "top": 8, "bottom": 8}},
-                "children": children}
-        widget = Widget(window, spec=spec, theme=theme, name=name, attach=False,
-                        interactive={f"item{i}": "on_surface" for i, e in enumerate(labels) if e is not None})
+        children = [Call("MenuItem", f"item{i}", {"label": entry[0]}, {"width": width, "height": 48, "padding": {"left": 12, "right": 12, "top": 0, "bottom": 0}})
+                    if entry is not None else Call("Container", f"item{i}", style={"width": width})
+                    for i, entry in enumerate(labels)]
+        call = Call("Container", style={"width": width, "flex_direction": "vertical", "background": "surface_container", "corner_radius": "extra_small",
+                                        "elevation": "level_2", "padding": {"left": 0, "right": 0, "top": 8, "bottom": 8}}, children=children)
+        widget = Widget(window, call=call, theme=theme, name=name, attach=False,
+                        components={None: "menu", **{f"item{i}": "menu_item" for i, e in enumerate(labels) if e is not None}})
         super().__init__(window, widget)
         a11y.describe(self.node, role="menu")
         self.items = []
@@ -292,24 +286,20 @@ class Snackbar(Overlay):
         self.duration = duration
         name = "snackbar"
 
-        def edit(spec: dict[str, Any]) -> None:
-            if action is not None:
-                button = fragment("ButtonText", {"label": action, "width": 80, "height": 36, "corner_radius": 18},
-                                  f"{name}.action")
-                button["children"][0]["style"]["foreground"] = "inverse_primary"
-                spec["children"].append(button)
-            if closable:
-                spec["children"].append({"id": f"{name}.close", "kind": "Rect",
-                                         "style": {"width": 40, "height": 40, "corner_radius": 20,
-                                                   "background": "transparent", "align_content": "center"},
-                                         "children": [{"id": f"{name}.close.icon", "kind": "Icon",
-                                                       "icon": {"name": "close"},
-                                                       "style": {"width": 24, "height": 24,
-                                                                 "foreground": "inverse_on_surface"}}]})
-
-        parts = (["action"] if action is not None else []) + (["close"] if closable else [])
-        widget = Widget(window, "Snackbar", {"text": text, "width": width}, theme=theme, edit=edit, name=name,
-                        attach=False, interactive={p: None for p in parts})
+        # no shipped view: the shipped `Snackbar` places itself by the app's window size, and a widget on a bare window has no app
+        children = [Call("Text", "text", {"text": text, "typography_role": "body_medium"}, {"foreground": "inverse_on_surface", "flex": "expand_horizontal"})]
+        if action is not None:
+            children.append(Call("Container", "action", style={"width": 80, "height": 36, "corner_radius": 18, "background": "transparent", "align_content": "center",
+                                                               "padding": {"left": 12, "right": 12, "top": 0, "bottom": 0}},
+                                 interaction="inverse_primary", children=[
+                Call("Text", "label", {"text": action, "typography_role": "label_large", "text_align": "center"}, {"foreground": "inverse_primary"})]))
+        if closable:
+            children.append(Call("Container", "close", style={"width": 40, "height": 40, "corner_radius": 20, "background": "transparent", "align_content": "center"},
+                                 interaction="inverse_on_surface", children=[
+                Call("Icon", "icon", {"icon": "close"}, {"width": 24, "height": 24, "foreground": "inverse_on_surface"})]))
+        call = Call("Container", style={"width": width, "height": 48, "background": "inverse_surface", "corner_radius": "extra_small", "elevation": "level_3",
+                                        "align_content": "left", "padding": {"left": 16, "right": 16, "top": 0, "bottom": 0}}, children=children)
+        widget = Widget(window, call=call, components={None: "snackbar"}, theme=theme, name=name, attach=False)
         super().__init__(window, widget)
         a11y.describe(self.node, role="alert", live="polite")
         self._timer = _Timer(window)
@@ -343,8 +333,11 @@ class Tooltip(Overlay):
     def __init__(self, window: Any, text: str, *, width: Optional[float] = None,
                  theme: Optional[Theme] = None) -> None:
         self.text = text
-        widget = Widget(window, "Tooltip", {"text": text, "width": width if width is not None else 1.0},
-                        theme=theme, name="tooltip", attach=False)
+        call = Call("Container", style={"width": width if width is not None else 1.0, "height": 24, "background": "inverse_surface", "corner_radius": "extra_small",
+                                        "align_content": "center", "padding": {"left": 8, "right": 8, "top": 0, "bottom": 0}}, children=[
+            Call("Text", "text", {"text": text, "typography_role": "body_small", "wrap": "none", "overflow": "ellipsis"},
+                 {"foreground": "inverse_on_surface", "flex": "expand_horizontal", "min_width": 0})])
+        widget = Widget(window, call=call, components={None: "tooltip"}, theme=theme, name="tooltip", attach=False)
         super().__init__(window, widget)
         if width is None:  # fit the text: 8 px either side
             widget.node.set(width=widget.part("text").get("width") + 16.0)
@@ -391,27 +384,19 @@ class Popover(Overlay):
         self.text = supporting_text
         name = "popover"
         inner = float(width) - 2 * self.PADDING
-        children: list[dict[str, Any]] = []
+        children: list[Call] = []
         if subhead is not None:
-            children.append({"id": f"{name}.subhead", "kind": "Text",
-                             "text": {"content": subhead, "typography_role": "title_small"},
-                             "style": {"foreground": "on_surface_variant"}})
-        children.append({"id": f"{name}.text", "kind": "Text",
-                         "text": {"content": supporting_text, "typography_role": "body_medium"},
-                         "style": {"width": inner, "foreground": "on_surface_variant"}})
+            children.append(Call("Text", "subhead", {"text": subhead, "typography_role": "title_small"}, {"foreground": "on_surface_variant"}))
+        children.append(Call("Text", "text", {"text": supporting_text, "typography_role": "body_medium"}, {"width": inner, "foreground": "on_surface_variant"}))
         if self.actions:
-            buttons = [fragment("ButtonText", {"label": label, "width": 72, "height": 40, "corner_radius": 20},
-                                f"{name}.action{i}") for i, (label, _) in enumerate(self.actions)]
-            children.append({"id": f"{name}.actions", "kind": "Container",
-                             "style": {"flex_direction": "horizontal", "gap": 8,
-                                       "margin": {"left": 0, "right": 0, "top": 8, "bottom": 0}},
-                             "children": buttons})
-        spec = {"id": name, "kind": "Rect",
-                "style": {"width": float(width), "background": "surface_container", "corner_radius": "medium",
-                          "elevation": "level_2", "flex_direction": "vertical", "gap": 4, "padding": self.PADDING},
-                "children": children}
-        widget = Widget(window, spec=spec, theme=theme, name=name, attach=False,
-                        interactive={f"action{i}": None for i in range(len(self.actions))})
+            children.append(Call("Container", "actions", style={"flex_direction": "horizontal", "gap": 8, "margin": {"left": 0, "right": 0, "top": 8, "bottom": 0}}, children=[
+                Call("Button", f"action{i}", {"label": label, "variant": "text", "size": "s"}, interaction="primary")
+                for i, (label, _) in enumerate(self.actions)]))
+        call = Call("Container", style={"width": float(width), "background": "surface_container", "corner_radius": "medium", "elevation": "level_2",
+                                        "flex_direction": "vertical", "gap": 4, "padding": self.PADDING}, children=children)
+        widget = Widget(window, call=call, components={None: "popover"}, theme=theme, name=name, attach=False,
+                        parts={**{f"action{i}": f"actions.action{i}" for i in range(len(self.actions))},
+                               **{f"action{i}.label": f"actions.action{i}.label" for i in range(len(self.actions))}})
         super().__init__(window, widget)
         a11y.describe(self.node, role="dialog", label=subhead if subhead is not None else supporting_text)
         for i, (_, fn) in enumerate(self.actions):
@@ -482,13 +467,14 @@ class SideSheet(_EdgeSheet):
 
     def __init__(self, window: Any, *, width: float = 360.0, label: Optional[str] = None,
                  theme: Optional[Theme] = None) -> None:
-        widget = Widget(window, "SideSheetModal", {"width": width, "height": 1, "scrim_width": 1, "scrim_height": 1},
-                        theme=theme, name="side_sheet", attach=False)
+        call = Call("Container", style={"width": 1, "height": 1, "background": SCRIM, "align_content": "top_right"}, children=[
+            Call("Container", "panel", style={"width": width, "height": 1, "background": "surface_container_low", "elevation": "level_1",
+                                              "corner_radius": {"top_left": 16.0, "top_right": 0.0, "bottom_right": 0.0, "bottom_left": 16.0}})])
+        widget = Widget(window, call=call, components={None: "side_sheet.modal"}, theme=theme, name="side_sheet", attach=False)
         panel = widget.part("panel")
         super().__init__(window, widget, panel, end=True)
         a11y.describe(panel, role="dialog", **({"label": label} if label else {}))
-        panel.set(focusable=True, corner_radius=(16.0, 0.0, 0.0, 16.0))
-        widget.after_theme(lambda: panel.set(corner_radius=(16.0, 0.0, 0.0, 16.0)))
+        panel.set(focusable=True)
 
 
 class NavigationDrawer(_EdgeSheet):

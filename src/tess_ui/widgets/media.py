@@ -183,8 +183,9 @@ def node_graph(
     from tess_ui.widgets._composed import Widget
     from tess_ui.widgets.buttons import _borders
 
-    widget = Widget(window, "NodeGraph", {"width": width, "height": height}, theme=theme, x=x, y=y,
-                    edit=_borders([None], border_color, border_width), name="node_graph")
+    widget = Widget(window, spec={"id": "node_graph", "kind": "Rect", "component_of": "node_graph",
+                                  "style": {"width": width, "height": height, "background": "surface_container_low"}},
+                    theme=theme, x=x, y=y, edit=_borders([None], border_color, border_width), name="node_graph")
     viewport = widget.node
     viewport.set(clip_children=True)
     a11y.describe(viewport, role="group", label="Node graph")
