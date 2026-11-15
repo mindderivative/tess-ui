@@ -17,9 +17,9 @@ class B(ViewModel):
 def make_project(tmp_path):
     (tmp_path / "Views").mkdir(exist_ok=True)
     for name, colour in (("a", "primary"), ("b", "secondary")):
-        (tmp_path / "Views" / f"{name.upper()}_View.yaml").write_text(
-            f"name: {name}\nwidget: Container\nstyle: {{width: 300, height: 200, background: {colour}}}\nchildren:\n"
-            f"  - {{widget: Container, name: card, style: {{width: 60, height: 40, background: tertiary}}}}\n")
+        (tmp_path / "Views" / f"{name.upper()}_View.tdl").write_text(
+            f"---\nTDL: 0.2\nName: {name}\n---\nContainer {{\n  Name: {name}\n  Style {{ Width: 300, Height: 200, Background: {colour} }}\n"
+            "  Children {\n    Container { Name: card, Style { Width: 60, Height: 40, Background: tertiary } }\n  }\n}\n")
 
 
 def opened(tmp_path, **kwargs):

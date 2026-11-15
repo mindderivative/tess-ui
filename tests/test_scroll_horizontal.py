@@ -17,24 +17,32 @@ class VM(ViewModel):
         self.way = Signal("none")
 
 
-def opened(tmp_path, props="orientation: horizontal"):
+def opened(tmp_path, props="Orientation: horizontal"):
     (tmp_path / "Views").mkdir(exist_ok=True)
-    (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{flex_direction: vertical, align_content: top_left, width: 300, height: 200}}
-children:
-  - widget: ScrollView
-    name: strip
-    {props}
-    scroll_offset: "{{{{ x }}}}"
-    at_top: "{{{{ start }}}}"
-    at_end: "{{{{ end }}}}"
-    scroll_direction: "{{{{ way }}}}"
-    style: {{width: 100, height: 60}}
-    children:
-      - {{widget: Container, name: a, style: {{width: 150, height: 40, background: primary}}}}
-      - {{widget: Container, name: b, style: {{width: 150, height: 40, background: secondary}}}}
-      - {{widget: Container, name: c, style: {{width: 150, height: 40, background: tertiary}}}}
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Align_Content: top_left, Width: 300, Height: 200 }}
+  Children {{
+    ScrollView {{
+      Name: strip
+      {props}
+      Scroll_Offset: <| x |>
+      At_Top: <| start |>
+      At_End: <| end |>
+      Scroll_Direction: <| way |>
+      Style {{ Width: 100, Height: 60 }}
+      Children {{
+        Container {{ Name: a, Style {{ Width: 150, Height: 40, Background: primary }} }}
+        Container {{ Name: b, Style {{ Width: 150, Height: 40, Background: secondary }} }}
+        Container {{ Name: c, Style {{ Width: 150, Height: 40, Background: tertiary }} }}
+      }}
+    }}
+  }}
+}}
 """)
     app = App(root=tmp_path)
     app.bind(VM)
@@ -83,30 +91,39 @@ def test_vertical_is_still_the_default(tmp_path):
 
 def test_another_orientation_is_refused(tmp_path):
     with pytest.raises((SpecBuildError, ValueError, Exception), match="vertical or horizontal|orientation"):
-        opened(tmp_path, props="orientation: diagonal")
+        opened(tmp_path, props="Orientation: diagonal")
 
 
 def test_a_scroll_view_with_a_max_size_and_none_of_its_own_is_as_long_as_its_content_up_to_that(tmp_path):
-    view, _ = opened(tmp_path, props="orientation: horizontal")
+    view, _ = opened(tmp_path, props="Orientation: horizontal")
     strip = view._built.outer["root.strip"]
     assert strip.get("layout_width") == 100.0  # its own width
-    (tmp_path / "Views" / "Main_View.yaml").write_text("""name: main
-widget: Container
-style: {flex_direction: vertical, align_content: top_left, width: 300, height: 300}
-children:
-  - widget: ScrollView
-    name: short
-    style: {max_height: 100}
-    children: [{widget: Container, name: a, style: {width: 50, height: 40}}]
-  - widget: ScrollView
-    name: tall
-    style: {max_height: 100}
-    children: [{widget: Container, name: b, style: {width: 50, height: 400}}]
-  - widget: ScrollView
-    name: wide
-    orientation: horizontal
-    style: {max_width: 120, height: 30}
-    children: [{widget: Container, name: c, style: {width: 500, height: 20}}]
+    (tmp_path / "Views" / "Main_View.tdl").write_text("""---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Flex_Direction: vertical, Align_Content: top_left, Width: 300, Height: 300 }
+  Children {
+    ScrollView {
+      Name: short
+      Style { Max_Height: 100 }
+      Children { Container { Name: a, Style { Width: 50, Height: 40 } } }
+    }
+    ScrollView {
+      Name: tall
+      Style { Max_Height: 100 }
+      Children { Container { Name: b, Style { Width: 50, Height: 400 } } }
+    }
+    ScrollView {
+      Name: wide
+      Orientation: horizontal
+      Style { Max_Width: 120, Height: 30 }
+      Children { Container { Name: c, Style { Width: 500, Height: 20 } } }
+    }
+  }
+}
 """)
     app = App(root=tmp_path)
     app.bind(VM)
@@ -123,18 +140,26 @@ def test_snap_and_snap_align_make_it_settle_on_a_child_and_a_wrong_alignment_is_
     (tmp_path / "Views").mkdir(exist_ok=True)
 
     def view_with(snap, align):
-        (tmp_path / "Views" / "Main_View.yaml").write_text(f"""name: main
-widget: Container
-style: {{width: 300, height: 100, align_content: top_left}}
-children:
-  - widget: ScrollView
-    name: s
-    orientation: horizontal
-    snap: {snap}
-    style: {{width: 100, height: 60}}
-    children:
-      - {{widget: Container, name: a, style: {{width: 150, height: 40, snap_align: {align}}}}}
-      - {{widget: Container, name: b, style: {{width: 150, height: 40, snap_align: {align}}}}}
+        (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Width: 300, Height: 100, Align_Content: top_left }}
+  Children {{
+    ScrollView {{
+      Name: s
+      Orientation: horizontal
+      Snap: {snap}
+      Style {{ Width: 100, Height: 60 }}
+      Children {{
+        Container {{ Name: a, Style {{ Width: 150, Height: 40, Snap_Align: {align} }} }}
+        Container {{ Name: b, Style {{ Width: 150, Height: 40, Snap_Align: {align} }} }}
+      }}
+    }}
+  }}
+}}
 """)
         app = App(root=tmp_path)
         app.bind(VM)

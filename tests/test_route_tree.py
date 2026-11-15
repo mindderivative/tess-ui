@@ -5,37 +5,112 @@ import pytest
 from tess_ui import App
 from tess_ui.spec.nodes import LoadError
 
-SHELL = """name: shell
-widget: Window
-title: App
-state: {signed: false}
-style: {width: 600, height: 300}
-children:
-  - {widget: Rect, name: sign_in, style: {width: 40, height: 20, background: primary}, handlers: {on_click: 'signed = True'}}
-  - {widget: Home, name: home, route: ""}
-  - {widget: Settings, name: settings, route: settings}
-  - widget: Admin
-    name: admin
-    route: {path: admin, guard: signed, redirect: ""}
-  - widget: Reports
-    name: reports
-    route: {path: reports, lazy: true}
+SHELL = """---
+TDL: 0.2
+Name: shell
+---
+Window {
+  Name: shell
+  Title: App
+  State { Signed: false }
+  Style { Width: 600, Height: 300 }
+  Children {
+    Rect {
+      Name: sign_in
+      Style { Width: 40, Height: 20, Background: primary }
+      Handlers {
+        On_Click { Set { Target: signed, Value: <| True |> } }
+      }
+    }
+    Home {
+      Name: home
+      Route: ""
+    }
+    Settings {
+      Name: settings
+      Route: settings
+    }
+    Admin {
+      Name: admin
+      Route { Path: admin, Guard: signed, Redirect: "" }
+    }
+    Reports {
+      Name: reports
+      Route { Path: reports, Lazy: true }
+    }
+  }
+}
 """
-LEAF = "name: {n}\nwidget: Container\nstate: {{count: 0}}\nstyle: {{width: 100, height: 50}}\nchildren:\n  - {{widget: Rect, name: bump, style: {{width: 20, height: 20, background: primary}}, handlers: {{on_click: 'count += 1'}}}}\n  - {{widget: Text, name: t, text: \"{n}\" , typography_role: body_medium, style: {{foreground: on_surface}}}}\n"
-SETTINGS = """name: settings
-widget: Container
-style: {width: 300, height: 100}
-children:
-  - {widget: Text, name: t, text: settings, typography_role: body_medium, style: {foreground: on_surface}}
-  - {widget: Profile, name: profile, route: profile}
-  - {widget: Account, name: account, route: /account}
+LEAF = """---
+TDL: 0.2
+Name: NNN
+---
+Container {
+  Name: NNN
+  State { Count: 0 }
+  Style { Width: 100, Height: 50 }
+  Children {
+    Rect {
+      Name: bump
+      Style { Width: 20, Height: 20, Background: primary }
+      Handlers {
+        On_Click { Set { Target: count, Value: <| count + 1 |> } }
+      }
+    }
+    Text {
+      Name: t
+      Text: NNN
+      Typography_Role: body_medium
+      Style { Foreground: on_surface }
+    }
+  }
+}
 """
-ADMIN = """name: admin
-widget: Container
-style: {width: 300, height: 100}
-children:
-  - {widget: Text, name: t, text: admin, typography_role: body_medium, style: {foreground: on_surface}}
-  - {widget: Users, name: users, route: users}
+SETTINGS = """---
+TDL: 0.2
+Name: settings
+---
+Container {
+  Name: settings
+  Style { Width: 300, Height: 100 }
+  Children {
+    Text {
+      Name: t
+      Text: settings
+      Typography_Role: body_medium
+      Style { Foreground: on_surface }
+    }
+    Profile {
+      Name: profile
+      Route: profile
+    }
+    Account {
+      Name: account
+      Route: "/account"
+    }
+  }
+}
+"""
+ADMIN = """---
+TDL: 0.2
+Name: admin
+---
+Container {
+  Name: admin
+  Style { Width: 300, Height: 100 }
+  Children {
+    Text {
+      Name: t
+      Text: admin
+      Typography_Role: body_medium
+      Style { Foreground: on_surface }
+    }
+    Users {
+      Name: users
+      Route: users
+    }
+  }
+}
 """
 
 
@@ -44,9 +119,9 @@ def shell(tmp_path):
     (tmp_path / "Views").mkdir()
     files = {"Shell": SHELL, "Settings": SETTINGS, "Admin": ADMIN}
     for n in ("Home", "Profile", "Account", "Users", "Reports"):
-        files[n] = LEAF.format(n=n.lower())
+        files[n] = LEAF.replace("NNN", n.lower())
     for n, text in files.items():
-        (tmp_path / "Views" / f"{n}_View.yaml").write_text(text)
+        (tmp_path / "Views" / f"{n}_View.tdl").write_text(text)
     app = App(root=tmp_path)
     view = app.open_view("Shell")
     app.window.advance(16)
@@ -190,17 +265,49 @@ def test_a_lazy_screen_has_its_route_before_it_is_built(shell):
 
 def test_a_lazy_route_with_if_is_refused(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Shell_View.yaml").write_text(
-        "name: shell\nwidget: Window\ntitle: T\nstyle: {width: 300, height: 200}\nchildren:\n  - {widget: Home, name: home, route: {path: '', lazy: true}, if: 'True'}\n")
-    (tmp_path / "Views" / "Home_View.yaml").write_text(LEAF.format(n="home"))
+    (tmp_path / "Views" / "Shell_View.tdl").write_text(
+        """---
+TDL: 0.2
+Name: shell
+---
+Window {
+  Name: shell
+  Title: T
+  Style { Width: 300, Height: 200 }
+  Children {
+    If <| True |> {
+      Home {
+        Name: home
+        Route { Path: "", Lazy: true }
+      }
+    }
+  }
+}
+""")
+    (tmp_path / "Views" / "Home_View.tdl").write_text(LEAF.replace("NNN", "home"))
     with pytest.raises(LoadError, match="a lazy route takes no 'if:'"):
         App(root=tmp_path).open_view("Shell")
 
 
 def test_a_route_mapping_is_checked(tmp_path):
     (tmp_path / "Views").mkdir()
-    (tmp_path / "Views" / "Shell_View.yaml").write_text(
-        "name: shell\nwidget: Window\ntitle: T\nstyle: {width: 300, height: 200}\nchildren:\n  - {widget: Home, name: home, route: {path: '', redirect: x}}\n")
-    (tmp_path / "Views" / "Home_View.yaml").write_text(LEAF.format(n="home"))
+    (tmp_path / "Views" / "Shell_View.tdl").write_text(
+        """---
+TDL: 0.2
+Name: shell
+---
+Window {
+  Name: shell
+  Title: T
+  Style { Width: 300, Height: 200 }
+  Children {
+    Home {
+      Name: home
+      Route { Path: "", Redirect: x }
+    }
+  }
+}
+""")
+    (tmp_path / "Views" / "Home_View.tdl").write_text(LEAF.replace("NNN", "home"))
     with pytest.raises(LoadError, match="redirect"):
         App(root=tmp_path).open_view("Shell")
