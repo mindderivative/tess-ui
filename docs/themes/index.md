@@ -35,7 +35,7 @@ Theme {
 }
 ```
 
-A theme is a root `Theme` block, and a colour is a quoted string (`"#0B6B58"`; a bare `#` starts a comment). A stylesheet is a root `Styles` block holding `Rule` blocks (a key a stylesheet does not have, such as a `Seed`, is an error). The keys are listed in the [TDL reference](../api/tdl.md#theme-and-stylesheet).
+A theme is a root `Theme` block, and a colour is a quoted string (`"#0B6B58"`; a bare `#` starts a comment). A stylesheet is a root `Styles` block holding `Rule` blocks (a key a stylesheet does not have, such as a `Seed`, is an error). The keys are listed in the [TDL reference](../api/tdl.md#the-theme).
 A component with a dot in its name (`card.elevated`) is a block inside its component: `Card { Elevated { ... } }`.
 Rules are written in a stylesheet, not a theme: a theme's own `Styles` list is read in the older rule shape (`Kind`,
 `Classes`, `Id`) and is not how a view is styled now.
