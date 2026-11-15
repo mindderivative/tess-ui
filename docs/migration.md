@@ -28,6 +28,24 @@ What to change in an existing app when you upgrade. Each section is the release 
 | `Components/Name_Component.yaml`, `component: Name` | a view `Name` with `Params`, called as `Name { ... }` |
 | `TESS_UI_SHIPPED=yaml` | nothing: Tesserae's own views are TDL only |
 
+### TEL: expressions and handlers
+
+Expressions and handlers run on TEL, the Tesserae Expression Language (`tesserae-el`, installed with Tesserae). Almost every view works unchanged; the view loader now says so when one does not. What to look for:
+
+| Before | Now |
+| --- | --- |
+| `d.get()` on a Signal that holds a dict gave the dict | it is the dict's own `get` and needs a key: write `d` |
+| `n.get()` on a plain value was an error | it is the value |
+| a name `_` | refused, as every name starting with `_` is |
+| a text with `<| |>` parts: each part up to 2000 characters | the whole text is limited to 2000 characters; split a longer one |
+| `rows[0] + 1`, `d.k + 1` with a Signal inside the list or dict | an error (`a Signal cannot be used in arithmetic`): write `rows[0].get() + 1`; `<| rows[0] |>` alone still reads it |
+| `items.append(x)`, `x.bit_length()`, `'{}'.format(x)`, `isinstance(x, (int, str))`, `2 ** 100000`, a call of a name that is not a function: errors when the expression ran | errors when the view loads, with the line |
+| an action inside a bigger expression of a handler (`ok = copy(t) and 1`) | an error: an action is a step of its own (`Call`) or the whole value of a `Set` (`ok = copy(t)`) |
+| one evaluation budget for a whole handler | one per step |
+| messages: `cannot call .x()`, `the limit is 100000`, `not exposed`, `allowed: ...` | `the method 'x' is not available`, `the range is over 100000 items`, `has no attribute`, only `did you mean ...`; an `ExprError` has TEL's `code` too (`unknown-name`, `call-not-function`, `method-not-available`, `bad-call`, `limit-range`, ...) |
+
+Python code that imported `tess_ui.expr` (`compile_expr`, `Template`, ...) uses `tess_ui.tel`, which has the same names.
+
 ## To 0.6.0.1
 
 **Views, stylesheets and themes are written in TDL.** A view is a `<Name>_View.tdl`, a stylesheet a `<Name>_Stylesheet.tdl` and a theme a `<Name>_Theme.tdl`; Tesserae no longer reads the YAML files of those kinds. The language is the same

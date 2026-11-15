@@ -2,12 +2,11 @@
 
 import pytest
 
-from tess_ui.expr import ExprError, compile_expr
+from tess_ui.tel import ExprError, compile_expr
+from tests.helpers import MapScope
 
 
 def run(source, **names):
-    from tess_ui.expr import MapScope
-
     return compile_expr(source).evaluate(MapScope(names))
 
 

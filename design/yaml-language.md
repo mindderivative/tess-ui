@@ -219,7 +219,7 @@ bool); a template always yields a string.
 
 ### 8.1 Grammar
 
-Parsed with Python's `ast` (mode `eval`), then checked: only these node types are allowed; anything else is an error naming it.
+Parsed by TEL (`tess_el`, on Python's `ast` in mode `eval`), then checked when the text is read: only these node types are allowed; anything else is an error naming it (with a `code`). tess-ui adds the scope, the host functions and the handler steps (`src/tess_ui/tel.py`).
 
 | Allowed | Notes |
 |---|---|
@@ -276,7 +276,8 @@ view has no ViewModel").
 
 **Decided: a Signal reads as its value.** `{{ count }}` is the value of the Signal `count`. When the name or attribute resolves to a
 `Signal` or `Computed`, the evaluator **unwraps** it (and, in a reactive expression, subscribes). The one exception is a method call on it:
-`count.get()` keeps working (a `Call` whose function is `Attribute(value=X, attr='get')` evaluates `X` without unwrapping). Writing is
+`count.get()` keeps working: TEL registers `get()` on `Signal`, `Computed` and the plain values (on a plain value it is the value), and a Signal that holds a `dict` is the one
+case that stays different (`d.get()` is the dict's own `get`; write `d`). A Signal inside a list or a dict is not read mid-expression (`rows[0] + 1` is an error; `rows[0].get() + 1` works). Writing is
 only in handlers (section 9).
 
 **Attribute access** on values is read-only and limited:
@@ -300,7 +301,7 @@ only in handlers (section 9).
 ### 8.6 Limits (the sandbox)
 
 Every evaluation has a **step budget** (default 200 000 visited AST nodes, counting comprehension iterations) and these caps, each a
-named error: expression length 2 000 characters; AST depth 40; `range` length 100 000; a repeated sequence (`'a' * n`) at most 1 000 000
+named error (TEL's `limit-*` codes): expression length 2 000 characters (a template text counts as one); AST depth 40; `range` length 100 000; a repeated sequence (`'a' * n`) at most 1 000 000
 items; `**` with an exponent above 64 or a result beyond 2^1024; string results over 1 MB. There is no recursion (no definitions) and no I/O.
 A function call that is not in 8.5 (and, in a handler, not a ViewModel method) is an error, not a `NameError`.
 
@@ -633,7 +634,7 @@ this list fixes only the names the language and the registry are designed around
 
 | Phase | New or changed modules | Tests |
 |---|---|---|
-| 2 expression language | `src/tess_ui/expr.py` (parse, check, evaluate, classify); `binding.py` is now a facade over it | the section 8 grammar table row by row; the sandbox corpus and fuzzer (8.6); every limit; static and reactive classification; Signals as values; error positions |
+| 2 expression language | `src/tess_ui/tel.py` on `tess_el` (the old `expr.py` is gone since 0.6.1); `binding.py` is a facade over it | the section 8 grammar table row by row; the sandbox corpus and fuzzer (8.6); every limit; static and reactive classification; Signals as values; error positions |
 | 3 node model | `src/tess_ui/spec/widgets.py` (registry, `Property`, `@widget`, `decl_from_params`, JSON schema), `spec/builtin_widgets.py` (the 25 built-in declarations), `spec/nodes.py` (`parse_view`: nodes, ids, positions, `LoadError`), `spec/translate.py` (old to new), `tools/generate_widget_schema.py` | one test per key in section 2; unknown-property errors with suggestions; the translator over every file in the repository (128 of 131 load, 3 known gaps) |
 | 4 composition | `src/tess_ui/spec/compose.py` (`Composer`, `Composition`, `Instance`, `Scope`: params, the caller's scope, `Slot`, `for`, `if`, `state`, ids, disposal) | scope rules; slot placement and errors; reactive `for:` reconciliation (add, remove, reorder, update in place, 10 000 rows); state per row and across a recomposition; the call's keys over the callee's root; every subscription released on dispose; mutation-checked |
 | 5 binding | `src/tess_ui/viewmodel.py` (`Bindings`, `ViewHandle`, `open_view`, `check_view`), `spec/lower.py` (instances to the builder's spec), `composed.py` (`ComposedView`, `open_composed`, built-in actions), `App.bind`/`open_view`/`check`, `ViewModel(view=None)` with `views`, `show`, `on_attached`, `on_detached` | the pie-and-list case (two views, one instance, one Signal) headless and on screen; the three ways to bind; unbound views; swap; the contract and `expects:`; lowering of every widget shape; handlers, two-way edits, `for:` and `if:` reaching real nodes; mutation-checked |

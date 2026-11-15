@@ -13,10 +13,9 @@ from types import SimpleNamespace
 import pytest
 
 from tess_ui import reactive
-from tess_ui.expr import (
-    BUILTIN_FUNCTIONS, ExprError, Limits, MapScope, Origin, compile_expr, compile_statements, compile_template, is_action_name,
-)
 from tess_ui.reactive import Computed, Signal
+from tess_ui.tel import BUILTIN_NAMES, ExprError, Limits, Origin, compile_expr, compile_statements, compile_template, is_action_name
+from tests.helpers import MapScope
 
 
 def run(source, **values):
@@ -77,7 +76,7 @@ DISALLOWED = [
     ("getattr(x, 'a')", "not a function"), ("type(x)", "not a function"), ("globals()", "not a function"), ("print(1)", "not a function"),
     ("print", "is not defined"), ("name.format()", "str.format() is not available"), ("name.format_map({})", "not available"),
     ("name.encode()", "not available"), ("items.append(1)", "not available"), ("items.pop()", "not available"), ("d.update({})", "not available"),
-    ("d.pop('k')", "not available"), ("items.sort()", "not available"), ("(1).bit_length()", "cannot call"), ("x.real", "no readable attribute"),
+    ("d.pop('k')", "not available"), ("items.sort()", "not available"), ("(1).bit_length()", "is not available"), ("x.real", "no readable attribute"),
     ("name.upper", "is a method"), ("sorted(items, key=len)", None),  # a function value is fine to pass to sorted()? see below
     ("x +", "syntax error"), ("", "empty"), ("   ", "empty"), ("1 2", "syntax error"), ("x = 1", "syntax error"), ("import os", "syntax error"),
 ]
@@ -123,7 +122,7 @@ def test_a_comprehension_variable_cannot_be_called_and_a_name_that_is_not_a_func
 
 
 def test_the_built_in_list_is_the_documented_one():
-    assert set(BUILTIN_FUNCTIONS) == {
+    assert set(BUILTIN_NAMES) == {
         "len", "min", "max", "abs", "round", "sum", "str", "int", "float", "bool", "sorted", "reversed", "range", "enumerate", "zip", "any",
         "all", "list", "dict", "tuple", "set", "isinstance", "format_number", "pluralize", "clamp",
         "date_add_days", "date_weekday", "days_in_month", "format_date", "current_date"}
@@ -196,7 +195,7 @@ def test_object_attributes_are_read_only_public_and_never_methods():
     assert run("o.items[1]", o=Plain()) == 2
     with pytest.raises(ExprError, match="is a method"):
         run("o.method", o=Plain())
-    with pytest.raises(ExprError, match="cannot call"):
+    with pytest.raises(ExprError, match="is not available"):
         run("o.method()", o=Plain())
     with pytest.raises(ExprError, match="private"):
         run("o._secret", o=Plain())
@@ -206,7 +205,7 @@ def test_object_attributes_are_read_only_public_and_never_methods():
 
 def test_expose_narrows_the_readable_attributes():
     assert run("o.shown", o=Narrow()) == 1
-    with pytest.raises(ExprError, match="not exposed"):
+    with pytest.raises(ExprError, match="has no attribute"):
         run("o.hidden", o=Narrow())
 
 
@@ -356,8 +355,8 @@ LIMIT_CASES = [
     ("[" + ",".join(["1"] * 1100) + "]", "more than 1000 parts", Limits(max_source=10**6)),
     ("[x for x in range(100000)]", "too expensive", Limits()),
     ("[x for x in range(10) for y in range(10) for z in range(10)]", "too expensive", Limits(max_steps=500)),
-    ("range(100001)", "the limit is 100000", Limits()),
-    ("range(10**9)", "the limit is 100000", Limits()),
+    ("range(100001)", "the range is over 100000 items", Limits()),
+    ("range(10**9)", "the range is over 100000 items", Limits()),
     ("'a' * 1000001", "repeated sequence", Limits()),
     ("[0] * 2_000_000", "repeated sequence", Limits()),
     ("3 * 'ab' * 400000", "repeated sequence", Limits()),
@@ -370,7 +369,7 @@ LIMIT_CASES = [
     ("'x'.center(2000000)", "the width is over", Limits()),
     ("'x'.zfill(10**7)", "the width is over", Limits()),
     ("list(range(100000)) + list(range(100000)) + list(range(100000))", "too expensive", Limits(max_steps=250_000)),
-    ("sum([[1]] * 500000, [])", "too expensive", Limits(max_steps=100_000)),
+    ("sum([[1]] * 500000, [])", "too large to check", Limits(max_steps=100_000)),
 ]
 
 
@@ -391,11 +390,13 @@ def test_a_big_but_legitimate_expression_fits_the_default_budget():
     assert len(run("[str(i) for i in range(2000)]")) == 2000
 
 
-def test_the_budget_covers_a_whole_handler():
+def test_the_budget_is_each_steps_own_and_a_step_over_it_fails():
     scope = MapScope({"n": 0}, writable={"n"})
-    statements = compile_statements("; ".join(["n = n + sum([i for i in range(300)])"] * 20), limits=Limits(max_steps=2000))
+    cheap = "n = n + sum([i for i in range(300)])"
+    compile_statements("; ".join([cheap] * 20), limits=Limits(max_steps=2000)).run(scope)  # twenty steps together are over 2000: TEL counts per expression
+    assert scope.values["n"] == 20 * sum(range(300))
     with pytest.raises(ExprError, match="too expensive"):
-        statements.run(scope)
+        compile_statements(cheap, limits=Limits(max_steps=1000)).run(scope)
 
 
 # -- the sandbox: a corpus of escapes that must all fail -----------------------------------------------------------------------------

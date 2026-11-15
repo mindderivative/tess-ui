@@ -4,7 +4,7 @@ a stylesheet rule and a handler -- with the line, and the names that are near.""
 import pytest
 
 from tess_ui import Signal
-from tess_ui.expr import BUILTIN_FUNCTIONS, ExprError, compile_expr, compile_statements, compile_template
+from tess_ui.tel import BUILTIN_NAMES, ExprError, compile_expr, compile_statements
 from tess_ui.spec.compose import Composer
 from tess_ui.spec.nodes import LoadError, parse_view
 from tess_ui.spec.tdl_stylesheet import load_marked_tdl_stylesheet
@@ -51,7 +51,7 @@ def test_an_unknown_function_in_an_expression_is_a_load_error_naming_it():
     with pytest.raises(ExprError) as caught:
         compile_expr("nosuch(1)")
     assert "'nosuch' is not a function you can call here" in caught.value.message
-    assert caught.value.hint.startswith("allowed: ") and "clamp" in caught.value.hint  # nothing is near: the whole list
+    assert caught.value.hint is None  # nothing is near: TEL gives no list of the allowed names (expr.py did)
 
 
 def test_the_near_names_are_offered():
@@ -62,7 +62,7 @@ def test_the_near_names_are_offered():
 
 def test_the_builtin_functions_still_compile():
     for name in ("clamp", "min", "max", "len", "format_number", "pluralize", "format_date", "current_date"):
-        assert name in BUILTIN_FUNCTIONS
+        assert name in BUILTIN_NAMES
         compile_expr(f"{name}(x)")
 
 
@@ -119,7 +119,7 @@ def test_without_the_actions_a_handlers_names_cannot_be_judged_so_it_loads():
 
 def test_compile_statements_keeps_the_calls_it_saw():
     statements = compile_statements("bump(1); count = nosuch(2)")
-    assert sorted(call.func.id for call in statements.calls) == ["bump", "nosuch"]
+    assert sorted(call.callee for call in statements.called) == ["bump", "nosuch"]
 
 
 # -- #283: the text of an `after(...)` or `every(...)` in a handler is checked as the handler is --------------------------------------------------

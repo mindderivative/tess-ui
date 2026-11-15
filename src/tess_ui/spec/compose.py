@@ -29,18 +29,18 @@ from typing import Any, Callable, Iterable, Iterator, Mapping, Optional
 
 from loguru import logger
 
-from tess_ui.expr import (BUILTIN_FUNCTIONS, Expr, ExprError, Template, check_handler_actions, check_handler_calls, check_handler_targets, compile_statements, is_action_name,
-                           timer_handlers)
 from tess_ui.reactive import Computed, Effect, Signal, untrack
 from tess_ui.spec.nodes import VISIBLE, Handler, LoadError, Node, ViewDoc
 from tess_ui.spec.rules import INTERACTION_STATES, Identity, Rule, RuleSheet
 from tess_ui.spec.widgets import PropertyError, WidgetDecl
+from tess_ui.tel import (BUILTIN_NAMES, Expr, ExprError, Origin, Template, check_handler_actions, check_handler_calls, check_handler_targets, compile_statements,
+                         is_action_name, timer_handlers)
 
 __all__ = ["Composer", "Composition", "Instance", "Scope"]
 
 MAX_DEPTH = 64
 #: Names a param, a loop variable or a state variable may not take (spec 8.7).
-RESERVED = frozenset({"hovered", "focused", "pressed", "event", "app", "True", "False", "None"}) | frozenset(BUILTIN_FUNCTIONS)
+RESERVED = frozenset({"hovered", "focused", "pressed", "event", "app", "True", "False", "None"}) | BUILTIN_NAMES
 
 
 class _StateValues(dict):
@@ -810,9 +810,9 @@ class Composer:
     def _check_statements(self, statements: Any, scope: "Scope") -> None:
         """The checks of a handler's calls and assignments, and the same for the statements written as the text of an `after(...)` or `every(...)` inside it
         (they run in this scope too, later; their position is the handler's, since the text has none of its own)."""
+        check_handler_actions(statements, scope)
         check_handler_calls(statements, scope)
         check_handler_targets(statements, scope)
-        check_handler_actions(statements, scope)
         for text in timer_handlers(statements):
             if not is_action_name(text):
                 self._check_statements(compile_statements(text, origin=statements.origin), scope)
@@ -910,7 +910,7 @@ class Composer:
                 raise self._fail(ctx, node.at, f"'{name}' is a reserved name and cannot be a state variable")
             if hasattr(initial, "is_reactive") and initial.is_reactive(scope):
                 # a starting value may read the view's own params (the value they have when the state is made), but not a ViewModel's names
-                if not all(n in BUILTIN_FUNCTIONS or scope.params_hold(n) for n in initial.names):
+                if not all(scope.params_hold(n) for n in initial.names):
                     raise self._fail(ctx, node.at, f"the starting value of state '{name}' must be static",
                                      "it may read the view's params, which seed it once; not a ViewModel's names")
             value = untrack(lambda: initial.evaluate(scope)) if hasattr(initial, "evaluate") else initial
@@ -936,8 +936,6 @@ class Composer:
         return convert(value.evaluate(scope))
 
     def _handler_ref(self, ctx: _Ctx, node: Node, pname: str, call_scope: "Scope") -> HandlerRef:
-        from tess_ui.expr import ExprError, Origin, compile_statements, is_action_name
-
         text = node.props[pname]
         if not isinstance(text, str) or not text.strip():
             raise self._fail(ctx, node.prop_at.get(pname, node.at), f"{node.widget}: '{pname}' is an action name or statements")
