@@ -5,6 +5,7 @@ import os
 import pytest
 
 from tess_ui import App
+from tess_ui.spec.nodes import LoadError
 from tess_ui.spec.watch import ComposedWatcher
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
@@ -205,14 +206,21 @@ def test_a_rail_of_screens_follows_the_current_screen(project):
     assert view.node("root.nav.item[Pref].label").get("fill") == app.theme.role("on_surface")
 
 
-# Old View(path) pipeline only (deleted with it at the YAML cutover): `view.py` raises this, the composed pipeline ignores a `Route` outside a window view.
-OLD_HOME = "id: root\nkind: Container\nstyle: {width: 200, height: 100}\nchildren:\n  - {id: hi, kind: Text, text: {content: Home, typography_role: body_large}, style: {foreground: on_surface}}\n"
+def _host(tmp_path, call):
+    (tmp_path / "Views").mkdir()
+    (tmp_path / "Views" / "Home_View.tdl").write_text(HOME)
+    (tmp_path / "Views" / "Host_View.tdl").write_text(
+        f"---\nTDL: 0.2\nName: Host\n---\nContainer {{\n  Name: host\n  Children {{\n    {call}\n  }}\n}}\n")
+    return App(root=tmp_path, theme_seed=SEED)
 
 
 def test_a_route_outside_a_window_view_is_an_error(tmp_path):
-    from tess_ui import View
+    app = _host(tmp_path, "Home { Name: l, Route: x }")
+    with pytest.raises(LoadError, match=r"Host_View\.tdl:8:\d+: error: a `route:` is for a view in the window view"):
+        app.open_view("Host")
 
-    (tmp_path / "Left_View.yaml").write_text(OLD_HOME)
-    (tmp_path / "Host_View.yaml").write_text("id: root\nkind: Container\nchildren:\n  - {id: l, view: Left_View.yaml, route: x}\n")
-    with pytest.raises(ValueError, match="a `route:` is for a view in the window view"):
-        View(tmp_path / "Host_View.yaml")
+
+def test_a_lazy_route_outside_a_window_view_is_an_error_too(tmp_path):
+    app = _host(tmp_path, "Home { Name: l, Route { Path: x, Lazy: true } }")
+    with pytest.raises(LoadError, match="a `route:` is for a view in the window view"):
+        app.open_view("Host")

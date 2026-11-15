@@ -774,6 +774,7 @@ class Composer:
         self.rules = [sheet for sheet in rules if sheet.rules]
         self.by_id: dict[str, Instance] = {}
         self.routes: list[RouteRecord] = []
+        self._windowed = False  # whether the view being composed is a window view (its root is a `Window`): the only one whose calls may be routed
         self._records: dict[int, RouteRecord] = {}  # a routed node (by identity) -> its record, for the call that is being made
         self.states: dict[tuple[str, str, str], Signal] = {}
         self._previous = previous._composer.states if previous is not None else {}
@@ -782,6 +783,7 @@ class Composer:
 
     def compose(self, doc: ViewDoc) -> Composition:
         ctx = _Ctx(doc, 0, (doc.name or doc.file,))
+        self._windowed = doc.root.widget == "Window"
         self._check_root(doc.root, ctx)
         scope = Scope(None, {}, root=self.viewmodel, actions=self.actions)
         return Composition(self._instance(doc.root, "root", scope, ctx, forced_id="root"), self)
@@ -832,6 +834,9 @@ class Composer:
                 suffix: str = "", looped: bool = False, virtual: Optional[Virtual] = None) -> _Region:
         if node.widget == "Slot":
             return self._slot(node, ctx, notify)
+        if node.route is not None and not self._windowed:  # a screen is a call in the window view (a routed call inside a screen is nested, and the window view still holds it)
+            raise self._fail(ctx, node.prop_at.get("route", node.at), "a `route:` is for a view in the window view (a view whose root is a `Window`)",
+                             "a screen is a view called with a route inside the app's Window view")
         if node.loop is not None and not looped:
             def element(el_scope: Scope, key_suffix: str, changed: Callable[[], None]) -> _Region:
                 return self._region(node, seg, parent_id, el_scope, ctx, changed, suffix=key_suffix, looped=True)
