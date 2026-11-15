@@ -3498,3 +3498,9 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 - **Mutations.** Library preferring YAML again fails `test_the_library_loads_the_shipped_tdl_by_default`; a twin no longer skipped fails 3 tests.
 - **NOT verified.** The full suite and CI (the parent's), Windows/macOS, the 3.12 jobs without `tess_dl` (the fallback to shipped YAML is tested by a monkeypatch only), examples and apps still YAML (6b).
 
+
+## 2026-11-14 TDL switch, piece 6b: examples, apps and tutorials on TDL
+
+- **Done.** 70 files (53 views, 9 stylesheets, 8 themes) under `examples/` and `apps/` converted and the YAML removed; the Python files, comments and docs that name them follow; the tutorial pages, `docs/getting-started.md` and the README show the TDL.
+- **One refusal.** `apps/shell_config/.../Views/Main_View.yaml:257`: an `a11y:` label `"{{ item['label'] }}: one value..."` (text mixed with a slot has no TDL form). Fixed in the source before converting: the label is one slot, `{{ item['label'] + ': one value ...' }}` (same string).
+- **Tests.** `test_examples_run`, `test_tutorials_current` (compare `.tdl`, skip without tess_dl), `test_language_marker` (threshold), `test_apps_tooling`, the shell-config schema test (`.tdl` in the source scan).

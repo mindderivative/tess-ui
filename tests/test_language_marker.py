@@ -329,10 +329,10 @@ def stamp_tool():
 
 
 def test_every_yaml_file_tesserae_ships_starts_with_the_marker():
-    """The shipped views and stylesheets, the default theme, the project templates and the examples: `python3 tools/stamp_language.py --write` fixes it."""
+    """The shipped views and stylesheets, the default theme, the project templates (the examples are TDL now): `python3 tools/stamp_language.py --write` fixes it."""
     tool = stamp_tool()
     files = tool.files()
-    assert len(files) >= 150, len(files)
+    assert len(files) >= 100, len(files)
     missing = [str(p.relative_to(ROOT)) for p in files if not p.read_bytes().decode("utf-8").startswith(f"{marker.KEY}: {marker.LINE}")]
     assert not missing, f"{len(missing)} file(s) lack `tesserae: {marker.LINE}` on line 1: {missing[:5]}"
     assert all(tool.stamped(p) is None for p in files)

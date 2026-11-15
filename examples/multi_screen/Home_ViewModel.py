@@ -1,4 +1,4 @@
-"""Serves `Home_View.yaml`. Its handler navigates with `self.app.navigate(...)` and records where the user came from in the app's shared state:
+"""Serves `Home_View.tdl`. Its handler navigates with `self.app.navigate(...)` and records where the user came from in the app's shared state:
 `self.app` and `self.state` are found through the view's window. Switching from inside a real dispatched handler is the reentrant case."""
 
 from tess_ui import ViewModel

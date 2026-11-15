@@ -1,7 +1,7 @@
 # Getting Started
 
 Build one small app, a label and a button that counts, twice: **declaratively**
-(a YAML view and a Python ViewModel) and **imperatively** (Python calls that
+(a TDL view and a Python ViewModel) and **imperatively** (Python calls that
 create nodes). Each step shows both, and every program here is a file in
 [`examples/getting_started/`](https://github.com/mindderivative/tess-ui/tree/main/examples/getting_started)
 that Tesserae's tests run.
@@ -29,9 +29,8 @@ white text we add next reads on any desktop theme) and open it.
 
 === "Declarative"
 
-    ```yaml title="Counter_View.yaml"
-    tesserae: 0.6
-    --8<-- "examples/getting_started/declarative/step1/Counter_View.yaml"
+    ```text title="Counter_View.tdl"
+    --8<-- "examples/getting_started/declarative/step1/Counter_View.tdl"
     ```
 
     ```python title="app.py"
@@ -45,8 +44,8 @@ white text we add next reads on any desktop theme) and open it.
     ```
 
 Declaratively the window shows a **screen**: `app.open_view` reads
-`Counter_View.yaml` and registers it, and `app.show("Counter")` puts it in the
-window. The screen's name is its file's name without `_View.yaml`. It has no
+`Counter_View.tdl` and registers it, and `app.show("Counter")` puts it in the
+window. The screen's name is its file's name without `_View.tdl`. It has no
 ViewModel yet, because it has nothing to react to. Imperatively there is no
 file: `window.root` is the box every node goes in, and one call sets its layout
 and background.
@@ -63,9 +62,8 @@ A **node** is one thing on screen. Add a label that says `Count: 0`.
 
 === "Declarative"
 
-    ```yaml title="Counter_View.yaml"
-    tesserae: 0.6
-    --8<-- "examples/getting_started/declarative/step2/Counter_View.yaml"
+    ```text title="Counter_View.tdl"
+    --8<-- "examples/getting_started/declarative/step2/Counter_View.tdl"
     ```
 
     ```python title="app.py"
@@ -78,12 +76,12 @@ A **node** is one thing on screen. Add a label that says `Count: 0`.
     --8<-- "examples/getting_started/imperative/step2/app.py"
     ```
 
-In YAML a node is an entry in `children:`: `widget: Text` makes a label and
-`text:` holds what it says. Every node says which `widget:` it is, and the rest
-of its keys are that widget's properties (`font_size`), its `style:` and a
-`name:` to find it by. In code, `window.create("text", ...)` makes the node
+In TDL a node is an entry in `Children { ... }`: `Text { ... }` makes a label and
+`Text` holds what it says. Every node is a widget, and the rest
+of its keys are that widget's properties (`Font_Size`), its `Style` and a
+`Name` to find it by. In code, `window.create("text", ...)` makes the node
 and `window.root.add_child(...)` puts it in the window. The text's colour is
-`foreground` in YAML and `fill=` in code.
+`Foreground` in TDL and `fill=` in code.
 
 !!! tip "If Python prints an error"
     A mistake in a view file ends in a traceback; read the **last line**. It
@@ -91,7 +89,7 @@ and `window.root.add_child(...)` puts it in the window. The text's colour is
     misspelt word says what you probably meant:
 
     ```text
-    tess_ui.spec.nodes.LoadError: .../Counter_View.yaml:9:37: error: Text: style 'foregorund' is not valid here (did you mean 'foreground')
+    tess_ui.spec.nodes.LoadError: .../Counter_View.tdl:9:37: error: Text: style 'foregorund' is not valid here (did you mean 'foreground')
     ```
 
 ## 3. A second node
@@ -100,9 +98,8 @@ Add a button: a purple, rounded box with a centred text node in it.
 
 === "Declarative"
 
-    ```yaml title="Counter_View.yaml"
-    tesserae: 0.6
-    --8<-- "examples/getting_started/declarative/step3/Counter_View.yaml"
+    ```text title="Counter_View.tdl"
+    --8<-- "examples/getting_started/declarative/step3/Counter_View.tdl"
     ```
 
     ```python title="app.py"
@@ -118,13 +115,13 @@ Add a button: a purple, rounded box with a centred text node in it.
 A button is a `Rect` (a coloured box) with a `Text` in it. The two ways name
 things a little differently:
 
-| YAML view | Python |
+| TDL view | Python |
 | --- | --- |
-| `widget: Text` / `widget: Rect` | `window.create("text", ...)` / `window.create("box", ...)` |
-| `style: {width: 96, ...}` | `width=96` |
-| `foreground`, `background` (`"#RRGGBB"`) | `fill=(r, g, b, a)` |
-| `text: "..."`, `font_size: 20` | `text="..."`, `font_size=20` |
-| `children:` | `node.add_child(other)` |
+| `Text { ... }` / `Rect { ... }` | `window.create("text", ...)` / `window.create("box", ...)` |
+| `Style { Width: 96, ... }` | `width=96` |
+| `Foreground`, `Background` (`"#RRGGBB"`) | `fill=(r, g, b, a)` |
+| `Text: "..."`, `Font_Size: 20` | `text="..."`, `font_size=20` |
+| `Children { ... }` | `node.add_child(other)` |
 
 ## 4. Make it count
 
@@ -134,9 +131,8 @@ things a little differently:
     --8<-- "examples/getting_started/declarative/step4/Counter_ViewModel.py"
     ```
 
-    ```yaml title="Counter_View.yaml"
-    tesserae: 0.6
-    --8<-- "examples/getting_started/declarative/step4/Counter_View.yaml"
+    ```text title="Counter_View.tdl"
+    --8<-- "examples/getting_started/declarative/step4/Counter_View.tdl"
     ```
 
     ```python title="app.py"
@@ -150,7 +146,7 @@ things a little differently:
     ```
 
 **Declaratively** the state lives in a ViewModel. The view says which one by its
-`name: Counter`, and the ViewModel says which views it serves with `views =
+`Name: Counter`, and the ViewModel says which views it serves with `views =
 "Counter"`; `app.bind(CounterViewModel)` joins them. Its `Signal` holds the
 count; the label's `text: "Count: {{ count }}"` keeps showing it, and
 `handlers:` calls `increment` on a click. A Signal reads as its value in a view,
@@ -163,7 +159,7 @@ Run it. Click the button, or press Tab and then Enter or Space, and the count
 goes up. The two versions are the same app.
 
 To see an edit without restarting, run the declarative version with `app.run(hot_reload=True)`, count a few clicks, then change the label's text in
-`Counter_View.yaml` and save: the window shows the new text with the count kept ([Hot Reload](guide/hot-reload.md)).
+`Counter_View.tdl` and save: the window shows the new text with the count kept ([Hot Reload](guide/hot-reload.md)).
 
 ## Which to use
 
@@ -173,8 +169,8 @@ bindings live in the view file, and the ViewModel holds only your logic. Use
 [Widgets in Python](guide/widget-catalog.md) guide covers it. The two mix freely,
 because a declarative screen is made of the same nodes you create in code:
 `app.screen("Counter")` gives the view and its ViewModel, and
-`view.node("root.button")` returns any node the YAML declared (a node's id is its
-path from the root, using each `name:`).
+`view.node("root.button")` returns any node the view declared (a node's id is its
+path from the root, using each `Name`).
 
 ## Next
 

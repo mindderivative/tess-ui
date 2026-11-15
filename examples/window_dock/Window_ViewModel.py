@@ -1,4 +1,4 @@
-"""The window's ViewModel. It serves `Window_View.yaml`, and so the views the window calls: the Console panel reads `last`, the Notes screen
+"""The window's ViewModel. It serves `Window_View.tdl`, and so the views the window calls: the Console panel reads `last`, the Notes screen
 reads `note` and `echo` (a called view has no ViewModel of its own)."""
 
 from tess_ui import Computed, Signal, ViewModel

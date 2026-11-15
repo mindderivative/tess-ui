@@ -15,13 +15,12 @@ each step put its files in it (or run a step straight from a checkout: `python e
 
 ## 1. A screen
 
-One screen: a title, a count, and a button. A **view** is the YAML; its **ViewModel** is the Python
-that holds the state. The view says which ViewModel serves it with its `name:`, and the ViewModel says which views it
+One screen: a title, a count, and a button. A **view** is a TDL file; its **ViewModel** is the Python
+that holds the state. The view says which ViewModel serves it with its `Name`, and the ViewModel says which views it
 serves with `views`.
 
-```yaml title="Tasks_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial/step1/Tasks_View.yaml"
+```text title="Tasks_View.tdl"
+--8<-- "examples/tutorial/step1/Tasks_View.tdl"
 ```
 
 ```python title="Tasks_ViewModel.py"
@@ -32,13 +31,13 @@ tesserae: 0.6
 --8<-- "examples/tutorial/step1/app.py"
 ```
 
-- **Every node is a `widget:`.** `Container` lays things out, `Text` shows text, and `Button` is MD3's button;
-  its keys are that widget's properties (`label`, `variant`), a `style:`, and a `name:` to find the node by.
+- **Every node is a widget.** `Container { ... }` lays things out, `Text { ... }` shows text, and `Button { ... }` is MD3's button;
+  its keys are that widget's properties (`Label`, `Variant`), a `Style { ... }`, and a `Name` to find the node by.
   [Every widget and component](components/index.md) has a page.
-- **Inline styling.** Each node has its own `style:`, with colours named for theme roles
+- **Inline styling.** Each node has its own `Style { ... }`, with colours named for theme roles
   (`surface`, `on_surface`), not hex codes, so they follow light and dark.
 - **State.** `tasks` is a `Signal`; `summary` is a `Computed` that follows it. A Signal reads as its value in
-  a view, so `text: "{{ summary }}"` stays up to date, and `handlers:` calls `add_task` on a click.
+  a view, so `Text: <| summary |>` stays up to date, and `Handlers { On_Click: add_task }` calls `add_task` on a click.
 - **The app.** `app.bind` joins the ViewModel to the views it serves, `app.open_view` opens the view and
   `app.show` puts it in the window. `theme_seed` makes the colours, and `search=["."]` says the app's other views are
   found in this folder, which the next step uses.
@@ -50,17 +49,15 @@ python app.py
 ## 2. A list of views
 
 A task is more than a line of text: it has a checkbox and a remove button. That makes it a view of its own,
-`TaskItem`, called once for each task. A view with `params:` is called by its name, with the params as keys, and
-`for:` with a `key:` repeats the call for each element of a list, adding and removing rows as the list changes.
+`TaskItem`, called once for each task. A view with `Params` is called by its name, with the params as keys, and
+`For task In ... Key ...` repeats the call for each element of a list, adding and removing rows as the list changes.
 
-```yaml title="TaskItem_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial/step2/TaskItem_View.yaml"
+```text title="TaskItem_View.tdl"
+--8<-- "examples/tutorial/step2/TaskItem_View.tdl"
 ```
 
-```yaml title="Tasks_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial/step2/Tasks_View.yaml"
+```text title="Tasks_View.tdl"
+--8<-- "examples/tutorial/step2/Tasks_View.tdl"
 ```
 
 ```python title="Tasks_ViewModel.py"
@@ -68,7 +65,7 @@ tesserae: 0.6
 ```
 
 - `tasks` holds one dictionary for each task, and is the single source of truth. Each change replaces the
-  list, which is how a view notices it. The `key:` is the task's `id`, so a row that stays is kept as it is.
+  list, which is how a view notices it. The `Key` is the task's `id`, so a row that stays is kept as it is.
 - A view cannot read the names of the view that calls it, so what it needs comes in as a param:
   `task` is the data. `on_toggle` and `on_remove` are `handler` params: the caller writes what to do (`remove(task.id)`
   is written in the caller's names) and the row runs it by name.
@@ -80,73 +77,66 @@ See [Components & Embedding](guide/components.md) and [Component Views](guide/co
 
 ## 3. Styling in files
 
-Inline `style:` is fine for one node. Two kinds of file take styling out of the views:
+Inline `Style` is fine for one node. Two kinds of file take styling out of the views:
 
-```yaml title="Brand_Theme.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial/step3/Brand_Theme.yaml"
+```text title="Brand_Theme.tdl"
+--8<-- "examples/tutorial/step3/Brand_Theme.tdl"
 ```
 
-```yaml title="Tasks_Stylesheet.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial/step3/Tasks_Stylesheet.yaml"
+```text title="Tasks_Stylesheet.tdl"
+--8<-- "examples/tutorial/step3/Tasks_Stylesheet.tdl"
 ```
 
-```yaml title="Tasks_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial/step3/Tasks_View.yaml"
+```text title="Tasks_View.tdl"
+--8<-- "examples/tutorial/step3/Tasks_View.tdl"
 ```
 
-```yaml title="TaskItem_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial/step3/TaskItem_View.yaml"
+```text title="TaskItem_View.tdl"
+--8<-- "examples/tutorial/step3/TaskItem_View.tdl"
 ```
 
 ```python title="app.py"
 --8<-- "examples/tutorial/step3/app.py"
 ```
 
-- **A theme** (`Brand_Theme.yaml`) is app-wide: one `seed` colour makes the whole palette, and
-  `typography:` changes a type style. Pass it as `App(custom_theme=)`.
-- **A stylesheet** (`Tasks_Stylesheet.yaml`) is rules. A rule names a `widget` and may narrow it by `classes`,
-  a property (`variant`), a `part` (a named node inside that widget) and a `state`, and gives a `style`. A node
-  that says `classes: [page]` is styled by the rule with `classes: [page]`. Pass the file as `App(stylesheet=)`.
-- **A rule for a view of your own.** `widget: TaskItem` styles the root of every `TaskItem`, so the row's
+- **A theme** (`Brand_Theme.tdl`) is app-wide: one `Seed` colour makes the whole palette, and
+  `Typography` changes a type style. Pass it as `App(custom_theme=)`.
+- **A stylesheet** (`Tasks_Stylesheet.tdl`) is rules. A rule names a widget and may narrow it by `Classes`,
+  a property (`Variant`), a `Part` (a named node inside that widget) and a `State`, and gives a `Style`. A node
+  that says `Classes: [page]` is styled by the rule with `Classes: [page]`. Pass the file as `App(stylesheet=)`.
+- **A rule for a view of your own.** A `TaskItem` rule styles the root of every `TaskItem`, so the row's
   layout is no longer written in its file.
 - **A rule for a widget Tesserae ships.** The two `Button` rules go over the shipped look of a filled button,
-  field by field: here, a tertiary one. `part: label` is the button's text.
+  field by field: here, a tertiary one. `Part: label` is the button's text.
 
-A node's own `style:` always wins, then the stylesheet, then the theme. See [Themes](themes/index.md).
+A node's own `Style` always wins, then the stylesheet, then the theme. See [Themes](themes/index.md).
 
 ## 4. A view of your own
 
 Two numbers in the same shape: that is a view with params. `Stat` is a file like any other, and there is no
 other kind of component.
 
-```yaml title="Stat_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial/step4/Stat_View.yaml"
+```text title="Stat_View.tdl"
+--8<-- "examples/tutorial/step4/Stat_View.tdl"
 ```
 
-```yaml title="Tasks_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial/step4/Tasks_View.yaml"
+```text title="Tasks_View.tdl"
+--8<-- "examples/tutorial/step4/Tasks_View.tdl"
 ```
 
 ```python title="Tasks_ViewModel.py"
 --8<-- "examples/tutorial/step4/Tasks_ViewModel.py"
 ```
 
-```yaml title="Tasks_Stylesheet.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial/step4/Tasks_Stylesheet.yaml"
+```text title="Tasks_Stylesheet.tdl"
+--8<-- "examples/tutorial/step4/Tasks_Stylesheet.tdl"
 ```
 
-- `widget: Stat` finds `Stat_View.yaml` by its name. Its params are `label` and `value`.
+- `Stat { ... }` finds `Stat_View.tdl` by its name. Its params are `Label` and `Value`.
 - `value` is an expression written where the view is called, so each stat keeps up with its `Computed`. (A text
   property takes a string, so the `Computed`s return strings.)
-- Its look is rules for `widget: Stat` in the app's stylesheet: one for the view's root and one for each named part
-  (`part: value`).
+- Its look is rules for `Stat` in the app's stylesheet: one for the view's root and one for each named part
+  (`Part: value`).
 - A view has no state of its own unless it says `state:`, and no ViewModel of its own: it reads its params, then the
   names of the ViewModel that serves the view at the top. `TaskItem` and `Stat` are the same kind of thing, a
   repeated *look* or a repeated *piece*; the behaviour stays in the one ViewModel.
@@ -156,18 +146,16 @@ tesserae: 0.6
 A **screen** is a view that is opened and registered with the app. Settings is a second one, and the two
 share state: the app owns it, and any ViewModel reads it as `self.state`.
 
-```yaml title="Settings_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial/step5/Settings_View.yaml"
+```text title="Settings_View.tdl"
+--8<-- "examples/tutorial/step5/Settings_View.tdl"
 ```
 
 ```python title="Settings_ViewModel.py"
 --8<-- "examples/tutorial/step5/Settings_ViewModel.py"
 ```
 
-```yaml title="Tasks_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial/step5/Tasks_View.yaml"
+```text title="Tasks_View.tdl"
+--8<-- "examples/tutorial/step5/Tasks_View.tdl"
 ```
 
 ```python title="Tasks_ViewModel.py"
@@ -192,24 +180,21 @@ See [Apps & Screens](guide/apps-and-screens.md).
 
 ## 6. A custom window
 
-With `borderless: true` the OS draws no title bar, and the app draws its own frame. The **window view** is that frame:
-a `widget: Window` file with a title bar (which gets the window's buttons), a navigation rail that switches screens, a status
-bar, and the screens themselves, each a call of a view with a `route:`. The app opens the one file, and the window's file now
+With `Borderless: true` the OS draws no title bar, and the app draws its own frame. The **window view** is that frame:
+a `Window` file with a title bar (which gets the window's buttons), a navigation rail that switches screens, a status
+bar, and the screens themselves, each a call of a view with a `Route`. The app opens the one file, and the window's file now
 brings the two screens in.
 
-```yaml title="Window_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial/step6/Window_View.yaml"
+```text title="Window_View.tdl"
+--8<-- "examples/tutorial/step6/Window_View.tdl"
 ```
 
-```yaml title="Tasks_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial/step6/Tasks_View.yaml"
+```text title="Tasks_View.tdl"
+--8<-- "examples/tutorial/step6/Tasks_View.tdl"
 ```
 
-```yaml title="Settings_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial/step6/Settings_View.yaml"
+```text title="Settings_View.tdl"
+--8<-- "examples/tutorial/step6/Settings_View.tdl"
 ```
 
 ```python title="Window_ViewModel.py"
@@ -220,9 +205,9 @@ tesserae: 0.6
 --8<-- "examples/tutorial/step6/app.py"
 ```
 
-- `style:` on the `Window` is the window's size and colour, and the title bar takes a `style:` too, so its colour is yours to set.
-- A call with a `route:` is a screen: `widget: Tasks` is the view `Tasks_View.yaml`, and the app can `navigate("Tasks")`, `show("Tasks")`
-  or `navigate_to("")` it. A routed screen is part of the window view, not opened by itself, so it has no `name:` and no ViewModel
+- `Style` on the `Window` is the window's size and colour, and the title bar takes a `Style` too, so its colour is yours to set.
+- A call with a `Route` is a screen: `Tasks { ... }` is the view `Tasks_View.tdl`, and the app can `navigate("Tasks")`, `show("Tasks")`
+  or `navigate_to("")` it. A routed screen is part of the window view, not opened by itself, so it has no `Name` and no ViewModel
   of its own: it reads the names of the ViewModel that serves the window. That is why `Tasks_ViewModel.py` and
   `Settings_ViewModel.py` are now one, `Window_ViewModel.py`, serving `Window`: delete the two old files, which nothing uses any more.
 - The rail replaces the Settings and Back buttons, so they are gone from the screens.

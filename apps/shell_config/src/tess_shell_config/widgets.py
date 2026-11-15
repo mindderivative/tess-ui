@@ -9,7 +9,7 @@ A `Widget` is made for one key (`factory(key, context)`). It does three things a
 
 `ui` is the cell shape the window's view draws (`switch`, `choice`, `field`, `length`, `sides`, `colour`, `icon`, `font`, `chord`, `list`). The registry maps a schema kind to a widget factory; a kind with no entry (a kind a higher schema
 minor version adds) and a kind with no widget yet get the generic TDL text field, and the form reports which keys did (`Widget.reason`). A widget of another branch (the icon picker, the font list, the key-chord recorder, the list
-editor) plugs in with one line: `registry.register("icon", IconWidget)`, plus the `ui` branch its cell needs in `Views/Main_View.yaml`. The registry ships with all of them.
+editor) plugs in with one line: `registry.register("icon", IconWidget)`, plus the `ui` branch its cell needs in `Views/Main_View.tdl`. The registry ships with all of them.
 """
 
 from __future__ import annotations

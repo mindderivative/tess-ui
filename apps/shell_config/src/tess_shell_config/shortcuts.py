@@ -33,7 +33,7 @@ from tess_shell_config.viewmodel import ShellConfigViewModel
 
 __all__ = ["REGIONS", "Shortcuts"]
 
-#: The form's widgets that take the keyboard focus, by the name they have in `Main_View.yaml`.
+#: The form's widgets that take the keyboard focus, by the name they have in `Main_View.tdl`.
 _FOCUSABLE = ("switch", "choose", "block_button", "field", "unit_button", "side_0", "colour_picker", "icon_picker", "font_list", "chord_field", "list_editor", "token_button")
 
 #: The structure actions that have a Ctrl+Shift+letter, by the letter.

@@ -27,7 +27,7 @@ HERE = Path(__file__).parent
 app = App(width=720, height=420, title="Notes", theme_seed=(0x67, 0x50, 0xA4, 0xFF),
           borderless=True, min_width=480, min_height=280, root=HERE, search=["."])
 app.bind(HomeViewModel)
-view = app.open_view("Home")  # Home_View.yaml
+view = app.open_view("Home")  # Home_View.tdl
 app.show("Home")
 
 # The example checks itself, as the others do: both bars drag the window, and the search field in the title bar follows the ViewModel.

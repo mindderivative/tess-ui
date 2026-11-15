@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tesserae's second vertical slice: `App.show(name)` switching between two independent screens, `Home` and `Settings`, each its own `*_View.yaml`
+"""Tesserae's second vertical slice: `App.show(name)` switching between two independent screens, `Home` and `Settings`, each its own `*_View.tdl`
 and `*_ViewModel.py`, through the same live `Window`, from inside a real dispatched click handler on each screen's own button.
 
 Both screens are opened with `open_view()` and bound to the ViewModel that serves them. Their ViewModels reach the app as `self.app` (to call

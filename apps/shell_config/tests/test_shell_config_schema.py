@@ -135,7 +135,7 @@ def test_the_code_writes_no_key_name_or_enum_value_of_the_schema(schema):
     names = {key.name for _, key in schema.walk_keys()} | {v for values in schema.enums.values() for v in values}
     names |= {p for m in schema.modules.values() for p in m.params} | {t.name for g in schema.tokens.values() for t in g.values()}
     words = {n for n in names if len(n) > 4 and n[0].isupper()}  # the shell's own words: Capitalised, not an English word the code needs
-    text = "\n".join(p.read_text(encoding="utf-8") for p in SOURCE.rglob("*") if p.suffix in (".py", ".yaml"))
+    text = "\n".join(p.read_text(encoding="utf-8") for p in SOURCE.rglob("*") if p.suffix in (".py", ".yaml", ".tdl"))
     quoted = {w for w in words if f'"{w}"' in text or f"'{w}'" in text}
     # the file types' root words and the configuration folder's own folder names are the application's vocabulary (what a file and a folder are called), not keys; the two grammars the schema does not carry
     # (a rule's Selector, from the Style Schema note, and a module file's Params block, from its file) are the rest; nothing else may appear

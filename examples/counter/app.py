@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tesserae's first vertical slice: a `Counter_View.yaml` and the `Counter_ViewModel.py` that serves it, opened through `App`.
+"""Tesserae's first vertical slice: a `Counter_View.tdl` and the `Counter_ViewModel.py` that serves it, opened through `App`.
 
 `app.py` is the entry point: it binds the ViewModel, opens the view and shows it. It checks itself with real dispatched clicks, then renders 20 frames
 and exits. Run it with `--interactive` to keep the window open. `app.run(hot_reload=True)` shows an edit to the view at once, the count kept.
@@ -20,7 +20,7 @@ directory = Path(__file__).parent
 
 app = App(width=240, height=120, title="Tesserae Counter", root=directory, search=["."])
 app.bind(CounterViewModel)  # the ViewModel that serves the view named `Counter`
-view = app.open_view("Counter")  # Counter_View.yaml
+view = app.open_view("Counter")  # Counter_View.tdl
 window = app.show("Counter")
 
 label = view.node("root.label")

@@ -2,7 +2,7 @@ from tess_ui import Computed, Signal, ViewModel
 
 
 class WindowViewModel(ViewModel):
-    """Serves Window_View.yaml, and so the Tasks and Settings screens in it: they read these names."""
+    """Serves Window_View.tdl, and so the Tasks and Settings screens in it: they read these names."""
 
     views = "Window"
 

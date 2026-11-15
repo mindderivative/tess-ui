@@ -18,7 +18,7 @@ that Tesserae's tests run. The page shows every file a step adds or changes, so 
 | Layout | every file side by side | `Views/`, `ViewModels/`, `Themes/`, `Styles/` (and `Components/`, for views in the older syntax) |
 | Open a screen | `app.open_view("Tasks")`, with `search=["."]` so views are found in the folder | `app.open_view("Main")` |
 | A ViewModel | an `import`, then `app.bind(TasksViewModel)` | `app.bind(app.project.viewmodel("Main"))`: no import |
-| A theme or stylesheet | `App(custom_theme=HERE / "Brand_Theme.yaml")` | `App(custom_theme="Brand")` |
+| A theme or stylesheet | `App(custom_theme=HERE / "Brand_Theme.tdl")` | `App(custom_theme="Brand")` |
 | A view of your own | next to the view that uses it | `Views/`, from any view |
 | Good for | one screen, a sketch, a single file to share | an app with several screens and its own look |
 
@@ -42,14 +42,13 @@ it (`--no-venv` skips the environment). Its files are in the current view langua
 ```text
 tasks/
   app.py
-  Views/Main_View.yaml
+  Views/Main_View.tdl
   ViewModels/Main_ViewModel.py
   Components/  Themes/  Styles/       empty for now; Components/ is not used here, a view of your own goes in Views/
 ```
 
-```yaml title="Views/Main_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial_project/step1/Views/Main_View.yaml"
+```text title="Views/Main_View.tdl"
+--8<-- "examples/tutorial_project/step1/Views/Main_View.tdl"
 ```
 
 ```python title="ViewModels/Main_ViewModel.py"
@@ -61,7 +60,7 @@ tesserae: 0.6
 ```
 
 - **Paired by name.** The view is named `Main` and its ViewModel serves `"Main"`. `app.open_view("Main")` opens
-  `Views/Main_View.yaml`, and `app.project.viewmodel("Main")` is the class `MainViewModel` in
+  `Views/Main_View.tdl`, and `app.project.viewmodel("Main")` is the class `MainViewModel` in
   `ViewModels/Main_ViewModel.py`. There is no import and no path: the flat `app.py` needed both.
 - **`root=HERE`** says where the project is, so it runs from any folder: `python tasks/app.py`.
 - The view and ViewModel are the flat Tutorial's, renamed `Tasks` to `Main`.
@@ -70,21 +69,19 @@ tesserae: 0.6
 
 A task row is a view of its own, in the same folder as the screen:
 
-```yaml title="Views/TaskItem_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial_project/step2/Views/TaskItem_View.yaml"
+```text title="Views/TaskItem_View.tdl"
+--8<-- "examples/tutorial_project/step2/Views/TaskItem_View.tdl"
 ```
 
-```yaml title="Views/Main_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial_project/step2/Views/Main_View.yaml"
+```text title="Views/Main_View.tdl"
+--8<-- "examples/tutorial_project/step2/Views/Main_View.tdl"
 ```
 
 ```python title="ViewModels/Main_ViewModel.py"
 --8<-- "examples/tutorial_project/step2/ViewModels/Main_ViewModel.py"
 ```
 
-- `widget: TaskItem` finds `Views/TaskItem_View.yaml` by its name, wherever the view that calls it is. The flat version
+- `widget: TaskItem` finds `Views/TaskItem_View.tdl` by its name, wherever the view that calls it is. The flat version
   needs `search=["."]` to say where its views are.
 - The row has no ViewModel: it takes the task and two handlers as params, and `Main`'s ViewModel does the work.
 
@@ -92,73 +89,64 @@ tesserae: 0.6
 
 Themes and stylesheets each have a folder, and the app names them:
 
-```yaml title="Themes/Brand_Theme.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial_project/step3/Themes/Brand_Theme.yaml"
+```text title="Themes/Brand_Theme.tdl"
+--8<-- "examples/tutorial_project/step3/Themes/Brand_Theme.tdl"
 ```
 
-```yaml title="Styles/Tasks_Stylesheet.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial_project/step3/Styles/Tasks_Stylesheet.yaml"
+```text title="Styles/Tasks_Stylesheet.tdl"
+--8<-- "examples/tutorial_project/step3/Styles/Tasks_Stylesheet.tdl"
 ```
 
-```yaml title="Views/Main_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial_project/step3/Views/Main_View.yaml"
+```text title="Views/Main_View.tdl"
+--8<-- "examples/tutorial_project/step3/Views/Main_View.tdl"
 ```
 
-```yaml title="Views/TaskItem_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial_project/step3/Views/TaskItem_View.yaml"
+```text title="Views/TaskItem_View.tdl"
+--8<-- "examples/tutorial_project/step3/Views/TaskItem_View.tdl"
 ```
 
 ```python title="app.py"
 --8<-- "examples/tutorial_project/step3/app.py"
 ```
 
-- `custom_theme="Brand"` is `Themes/Brand_Theme.yaml`, and `stylesheet="Tasks"` is `Styles/Tasks_Stylesheet.yaml`.
+- `custom_theme="Brand"` is `Themes/Brand_Theme.tdl`, and `stylesheet="Tasks"` is `Styles/Tasks_Stylesheet.tdl`.
 - The stylesheet holds rules for your own views (`widget: TaskItem`) and for ones Tesserae ships (`widget: Button`,
   here a tertiary button), over the shipped look.
 
 ## 4. A view of your own
 
-Any view says `widget: Stat`, wherever it is, because every view in `Views/` is found by its name:
+Any view says `Stat`, wherever it is, because every view in `Views/` is found by its name:
 
-```yaml title="Views/Stat_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial_project/step4/Views/Stat_View.yaml"
+```text title="Views/Stat_View.tdl"
+--8<-- "examples/tutorial_project/step4/Views/Stat_View.tdl"
 ```
 
-```yaml title="Views/Main_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial_project/step4/Views/Main_View.yaml"
+```text title="Views/Main_View.tdl"
+--8<-- "examples/tutorial_project/step4/Views/Main_View.tdl"
 ```
 
-```yaml title="Styles/Tasks_Stylesheet.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial_project/step4/Styles/Tasks_Stylesheet.yaml"
+```text title="Styles/Tasks_Stylesheet.tdl"
+--8<-- "examples/tutorial_project/step4/Styles/Tasks_Stylesheet.tdl"
 ```
 
 ```python title="ViewModels/Main_ViewModel.py"
 --8<-- "examples/tutorial_project/step4/ViewModels/Main_ViewModel.py"
 ```
 
-- `Views/Stat_View.yaml` is the structure, and its look is the `widget: Stat` rules in the stylesheet, as in the flat
+- `Views/Stat_View.tdl` is the structure, and its look is the `Stat` rules in the stylesheet, as in the flat
   Tutorial. One folder holds every view, so reusing one in another screen needs no path.
 
 ## 5. A second screen
 
-Add `Views/Settings_View.yaml` and `ViewModels/Settings_ViewModel.py` (`tesserae add screen Settings` writes a starting
+Add `Views/Settings_View.tdl` and `ViewModels/Settings_ViewModel.py` (`tesserae add screen Settings` writes a starting
 pair; [The `tesserae` command](guide/cli.md) says what it makes), then fill them in and share state through the app:
 
-```yaml title="Views/Settings_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial_project/step5/Views/Settings_View.yaml"
+```text title="Views/Settings_View.tdl"
+--8<-- "examples/tutorial_project/step5/Views/Settings_View.tdl"
 ```
 
-```yaml title="Views/Main_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial_project/step5/Views/Main_View.yaml"
+```text title="Views/Main_View.tdl"
+--8<-- "examples/tutorial_project/step5/Views/Main_View.tdl"
 ```
 
 ```python title="ViewModels/Settings_ViewModel.py"
@@ -183,19 +171,16 @@ tesserae: 0.6
 The app's frame is one more view, a `widget: Window` file in `Views/`, opened by name. It holds the title bar, a rail, a status
 bar, and the two screens as calls with a `route:`:
 
-```yaml title="Views/Window_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial_project/step6/Views/Window_View.yaml"
+```text title="Views/Window_View.tdl"
+--8<-- "examples/tutorial_project/step6/Views/Window_View.tdl"
 ```
 
-```yaml title="Views/Settings_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial_project/step6/Views/Settings_View.yaml"
+```text title="Views/Settings_View.tdl"
+--8<-- "examples/tutorial_project/step6/Views/Settings_View.tdl"
 ```
 
-```yaml title="Views/Main_View.yaml"
-tesserae: 0.6
---8<-- "examples/tutorial_project/step6/Views/Main_View.yaml"
+```text title="Views/Main_View.tdl"
+--8<-- "examples/tutorial_project/step6/Views/Main_View.tdl"
 ```
 
 ```python title="ViewModels/Window_ViewModel.py"
@@ -207,7 +192,7 @@ tesserae: 0.6
 ```
 
 - The rail replaces the Settings button, so the screens lose their Back and Settings buttons.
-- `app.open_view("Window")` opens `Views/Window_View.yaml`. Its `widget: Main` and `widget: Settings` calls, with a
+- `app.open_view("Window")` opens `Views/Window_View.tdl`. Its `widget: Main` and `widget: Settings` calls, with a
   `route:`, are the screens: each is registered under its view's name (`Main`, `Settings`), so `app.py` no longer opens
   or routes them.
 - A routed screen has no ViewModel of its own: it reads the names of the one that serves the window, so
@@ -220,4 +205,4 @@ tesserae: 0.6
 - [Projects](guide/projects.md): the rest of finding files by name, more folders to search (`search=`), looking
   through the whole project (`recursive=True`), and what a name in two places does.
 - [The `tesserae` command](guide/cli.md): `new`, `add screen`, `build`.
-- [Tutorial](tutorial.md): the same app with every file named by its path, and its YAML for each step.
+- [Tutorial](tutorial.md): the same app with every file named by its path, and its TDL for each step.

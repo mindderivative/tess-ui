@@ -1,4 +1,4 @@
-"""The Structure area's actions in the window (Main_View.yaml), headless and driven with key events only: Add, Remove, Move up and down, Move to, Duplicate, the menu, Undo and Redo.
+"""The Structure area's actions in the window (Main_View.tdl), headless and driven with key events only: Add, Remove, Move up and down, Move to, Duplicate, the menu, Undo and Redo.
 
 Each edit is checked in the file's text line by line, in the tree and in the selection, and the whole flow once from the keyboard alone (open, select, change a value, add a block, move it,
 duplicate it, undo, redo, save).

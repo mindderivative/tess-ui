@@ -16,7 +16,7 @@ class AppState:
 state = AppState()
 app = App(title="Tasks", root=HERE, custom_theme="Brand", stylesheet="Tasks", state=state)
 app.bind(app.project.viewmodel("Window")(state))
-app.open_view("Window")  # Views/Window_View.yaml: the window, its rail and its screens
+app.open_view("Window")  # Views/Window_View.tdl: the window, its rail and its screens
 
 app.navigate_to(sys.argv[1] if len(sys.argv) > 1 else "")
 app.run()

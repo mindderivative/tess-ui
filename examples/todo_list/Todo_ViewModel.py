@@ -1,4 +1,4 @@
-"""Serves `Todo_View.yaml`. `items` is the single source of truth: a list of `{"id", "text", "done"}`. The view builds one `TodoItem` row for each, by
+"""Serves `Todo_View.tdl`. `items` is the single source of truth: a list of `{"id", "text", "done"}`. The view builds one `TodoItem` row for each, by
 `for:` and `key:`, so adding, toggling and removing are only changes to this list: there is nothing to keep in step by hand."""
 
 from tess_ui import Signal, ViewModel

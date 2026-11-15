@@ -1,4 +1,4 @@
-"""The window (Main_View.yaml), headless: Files, Structure and Text areas over a copy of the representative configuration, driven with key events only.
+"""The window (Main_View.tdl), headless: Files, Structure and Text areas over a copy of the representative configuration, driven with key events only.
 
 Nothing here opens a window on a desktop: the toolkit's own headless window draws into memory (the real-session guard in conftest removes DISPLAY and the session bus), the folder is a copy under
 `tmp_path`, and the shell command is never started.

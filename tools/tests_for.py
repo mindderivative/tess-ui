@@ -162,7 +162,7 @@ def pick(files, tests, include_core=False):
                 add(t, f"mentions {name}")
             if not direct and not named and not by_name and not any("core module" in n for n in notes if f in n):
                 notes.append(f"{f}: no test imports {module} or matches its name; look for one by hand")
-        elif (f.startswith("src/") or APP_SOURCE.match(f)) and path.suffix in (".yaml", ".yml"):
+        elif (f.startswith("src/") or APP_SOURCE.match(f)) and path.suffix in (".yaml", ".yml", ".tdl"):
             key = norm(path.stem)
             for t, (text, _) in tests.items():
                 if path.name in text:

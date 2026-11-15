@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tesserae's window, dock and embedded views, in the same YAML as any view.
 
-The frame -- the title bar, the rail, the docked panels, the screens and the status bar -- is `Window_View.yaml`, opened
+The frame -- the title bar, the rail, the docked panels, the screens and the status bar -- is `Window_View.tdl`, opened
 with `app.open_view()`. There are no widgets made in Python:
 
 - The panels (`Files`, `Outline`, `Properties`, `Console`) are views the window calls; the ones that show state (`Console`, and the
@@ -30,7 +30,7 @@ SEED = (0x67, 0x50, 0xA4, 0xFF)
 
 app = App(title="Tesserae Window", theme_seed=SEED, dark=False, root=directory, search=["."])
 app.bind(WindowViewModel)
-view = app.open_view("Window")  # the whole frame, from Window_View.yaml
+view = app.open_view("Window")  # the whole frame, from Window_View.tdl
 app.navigate_to("")
 window = app.window
 window.advance(16)

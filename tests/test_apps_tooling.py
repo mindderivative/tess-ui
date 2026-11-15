@@ -38,7 +38,7 @@ def test_a_changed_apps_test_is_itself_the_pick():
 
 def test_the_apps_view_files_pick_a_test_that_names_them():
     tests = tests_for.load_tests()
-    picks, _ = tests_for.pick(["apps/shell_config/src/tess_shell_config/Views/Main_View.yaml"], tests)
+    picks, _ = tests_for.pick(["apps/shell_config/src/tess_shell_config/Views/Main_View.tdl"], tests)
     assert any(t.startswith("apps/shell_config/tests/") for t in picks)
 
 

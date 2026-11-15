@@ -1,4 +1,4 @@
-"""`Home_ViewModel.py`'s counterpart: it serves `Settings_View.yaml`. See its docstring."""
+"""`Home_ViewModel.py`'s counterpart: it serves `Settings_View.tdl`. See its docstring."""
 
 from tess_ui import ViewModel
 

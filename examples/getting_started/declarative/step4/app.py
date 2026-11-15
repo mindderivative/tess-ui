@@ -8,6 +8,6 @@ HERE = Path(__file__).parent
 
 app = App(width=360, height=160, title="Counter")
 app.bind(CounterViewModel)
-app.open_view(HERE / "Counter_View.yaml")
+app.open_view(HERE / "Counter_View.tdl")
 app.show("Counter")
 app.run()

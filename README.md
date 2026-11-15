@@ -10,19 +10,33 @@ app authors write views, not Python widget-class trees, and a plain `Signal`-dri
 **Status: pre-alpha.** The [documentation](https://mindderivative.github.io/tess-ui/) is the reference, and the
 [changelog](https://mindderivative.github.io/tess-ui/changelog/) says what each release changed.
 
-```yaml
-tesserae: 0.6
-# Counter_View.yaml
-name: Counter
-widget: Container
-style: {flex_direction: vertical, gap: 12, padding: 24, background: surface}
-children:
-  - widget: Text
-    name: label
-    text: "Count: {{ count }}"
-    typography_role: headline_medium
-    style: {foreground: on_surface}
-  - {widget: Button, name: button, label: Count, style: {width: 120}, handlers: {on_click: increment}}
+```text
+---
+TDL: 0.2
+Name: Counter
+Tesserae: "0.6"
+---
+# Counter_View.tdl
+Container {
+  Name: Counter
+  Style { Flex_Direction: vertical, Gap: 12, Padding: 24, Background: surface }
+  Children {
+    Text {
+      Name: label
+      Text: <| 'Count: ' + str(count) |>
+      Typography_Role: headline_medium
+      Style { Foreground: on_surface }
+    }
+    Button {
+      Name: button
+      Label: Count
+      Style { Width: 120 }
+      Handlers {
+        On_Click: increment
+      }
+    }
+  }
+}
 ```
 
 ```python
@@ -47,7 +61,7 @@ from Counter_ViewModel import CounterViewModel
 
 app = App(width=240, height=160, title="Counter", search=["."])
 app.bind(CounterViewModel)
-app.open_view("Counter")      # Counter_View.yaml
+app.open_view("Counter")      # Counter_View.tdl
 app.show("Counter")
 app.run()
 ```

@@ -5,7 +5,7 @@
     python3 tools/shot.py examples/counter --view Counter --viewmodel Counter_ViewModel.CounterViewModel --click root.button --out /tmp/after.png
     python3 tools/shot.py some/project --view Main --size 640x480 --dark --seed 6750A4 --out /tmp/main.png
 
-ROOT is a folder holding `<Name>_View.yaml` files (and the ViewModel module, when one is named). The window is tess_re's headless one: it
+ROOT is a folder holding `<Name>_View.tdl` (or `.yaml`) files (and the ViewModel module, when one is named). The window is tess_re's headless one: it
 draws text, shaders, gradients and backdrop blur without a GPU or display, the same snapshot `tests/test_pixels.py` reads. It does not show
 timing, scroll feel, an OS window's decorations or anything another platform draws differently. Say so when reporting what you saw.
 
@@ -33,7 +33,7 @@ def parse_size(text):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("root", type=Path)
-    parser.add_argument("--view", required=True, help="the view's name: Main for Main_View.yaml")
+    parser.add_argument("--view", required=True, help="the view's name: Main for Main_View.tdl or Main_View.yaml")
     parser.add_argument("--viewmodel", help="module.Class of the ViewModel, found on ROOT")
     parser.add_argument("--out", type=Path, default=Path("/tmp/tesserae-shot.png"))
     parser.add_argument("--size", type=parse_size, default=(480, 320))

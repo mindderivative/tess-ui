@@ -20,8 +20,8 @@ app = App(
     title="Tasks",
     root=HERE,
     search=["."],
-    custom_theme=HERE / "Brand_Theme.yaml",
-    stylesheet=HERE / "Tasks_Stylesheet.yaml",
+    custom_theme=HERE / "Brand_Theme.tdl",
+    stylesheet=HERE / "Tasks_Stylesheet.tdl",
     state=state,
 )
 app.bind(WindowViewModel(state))

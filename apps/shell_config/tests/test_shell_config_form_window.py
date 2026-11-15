@@ -1,4 +1,4 @@
-"""The form in the window (Main_View.yaml), headless: the Form area beside the Structure tree, driven with key events.
+"""The form in the window (Main_View.tdl), headless: the Form area beside the Structure tree, driven with key events.
 
 The form's rows are drawn by the toolkit from `form_items`; each widget's commit (Enter, or the focus leaving) is one `DocumentModel` edit, so the Text area and the Structure tree follow. A test checks the file
 line by line: only the edited line changes.

@@ -15,11 +15,13 @@ import pytest
 
 import tess_ui
 
+pytest.importorskip("tess_dl")  # the steps' views are TDL files (Python 3.14)
+
 ROOT = Path(__file__).resolve().parent.parent
 EX = ROOT / "examples"
 FLAVOURS = {"tutorial": "Tasks", "tutorial_project": "Main"}
 PAGES = {"tutorial": "tutorial.md", "tutorial_project": "tutorial-project.md"}
-CHECKED = (".py", ".yaml")
+CHECKED = (".py", ".tdl")
 
 
 @pytest.fixture

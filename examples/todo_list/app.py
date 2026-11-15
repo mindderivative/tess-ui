@@ -5,7 +5,7 @@ one `TodoItem` row for each item by `for: item in items` with a `key:`, so rows 
 
 Real dispatched clicks add three items, tick one, remove one, and add again, then the app renders 20 frames and exits.
 
-Hot reload: run it with `app.run(hot_reload=True)` (and no `max_frames`), then edit `TodoItem_View.yaml` -- every row changes in place, its items kept.
+Hot reload: run it with `app.run(hot_reload=True)` (and no `max_frames`), then edit `TodoItem_View.tdl` -- every row changes in place, its items kept.
 """
 
 from pathlib import Path

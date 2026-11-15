@@ -2,7 +2,7 @@ from tess_ui import Computed, Signal, ViewModel
 
 
 class TasksViewModel(ViewModel):
-    views = "Tasks"  # the view it serves: the `name:` at the top of Tasks_View.yaml
+    views = "Tasks"  # the view it serves: the name after `View` at the top of Tasks_View.tdl
 
     def __init__(self):
         super().__init__()

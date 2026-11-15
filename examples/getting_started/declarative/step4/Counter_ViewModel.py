@@ -2,7 +2,7 @@ from tess_ui import Signal, ViewModel
 
 
 class CounterViewModel(ViewModel):
-    views = "Counter"  # the view it serves: the `name:` at the top of Counter_View.yaml
+    views = "Counter"  # the view it serves: the name after `View` at the top of Counter_View.tdl
 
     def __init__(self):
         super().__init__()

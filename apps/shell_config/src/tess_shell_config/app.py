@@ -38,7 +38,7 @@ class Built:
 def build(session: ConfigSession, *, width: int = 1280, height: int = 800, dark: bool | str = "system", live: bool = False, **options: Any) -> Built:
     """The app for `session`. `options` go to `App` (a test passes `reduced_motion=True`, a theme seed...). `live` starts what runs beside the window: the file watch, the first `status` and `check`, each
     command on a worker thread whose answer is posted to the loop (`close` stops the watch). Without it nothing runs a command or watches the folder."""
-    app = App(root=ROOT, width=width, height=height, title=TITLE, dark=dark, stylesheet=ROOT / "Views" / "Main_Stylesheet.yaml", **options)
+    app = App(root=ROOT, width=width, height=height, title=TITLE, dark=dark, stylesheet=ROOT / "Views" / "Main_Stylesheet.tdl", **options)
     viewmodel = ShellConfigViewModel(session)
     app.bind(viewmodel)
     view = app.open_view("Main")

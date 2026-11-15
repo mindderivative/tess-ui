@@ -1,4 +1,4 @@
-"""The counter's ViewModel: it serves `Counter_View.yaml` (`views = "Counter"`), which shows `label` and calls `increment`."""
+"""The counter's ViewModel: it serves `Counter_View.tdl` (`views = "Counter"`), which shows `label` and calls `increment`."""
 
 from tess_ui import Computed, Signal, ViewModel
 

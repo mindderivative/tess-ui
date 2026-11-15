@@ -9,8 +9,8 @@ app = App(
     height=520,
     title="Tasks",
     root=HERE,
-    custom_theme="Brand",  # Themes/Brand_Theme.yaml: the colours, made from one seed
-    stylesheet="Tasks",    # Styles/Tasks_Stylesheet.yaml: the look of every screen
+    custom_theme="Brand",  # Themes/Brand_Theme.tdl: the colours, made from one seed
+    stylesheet="Tasks",    # Styles/Tasks_Stylesheet.tdl: the look of every screen
 )
 app.bind(app.project.viewmodel("Main"))
 app.open_view("Main")
