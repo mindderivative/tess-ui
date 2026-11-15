@@ -7,9 +7,8 @@ result out one entry per line with two spaces to a level; a YAML flow collection
 that does not is wrapped there, a mapping that does not is opened one entry to a line).
 
 Nothing is written that does not read back: every result is loaded again through the front end (`spec/tdl.py`) and compared with the YAML loader's mapping, so a form
-the converter cannot express is a `ConvertError` that names the line and says what to write instead, never a nearly right file. The one bent rule is the pair `for:`
-target (`i, it in enumerate(items)`): a TDL `For` has one variable, so the loop is written with one variable (`i_it`, the pair), a `# TODO tuple for-target: ...` line
-above it, and is reported as a `Loop` whose body the person must adjust.
+the converter cannot express is a `ConvertError` that names the line and says what to write instead, never a nearly right file. A `for:` with several targets
+(`i, it in enumerate(items)`) is written as it is: `For i, it In <| enumerate(items) |> Key <| ... |>` (language 0.2).
 
 `migrate_tdl(path, write=, remove_source=)` does it for a file or a project folder; without `write` it only reports. A `*_Stylesheet.yaml` is converted by `migrate_tdl_sheets.convert_sheet`; themes and components are
 skipped with a note (their converters come later). Running it again changes nothing.
@@ -36,10 +35,10 @@ from tess_ui.migrate import _files
 from tess_ui.spec import marker
 from tess_ui.spec import widgets as registry
 from tess_ui.spec.nodes import LoadError, PMap, load_marked
-from tess_ui.spec.tdl import load_marked_tdl, snake_case, title_case
+from tess_ui.spec.tdl import LANGUAGE_VERSION, load_marked_tdl, snake_case, title_case
 from tess_ui.spec.widgets import WidgetDecl
 
-__all__ = ["ConvertError", "Converted", "FileResult", "Loop", "Report", "convert_view", "migrate_tdl", "with_single_variable"]
+__all__ = ["ConvertError", "Converted", "FileResult", "Report", "convert_view", "migrate_tdl"]
 
 #: The width the converter lays long lists out to, as the YAML views are.
 WIDTH = 150
@@ -70,57 +69,16 @@ class ConvertError(Exception):
         return f"{self.message} ({self.hint})" if self.hint else self.message
 
 
-@dataclass(frozen=True)
-class Loop:
-    """A `for:` with a pair target, written with one variable: the person adjusts its body."""
-
-    file: str
-    line: int
-    original: str
-    rewrite: str
-
-    @property
-    def variable(self) -> str:
-        return self.rewrite.split(" in ", 1)[0]
-
-
 @dataclass
 class Converted:
-    """The TDL text of one view, the steps written and the pair loops and notes it came with."""
+    """The TDL text of one view, the steps written and the notes it came with."""
 
     text: str
     steps: int = 0
-    loops: list[Loop] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
 
 
 # -- the values --------------------------------------------------------------------------------------------------------------
-
-
-def single_variable(target: str) -> str:
-    """The one variable a pair target is written with: `i, it` -> `i_it`."""
-    return "_".join(t.strip() for t in target.split(","))
-
-
-def with_single_variable(data: Any) -> list[str]:
-    """Rewrites every pair-target `for:` in the YAML mapping `data` in place to the form `convert_view` writes; returns the original texts."""
-    found: list[str] = []
-
-    def walk(item: Any) -> None:
-        if isinstance(item, dict):
-            value = item.get("for")
-            match = _FOR.match(value) if isinstance(value, str) else None
-            if isinstance(value, str) and match and "," in match.group(1):
-                found.append(value)
-                item["for"] = f"{single_variable(match.group(1))} in {match.group(2)}"
-            for sub in item.values():
-                walk(sub)
-        elif isinstance(item, list):
-            for sub in item:
-                walk(sub)
-
-    walk(data)
-    return found
 
 
 def _slot(expr: str) -> str:
@@ -270,7 +228,6 @@ class _Converter:
         self.comments = _comments(text)
         self.comment_lines = sorted({c.line for c in self.comments if c.text})
         self.steps = 0
-        self.loops: list[Loop] = []
         self.notes: list[str] = []
 
     def check_aliases(self, node: yaml.Node, line: int, seen: set[int]) -> None:
@@ -645,7 +602,6 @@ class _Converter:
         if "key" in by and "for" not in by:
             raise self.fail(by["key"][0], "a key: without a for:", "a key names the items of a for: loop; remove it or add the for:")
         wrappers: list[tuple[str, tuple[int, ...]]] = []  # (head text, the YAML lines it answers for), outermost first
-        pre: tuple[str, ...] = ()
         if "for" in by:
             fkn, fvn = by["for"]
             text = self.string(fvn, "for")
@@ -653,13 +609,10 @@ class _Converter:
             if match is None:
                 raise self.fail(fvn, f"'for:' reads 'name in expression', got {text!r}", "write for: item in items")
             targets = [t.strip() for t in match.group(1).split(",")]
-            variable = "_".join(targets)
-            if variable.title() in _NO_BLOCK or variable in _NO_BLOCK:
-                raise self.fail(fvn, f"'{variable}' cannot be the variable of a TDL For", "rename the variable")
-            if len(targets) > 1:
-                original = f"{', '.join(targets)} in {match.group(2)}"
-                self.loops.append(Loop(self.file, _line_of(fkn), text.strip(), f"{variable} in {match.group(2)}"))
-                pre = (f"# TODO tuple for-target: {original}",)
+            variable = ", ".join(targets)
+            for target in targets:
+                if target.title() in _NO_BLOCK or target in _NO_BLOCK:
+                    raise self.fail(fvn, f"'{target}' cannot be the variable of a TDL For", "rename the variable")
             key_text = "None"
             lines: tuple[int, ...] = (_line_of(fkn),)
             if "key" in by:
@@ -678,7 +631,7 @@ class _Converter:
         first_keys = tuple(sorted({item_line, widget_line, *extra_keys}))
         for number, (head, lines) in enumerate(wrappers):
             keys = (*first_keys, *lines) if number == 0 else lines
-            out.append(_Line(level, head, tuple(sorted(set(keys))), lines, pre=pre if head.startswith("For") else ()))
+            out.append(_Line(level, head, tuple(sorted(set(keys))), lines))
             level += 2
         node_keys = () if wrappers else first_keys
         if not body:
@@ -703,13 +656,13 @@ class _Converter:
         if not _KEY.match(view_name) or view_name in _NO_BLOCK:
             raise ConvertError(f"the view's name {view_name!r} cannot be a TDL Name", 1,
                                hint="a Name is letters, digits and underscores, starting with a letter: rename the file or give the root a name:")
-        head = [_Line(0, "---"), _Line(0, "TDL: 0.1"), _Line(0, f"Name: {view_name}")]
+        head = [_Line(0, "---"), _Line(0, f"TDL: {LANGUAGE_VERSION}"), _Line(0, f"Name: {view_name}")]
         if scanned.found and scanned.value:
             head.append(_Line(0, f'Tesserae: "{scanned.value}"', trails=(meta_line,)))
         head.append(_Line(0, "---"))
         body = self.node(self.root, 0, extra_keys=(body_first,), skip=skip)
         text = self.assemble(head, body, body_first)
-        return Converted(text, self.steps, self.loops, self.notes)
+        return Converted(text, self.steps, self.notes)
 
     def assemble(self, head: list[_Line], body: list[_Line], body_first: int) -> str:
         lines = head + body
@@ -840,7 +793,6 @@ def convert_view(text: str, name: str, file: str = "<view>", *, resolver: Callab
     except yaml.YAMLError as exc:  # unreachable after load_marked; kept so a scanner difference is an error, not a traceback
         raise ConvertError(f"YAML: {exc}") from None
     expected = load_marked(text, file)
-    with_single_variable(expected)
     try:
         got = load_marked_tdl(result.text, file, resolver=resolver)
     except LoadError as exc:
@@ -885,7 +837,6 @@ class FileResult:
 @dataclass
 class Report:
     results: list[FileResult] = field(default_factory=list)
-    loops: list[Loop] = field(default_factory=list)
     written: bool = False
     removed_source: bool = False
 
@@ -920,24 +871,12 @@ class Report:
             lines.extend(f"              note: {note}" for note in r.notes)
             if r.removed:
                 lines.append(f"              removed {rel(r.path)}")
-        if self.loops:
-            lines.append("")
-            lines.append(f"Tuple for-targets: {len(self.loops)} (a TDL For has one variable, the pair form is not supported yet). Each loop is written with one "
-                         "variable and a `# TODO tuple for-target` line above it. Adjust the body by hand:")
-            for loop in self.loops:
-                first = loop.original.split(" in ", 1)[0].replace(" ", "")
-                parts = first.split(",")
-                uses = ", ".join(f"{loop.variable}[{i}] for {p}" for i, p in enumerate(parts))
-                lines.append(f"  {loop.file}:{loop.line}: `for: {loop.original}`")
-                variable, iterable = loop.rewrite.split(" in ", 1)
-                lines.append(f"      written as `For {variable} In <| {iterable} |>`; the body still uses {' and '.join(parts)}, which no longer exist: "
-                             f"{loop.variable} is the ({', '.join(parts)}) pair, use {uses}")
         counts = {s: sum(r.status == s for r in self.results) for s in ("converted", "current", "skipped", "failed")}
         lines.append("")
         if self.written:
-            summary = [f"{counts['converted']} files converted", f"{self.steps} steps written", f"{len(self.loops)} tuple for-targets to adjust by hand"]
+            summary = [f"{counts['converted']} files converted", f"{self.steps} steps written"]
         else:
-            summary = [f"{counts['converted']} files would be converted", f"{self.steps} steps would be written", f"{len(self.loops)} tuple for-targets to adjust by hand"]
+            summary = [f"{counts['converted']} files would be converted", f"{self.steps} steps would be written"]
         extra = [f"{counts[s]} {s}" for s in ("current", "skipped", "failed") if counts[s]]
         lines.append(", ".join(summary + extra))
         if not self.results:
@@ -1015,7 +954,6 @@ def migrate_tdl(path: str | Path, *, write: bool = False, remove_source: bool = 
         if existing is not None and existing != converted.text:
             result.notes.append(f"{new_path.name} exists and differs: it is replaced")
         report.results.append(result)
-        report.loops += [Loop(f"{file.relative_to(root).as_posix()}", loop.line, loop.original, loop.rewrite) for loop in converted.loops]
     if write:
         for result in report.results:
             if result.status not in ("converted", "current") or result.new_path is None or result.text is None:

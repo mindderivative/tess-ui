@@ -4,7 +4,7 @@ Piece 5 of `design/tdl-switch-plan.md`; the shape is in `design/tdl-views.md` ("
 
 ```
 ---
-TDL: 0.1
+TDL: 0.2
 Name: Brand
 Tesserae: "0.6"
 ---

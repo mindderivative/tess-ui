@@ -43,7 +43,9 @@ Repository = "https://github.com/mindderivative/tess-ui"
 
 [project.optional-dependencies]
 build = ["pyinstaller>=6.10"]
-dev = ["pytest>=8.0", "pyinstaller>=6.10", "jsonschema>=4.17", "ruff>=0.6", "mypy>=1.10"]
+# TDL (language 0.2): the front end and `tesserae migrate-tdl` need `tess_dl`, which needs Python 3.14 (the loaders are not wired in yet: piece 6/10 of design/tdl-switch-plan.md makes it required).
+tdl = ["tesserae-dl>=0.2.0,<0.3; python_version >= '3.14'"]
+dev = ["pytest>=8.0", "pyinstaller>=6.10", "jsonschema>=4.17", "ruff>=0.6", "mypy>=1.10", "tesserae-dl>=0.2.0,<0.3; python_version >= '3.14'"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tess_ui"]

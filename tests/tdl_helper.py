@@ -1,7 +1,6 @@
 """What the TDL tests share: a YAML view's text as TDL, through the real converter (`tess_ui.migrate_tdl`), and a way to compare two mappings.
 
-The converter writes a pair-target loop with one variable (`i, it in enumerate(items)` -> `i_it`): `tess_ui.migrate_tdl.with_single_variable(data)` makes the YAML
-mapping say the same, so the two can be compared.
+A pair-target loop is written `For i, it In` by the converter, as the YAML says it, so the two mappings compare equal as they are.
 """
 
 from __future__ import annotations

@@ -21,6 +21,7 @@ from tess_ui.migrate_tdl import (
 from tess_ui.spec import marker
 from tess_ui.spec.expand import _normalize_scalars
 from tess_ui.spec.nodes import LoadError, _near
+from tess_ui.spec.tdl import LANGUAGE_VERSION
 from tess_ui.spec.tdl_theme import ROOT, THEME_KEYS, load_theme_tdl
 
 __all__ = ["convert_theme", "theme_result", "theme_stem"]
@@ -107,7 +108,7 @@ class _ThemeConverter(_Converter):
         skip = frozenset({marker.KEY}) if scanned.found else frozenset()
         entries = [(kn, vn) for kn, vn in self.root.value if self.key_text(kn) not in skip]
         body_first = _line_of(entries[0][0]) if entries else _line_of(self.root)
-        head = [_Line(0, "---"), _Line(0, "TDL: 0.1"), _Line(0, f"Name: {view_name}")]
+        head = [_Line(0, "---"), _Line(0, f"TDL: {LANGUAGE_VERSION}"), _Line(0, f"Name: {view_name}")]
         if scanned.found and scanned.value:
             head.append(_Line(0, f'Tesserae: "{scanned.value}"', trails=(meta_line,)))
         head.append(_Line(0, "---"))
@@ -122,7 +123,7 @@ class _ThemeConverter(_Converter):
                     raise self.fail(kn, f"unknown field `{key}`, expected one of {expected}", _near(key, THEME_KEYS))
                 body += self.components(kn, vn, 2) if key == "components" else self.map_entry(kn, vn, 2, steps=False)
             body.append(_Line(0, "}"))
-        return Converted(self.assemble(head, body, body_first), 0, [], self.notes)
+        return Converted(self.assemble(head, body, body_first), 0, self.notes)
 
 
 def _expected(text: str) -> Any:
@@ -154,7 +155,7 @@ def convert_theme(text: str, name: str, file: str = "<theme>") -> Converted:
             raise
         converter = None  # nothing but comments (or nothing): there is no mapping to read them from
     if converter is None:
-        result = Converted(f"---\nTDL: 0.1\nName: {name}\n" + (f'Tesserae: "{scanned.value}"\n' if scanned.found and scanned.value else "") + f"---\n{ROOT} {{ }}\n")
+        result = Converted(f"---\nTDL: {LANGUAGE_VERSION}\nName: {name}\n" + (f'Tesserae: "{scanned.value}"\n' if scanned.found and scanned.value else "") + f"---\n{ROOT} {{ }}\n")
     else:
         result = converter.run_theme(scanned, name)
     try:

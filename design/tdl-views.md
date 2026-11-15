@@ -7,7 +7,7 @@ Piece 0 of `design/tdl-switch-plan.md`. Evidence: `spike/FINDINGS.md` on branch 
 ## File
 ```
 ---
-TDL: 0.1
+TDL: 0.2
 Name: Button
 Tesserae: "0.6"
 ---
@@ -39,12 +39,12 @@ For item In <| items |> Key <| item['value'] |> {
 - `if: expr` -> `If <| expr |> { node }`; `for: x in xs` + `key: k` -> `For x In <| xs |> Key <| k |> { node }`. A node with both has the `For` outside and the `If` inside it (the `if` is tested for each item).
 - **The front end removes the wrappers again**: it hands the node on with `if`, `for` and `key` set, exactly as the YAML loader does. Instance ids and paths (`root.cp.panel`), `part:` rules, names and hot reload therefore see the same tree as today; nothing downstream knows the wrapper exists. (This is the answer to the tree-shape risk in the plan.)
 - The expression texts keep their TEL form; `<| |>` is only the container.
-- **Tuple targets** (`for: i, it in enumerate(items)`, 10 uses) have no TDL form yet (maintainer: added later to TEL or TDL). The converter writes them with one variable and lists each in piece 2 with its rewrite; it refuses silently-wrong output.
+- **Tuple targets** (`for: i, it in enumerate(items)`, 10 uses): language 0.2 gives a `For` several variables, so the converter writes `For i, it In <| enumerate(items) |> Key <| ... |>` as the YAML says it (no rewrite, no TODO line, nothing to report; until 0.2 they were written with one variable `i_it`). The front end reads `For.variables` back as `i, it in enumerate(items)`.
 
 ## Expressions
 - A value that is exactly one slot: `Text: <| label |>`; text around a slot is a template: `Text: Battery <| level |>%`, read as the template string `Battery {{ level }}%` for the existing loader. A quoted string is plain text (a `<|` inside quotes is not a slot).
 - The slot text is handed to TEL as is (`tess_el` origin from the slot's text origin: the column of a mistake is exact). Braces, `}}`, quotes and `#` inside an expression are ordinary text.
-- Until `tess-dl` reads `<| |>`, the front end's slot reading is one small function and the tests use a stand-in that rewrites `<| x |>` to `{{ x }}` for text without nested braces; the stand-in is deleted when the delimiters ship.
+- `tess-dl` 0.2 reads `<| |>` itself (language 0.2, `tesserae-dl>=0.2.0,<0.3`): the front end hands the text to `tess_dl.loads` and takes `Slot.text`; the earlier stand-in is gone. A file that says `TDL: 0.1` (slots `{{ }}`) is refused at its version line with a hint to `tools/migrate_slots.py` of the tess-dl repository.
 
 ## Handlers are step blocks
 ```
@@ -87,9 +87,9 @@ Entry points: `load_marked_tdl(text, file, resolver=None)` and `load_tdl_file(pa
 - **Keys.** Round-trippable `Title_Case` only: lower-casing must give a key that `title_case` writes back as given (`MaxLines`, `max_lines`, `MAX` are refused with `write 'Max_Lines'`). A key with `__` is allowed.
 - **Values.** `true`, `false`, `null` words are the YAML values; any other word is text; `50%` is the text `"50%"`; a `name(...)` call is an error (nothing in a view takes one yet).
 - **Metadata.** `TDL`, `Name`, `Tesserae` only; `Tesserae` goes through `marker.scan` (same problems, written `Tesserae:`), and is optional as the YAML first line is. The metadata `Name` is not the node's `name` (the root block's own `Name:` property is); nothing compares it with the file name yet (piece 6).
-- **Errors.** `tess_dl`'s errors keep its wording and hint, with `{{ }}` said `<| |>` while the stand-in is in; a pair target `For i, it In` gets the hint that the pair form is not supported yet.
-- **The stand-in** is the block at the top of `tdl.py` (`_standin_rewrite`, `_standin_words`, `_slot_text`, the mask tables): it hides braces, quotes and backslashes inside a slot so an expression with `}}` in it (`{'a': {'b': 1}}`) reads too, which the plain `{{ x }}` rewrite of the plan could not. Deleting it is one change in that block.
-- **Test helper.** `tests/tdl_helper.py` was a test-only YAML-to-TDL writer (the seed of piece 2); it is now a thin wrapper over the real converter (`tess_ui.migrate_tdl`, below). The 10 pair loops are written with one variable (`i, it in enumerate(items)` -> `For i_it In <| enumerate(items) |>`) and their bodies are not rewritten.
+- **Errors.** `tess_dl`'s errors keep its wording and hint, at the same line and column (a slot's position is the start of its `<|`, `text_origin` where its text starts). A file in an older language (`TDL: 0.1`) is a `LoadError` at its version: this file is written in TDL 0.1; Tesserae reads TDL 0.2.
+- **The stand-in** (piece 1 to 5) hid braces and quotes inside a slot so `<| |>` could be read as `{{ }}`; piece 3b deleted it (`_standin_rewrite`, `_standin_words`, `_slot_text`, the mask tables). `spec/tdl.LANGUAGE_VERSION` (`"0.2"`) is what the front end accepts and the converters write.
+- **Test helper.** `tests/tdl_helper.py` was a test-only YAML-to-TDL writer (the seed of piece 2); it is now a thin wrapper over the real converter (`tess_ui.migrate_tdl`, below). The 10 pair loops are written `For i, it In <| enumerate(items) |>`, as in the YAML, so the two mappings compare equal as they are.
 
 ## What piece 2 decided (the converter, `src/tess_ui/migrate_tdl.py`, `tesserae migrate-tdl PATH [--write] [--remove-source]`)
 - **Output is checked.** Every result is read back with `spec/tdl.py` and compared (types kept, key order and the spelling of handler statements not) with the YAML loader's mapping before it counts; a form that does not read back is a `ConvertError` with the YAML line and what to write, never a nearly right file. A file that fails is reported and left alone; the other files are still written.
@@ -99,7 +99,7 @@ Entry points: `load_marked_tdl(text, file, resolver=None)` and `load_tdl_file(pa
 - **Values.** `50%` is written bare (`Width: 100%`), a word that is not `true`, `false` or `null` is written bare, other text quoted with the JSON escapes TDL reads; text with a slot is written unquoted when TDL can read it (no quote, `,`, `{`, `}`, `]`, ` #`, no leading or trailing space) and is refused otherwise, with the hint to make the whole value one slot. A slot's text is kept as written (`{{ x }}` is `<| x |>`); a handler's expressions are the author's source text when on one line.
 - **Handlers.** `Handlers` events: a bare (dotted) action name or a number or null or empty text stays a property; otherwise statements become steps: an assignment to one plain name is a `Set`, an augmented assignment is a `Set` with the operation spelled out (`x += 1` is `Value: <| x + 1 |>`, noted in the report: a new value, not changed in place), a call of a (dotted) name with positional and keyword arguments is a `Call` (`Args:` for the positional ones, a keyword is its own `Title_Case` property); anything else (a bare name among statements, `a[0] = 1`, `a = b = 1`, `a, b = ...`, `*args`, `**kw`, `if`, a keyword argument named `action` or `args`) is refused. An `on_*` key of a node itself (a view's own `on_pick` param) is text; an `on_*` key inside a map (a tooltip action) is steps when its text reads as statements, text otherwise.
 - **Nodes and maps.** `if:` is `If <| ... |>`, `for:` is `For x In <| ... |> Key <| ... |>` (`Key <| None |>` without a `key:`), the `For` outside the `If`. `children:` is `Children { }`, a node-typed property (`node` or `nodes` in the registry or in a view's `params:` found beside the file) a block with the node or nodes, a list of mappings `Key { Item { } Item { } }`, an empty mapping `Key { }`. A property that looks like a node of a widget the converter does not know is written as a map and noted.
-- **Pair loops.** `for: i, it in enumerate(items)` is written `For i_it In <| enumerate(items) |> Key <| ... |>` (the names joined by `_`) with `# TODO tuple for-target: i, it in enumerate(items)` above the `For`, and reported (file, line of the `for:`, original text, rewrite, and that the body still uses the second name and must use `i_it[0]`, `i_it[1]`). The converter never rewrites the body.
+- **Pair loops.** `for: i, it in enumerate(items)` is written `For i, it In <| enumerate(items) |> Key <| ... |>` (piece 3b; before it, `For i_it In` with a `# TODO tuple for-target` line and a report). Nothing is rewritten and nothing reported.
 - **Refused**, with file, line and what to write: a key that is not lower snake_case or is `if`/`else`/`for` (or a block named `in`/`key`), a widget name that cannot head a block, an anchor or alias, a value that is not text, a number, yes/no or null (a YAML date), a list of lists or a list that mixes maps and text, `key:` without `for:`, a `for:` that is not `name in expression`, an expression that has `|>` or a line end, a view in the older syntax (`kind:`; run `tesserae migrate-yaml`), a series line that is not the current one.
 - **Files.** A dry run lists what would be converted and writes nothing; `--write` writes `<Name>_View.tdl` beside the YAML (only when it differs: a second run is `current` and touches nothing); a differing `.tdl` is replaced only with `--write`; the YAML stays unless `--remove-source` (with `--write`) and then only for the files written or already current. Stylesheets, themes and components found under PATH are skipped with a note (pieces 4 and 5). Exit code 1 when a file failed, 2 for a wrong argument. Python 3.14 (`tess_dl`) is needed, and the command says so when it is missing.
 
@@ -107,7 +107,7 @@ Entry points: `load_marked_tdl(text, file, resolver=None)` and `load_tdl_file(pa
 Surveyed first: the 49 shipped sheets (276 rules), the 9 under `examples/` and `apps/shell_config`, and the tests'. Every one is `tesserae:` + `styles:`; a rule has only `widget`, `style` and optionally `part`, `variant`, `size`, `shape`, `state`, `classes` (a list of names; `name` is allowed by the loader and unused in the shipped files); of the 525 style values in the shipped sheets 112 are slots (all of them one whole-value `"{{ ... }}"`, none mixed with text), 42 are a map one level deep (`padding`, `transition`, `corner_radius`, `margin`) and the rest are numbers, words (token names such as `on_surface_variant`) and `true`. No anchors, no handlers, no `style:` that names a `*_Style.yaml` in a shipped file.
 ```
 ---
-TDL: 0.1
+TDL: 0.2
 Name: Button
 Tesserae: "0.6"
 ---
@@ -140,7 +140,7 @@ Styles {
 Evidence: every theme the repository has (8 `Brand_Theme.yaml` in the examples, all the same file, and Tesserae's own `src/tess_ui/spec/default_theme.yaml`, which has comments, a `styles:` list and dotted component keys) and a synthetic theme with every key the loader takes (`seed`, `dark`, `colors`, `typography` with all five fields, `components` with both fields and variants, `styles`).
 ```
 ---
-TDL: 0.1
+TDL: 0.2
 Name: Brand
 Tesserae: "0.6"
 ---

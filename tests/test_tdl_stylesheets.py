@@ -23,7 +23,7 @@ SHIPPED = sorted(VIEWS.glob("*_Stylesheet.yaml"))
 
 def sheet(body, meta='Tesserae: "0.6"'):
     """A TDL stylesheet file (`T_Stylesheet.tdl`): the metadata block is five lines, so `body` starts on line 6."""
-    return f"---\nTDL: 0.1\nName: T\n{meta}\n---\n{body}"
+    return f"---\nTDL: 0.2\nName: T\n{meta}\n---\n{body}"
 
 
 def load(body, **kw):
@@ -292,7 +292,7 @@ styles:  # the rules
 """
 
 SAMPLE_TDL = """---
-TDL: 0.1
+TDL: 0.2
 Name: Sample
 Tesserae: "0.6"  # the series
 ---
@@ -328,7 +328,7 @@ Styles {  # the rules
 """
 
 DIVIDER_TDL = """---
-TDL: 0.1
+TDL: 0.2
 Name: Divider
 Tesserae: "0.6"
 ---
@@ -364,7 +364,7 @@ Styles {
 
 def test_golden_comments_blank_lines_order_and_layout_are_kept_on_a_sample_that_has_every_kind_of_comment():
     result = convert_sheet(SAMPLE, "Sample", "Sample_Stylesheet.yaml")
-    assert result.text == SAMPLE_TDL and result.steps == 0 and result.loops == []
+    assert result.text == SAMPLE_TDL and result.steps == 0
     assert reads_equal(SAMPLE, result.text)
 
 
@@ -390,7 +390,7 @@ def test_an_empty_stylesheet_is_an_empty_styles_block_and_reads_back_as_no_rules
 
 def test_the_name_is_the_file_stem_and_a_series_line_is_written_only_when_the_yaml_had_one():
     out = convert_sheet("styles: []\n", "Fancy_Button", "F_Stylesheet.yaml").text
-    assert out.startswith("---\nTDL: 0.1\nName: Fancy_Button\n---\n")
+    assert out.startswith("---\nTDL: 0.2\nName: Fancy_Button\n---\n")
     with pytest.raises(ConvertError, match="name '9Lives' cannot be a TDL Name"):
         convert_sheet("tesserae: 0.6\nstyles: []\n", "9Lives")
 

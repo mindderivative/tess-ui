@@ -1,5 +1,5 @@
 ---
-TDL: 0.1
+TDL: 0.2
 Name: SegmentedButton
 Tesserae: "0.6"
 ---
@@ -19,8 +19,7 @@ Container {
   Style { Flex_Direction: horizontal, Height: 40, Corner_Radius: full, Clip_Children: true, Border_Width: 1, Border_Color: outline }
   A11y { Role: group }
   Children {
-    # TODO tuple for-target: i, o in enumerate(options)
-    For i_o In <| enumerate(options) |> Key <| o['value'] |> {
+    For i, o In <| enumerate(options) |> Key <| o['value'] |> {
       Container {
         Name: segment
         Interaction: true

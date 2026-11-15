@@ -6,7 +6,7 @@ error a stylesheet can have keeps its wording and now points into the `.tdl` fil
 
 ```
 ---
-TDL: 0.1
+TDL: 0.2
 Name: Button
 Tesserae: "0.6"
 ---

@@ -1,5 +1,5 @@
 ---
-TDL: 0.1
+TDL: 0.2
 Name: ListEditor
 Tesserae: "0.6"
 ---
@@ -54,8 +54,7 @@ Container {
       A11y { Role: list, Label: <| label |> }
       Style { Flex_Direction: vertical, Gap: 8 }
       Children {
-        # TODO tuple for-target: i, row in enumerate(rows)
-        For i_row In <| enumerate(rows) |> Key <| row['uid'] |> {
+        For i, row In <| enumerate(rows) |> Key <| row['uid'] |> {
           ListEditorRow {
             Name: item
             Kind: <| item_kind |>

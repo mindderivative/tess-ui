@@ -1,5 +1,5 @@
 ---
-TDL: 0.1
+TDL: 0.2
 Name: Carousel
 Tesserae: "0.6"
 ---
@@ -29,8 +29,7 @@ ScrollView {
     Padding: <| {'left': 56 + 8, 'right': 56 + 8, 'top': 0, 'bottom': 0} if variant == 'center_hero' else 0 |>
   }
   Children {
-    # TODO tuple for-target: i, it in enumerate(items)
-    For i_it In <| enumerate(items) |> Key <| it['value'] |> {
+    For i, it In <| enumerate(items) |> Key <| it['value'] |> {
       Container {
         Name: item
         Interaction: true

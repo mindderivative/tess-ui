@@ -23,6 +23,7 @@ from tess_ui.migrate_tdl import _KEY, _NO_BLOCK, ConvertError, Converted, _comme
 from tess_ui.project import looks_like
 from tess_ui.spec import marker
 from tess_ui.spec.nodes import LoadError, PMap, load_marked
+from tess_ui.spec.tdl import LANGUAGE_VERSION
 from tess_ui.spec.tdl_stylesheet import load_marked_tdl_stylesheet
 
 __all__ = ["convert_sheet"]
@@ -42,7 +43,6 @@ class _SheetConverter(_Converter):
         self.comments = _comments(text)
         self.comment_lines = sorted({c.line for c in self.comments if c.text})
         self.steps = 0
-        self.loops = []
         self.notes = []
 
     def handler_text(self, vn: yaml.ScalarNode) -> str | None:
@@ -78,12 +78,12 @@ class _SheetConverter(_Converter):
         if not _KEY.match(self.name) or self.name in _NO_BLOCK:
             raise ConvertError(f"the stylesheet's name {self.name!r} cannot be a TDL Name", 1,
                                hint="a Name is letters, digits and underscores, starting with a letter: rename the file")
-        head = [_Line(0, "---"), _Line(0, "TDL: 0.1"), _Line(0, f"Name: {self.name}")]
+        head = [_Line(0, "---"), _Line(0, f"TDL: {LANGUAGE_VERSION}"), _Line(0, f"Name: {self.name}")]
         if scanned.found and scanned.value:
             head.append(_Line(0, f'Tesserae: "{scanned.value}"', trails=(meta_line,)))
         head.append(_Line(0, "---"))
         body = self.rules(*styles) if styles else [_Line(0, "Styles { }", (body_first,), (body_first,))]
-        return Converted(self.assemble(head, body, body_first), 0, [], self.notes)
+        return Converted(self.assemble(head, body, body_first), 0, self.notes)
 
 
 def _canon(item: Any) -> Any:

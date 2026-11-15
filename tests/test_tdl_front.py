@@ -1,6 +1,7 @@
 """Piece 1 of the TDL switch: the TDL front end reads a view into the same mapping with positions that the YAML loader makes, and its errors name the
 `.tdl` file, line and column in the same words (`design/tdl-views.md`)."""
 
+import re
 from pathlib import Path
 
 import pytest
@@ -9,7 +10,7 @@ pytest.importorskip("tess_dl", reason="TDL needs tess_dl, which needs Python 3.1
 from tess_ui.spec import tdl as T
 from tess_ui.spec.nodes import LoadError, PMap, PSeq, load_marked, parse_data, parse_view
 from tess_ui.spec.widgets import Property, WidgetDecl
-from tess_ui.migrate_tdl import ConvertError, with_single_variable
+from tess_ui.migrate_tdl import ConvertError
 from tests.tdl_helper import normal, yaml_to_tdl
 
 VIEWS = sorted((Path(__file__).parent.parent / "src" / "tess_ui" / "views").glob("*_View.yaml"))
@@ -17,7 +18,7 @@ VIEWS = sorted((Path(__file__).parent.parent / "src" / "tess_ui" / "views").glob
 
 def view(body, meta='Tesserae: "0.6"'):
     """A TDL file with the usual metadata around `body`."""
-    return f"---\nTDL: 0.1\nName: T\n{meta}\n---\n{body}"
+    return f"---\nTDL: 0.2\nName: T\n{meta}\n---\n{body}"
 
 
 def load(body, **kw):
@@ -41,15 +42,15 @@ def at(err, line, column):
 
 def test_every_shipped_view_read_as_tdl_equals_the_yaml_mapping():
     assert len(VIEWS) == 61
-    pairs = []
+    pairs = 0
     for path in VIEWS:
         text = path.read_text(encoding="utf-8")
         expected = load_marked(text)
-        pairs += with_single_variable(expected)
         tdl_text = yaml_to_tdl(text, path.name.removesuffix("_View.yaml"))
         got = T.load_marked_tdl(tdl_text, path.name.replace(".yaml", ".tdl"))
         assert normal(got) == normal(expected), path.name
-    assert len(pairs) == 10  # the loops with a pair target, which the helper writes with one variable (the plan's list)
+        pairs += len(re.findall(r"^\s*For \w+, \w+ In ", tdl_text, re.M))
+    assert pairs == 10  # the loops with a pair target, written with two variables as they are in the YAML (the plan's list)
 
 
 def check_shape(item):
@@ -217,7 +218,7 @@ def test_a_syntax_error_from_tess_dl_names_the_tdl_file_line_and_column_and_says
     err = fails("Container {\n  Children {\n    Text { }\n", "This block is never closed")
     at(err, 7, 11)
     assert "Add the missing }" in str(err) and "T_View.tdl:7:12: error:" in str(err)
-    err = fails("Text {\n  Text: <| level\n}\n", "this '<|' has no '|>' on its line")
+    err = fails("Text {\n  Text: <| level\n}\n", "This <| has no |> on its line")
     at(err, 7, 8)
     err = fails("Container {\n  If <| a |>\n}\n", "An If needs", )
     assert "{{" not in str(err) and "<|" in str(err)
@@ -225,10 +226,12 @@ def test_a_syntax_error_from_tess_dl_names_the_tdl_file_line_and_column_and_says
     at(err, 7, 8)
 
 
-def test_a_pair_target_is_refused_with_a_hint():
-    err = fails("Container {\n  Children {\n    For i, it In <| enumerate(items) |> Key <| i |> {\n      Text { }\n    }\n  }\n}\n", "For is missing In")
-    assert "one variable" in str(err)
-    at(err, 8, 9)
+def test_a_pair_target_is_read_as_the_for_text_of_the_yaml():
+    m = load("Container {\n  Children {\n    For i, it In <| enumerate(items) |> Key <| i |> {\n      Text { }\n    }\n  }\n}\n")
+    assert m["children"][0]["for"] == "i, it in enumerate(items)" and m["children"][0]["key"] == "i"
+    line = "    For i, it In <| enumerate(items) |> Key <| i |> {"
+    assert m["children"][0].val_at["for"][0] == 8 and m["children"][0].val_at["for"][1] + len("i, it in ") == line.index("enumerate")  # an error in the expression is placed true
+    assert m["children"][0].key_at["key"] == (8, line.index("Key"))
 
 
 def test_a_key_that_is_not_title_case_says_what_to_write():
@@ -357,7 +360,7 @@ def test_a_call_value_and_a_file_that_is_not_utf8_are_errors(tmp_path):
     err = fails("Text {\n  Color: rgba(0 0 0 0.5)\n}\n", "'rgba(...)' is not a value a view takes")
     at(err, 7, 9)
     bad = tmp_path / "Bad_View.tdl"
-    bad.write_bytes(b"---\nTDL: 0.1\nName: T\n---\nText { Label: \xff }\n")
+    bad.write_bytes(b"---\nTDL: 0.2\nName: T\n---\nText { Label: \xff }\n")
     with pytest.raises(LoadError) as caught:
         T.load_tdl_file(bad)
     assert caught.value.file == "Bad_View.tdl" and "not UTF-8" in str(caught.value)
@@ -388,14 +391,22 @@ def test_the_snake_case_conversion_is_exact_both_ways():
         assert T.snake_case(T.title_case(snake)) == snake
     for bad in ("max_lines", "maxLines", "Max_lines", "MAX"):
         assert T.snake_case(bad) is None, bad
-
-
-def test_the_stand_in_leaves_everything_but_slots_alone():
-    text = view('Text {\n  A: "x <| y |>"  # <| z |>\n  B: <| a |> # c\n  C: [<| p |>, "q <| r |>"]\n  D: Don\'t <| s |>\n}\n')
-    want = text.replace("<| a |>", "{{ a }}").replace("<| p |>", "{{ p }}").replace("<| s |>", "{{ s }}")
-    assert T._standin_rewrite(text, "f") == want  # a slot in a string or a comment stays as it is
-    assert len(T._standin_rewrite(text, "f")) == len(text)  # every column stays true
     assert T.snake_case("Max__Lines") == "max__lines"
+
+
+def test_a_slot_is_read_by_tess_dl_and_a_slot_in_a_string_or_a_comment_stays_text():
+    m = load('Text {\n  A: "x <| y |>"  # <| z |>\n  B: <| a |> # c\n  C: [<| p |>, "q <| r |>"]\n  D: Don\'t <| s |>\n}\n')
+    assert m["a"] == "x <| y |>" and m["b"] == "{{ a }}" and m["c"] == ["{{ p }}", "q <| r |>"] and m["d"] == "Don't {{ s }}"
+
+
+def test_a_file_in_language_0_1_is_refused_at_its_version_with_a_hint():
+    old = "---\nTDL: 0.1\nName: T\n---\nText { Text: {{ a }} }\n"
+    err = fails("", "written in TDL 0.1; Tesserae reads TDL 0.2", text=old)
+    at(err, 2, 5)
+    assert "migrate_slots.py" in str(err)
+    quoted = "---\nName: T\nTDL: '0.1'\n---\nText { }\n"
+    at(fails("", "written in TDL 0.1", text=quoted), 3, 6)
+    assert T.load_marked_tdl("---\nTDL: 0.2\nName: T\n---\nText { }\n", "T_View.tdl") == {"widget": "Text"}
 
 
 def test_a_quoted_string_is_positioned_at_its_text_a_slot_and_a_word_at_their_start():

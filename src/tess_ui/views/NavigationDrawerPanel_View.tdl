@@ -1,5 +1,5 @@
 ---
-TDL: 0.1
+TDL: 0.2
 Name: NavigationDrawerPanel
 Tesserae: "0.6"
 ---
@@ -29,8 +29,7 @@ Container {
       Focus_Group: vertical
       Style { Flex_Direction: vertical, Flex: fill }
       Children {
-        # TODO tuple for-target: i, it in enumerate(items)
-        For i_it In <| enumerate(items) |> Key <| i |> {
+        For i, it In <| enumerate(items) |> Key <| i |> {
           Container {
             Name: row
             Style { Flex_Direction: vertical, Width: 100% }

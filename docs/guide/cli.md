@@ -88,14 +88,13 @@ reported with its file, line and what to write instead, and left alone; the othe
 yes/no or nothing (a YAML date: quote it), an anchor or alias, and text that holds a `{{ }}` and a `,`, a brace or ` #` (write the whole value as one slot).
 An augmented assignment (`x += 1`) is written as `Set { Target: x, Value: <| x + 1 |> }`: the name gets a new value, it is not changed in place.
 
-A `for:` with a pair target (`for: i, item in enumerate(items)`) has no TDL form yet, because a TDL `For` has one variable. It is written with one variable that
-joins the names (`For i_item In <| enumerate(items) |> ...`), with a `# TODO tuple for-target: i, item in enumerate(items)` line above it, and listed in the
-report with its file and line. The loop's body still uses `i` and `item`: change it by hand to `i_item[0]` and `i_item[1]`.
+A `for:` with a pair target (`for: i, item in enumerate(items)`) is written as it is, `For i, item In <| enumerate(items) |> Key <| ... |>` (a TDL `For` takes several variables
+from language 0.2). The files are written in TDL 0.2: slots are `<| expr |>`. The command needs `tesserae-dl` 0.2 (`pip install tesserae-ui[tdl]`).
 
 Running it again changes nothing. It never replaces a file that differs without `--write`; the YAML is kept unless `--remove-source` is given with `--write`, and
 then it is deleted only for the files that were written (or already current). Themes (`*_Theme.yaml`) and components are skipped with a note. The
 then it is deleted only for the files that were written (or already current). Stylesheets (`*_Stylesheet.yaml`) and components are skipped with a note. The
-exit code is 1 if any file failed and 2 for a wrong argument. The command needs the `tess_dl` package, which needs Python 3.14.
+exit code is 1 if any file failed and 2 for a wrong argument. The command needs the `tess_dl` package (`tesserae-dl`, 0.2), which needs Python 3.14.
 
 A theme (`*_Theme.yaml`, and Tesserae's own `default_theme.yaml`) is written as `*_Theme.tdl` (`default_theme.tdl`) the same way: a root `Theme { }` with `Seed`, `Dark`,
 `Colors { }`, `Typography { }` and `Components { }`; a colour is quoted (`Seed: "#0B6B58"`); a component key with a dot is a block inside its component

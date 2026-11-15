@@ -1,5 +1,5 @@
 ---
-TDL: 0.1
+TDL: 0.2
 Name: ButtonGroup
 Tesserae: "0.6"
 ---
@@ -26,8 +26,7 @@ Container {
     Gap: <| 2 if connected else 8 |>
   }
   Children {
-    # TODO tuple for-target: i, o in enumerate(items)
-    For i_o In <| enumerate(items) |> Key <| o['value'] |> {
+    For i, o In <| enumerate(items) |> Key <| o['value'] |> {
       Button {
         Name: item
         Label: <| o['label'] |>

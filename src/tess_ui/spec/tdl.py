@@ -13,6 +13,7 @@ What it undoes, in one place each:
   (`open = not open; on_toggle()`); a handler that is a bare action name is a property (`On_Click: save`);
 - a slot (`<| expr |>`) is the string `{{ expr }}`, text with slots in it is the template string, a quoted string is plain text;
 - the metadata line `Tesserae: "0.6"` goes through `marker.scan` as the first line of a YAML file does.
+- the metadata line `TDL: 0.2` is the language (0.2: slots are `<| |>`, a `For` takes several variables, `For i, it In <| enumerate(items) |> Key <| ... |>`): a file that says `TDL: 0.1` is refused with a hint to convert it.
 
 Where a block is a node and where it is a map is told by position, never by letter case: a block directly in `Children`, `If` or `For` is a node, so
 is the block of a property the widget declares as `node` or `nodes`; every other block inside a node is a map.
@@ -36,71 +37,35 @@ __all__ = ["load_marked_tdl", "load_tdl_file", "title_case", "snake_case"]
 
 _BOM = "\ufeff"
 
-# -- the stand-in for slots ------------------------------------------------------------------------------------------------
-# The pinned `tess_dl` reads slots as `{{ expr }}`, not yet as `<| expr |>`. This section is the whole of what stands in: `_parse_document` hands
-# it the text with every `<| x |>` written `{{ x }}` (the same width, so every column stays true) and braces, quotes and backslashes inside the
-# expression hidden, `_slot_text` shows them again. When `tess_dl` reads `<| |>` itself: delete `_standin_rewrite`, `_standin_words` and the mask
-# tables, make `_parse_document` call `tess_dl.loads` on the text and `_slot_text` return `slot.text`.
+#: The TDL language version this front end reads and the converters write (`tess_dl.LANGUAGE_VERSION` at the pin `tesserae-dl>=0.2.0,<0.3`).
+LANGUAGE_VERSION = "0.2"
 
-_MASK = str.maketrans({"{": "\ue000", "}": "\ue001", "'": "\ue002", '"': "\ue003", "\\": "\ue004"})
-_UNMASK = str.maketrans({"\ue000": "{", "\ue001": "}", "\ue002": "'", "\ue003": '"', "\ue004": "\\"})
+_METADATA_BLOCK = re.compile(r"\A---[ \t]*\r?\n(.*?)^---[ \t]*(?:\r?\n|\Z)", re.S | re.M)
+_VERSION_LINE = re.compile(r"^TDL:[ \t]*[\"']?([0-9]+)\.([0-9]+)", re.M)
 
 
-def _standin_rewrite(text: str, file: str) -> str:
-    """`text` with each slot `<| x |>` as `{{ x }}`. A slot is not read inside a quoted string or a comment."""
-    out: list[str] = []
-    i, n, prev = 0, len(text), ""  # prev: the last character that was not whitespace ("s" after a string)
-    while i < n:
-        c = text[i]
-        if text.startswith("<|", i):
-            eol = text.find("\n", i)
-            eol = n if eol < 0 else eol
-            end = text.find("|>", i + 2, eol)
-            if end < 0:
-                line, column = text.count("\n", 0, i) + 1, i - (text.rfind("\n", 0, i) + 1)
-                raise LoadError("this '<|' has no '|>' on its line", file=file, line=line, column=column, hint="close the slot on the same line", text=text)
-            out.append("{{" + text[i + 2:end].translate(_MASK) + "}}")
-            i, prev = end + 2, "}"
-        elif c in "\"'" and prev in (":", "[", ",", "(", "s"):
-            j = i + 1
-            while j < n and text[j] != c and text[j] != "\n":
-                j += 2 if text[j] == "\\" else 1
-            j = min(j + 1, n) if j < n and text[j] == c else j
-            out.append(text[i:j])
-            i, prev = j, "s"
-        elif c == "#" and (i == 0 or text[i - 1] in " \t\r\n"):
-            eol = text.find("\n", i)
-            eol = n if eol < 0 else eol
-            out.append(text[i:eol])
-            i = eol
-        else:
-            out.append(c)
-            i += 1
-            if not c.isspace():
-                prev = c
-    return "".join(out)
-
-
-def _standin_words(message: str) -> str:
-    """`tess_dl` names a slot `{{ }}` in its messages: say `<| |>`."""
-    return message.replace("{{", "<|").replace("}}", "|>")
-
-
-def _slot_text(slot: tess_dl.Slot) -> str:
-    """What lies between the delimiters of `slot`, nothing trimmed."""
-    return slot.text.translate(_UNMASK)
+def _refuse_older_language(text: str, file: str) -> None:
+    """A file that says `TDL: 0.1` writes slots as `{{ }}` and cannot be read as 0.2: say so, at the version, before `tess_dl` meets its first slot."""
+    block = _METADATA_BLOCK.match(text)
+    found = _VERSION_LINE.search(block.group(1)) if block else None
+    if block is None or found is None or (int(found.group(1)), int(found.group(2))) >= (0, 2):
+        return
+    start = block.start(1) + found.start(1)
+    line = text.count("\n", 0, start) + 1
+    column = start - (text.rfind("\n", 0, start) + 1)
+    raise LoadError(f"this file is written in TDL {found.group(1)}.{found.group(2)}; Tesserae reads TDL {LANGUAGE_VERSION}", file=file, line=line, column=column,
+                    hint=f"slots are written <| expr |> now, not {{{{ expr }}}}: convert the file with `tools/migrate_slots.py` from the tess-dl repository, then write `TDL: {LANGUAGE_VERSION}`",
+                    text=text)
 
 
 def _parse_document(text: str, file: str) -> tess_dl.Document:
-    """Reads `text` with `tess_dl`; a syntax error becomes a `LoadError` at the same line and column."""
+    """Reads `text` with `tess_dl`; a syntax error becomes a `LoadError` at the same line and column, a file in an older language a `LoadError` at its version."""
+    _refuse_older_language(text, file)
     try:
-        return tess_dl.loads(_standin_rewrite(text, file), path=file)
+        return tess_dl.loads(text, path=file)
     except tess_dl.TDLSyntaxError as exc:
-        hint = _standin_words(exc.hint)
-        line = text.splitlines()[exc.origin.line - 1] if 1 <= exc.origin.line <= len(text.splitlines()) else ""
-        if re.match(r"\s*For\s+\w+\s*,", line):
-            hint = "a For takes one variable: the pair form (`i, item`) is not supported yet"
-        raise LoadError(_standin_words(exc.message), file=file, line=exc.origin.line, column=exc.origin.column - 1, hint=hint, text=text) from None
+        raise LoadError(exc.message, file=file, line=exc.origin.line, column=exc.origin.column - 1, hint=exc.hint, text=text) from None
+
 
 
 # -- keys ------------------------------------------------------------------------------------------------------------------
@@ -180,9 +145,9 @@ class _Front:
         if isinstance(v, tess_dl.Percent):
             return v.text, at
         if isinstance(v, tess_dl.Slot):
-            return "{{" + _slot_text(v) + "}}", at
+            return "{{" + v.text + "}}", at
         if isinstance(v, tess_dl.Template):
-            return "".join(p if isinstance(p, str) else "{{" + _slot_text(p) + "}}" for p in v.parts), at
+            return "".join(p if isinstance(p, str) else "{{" + p.text + "}}" for p in v.parts), at
         if isinstance(v, tess_dl.List):
             seq = PSeq()
             seq.at, seq.item_at = at, []
@@ -195,7 +160,7 @@ class _Front:
 
     def expr(self, slot: tess_dl.Slot) -> tuple[str, Position]:
         """The expression text of a condition, a loop or a step (trimmed) and where its first character is."""
-        raw = _slot_text(slot)
+        raw = slot.text
         line, column = self.pos(slot.text_origin)
         return raw.strip(), (line, column + len(raw) - len(raw.lstrip()))
 
@@ -224,7 +189,7 @@ class _Front:
                 self.put(node, "if", text, self.pos(wrapper), at)
             else:
                 items, items_at = self.expr(wrapper.items)
-                prefix = f"{wrapper.variable} in "
+                prefix = f"{', '.join(wrapper.variables)} in "
                 self.put(node, "for", prefix + items, self.pos(wrapper), (items_at[0], items_at[1] - len(prefix)))
                 key, key_at = self.expr(wrapper.key)
                 if key != "None":  # a For must write a Key; `None` is how a node without one says so

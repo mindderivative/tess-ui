@@ -1,5 +1,5 @@
 """Piece 2 of the TDL switch: `tesserae migrate-tdl` writes `*_View.yaml` as `*_View.tdl`, keeping comments and key order, laid out one entry to a line,
-idempotent, refusing what it cannot write back, and reporting the pair-target loops (`design/tdl-views.md`, `src/tess_ui/migrate_tdl.py`)."""
+idempotent, refusing what it cannot write back, and writing the pair-target loops as `For i, it In` (`design/tdl-views.md`, `src/tess_ui/migrate_tdl.py`)."""
 
 import re
 import sys
@@ -10,7 +10,7 @@ import pytest
 pytest.importorskip("tess_dl", reason="the TDL front end needs tess_dl (Python 3.14)")
 
 from tess_ui import cli  # noqa: E402
-from tess_ui.migrate_tdl import ConvertError, convert_view, migrate_tdl, with_single_variable  # noqa: E402
+from tess_ui.migrate_tdl import ConvertError, convert_view, migrate_tdl  # noqa: E402
 from tess_ui.spec.nodes import load_marked  # noqa: E402
 from tess_ui.spec.tdl import load_marked_tdl  # noqa: E402
 from tess_ui.spec.widgets import Property, WidgetDecl  # noqa: E402
@@ -21,9 +21,8 @@ SHIPPED = sorted(VIEWS.glob("*_View.yaml"))
 
 
 def reads_equal(yaml_text, tdl_text, **kw):
-    """The TDL text loads to the mapping the YAML loader makes (the pair loops written with one variable)."""
+    """The TDL text loads to the mapping the YAML loader makes."""
     expected = load_marked(yaml_text)
-    with_single_variable(expected)
     got = load_marked_tdl(tdl_text, "T_View.tdl", **kw)
     return normal(got) == normal(expected)
 
@@ -59,29 +58,21 @@ def test_the_61_shipped_views_convert_and_load_to_the_yaml_mapping():
         text = path.read_text(encoding="utf-8")
         result = convert_view(text, path.name.removesuffix("_View.yaml"), path.name)
         assert reads_equal(text, result.text), path.name
-        loops += len(result.loops)
+        loops += len(re.findall(r"^\s*For \w+, \w+ In ", result.text, re.M))
     assert loops == 10
 
 
-def test_the_report_lists_each_of_the_10_tuple_loops_of_the_shipped_views(tmp_path):
+def test_the_report_of_the_shipped_views_has_no_loop_to_adjust_and_no_todo_line(tmp_path):
     for path in SHIPPED:
         (tmp_path / path.name).write_bytes(path.read_bytes())
     report = migrate_tdl(tmp_path)
     assert len(report.converted) == 61 and not report.failed and report.steps > 100
-    assert len(report.loops) == 10
     rendered = report.render(tmp_path)
-    for loop in report.loops:
-        source_line = (tmp_path / loop.file).read_text(encoding="utf-8").splitlines()[loop.line - 1]
-        assert source_line.strip().startswith("for:") and loop.original in source_line
-        assert "," in loop.original.split(" in ")[0] and loop.rewrite == f"{loop.variable} in {loop.original.split(' in ', 1)[1]}"
-        assert f"{loop.file}:{loop.line}: `for: {loop.original}`" in rendered
-    assert "Tuple for-targets: 10" in rendered and "Adjust the body by hand" in rendered
+    assert "tuple" not in rendered.lower() and "adjust" not in rendered.lower()
     assert "61 files would be converted" in rendered and "nothing written" in rendered
     assert not list(tmp_path.glob("*.tdl"))  # a dry run
-    for loop in report.loops:  # each loop is in the TDL with its TODO line above it
-        tdl = convert_view((tmp_path / loop.file).read_text(encoding="utf-8"), "X").text.splitlines()
-        at = next(i for i, line in enumerate(tdl) if line.strip().startswith(f"For {loop.variable} In"))
-        assert tdl[at - 1].strip() == f"# TODO tuple for-target: {loop.original}"
+    for result in report.converted:
+        assert result.text is not None and "TODO" not in result.text and "i_it" not in result.text and result.text.startswith("---\nTDL: 0.2\n")
 
 
 def test_every_view_is_laid_out_one_entry_to_a_line_within_150_columns_unless_one_value_is_longer():
@@ -140,7 +131,7 @@ children:
 """
 
 SAMPLE_TDL = """---
-TDL: 0.1
+TDL: 0.2
 Name: Sample
 Tesserae: "0.6"  # the series
 ---
@@ -185,8 +176,7 @@ Container {
         Text: <| label |>
       }
     }
-    # TODO tuple for-target: i, it in enumerate(items)
-    For i_it In <| enumerate(items) |> Key <| it['v'] |> {
+    For i, it In <| enumerate(items) |> Key <| it['v'] |> {
       If <| it['on'] |> {
         Button {
           Label: Item <| i |>
@@ -204,7 +194,7 @@ def test_a_file_with_comments_everywhere_converts_to_the_golden_text():
     result = convert_view(SAMPLE, "Sample", "Sample_View.yaml")
     assert result.text == SAMPLE_TDL
     assert reads_equal(SAMPLE, result.text)
-    assert result.steps == 3 and [(loop.line, loop.original) for loop in result.loops] == [(37, "i, it in enumerate(items)")]
+    assert result.steps == 3
     assert len(result.notes) == 1 and "augmented assignment" in result.notes[0]
 
 
@@ -355,11 +345,11 @@ def test_empty_children_handlers_and_nodes_are_written_empty():
 
 
 def test_the_metadata_names_the_view_by_its_name_key_or_else_by_its_file():
-    assert conv("widget: Text\n", name="Foo").text.startswith('---\nTDL: 0.1\nName: Foo\nTesserae: "0.6"\n---\n')
-    assert conv("name: Bound\nwidget: Text\n", name="Foo").text.startswith('---\nTDL: 0.1\nName: Bound\nTesserae: "0.6"\n---\n')
+    assert conv("widget: Text\n", name="Foo").text.startswith('---\nTDL: 0.2\nName: Foo\nTesserae: "0.6"\n---\n')
+    assert conv("name: Bound\nwidget: Text\n", name="Foo").text.startswith('---\nTDL: 0.2\nName: Bound\nTesserae: "0.6"\n---\n')
     assert "  Name: Bound\n" in conv("name: Bound\nwidget: Text\n", name="Foo").text  # and the node keeps its own name
     plain = convert_view("widget: Text\n", "Foo", "Foo_View.yaml").text  # the series line is optional
-    assert plain == "---\nTDL: 0.1\nName: Foo\n---\nText { }\n"
+    assert plain == "---\nTDL: 0.2\nName: Foo\n---\nText { }\n"
     with pytest.raises(ConvertError, match="cannot be a TDL Name"):
         convert_view("widget: Text\n", "My-View", "My-View_View.yaml")
 
@@ -427,9 +417,8 @@ def test_a_dry_run_reports_and_writes_nothing(tmp_path):
     assert sorted(p.name for p in tmp_path.rglob("*") if p.is_file()) == ["Button_View.yaml", "Check_View.yaml"]
     text = report.render(tmp_path)
     assert "would convert" in text and "Views/Button_View.yaml -> Views/Button_View.tdl" in text and "(2 steps)" in text
-    assert "2 files would be converted, 2 steps would be written, 1 tuple for-targets to adjust by hand" in text
+    assert "2 files would be converted, 2 steps would be written" in text
     assert "nothing written: use --write" in text
-    assert report.loops[0].file == "Views/Check_View.yaml" and report.loops[0].line == 7
 
 
 def test_write_writes_the_tdl_files_beside_the_yaml_and_keeps_the_yaml(tmp_path):
@@ -442,7 +431,7 @@ def test_write_writes_the_tdl_files_beside_the_yaml_and_keeps_the_yaml(tmp_path)
         assert written == convert_view((tmp_path / "Views" / f"{name}_View.yaml").read_text(encoding="utf-8"), name).text
     assert (tmp_path / "Views" / "Button_View.tdl").read_text(encoding="utf-8").splitlines()[5] == "# A button."
     text = report.render(tmp_path)
-    assert "converted     Views/Button_View.yaml -> Views/Button_View.tdl" in text and "2 files converted, 2 steps written, 1 tuple for-targets" in text
+    assert "converted     Views/Button_View.yaml -> Views/Button_View.tdl" in text and "2 files converted, 2 steps written" in text
     assert text.endswith("written")
 
 
@@ -453,16 +442,16 @@ def test_a_second_run_changes_nothing(tmp_path):
     again = migrate_tdl(tmp_path, write=True)
     assert [r.status for r in again.results] == ["current", "current"] and not again.converted
     assert {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in tmp_path.iterdir()} == before
-    assert "2 current" in again.render(tmp_path) and len(again.loops) == 1  # the reminder of the pair loop stays while the YAML is there
-    assert "0 files converted, 0 steps written, 1 tuple for-targets to adjust by hand" in again.render(tmp_path)
+    assert "2 current" in again.render(tmp_path)
+    assert "0 files converted, 0 steps written" in again.render(tmp_path)
     assert convert_view(BUTTON, "Button").text == convert_view(BUTTON, "Button").text
 
 
 def test_it_never_overwrites_a_different_file_without_write(tmp_path):
-    make_project(tmp_path, {"Button_View.yaml": BUTTON, "Button_View.tdl": "---\nTDL: 0.1\nName: Button\n---\nText { }\n"})
+    make_project(tmp_path, {"Button_View.yaml": BUTTON, "Button_View.tdl": "---\nTDL: 0.2\nName: Button\n---\nText { }\n"})
     dry = migrate_tdl(tmp_path)
     assert dry.results[0].status == "converted" and any("exists and differs" in n for n in dry.results[0].notes)
-    assert (tmp_path / "Button_View.tdl").read_text(encoding="utf-8") == "---\nTDL: 0.1\nName: Button\n---\nText { }\n"
+    assert (tmp_path / "Button_View.tdl").read_text(encoding="utf-8") == "---\nTDL: 0.2\nName: Button\n---\nText { }\n"
     migrate_tdl(tmp_path, write=True)
     assert "Params" in (tmp_path / "Button_View.tdl").read_text(encoding="utf-8")
 
@@ -535,8 +524,7 @@ def test_the_command_reports_writes_and_says_what_goes_with_what(tmp_path, capsy
     assert cli.main(["migrate-tdl", str(tmp_path)]) == 0
     out = capsys.readouterr().out
     assert "would convert Button_View.yaml -> Button_View.tdl" in out and not list(tmp_path.glob("*.tdl"))
-    assert "Tuple for-targets: 1" in out and "Check_View.yaml:7: `for: i, it in enumerate(items)`" in out
-    assert "the body still uses i and it" in out and "i_it[0] for i, i_it[1] for it" in out
+    assert "tuple" not in out.lower()
     assert cli.main(["migrate-tdl", str(tmp_path), "--write", "--remove-source"]) == 0
     assert sorted(p.name for p in tmp_path.iterdir()) == ["Button_View.tdl", "Check_View.tdl"]
     assert cli.main(["migrate-tdl", str(tmp_path / "Button_View.tdl")]) == 2  # not a *_View.yaml or *_Stylesheet.yaml file

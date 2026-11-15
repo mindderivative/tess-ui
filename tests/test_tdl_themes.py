@@ -102,7 +102,7 @@ styles:
 
 def test_a_theme_with_every_key_loads_equal():
     written = equal(EVERYTHING)
-    assert written.startswith('---\nTDL: 0.1\nName: T\nTesserae: "0.6"  # the series\n---\n')
+    assert written.startswith('---\nTDL: 0.2\nName: T\nTesserae: "0.6"  # the series\n---\n')
     got = load_theme_tdl(written)
     assert set(got) == set(THEME_KEYS)
     check_theme(got)  # and the loader takes it
@@ -200,7 +200,7 @@ components:
 """
 
 GOLDEN = """---
-TDL: 0.1
+TDL: 0.2
 Name: Brand
 Tesserae: "0.6"  # series
 ---
@@ -295,7 +295,7 @@ def test_a_stale_tdl_is_replaced_only_with_write(tmp_path):
 
 # -- (f) errors point into the file -------------------------------------------------------------------------------------------
 
-HEAD = '---\nTDL: 0.1\nName: T\nTesserae: "0.6"\n---\n'
+HEAD = '---\nTDL: 0.2\nName: T\nTesserae: "0.6"\n---\n'
 
 
 def load(body, head=HEAD):

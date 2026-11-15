@@ -1,5 +1,5 @@
 ---
-TDL: 0.1
+TDL: 0.2
 Name: FileDialog
 Tesserae: "0.6"
 ---
@@ -220,8 +220,7 @@ Overlay {
           A11y { Role: group, Label: "Folders in the path" }
           Style { Flex_Direction: horizontal, Align_Content: left, Gap: 0, Height: 36 }
           Children {
-            # TODO tuple for-target: i, c in enumerate(crumbs)
-            For i_c In <| enumerate(crumbs) |> Key <| c['path'] |> {
+            For i, c In <| enumerate(crumbs) |> Key <| c['path'] |> {
               Container {
                 Name: crumb
                 Style { Flex_Direction: horizontal, Align_Content: center }
@@ -310,8 +309,7 @@ Overlay {
                   Scroll_Offset: <| y |>
                   Style { Flex_Direction: vertical, Height: <| rows * 40 |> }
                   Children {
-                    # TODO tuple for-target: i, row in enumerate(entries)
-                    For i_row In <| enumerate(entries) |> Key <| row['path'] |> {
+                    For i, row In <| enumerate(entries) |> Key <| row['path'] |> {
                       Container {
                         Name: row
                         Interaction: true

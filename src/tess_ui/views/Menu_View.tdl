@@ -1,5 +1,5 @@
 ---
-TDL: 0.1
+TDL: 0.2
 Name: Menu
 Tesserae: "0.6"
 ---
@@ -43,8 +43,7 @@ Overlay {
       A11y { Role: menu }
       Style { Flex_Direction: vertical, Width: <| min(280, max(112, width)) |> }
       Children {
-        # TODO tuple for-target: i, it in enumerate(items)
-        For i_it In <| enumerate(items) |> Key <| i |> {
+        For i, it In <| enumerate(items) |> Key <| i |> {
           Container {
             Name: row
             State { Subopen: false }
