@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any, Callable, Optional
 
 from tess_ui import a11y as a11y_module, tokens, urls
+from tess_ui.fonts import check_font_families
 from tess_ui.follow import app_of
 from tess_ui.listeners import handled, listen_window
 from tess_ui.reactive import Computed, Effect, Signal, untrack
@@ -34,6 +35,7 @@ from tess_ui.spec.mask import Mask
 from tess_ui.spec import placement as placement_module
 from tess_ui.spec.placement import offset_pair
 from tess_ui.spec.nodes import ViewDoc
+from tess_ui.spec.themes import view_font_families
 from tess_ui.view import _EVENTS, SURFACE_ACTIONS, WINDOW_ACTIONS, View
 
 #: Events the renderer adds to the engine's: a key press, Enter in a field that is not multiline, and a pointer press (which, unlike a click,
@@ -206,6 +208,7 @@ class ComposedView(View):
         self._observed: set[int] = set()
         self._extracted: dict[int, tuple[Any, Any, list[Any], set[Path]]] = {}  # the lowered nodes that were looked through for images, by identity (see `extract_images`)
         self._synced = False
+        self._font_said: set[str] = set()  # the font families a warning has named (each is said once, however often the view is lowered again)
         self.source: Optional[Path] = None  # the view file it was opened from (set by `App.open_view`), which a hot reload watches
         self.image_files: set[Path] = set()  # the pictures the view draws, for a hot reload to watch
         self._effect: Optional[Effect] = None
@@ -297,6 +300,10 @@ class ComposedView(View):
 
     def _lowered(self) -> tuple[dict[str, Any], dict[str, tuple[bytes, int, int]]]:
         spec = lower(self.handle.composition.root)
+        unsaid = set(view_font_families(spec)) - self._font_said
+        if unsaid:  # a family the engine cannot draw is replaced by a bundled face without a word: say so, naming the file
+            self._font_said |= unsaid
+            check_font_families(unsaid, self.handle.doc.file if self.handle.doc is not None else "the view")
         images: set[Path] = set()
         if len(self._extracted) > 4 * max(len(self._observed), 64):  # what nodes that are gone had: not kept for ever
             self._extracted.clear()
