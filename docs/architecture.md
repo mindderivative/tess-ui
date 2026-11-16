@@ -49,7 +49,7 @@ serves every view that names it. See [Apps and screens](guide/apps-and-screens.m
    become a `box`, `Text` and `Link` a `text`, `Icon` a `path`, `Image` an `image`, a text input a
    `text_input`. The stateful kinds (`Checkbox`, `RadioButton`, `Switch`, `Slider`,
    `RangeSlider`, `SpinBox`, `CircularProgress`, `LinearProgress`, `LoadingIndicator`, `TimePickerDial`) become Tesserae's own
-   controls. Image `src:` files are decoded to pixels (Pillow). Every property is set explicitly, defaults
+   controls. Image `src:` files are decoded to pixels (`tess_utils.decode_image_file`). Every property is set explicitly, defaults
    included, so a later patch can reset it.
 
 **Styles.** A node's style is built from layers, lowest first: the rules Tesserae ships with each view,
@@ -60,7 +60,7 @@ properties. See [Themes](themes/index.md) and [Stylesheets](stylesheets/index.md
 
 **Tokens and `Theme`.** `tess_ui.tokens` holds the MD3 values: the 49 colour roles from a seed
 (light and dark, via `materialyoucolor`) with `colors:` overrides, the shape scale, elevation
-(as key and ambient shadows), the 15 type roles, and colour-string parsing. `tess_ui.Theme` is
+(as key and ambient shadows), the 15 type roles, and colour-string parsing (`tess_utils.parse_color`). `tess_ui.Theme` is
 one resolved theme, which style values like `primary`, `extra_large`, `level_3` or
 `typography_role` resolve through. Widgets and views follow their app's theme: `App.set_dark`,
 the OS light/dark switch and `App.set_theme_specs` re-colour them in place. See

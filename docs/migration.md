@@ -3,6 +3,12 @@
 What to change in an existing app when you upgrade. Each section is the release you are moving to; the
 [changelog](changelog.md) has everything else that changed.
 
+## To 0.6.2
+
+**The colour parser and the image decoder come from `tesserae-utils`.** `tess_ui.tokens.parse_color` is gone: write `from tess_utils import parse_color` (the same strings parse to the same values). `tess_ui.images.decode_image` is gone: use `tess_utils.decode_image_file(path)`, which returns `(width, height, rgba)` where `decode_image` returned `(rgba, width, height)`.
+
+Images are read by the same package, so three things differ: only **PNG, JPEG, GIF and WebP** files load (convert a BMP, TIFF or ICO picture first), the **EXIF orientation is applied** (a photo stored sideways is shown upright), and a file that cannot be read says `cannot decode image '<path>': cannot read the image: ...`.
+
 ## To 0.6.1
 
 **YAML is no longer read.** Tesserae 0.6.1 reads TDL only; a `.yaml` view, stylesheet or theme is refused with a message that points here. A project still in YAML moves first, then upgrades.

@@ -122,7 +122,6 @@
 "src/tess_ui/tokens.py|import-untyped|Skipping analyzing \"materialyoucolor.dynamiccolor.material_dynamic_colors\": module is installed, but missing library stubs or py.typed marker": 1,
 "src/tess_ui/tokens.py|import-untyped|Skipping analyzing \"materialyoucolor.hct\": module is installed, but missing library stubs or py.typed marker": 1,
 "src/tess_ui/tokens.py|import-untyped|Skipping analyzing \"materialyoucolor.scheme.scheme_tonal_spot\": module is installed, but missing library stubs or py.typed marker": 1,
-"src/tess_ui/tokens.py|return-value|Incompatible return value type (got \"tuple[int, ...]\", expected \"tuple[int, int, int, int]\")": 2,
 "src/tess_ui/view.py|arg-type|Argument 1 to \"prepare_layers\" has incompatible type \"float | bool | tuple[int, int, int, int] | dict[str, Any] | None\"; expected \"dict[str, Any] | None\"": 1,
 "src/tess_ui/view.py|arg-type|Argument 1 to \"resolve\" of \"Theme\" has incompatible type \"**dict[str, float | bool | tuple[int, int, int, int] | dict[str, Any] | None]\"; expected \"bool\"": 1,
 "src/tess_ui/view.py|arg-type|Argument 1 to \"resolve\" of \"Theme\" has incompatible type \"**dict[str, float | bool | tuple[int, int, int, int] | dict[str, Any] | None]\"; expected \"dict[str, Any] | None\"": 1,

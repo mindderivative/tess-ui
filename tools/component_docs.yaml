@@ -2265,7 +2265,7 @@ components:
       An image shows a picture, fitted to its box. Material Design 3 describes how to crop and round it in a
       container: a corner from the shape scale, a circle for an avatar.
     built: |
-      `Image` is the engine's picture node: Tesserae reads and decodes the file (Pillow), and `Fit` says how it fills the box (`cover` by default, or `contain` or `fill`).
+      `Image` is the engine's picture node: Tesserae reads and decodes the file (PNG, JPEG, GIF or WebP, turned upright by its EXIF orientation), and `Fit` says how it fills the box (`cover` by default, or `contain` or `fill`).
       `Src` is relative to the view, and can be an expression, so it follows a Signal. `Alt` says what the picture shows, for a screen reader; without it the picture is decorative
       and hidden from one, unless it handles clicks. The path must be relative and stay inside the view's directory; an absolute one, or one that leaves it, is refused.
 

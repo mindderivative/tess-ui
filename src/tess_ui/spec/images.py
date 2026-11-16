@@ -20,7 +20,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from tess_ui.images import decode_image
+from tess_utils import decode_image_file
 
 __all__ = ["ComponentError", "Frame", "check_frame", "extract_images"]
 
@@ -96,7 +96,7 @@ def _cursor(node: dict[str, Any], base_dir: Path | None, deps: set[Path]) -> dic
     path = _resolve_src(base_dir, src, node_id)
     deps.add(path)
     try:
-        rgba, width, height = decode_image(path)
+        width, height, rgba = decode_image_file(path)
     except OSError as exc:
         raise ComponentError(f"widget {node_id!r}: {exc}") from exc
     if not (1 <= width <= 256 and 1 <= height <= 256):
@@ -131,7 +131,7 @@ def _extract(node: Any, base_dir: Path | None, memo: dict[int, tuple[Any, Any, l
         path = _resolve_src(base_dir, src, node_id)
         deps.add(path)
         try:
-            rgba, width, height = decode_image(path)
+            width, height, rgba = decode_image_file(path)
         except OSError as exc:
             raise ComponentError(f"widget {node_id!r}: {exc}") from exc
         frames.append((node_id, rgba, width, height))
