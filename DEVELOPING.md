@@ -30,7 +30,7 @@ python3 -m venv .venv
 .venv/bin/pip install mkdocs mkdocs-material   # the docs build; also pillow-based tools need no extra
 ```
 
-`pip install -e ".[dev]"` pulls `tesserae-engine==0.6.8` and `tesserae-el==0.1.2` (`import tess_el`, the expression language) from PyPI (`import tess_re`; pinned to the release the whole suite was run on); nothing else is needed. A newer `tess_re` is tried first in a throwaway venv (`python3 tools/tre_version_check.py` says when there is one), then the pin moves. The suite was run on the PyPI build of 0.6.8. To work against an unreleased tess_re, build its wheel (`pip install maturin`, then in the tess_re checkout `maturin build --release -m
+`pip install -e ".[dev]"` pulls `tesserae-engine==0.6.8` and `tesserae-el==0.2.0` (`import tess_el`, the expression language) from PyPI (`import tess_re`; pinned to the release the whole suite was run on); nothing else is needed. A newer `tess_re` is tried first in a throwaway venv (`python3 tools/tre_version_check.py` says when there is one), then the pin moves. The suite was run on the PyPI build of 0.6.8. To work against an unreleased tess_re, build its wheel (`pip install maturin`, then in the tess_re checkout `maturin build --release -m
 crates/engine-py/Cargo.toml`) and `pip install --force-reinstall --no-deps` it into a scratch venv.
 
 Never put a scratch tess_re build into `.venv` by accident; to try another tess_re version make a throwaway venv (`python3 -m venv /tmp/v055`, install the wheel and

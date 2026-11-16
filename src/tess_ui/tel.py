@@ -32,7 +32,7 @@ import functools
 import re
 import types
 import warnings
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any, Callable, Optional
 
@@ -42,7 +42,7 @@ from tess_ui.reactive import Computed, Signal
 
 __all__ = [
     "BUILTIN_NAMES", "DEFAULT_LIMITS", "HOST_FUNCTIONS", "HOST_METHODS", "LANGUAGE", "TIMER_CALLS", "Call", "Expr", "ExprError", "Limits", "NestedTemplate",
-    "Origin", "Set", "Statements", "TelScope", "Template", "adapt", "check_handler_actions", "check_handler_calls", "check_handler_targets",
+    "Origin", "Parts", "Set", "Slot", "Statements", "TelScope", "Template", "adapt", "check_handler_actions", "check_handler_calls", "check_handler_targets",
     "compile_expr", "compile_statements", "compile_template", "is_action_name", "timer_handlers"]
 
 #: The language version tess-ui declares to TEL.
@@ -348,20 +348,25 @@ class Expr:
         check = getattr(scope, "is_reactive", None)
         return check is not None and any(check(name) for name in self.names)
 
-    def evaluate(self, scope: Any, *, event: Any = MISSING) -> Any:
-        """The value, with Signals read as their values. Raises `ExprError`."""
+    def _run(self, scope: Any, event: Any) -> Any:
         try:
-            value = self._expression.evaluate(adapt(scope, event=event))
+            return self._expression.evaluate(adapt(scope, event=event))
         except tess_el.TelError as err:
             raise _error(err, self.origin) from None
-        return _result(value)
+
+    def _run_tracked(self, scope: Any, event: Any) -> tuple[Any, frozenset[str]]:
+        try:
+            return self._expression.evaluate_tracked(adapt(scope, event=event))
+        except tess_el.TelError as err:
+            raise _error(err, self.origin) from None
+
+    def evaluate(self, scope: Any, *, event: Any = MISSING) -> Any:
+        """The value, with Signals read as their values. Raises `ExprError`."""
+        return _result(self._run(scope, event))
 
     def evaluate_tracked(self, scope: Any, *, event: Any = MISSING) -> tuple[Any, frozenset[str]]:
         """`evaluate`, and the paths the evaluation actually read (`a`, `a.b.c`): fewer than `paths` when a branch was not taken."""
-        try:
-            value, reads = self._expression.evaluate_tracked(adapt(scope, event=event))
-        except tess_el.TelError as err:
-            raise _error(err, self.origin) from None
+        value, reads = self._run_tracked(scope, event)
         return _result(value), reads
 
     def evaluate_raw(self, scope: Any, *, event: Any = MISSING) -> Any:
@@ -372,10 +377,7 @@ class Expr:
                 return scope.lookup(self._bare)
             except (KeyError, AttributeError):
                 pass  # evaluating says what is wrong
-        try:
-            return _result(self._expression.evaluate(adapt(scope, event=event)))
-        except tess_el.TelError as err:
-            raise _error(err, self.origin) from None
+        return _result(self._run(scope, event))
 
     def bare_name(self) -> Optional[str]:
         """The name, if the whole expression is one bare name (a candidate for two-way binding), else `None`."""
@@ -401,77 +403,130 @@ def compile_expr(source: str, *, origin: Optional[Origin] = None, limits: Any = 
 
 
 # -- templates ----------------------------------------------------------------------------------------------------------
+#
+# TEL is an expression language and has no template form: a text with values in it is Tesserae's. The TDL front end reads `Battery <| level |>%` into `Parts`
+# (the literal text and each slot's expression text, with where that text starts in the file), so nothing here looks for delimiters in text, and no text is
+# ever read for `{{ }}` or `<| |>` again: a string is a template when it is a `Parts`, whatever else it holds. `compile_template` compiles each slot with
+# `compile_expr`; the `Template` it makes evaluates them in order and, when there is more than the one slot, joins the values as text.
+
+
+@dataclass(frozen=True, slots=True)
+class Slot:
+    """One `<| expression |>` of a text: `text` is exactly what lies between the delimiters (not trimmed), `origin` where it starts in the file."""
+
+    text: str
+    origin: Optional[Origin] = None
+
+
+class Parts(str):
+    """A text with slots in it, as a loader reads it: `items` are literal strings and `Slot`s, in order. The string it is is the text as TDL writes it
+    (`Battery <| level |>%`), for a message to show; what makes it a template is the type, so a plain string is a plain string, whatever it holds.
+
+    A `str`, so that every place that takes a value as text (a property's type, a name in an error) takes it; `compile_template` is what reads `items`."""
+
+    items: tuple[str | Slot, ...]
+
+    def __new__(cls, items: Iterable[str | Slot]) -> Parts:
+        kept = tuple(items)
+        made = super().__new__(cls, "".join(item if isinstance(item, str) else f"<|{item.text}|>" for item in kept))
+        made.items = kept
+        return made
+
+    def __getnewargs__(self) -> tuple[Any, ...]:  # a copy is made from the items, not from the text
+        return (self.items,)
+
+
+def _plain_text(expr: Expr, value: Any) -> str:
+    """A slot's value as text: nothing for `None`, `str()` for a plain value, an error for an object of the application's or a function (what TEL's own text
+    conversion refuses: it says to read an attribute of it instead)."""
+    if value is None:
+        return ""
+    if type(value) is str:
+        return value
+    if isinstance(value, _PLAIN):
+        return str(value)
+    kind = type(value._o if isinstance(value, _Host) else value).__name__  # an object of the application's, by its own class
+    raise ExprError(f"a {kind} cannot be used in text", source=expr.source, line=1, column=0,
+                    end_column=None if "\n" in expr.source else len(expr.source), origin=expr.origin, hint="read one of its attributes instead",
+                    code="value-not-plain")
 
 
 class Template:
-    """Text with `{{ }}` parts: `"Hello {{ name }}!"`. `parts` are strings and `Expr`s. When the whole text is one `{{ }}`, the value keeps its own
-    type (`single`); otherwise the parts are joined as text (`None` is empty)."""
+    """A text with slots, compiled: `parts` are strings and `Expr`s. When the whole text is one slot, the value keeps its own type (`single`); otherwise the
+    parts are joined as text (`None` is empty). `names` and `paths` are the union over the slots, and `evaluate_tracked` reports the union of what they read.
 
-    __slots__ = ("parts", "origin", "_template")
+    Each slot is a TEL expression with a budget of its own (`Limits.max_steps` and the rest apply to one slot, so a text of three slots may take three times
+    the steps of one); the joined text as a whole is held to `Limits.max_string`."""
 
-    def __init__(self, template: Any, origin: Optional[Origin]) -> None:
-        self._template = template
-        self.origin = origin
-        self.parts: list[Any] = []
-        for part in template._parts:  # noqa: SLF001 - TEL gives the parts no public name; each one is made a `Expr` of its own
-            self.parts.append(part if isinstance(part, str) else Expr(part, part.source, _part_origin(origin, part)))
+    __slots__ = ("parts", "names", "paths", "_single", "_max_string")
+
+    def __init__(self, parts: list[Any], max_string: int) -> None:
+        self.parts = parts
+        exprs = [part for part in parts if isinstance(part, Expr)]
+        self.names: frozenset[str] = frozenset().union(*(e.names for e in exprs))
+        self.paths: frozenset[str] = frozenset().union(*(e.paths for e in exprs))
+        self._single: Optional[Expr] = parts[0] if len(parts) == 1 and isinstance(parts[0], Expr) else None
+        self._max_string = max_string
 
     @property
     def single(self) -> bool:
-        return len(self.parts) == 1 and isinstance(self.parts[0], Expr)
-
-    @property
-    def names(self) -> frozenset[str]:
-        return frozenset(self._template.names)
-
-    @property
-    def paths(self) -> frozenset[str]:
-        return frozenset(self._template.paths)
+        return self._single is not None
 
     def is_reactive(self, scope: Any) -> bool:
         return any(p.is_reactive(scope) for p in self.parts if isinstance(p, Expr))
 
     def evaluate(self, scope: Any, *, event: Any = MISSING) -> Any:
-        try:
-            value = self._template.evaluate(adapt(scope, event=event))
-        except tess_el.TelError as err:
-            raise _error(err, self.origin) from None
-        return _result(value)
+        if self._single is not None:
+            return self._single.evaluate(scope, event=event)
+        return self._join(scope, event, None)
 
     def evaluate_tracked(self, scope: Any, *, event: Any = MISSING) -> tuple[Any, frozenset[str]]:
-        try:
-            value, reads = self._template.evaluate_tracked(adapt(scope, event=event))
-        except tess_el.TelError as err:
-            raise _error(err, self.origin) from None
-        return _result(value), reads
+        if self._single is not None:
+            return self._single.evaluate_tracked(scope, event=event)
+        reads: set[str] = set()
+        text = self._join(scope, event, reads)
+        return text, frozenset(reads)
+
+    def _join(self, scope: Any, event: Any, reads: Optional[set[str]]) -> str:
+        out: list[str] = []
+        total = 0
+        for part in self.parts:
+            if isinstance(part, str):
+                text = part
+            else:
+                if reads is None:
+                    value = part._run(scope, event)  # noqa: SLF001 - the slot's own value, before a `_Host` is unwrapped
+                else:
+                    value, read = part._run_tracked(scope, event)  # noqa: SLF001
+                    reads |= read
+                if isinstance(value, (Signal, Computed)):
+                    value = value.get()
+                text = _plain_text(part, value)
+            total += len(text)
+            if total > self._max_string:
+                where = {"source": part.source, "origin": part.origin} if isinstance(part, Expr) else {}
+                raise ExprError(f"the text would be over {self._max_string} characters", code="limit-string", **where)
+            out.append(text)
+        return "".join(out)
 
     def __repr__(self) -> str:
-        return f"Template({self._template.source!r})"
+        return "Template(" + repr("".join(p if isinstance(p, str) else f"<| {p.source} |>" for p in self.parts)) + ")"
 
 
-def _part_origin(origin: Optional[Origin], part: Any) -> Optional[Origin]:
-    """Where a part of a template starts: TEL knows it (`part.origin`, 1-based), the file's 0-based column is that minus one."""
-    if origin is None or part.origin is None:
-        return None
-    return Origin(part.origin.file, part.origin.line, part.origin.column - 1)
-
-
-def compile_template(text: str, *, origin: Optional[Origin] = None, limits: Any = DEFAULT_LIMITS) -> Optional[Template]:
-    """Splits `text` at its `{{ }}` parts and compiles each. Returns `None` when there is no `{{` (plain text). Raises `ExprError`."""
-    _as_text(text, origin)
-    if "{{" not in text:
-        return None
-    try:
-        template = tess_el.compile_template(text, language=LANGUAGE, origin=_tel_origin(origin), limits=limits, functions=_REGISTERED, methods=HOST_METHODS)
-    except tess_el.TelError as err:
-        raise _error(err, origin) from None
-    return Template(template, origin)
+def compile_template(parts: Parts, *, limits: Any = DEFAULT_LIMITS) -> Template:
+    """Compiles each slot of `parts` (a `Parts`, as the TDL front end reads a text with slots) with `compile_expr`, at the slot's own origin, so an error in the
+    second slot names its own line and column. The text as a whole, as written, is held to `Limits.max_source`. Raises `ExprError`."""
+    if not isinstance(parts, Parts):
+        raise TypeError(f"a template is made of the Parts a loader reads, got {type(parts).__name__}")
+    if len(parts) > limits.max_source:
+        raise ExprError(f"the text is {len(parts)} characters; the limit is {limits.max_source}", code="limit-source")
+    return Template([item if isinstance(item, str) else compile_expr(item.text, origin=item.origin, limits=limits) for item in parts.items], limits.max_string)
 
 
 @dataclass
 class NestedTemplate:
-    """A list or mapping with `{{ }}` strings inside it (a `Text`'s `runs`), as `Template`s: it evaluates to the same shape with each of those strings
-    worked out (a string that is one whole `{{ }}` keeps the type of its value), and is reactive if any of them is."""
+    """A list or mapping with `Parts` inside it (a `Text`'s `runs`), as `Template`s: it evaluates to the same shape with each of those texts
+    worked out (a text that is one whole slot keeps the type of its value), and is reactive if any of them is."""
 
     value: Any
 

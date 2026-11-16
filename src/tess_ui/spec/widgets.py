@@ -4,7 +4,7 @@ A widget has a name, **properties** (`Property`: a type, a default, `choices`, `
 `parts` a stylesheet can address. Built-in widgets are declared with `@widget` (or `declare`); a view with `params:` becomes a declaration with
 `decl_from_params`, so the loader, the schema generator and the editor treat both alike.
 
-`Property.coerce` checks a literal against its type and returns the value to keep; a `{{ }}` expression is checked later, when it is
+`Property.coerce` checks a literal against its type and returns the value to keep; a text with slots (`tess_ui.tel.Parts`) is checked later, when it is
 evaluated, and passes through here.
 """
 
@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable, Optional
 
 from tess_ui.spec import marker
+from tess_ui.tel import Parts
 
 __all__ = [
     "PROPERTY_TYPES", "RESERVED_KEYS", "Property", "PropertyError", "WidgetDecl", "declare", "decl_from_params", "is_expression", "json_schema", "lookup",
@@ -53,7 +54,8 @@ class PropertyError(ValueError):
 
 
 def is_expression(value: Any) -> bool:
-    return isinstance(value, str) and "{{" in value
+    """Whether `value` is a text with slots: a `tess_ui.tel.Parts`, which is what the TDL front end makes of one. A plain string never is."""
+    return isinstance(value, Parts)
 
 
 def _near(text: str, options: Iterable[str]) -> Optional[str]:
@@ -369,7 +371,7 @@ _UNIVERSAL: dict[str, dict[str, Any]] = {
     "params": {"type": ["array", "object"]}, "expects": {"type": "object"},
     "tesserae": marker.SCHEMA,  # the first line of the file (it is looser than that, being allowed on any node, as `params` is)
 }
-_EXPRESSION = {"type": "string", "pattern": r"\{\{"}
+_EXPRESSION = {"type": "string", "pattern": r"<\|"}  # a text with slots, as the front end gives it (`Parts`: its TDL spelling, `<| expr |>` in it)
 _JSON_TYPE = {
     "str": {"type": "string"}, "icon": {"type": "string"}, "mask": {"type": "string"}, "handler": {"type": "string"}, "color": {"type": "string"},
     "int": {"type": "integer"}, "float": {"type": "number"}, "bool": {"type": "boolean"}, "length": {"type": ["number", "string"]},

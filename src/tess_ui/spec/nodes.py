@@ -1,7 +1,7 @@
 """The node model: a view file in the 0.5.0 syntax, read into validated `Node`s (spec sections 2, 3, 5 and 14; phase 3 of #209).
 
 `parse_view(text, file)` reads one `*_View.tdl` (read into mappings with positions kept), checks every key of every node against the spec, checks each
-property against its widget's declaration, compiles every `{{ }}` expression and handler through `tess_ui.tel`, and gives every node a
+property against its widget's declaration, compiles every slot (`<| expression |>`, a `tess_ui.tel.Parts`) and handler through `tess_ui.tel`, and gives every node a
 stable id (its path from the root: the node's `name`, else `children[2]`). The first problem is a `LoadError` that names the file, line and
 column, says what is wrong and, where it can, what to write instead.
 
@@ -19,7 +19,7 @@ from typing import Any, Callable, Iterator, Optional
 
 from tess_ui import a11y as a11y_module
 from tess_ui.spec import placement, sizes
-from tess_ui.tel import (Expr, ExprError, NestedTemplate, Origin, Statements, compile_expr, compile_statements, compile_template, is_action_name,
+from tess_ui.tel import (Expr, ExprError, NestedTemplate, Origin, Parts, Statements, compile_expr, compile_statements, compile_template, is_action_name,
                          timer_handlers)
 from tess_ui.spec import widgets as registry
 from tess_ui.spec.widgets import Property, PropertyError, WidgetDecl, decl_from_params, is_expression, style_fields_of
@@ -237,25 +237,24 @@ class _Parser:
 
     # values
 
-    def template(self, value: Any, at: Position) -> Any:
-        """A string with `{{ }}` parts as a `Template`; any other value unchanged."""
-        if isinstance(value, str) and "{{" in value:
+    def template(self, value: Any) -> Any:
+        """A `Parts` (a text with slots, as the TDL front end read it) as a `Template`; any other value unchanged. Each slot is compiled where it is written."""
+        if isinstance(value, Parts):
             try:
-                return compile_template(value, origin=self.origin(at))
+                return compile_template(value)
             except ExprError as exc:
                 raise self.expr_error(exc) from None
         return value
 
-    def nested(self, value: Any, at: Position) -> Any:
-        """A list or mapping whose strings may have `{{ }}` parts: a `NestedTemplate` when any do, else the value itself."""
+    def nested(self, value: Any) -> Any:
+        """A list or mapping whose strings may be `Parts`: a `NestedTemplate` when any are, else the value itself."""
         found = False
 
         def work(item: Any) -> Any:
             nonlocal found
-            if isinstance(item, str):
-                made = self.template(item, getattr(item, "at", at))
-                found = found or made is not item
-                return made
+            if isinstance(item, Parts):
+                found = True
+                return self.template(item)
             if isinstance(item, list):
                 return [work(sub) for sub in item]
             if isinstance(item, dict):
@@ -348,7 +347,7 @@ class _Parser:
             for state_name, initial in value.items():
                 if not isinstance(state_name, str) or not _NAME.match(state_name) or state_name.startswith("_"):
                     raise self.fail(value.key_at[state_name], f"a state name is a plain identifier, got {state_name!r}")
-                node.state[state_name] = self.template(initial, value.val_at[state_name])
+                node.state[state_name] = self.template(initial)
         elif key == "style":
             self.style(node, value, vat)
         elif key == "classes":
@@ -365,7 +364,7 @@ class _Parser:
             if value is not None and not isinstance(value, (bool, str)):
                 raise self.fail(vat, f"'interaction:' takes true, false or a colour role, got {_describe(value)}")
             # an expression is worked out once, when the view is composed (it may read the view's params, not a Signal)
-            node.interaction = self.template(value, vat) if is_expression(value) else value
+            node.interaction = self.template(value)
         elif key == "window_region":
             if value not in WINDOW_REGIONS:
                 raise self.fail(vat, f"'window_region:' is one of {', '.join(WINDOW_REGIONS)}, got {value!r}", _near(value, WINDOW_REGIONS))
@@ -421,12 +420,12 @@ class _Parser:
                     users = sorted(n for n in registry.names() if "foreground" in (registry.lookup(n).extras or ()))
                     hint = f"widgets that accept it: {', '.join(users)}"
                 raise self.fail(value.key_at[key], f"{node.decl.name}: style '{key}' is not valid here", hint or _near(key, allowed))
-            problem = None if not isinstance(item, (str, int, float)) or (isinstance(item, str) and "{{" in item) else sizes.size_problem(key, item)
-            if problem is None and key in placement.ANCHOR_FIELDS and not (isinstance(item, str) and "{{" in item):
+            problem = None if not isinstance(item, (str, int, float)) or isinstance(item, Parts) else sizes.size_problem(key, item)
+            if problem is None and key in placement.ANCHOR_FIELDS and not isinstance(item, Parts):
                 problem = placement.style_problem(key, item.unwrap() if hasattr(item, "unwrap") else item)
             if problem:  # a size or an inset that tess_re would refuse, found where it is written (an expression is checked when it is worked out)
                 raise self.fail(value.val_at[key], f"{node.decl.name}: {problem}")
-            node.style[key] = self.template(item, value.val_at[key])
+            node.style[key] = self.template(item)
         for edge, others in _EDGES.items():  # two ways to place one edge in one mapping leave one unheard
             if edge in value and value[edge] is not None:
                 for other in others:
@@ -458,7 +457,7 @@ class _Parser:
     def tooltip(self, node: Node, value: Any, vat: Position) -> None:
         """`tooltip: text`, or `tooltip: {text, title, delay, placement, actions}` for a rich one."""
         if isinstance(value, str):
-            node.tooltip = {"text": self.template(value, vat)}
+            node.tooltip = {"text": self.template(value)}
             return
         if not isinstance(value, PMap):
             raise self.fail(vat, f"'tooltip:' takes text, or a mapping of text, title, delay, placement and actions, got {_describe(value)}")
@@ -479,7 +478,7 @@ class _Parser:
             elif not isinstance(item, str):
                 raise self.fail(iat, f"tooltip {key} is text, got {_describe(item)}")
             else:
-                node.tooltip[key] = self.template(item, iat)
+                node.tooltip[key] = self.template(item)
         if "text" not in node.tooltip:
             raise self.fail(vat, "a tooltip needs text", "write tooltip: {text: ..., title: ...}")
 
@@ -501,7 +500,7 @@ class _Parser:
                     handler = Handler(click, statements=compile_statements(click, origin=self.origin(item.val_at["on_click"])))
                 except ExprError as exc:
                     raise self.expr_error(exc) from None
-            actions.append((self.template(label, item.val_at["label"]), handler))
+            actions.append((self.template(label), handler))
         return actions
 
     def a11y(self, node: Node, value: Any, vat: Position) -> None:
@@ -513,11 +512,11 @@ class _Parser:
             iat = value.val_at[key]
             if is_expression(item):
                 if key == "role":  # a role cannot change while a view is open, but it may be worked out from the view's params (checked when composing)
-                    node.a11y[key] = self.template(item, iat)
+                    node.a11y[key] = self.template(item)
                     continue
                 if key not in a11y_module.BINDABLE:
                     raise self.fail(iat, f"a11y '{key}' cannot be bound", f"bindable: {', '.join(a11y_module.BINDABLE)}")
-                node.a11y[key] = self.template(item, iat)
+                node.a11y[key] = self.template(item)
                 continue
             try:
                 a11y_module.check({key: item})
@@ -540,7 +539,7 @@ class _Parser:
                 coerced = prop.coerce(value)
             except PropertyError as exc:
                 raise self.fail(vat, f"{node.decl.name}: {exc.message}", exc.hint) from None
-            node.props[key] = self.nested(coerced, vat) if key == "runs" and node.decl.name == "Text" else self.template(coerced, vat)
+            node.props[key] = self.nested(coerced) if key == "runs" and node.decl.name == "Text" else self.template(coerced)
 
 
 #: `x` is `left` and `y` is `top`, and `inset` is all four: a mapping that gives an edge twice says what it means only once.

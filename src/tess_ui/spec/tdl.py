@@ -1,8 +1,8 @@
 """The TDL front end: a view written in TDL, read into a mapping with positions.
 
 Piece 1 of `design/tdl-switch-plan.md`, the rules in `design/tdl-views.md`. Nothing after this changes: `load_marked_tdl(text, file)` returns a `PMap` that
-`nodes.parse_data` takes (`{widget, name, style, children, handlers, ...}`, `{{ }}` still the template form inside
-strings, `if`/`for`/`key` on the node), with the same position maps (`at`, `key_at`, `val_at`), so every error a view can have keeps its wording and now
+`nodes.parse_data` takes (`{widget, name, style, children, handlers, ...}`, a text with slots is a `tess_ui.tel.Parts` inside it, `if`/`for`/`key` on the node),
+with the same position maps (`at`, `key_at`, `val_at`), so every error a view can have keeps its wording and now
 points into the `.tdl` file.
 
 What it undoes, in one place each:
@@ -11,7 +11,7 @@ What it undoes, in one place each:
 - `If` and `For` wrap a node in TDL and are set on the node again (`if`, `for`, `key`);
 - `Children { ... }` is the `children` list; `Handlers { On_Click { Set {...} Call {...} } }` is the handler text the runtime takes
   (`open = not open; on_toggle()`); a handler that is a bare action name is a property (`On_Click: save`);
-- a slot (`<| expr |>`) is the string `{{ expr }}`, text with slots in it is the template string, a quoted string is plain text;
+- a slot (`<| expr |>`) is `Parts` of one slot, text with slots in it is `Parts` of its literals and slots (each slot's text as written and where it starts), a quoted string is plain text;
 - the metadata line `Tesserae: "0.6"` goes through `marker.scan`.
 - the metadata line `TDL: 0.2` is the language (0.2: slots are `<| |>`, a `For` takes several variables, `For i, it In <| enumerate(items) |> Key <| ... |>`): a file that says `TDL: 0.1` is refused with a hint to convert it.
 
@@ -32,6 +32,7 @@ from tess_ui.spec import marker
 from tess_ui.spec import widgets as registry
 from tess_ui.spec.nodes import LoadError, PMap, PSeq, Position, _near
 from tess_ui.spec.widgets import WidgetDecl
+from tess_ui.tel import Origin, Parts, Slot
 
 __all__ = ["load_marked_tdl", "load_tdl_file", "title_case", "snake_case"]
 
@@ -134,8 +135,9 @@ class _Front:
     # values
 
     def value(self, v: tess_dl.Value) -> tuple[Any, Position]:
-        """A value and where it is: a quoted string's text starts after its quote, a slot's `{{` is where its delimiter is.
-        Only the TDL 0.2 slot (`<| |>`) is a slot: a `{{ }}` in text is the 0.1 form and is refused, never read as a template."""
+        """A value and where it is: a quoted string's text starts after its quote, a slot's `<|` is where its delimiter is.
+        Only the TDL 0.2 slot (`<| |>`) is a slot, and it is read as `Parts`, never as text with delimiters in it. A `{{ }}` in text is the 0.1 form and is refused
+        (read as it stands it would be text that looks like a slot and is not one)."""
         at = self.pos(v)
         if isinstance(v, tess_dl.Word):
             return _WORDS.get(v.text, v.text), at
@@ -147,12 +149,12 @@ class _Front:
         if isinstance(v, tess_dl.Percent):
             return v.text, at
         if isinstance(v, tess_dl.Slot):
-            return "{{" + v.text + "}}", at
+            return Parts((self.slot(v),)), at
         if isinstance(v, tess_dl.Template):
             for part in v.parts:
                 if isinstance(part, str):
                     self.refuse_old_slot(part, at)
-            return "".join(p if isinstance(p, str) else "{{" + p.text + "}}" for p in v.parts), at
+            return Parts(tuple(p if isinstance(p, str) else self.slot(p) for p in v.parts)), at
         if isinstance(v, tess_dl.List):
             seq = PSeq()
             seq.at, seq.item_at = at, []
@@ -163,8 +165,13 @@ class _Front:
             return seq, at
         raise self.fail(at, f"'{v.name}(...)' is not a value a view takes", "write the value as text or a number")  # a Call
 
+    def slot(self, slot: tess_dl.Slot) -> Slot:
+        """The slot's expression text, as written, with where it starts: `Origin` has a 0-based column."""
+        line, column = self.pos(slot.text_origin)
+        return Slot(slot.text, Origin(self.file, line, column))
+
     def refuse_old_slot(self, text: str, at: Position) -> None:
-        """`{{ }}` in text is how TDL 0.1 wrote a slot, and the front end's own spelling of one below: refused here, so a file never gets a live template that way."""
+        """`{{ }}` in text is how TDL 0.1 wrote a slot: refused here, so a file written for 0.1 is told so and its text never silently holds braces it meant as a slot."""
         if "{{" in text:
             raise self.fail(at, "A slot is written <| expression |>; {{ }} was the TDL 0.1 form", "write <| expression |>")
 
