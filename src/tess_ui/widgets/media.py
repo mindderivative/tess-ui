@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from tess_ui.images import decode_image
+from tess_utils import decode_image_file
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -37,14 +37,14 @@ def image(
     label: str | None = None,
 ) -> "Widget":
     """An image from a file, `width`x`height`, `fit` cover, contain or
-    fill. Tesserae decodes the file (Pillow) and builds the node itself
+    fill. Tesserae decodes the file (`tess_utils.decode_image_file`: PNG, JPEG, GIF or WebP) and builds the node itself
     (`window.create("image")` with the pixels). Raises `OSError` if the
     file can't be read or decoded. Decorative unless given `label=`, then
     `role="img"`."""
     from tess_ui import a11y
     from tess_ui.widgets._composed import Widget
 
-    rgba, pixel_width, pixel_height = decode_image(path)
+    pixel_width, pixel_height, rgba = decode_image_file(path)
     widget = Widget(window, spec=_image_spec("image", width, height, fit), x=x, y=y, name="image",
                     frames={"image": (rgba, pixel_width, pixel_height)})
     a11y.describe(widget.node, **({"role": "img", "label": label} if label is not None else {"hidden": True}))

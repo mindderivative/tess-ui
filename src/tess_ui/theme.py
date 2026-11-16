@@ -29,6 +29,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Optional, Union
 
+from tess_utils import parse_color
+
 from tess_ui import tokens
 
 __all__ = ["DURATIONS", "EASINGS", "Theme"]
@@ -179,7 +181,7 @@ class Theme:
 
 def _seed(spec: Optional[dict[str, Any]]) -> Optional[RGBA]:
     raw = (spec or {}).get("seed")
-    return tokens.parse_color(raw) if isinstance(raw, str) else None
+    return parse_color(raw) if isinstance(raw, str) else None
 
 
 def _component(key: str, raw: Any) -> _Component:

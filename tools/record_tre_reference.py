@@ -29,7 +29,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 MODULES = ["test_tree_parity", "test_spec_build", "test_tokens", "test_theme_object",
-           "test_view", "test_clickable", "test_wide_gamut"]
+           "test_view", "test_clickable"]
 
 
 def main() -> int:

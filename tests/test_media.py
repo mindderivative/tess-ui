@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 import tess_re
+from tess_utils import decode_image_file
 
 from tess_ui import Theme
-from tess_ui.images import decode_image
 from tess_ui.widgets import image, video
 
 PIXEL_PNG = str(Path(__file__).parent / "fixtures" / "pixel.png")
@@ -26,7 +26,7 @@ def test_an_image_shows_the_files_decoded_pixels():
     window = _window()
     im = image(window, PIXEL_PNG, 60, 40, fit="contain")
     window.advance(16)
-    rgba, width, height = decode_image(PIXEL_PNG)
+    width, height, rgba = decode_image_file(PIXEL_PNG)
     assert (im.node.get("layout_width"), im.node.get("layout_height")) == (60.0, 40.0)
     assert (im.node.get("pixel_width"), im.node.get("pixel_height"), im.node.get("fit")) == (width, height, "contain")
     assert bytes(im.node.get("rgba")) == rgba

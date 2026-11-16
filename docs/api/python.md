@@ -382,14 +382,6 @@ width_class(width: float) -> str
 
 The MD3 window size class for a window `width` wide: `compact` (under 600), `medium`, `expanded` (840), `large` (1200) or `extra_large` (1600).
 
-### `parse_color`
-
-```python
-parse_color(raw: str) -> RGBA
-```
-
-A colour string as `tess_re` parses it: hex (`#RGB`, `#RGBA`, `#RRGGBB`, `#RRGGBBAA`), a CSS colour name, `transparent`, or `rgb()`/`rgba()`/`hsl()`/`hsla()` in CSS Color 4's comma or space syntax with an optional alpha, and CSS's wide-gamut functions (`color()`, `lab()`, `lch()`, `oklab()`, `oklch()`, `hwb()`), clipped into sRGB. Raises `ValueError`.
-
 ### `resolve_color`
 
 ```python
@@ -852,7 +844,7 @@ image(
 ) -> 'Widget'
 ```
 
-An image from a file, `width`x`height`, `fit` cover, contain or fill. Tesserae decodes the file (Pillow) and builds the node itself (`window.create("image")` with the pixels).
+An image from a file, `width`x`height`, `fit` cover, contain or fill. Tesserae decodes the file (`tess_utils.decode_image_file`: PNG, JPEG, GIF or WebP) and builds the node itself (`window.create("image")` with the pixels).
 
 ### `svg`
 

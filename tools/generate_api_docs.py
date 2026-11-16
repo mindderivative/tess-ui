@@ -277,7 +277,7 @@ def theme_block() -> tuple[str, list[str]]:
         out.append(f"- `{_signature(fn, name)}`: {doc}")
     out.append("")
     out += ["### Tokens", "", "`tess_ui.tokens`: Material Design 3's tokens as Python values.", ""]
-    for name in ("shape", "elevation", "type_style", "color_scheme", "baseline_scheme", "resolve_scheme", "parse_color", "elevation_shadows"):
+    for name in ("shape", "elevation", "type_style", "color_scheme", "baseline_scheme", "resolve_scheme", "elevation_shadows"):
         fn = getattr(tokens, name)
         doc = _paragraph(fn.__doc__)
         if not doc:

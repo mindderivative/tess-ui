@@ -12,9 +12,9 @@ from pathlib import Path
 
 import pytest
 from PIL import Image
+from tess_utils import decode_image_file
 
 from tess_ui import App
-from tess_ui.images import decode_image
 from tess_ui.spec import ComponentError
 from tess_ui.spec.images import extract_images
 
@@ -27,34 +27,6 @@ def _png(path: Path, mode: str = "RGB", size=(2, 1), pixels=((255, 0, 0), (0, 0,
     img.putdata(list(pixels))
     img.save(path)
     return path
-
-
-# -- decode_image ------------------------------------------------------
-
-
-def test_decode_image_returns_straight_rgba_bytes_and_pixel_size(tmp_path: Path):
-    rgba, width, height = decode_image(_png(tmp_path / "rb.png"))
-    assert (width, height) == (2, 1)
-    assert rgba == RED_BLUE
-
-
-def test_decode_image_converts_non_rgba_modes(tmp_path: Path):
-    # Greyscale+alpha in, RGBA out: 4 bytes per pixel, alpha preserved.
-    path = _png(tmp_path / "la.png", mode="LA", size=(1, 1), pixels=((128, 64),))
-    rgba, width, height = decode_image(path)
-    assert (width, height, rgba) == (1, 1, b"\x80\x80\x80\x40")
-
-
-def test_decode_image_missing_file_raises_oserror_naming_it(tmp_path: Path):
-    with pytest.raises(OSError, match="nope.png"):
-        decode_image(tmp_path / "nope.png")
-
-
-def test_decode_image_corrupt_file_raises_oserror(tmp_path: Path):
-    bad = tmp_path / "bad.png"
-    bad.write_bytes(b"not an image")
-    with pytest.raises(OSError, match="bad.png"):
-        decode_image(bad)
 
 
 # -- extract_images ----------------------------------------------------
@@ -152,7 +124,7 @@ def test_a_view_decodes_images_into_image_nodes(tmp_path: Path):
     `image` node (M37); `tess_re` is given no path."""
     _png(tmp_path / "Views" / "assets" / "rb.png")
     node = _gallery(tmp_path).open_view("Gallery").node("root.img")
-    rgba, width, height = decode_image(tmp_path / "Views" / "assets" / "rb.png")
+    width, height, rgba = decode_image_file(tmp_path / "Views" / "assets" / "rb.png")
     assert (node.get("pixel_width"), node.get("pixel_height"), node.get("fit")) == (width, height, "cover")
     assert node.get("rgba") == rgba
 

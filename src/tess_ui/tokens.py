@@ -21,7 +21,6 @@ while it still has them:
 
 from __future__ import annotations
 
-import colorsys
 import re
 from dataclasses import dataclass
 from typing import Any, Optional, Tuple
@@ -29,13 +28,11 @@ from typing import Any, Optional, Tuple
 from materialyoucolor.dynamiccolor.material_dynamic_colors import MaterialDynamicColors
 from materialyoucolor.hct import Hct
 from materialyoucolor.scheme.scheme_tonal_spot import SchemeTonalSpot
-from PIL import ImageColor
-
-from tess_ui import _wide_gamut
+from tess_utils import parse_color
 
 __all__ = [
     "BASELINE", "ELEVATION_LEVELS", "baseline_scheme", "ROLES", "SHAPES", "TYPE_SCALE", "TypeStyle", "color_scheme",
-    "elevation", "elevation_shadows", "FULL_RADIUS", "HEIGHT_CLASSES", "MD3_TRACKING", "MD3_TRACKING_TYPOGRAPHY", "WIDTH_CLASSES", "height_class", "width_class", "parse_color", "resolve_color", "resolve_scheme", "shape", "type_style",
+    "elevation", "elevation_shadows", "FULL_RADIUS", "HEIGHT_CLASSES", "MD3_TRACKING", "MD3_TRACKING_TYPOGRAPHY", "WIDTH_CLASSES", "height_class", "width_class", "resolve_color", "resolve_scheme", "shape", "type_style",
 ]
 
 RGBA = Tuple[int, int, int, int]
@@ -140,79 +137,6 @@ def color_scheme(seed: RGBA, dark: bool = False, contrast: float = 0.0) -> dict[
         dynamic = getattr(MaterialDynamicColors, role, None) or getattr(MaterialDynamicColors, _camel(role))
         roles[role] = _argb_to_rgba(dynamic.get_argb(scheme))
     return roles
-
-
-_FUNC = re.compile(r"^(rgba?|hsla?)\((.*)\)$", re.IGNORECASE)
-_WIDE_GAMUT = re.compile(r"^(color|lab|lch|oklab|oklch|hwb)(?![a-z0-9_-])", re.IGNORECASE)  # the whole identifier
-
-
-def _alpha(text: str) -> int:
-    value = float(text[:-1]) / 100 if text.endswith("%") else float(text)
-    return int(_clamp(value, 0.0, 1.0) * 255 + 0.5)
-
-
-def _functional(name: str, body: str) -> RGBA:
-    """`rgb()`/`rgba()`/`hsl()`/`hsla()`, in CSS Color 4's comma or
-    space syntax, with an optional alpha (`, a` or `/ a`)."""
-    if "/" in body:
-        main, alpha_text = body.split("/", 1)
-        parts = main.split()
-    else:
-        main, alpha_text = body, None
-        parts = [p.strip() for p in main.split(",")] if "," in main else main.split()
-        if len(parts) == 4:
-            parts, alpha_text = parts[:3], parts[3]
-    if len(parts) != 3:
-        raise ValueError
-    alpha = _alpha(alpha_text.strip()) if alpha_text is not None else 255
-    if name.lower().startswith("rgb"):
-        channels = [
-            int(_clamp(float(p[:-1]) / 100 * 255 if p.endswith("%") else float(p), 0, 255) + 0.5) for p in parts
-        ]
-        return (channels[0], channels[1], channels[2], alpha)
-    hue = float(parts[0][:-3] if parts[0].endswith("deg") else parts[0]) % 360
-    sat, light = (_clamp(float(p.rstrip("%")) / 100, 0, 1) for p in parts[1:])
-    r, g, b = colorsys.hls_to_rgb(hue / 360, light, sat)
-    return (int(r * 255 + 0.5), int(g * 255 + 0.5), int(b * 255 + 0.5), alpha)
-
-
-def parse_color(raw: str) -> RGBA:
-    """A colour string as `tess_re` parses it: hex (`#RGB`, `#RGBA`,
-    `#RRGGBB`, `#RRGGBBAA`), a CSS colour name, `transparent`, or
-    `rgb()`/`rgba()`/`hsl()`/`hsla()` in CSS Color 4's comma or space
-    syntax with an optional alpha, and CSS's wide-gamut functions
-    (`color()`, `lab()`, `lch()`, `oklab()`, `oklch()`, `hwb()`), clipped
-    into sRGB. Raises `ValueError`."""
-    text = raw.strip()
-    if text.lower() == "transparent":
-        return (0, 0, 0, 0)
-    if _WIDE_GAMUT.match(text):
-        try:
-            return _wide_gamut.parse(text)
-        except ValueError as exc:
-            raise ValueError(f"invalid color {raw!r}: {exc}") from None
-    match = _FUNC.match(text)
-    if match:
-        try:
-            return _functional(match.group(1), match.group(2))
-        except ValueError:
-            raise ValueError(f"invalid color {raw!r}") from None
-    if text.startswith("#"):
-        if len(text) - 1 not in (3, 4, 6, 8):
-            raise ValueError("wrong number of hex digits")  # tess_re's wording
-        if len(text) == 5:  # #RGBA, which Pillow reads differently
-            text = "#" + "".join(c * 2 for c in text[1:])
-    elif text.isidentifier() or text.replace("-", "").isalpha():
-        try:
-            value = ImageColor.getrgb(text)
-        except ValueError:
-            raise ValueError("unknown color identifier") from None  # tess_re's wording
-        return tuple(value) if len(value) == 4 else (*value, 255)
-    try:
-        value = ImageColor.getrgb(text)
-    except ValueError as exc:
-        raise ValueError(f"invalid color {raw!r}") from exc
-    return tuple(value) if len(value) == 4 else (*value, 255)
 
 
 _ALPHA = re.compile(r"^(?P<base>.+?)\s*@\s*(?P<pct>\d+(?:\.\d+)?)\s*%$")

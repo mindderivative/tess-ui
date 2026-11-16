@@ -24725,7 +24725,7 @@
                   "properties": {
                     "src": {
                       "type": "string",
-                      "description": "A PNG (or any picture Pillow reads) next to the view."
+                      "description": "A PNG, JPEG, GIF or WebP picture next to the view."
                     },
                     "hotspot": {
                       "type": "array",

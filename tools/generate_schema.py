@@ -172,7 +172,7 @@ def _definitions(fragment: bool) -> dict[str, Any]:
                                         "nesw_resize", "nwse_resize", "copy", "cell", "context_menu", "zoom_in", "zoom_out",
                                         "all_scroll"]},
                               {"type": "object", "additionalProperties": False, "required": ["src"],
-                               "properties": {"src": {"type": "string", "description": "A PNG (or any picture Pillow reads) next to the view."},
+                               "properties": {"src": {"type": "string", "description": "A PNG, JPEG, GIF or WebP picture next to the view."},
                                               "hotspot": {"type": "array", "items": {"type": "integer"},
                                                           "description": "`[x, y]`: the pixel that is the pointer's place."}}}]},
                    "The pointer over it: a name, or `{src: cursor.png, hotspot: [x, y]}` (a picture next to the view, at most "

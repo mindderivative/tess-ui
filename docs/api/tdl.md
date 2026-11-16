@@ -300,7 +300,7 @@ A node's `Style` block is a mapping of these fields. The same fields go in a sty
 | `Corner_Radius.Bottom` | a number or `extra_large` \| `extra_small` \| `large` \| `medium` \| `none` \| `small` \| `full` | The radius of both bottom corners. |
 | `Corner_Radius.Left` | a number or `extra_large` \| `extra_small` \| `large` \| `medium` \| `none` \| `small` \| `full` | The radius of both left corners. |
 | `Cursor` | one of 23 names or a block | The pointer over it: a name, or `{src: cursor.png, hotspot: [x, y]}` (a picture next to the view, at most 256 pixels a side; only in a node's own `Style:`). |
-| `Cursor.Src` *(required)* | text | A PNG (or any picture Pillow reads) next to the view. |
+| `Cursor.Src` *(required)* | text | A PNG, JPEG, GIF or WebP picture next to the view. |
 | `Cursor.Hotspot` | a list | `[X, Y]`: the pixel that is the pointer's place. |
 | `Elevation` | a number or `level_0` \| `level_1` \| `level_2` \| `level_3` \| `level_4` \| `level_5` | A shadow level, 0 to 5. |
 | `Filter` | a block | Colour filters over it and its children, as in CSS: `{grayscale: 1}`, `{saturate: 0.4, brightness: 0.9}` (`hue_rotate` is in degrees). |

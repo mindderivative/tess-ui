@@ -3552,3 +3552,9 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 - `release.yml` no longer waits for a hand-made GitHub Release. It runs when CI is green on `main`, and a version without a tag is a release: build and wheel tests, `pypi` environment (the maintainer's approval, kept), then install of the published package, tag `vX` and the Release with notes from the changelog, wheel and sdist attached, marked latest. Re-runnable (`workflow_dispatch`): upload skips files already on PyPI, the Release only if absent. Actions pinned to commit SHAs, runner `ubuntu-24.04`, as the gh-cicd skill says (the skill's tesserae variant, `on: release: published`, is replaced: a Release made with the workflow's token starts no workflow).
 - DEVELOPING section 6 and the `release-checklist` skill describe the new flow. 0.6.1 itself was released by hand (the last one).
 - Not run: the workflow has not executed on a real release yet; the first one is the 0.6.2 (or next) release commit.
+
+## 2026-11-15 tess-ui uses tesserae-utils
+
+- The colour parser and the image decoder moved to the shared package `tesserae-utils[image]>=0.2.2,<0.3` (`import tess_utils`). On the 346 colour strings of tess-ui's tests, docs and views `tess_utils.parse_color` gave the same results and the same errors as `tess_ui.tokens.parse_color`.
+- Deleted: `src/tess_ui/_wide_gamut.py`, `src/tess_ui/images.py`, `tests/test_wide_gamut.py`, the parser in `tokens.py` and its pure parser tests in `tests/test_tokens.py` (`tesserae-utils` owns them). `tess_ui.tokens.parse_color` and `tess_ui.images.decode_image` are gone: callers import `tess_utils.parse_color` and `tess_utils.decode_image_file` (which returns `(width, height, rgba)`).
+- Behaviour: images load PNG, JPEG, GIF and WebP only, EXIF orientation is applied, and the error text is the shared one. Listed in `docs/changelog.md` (0.6.2) and `docs/migration.md`. The version is not bumped.

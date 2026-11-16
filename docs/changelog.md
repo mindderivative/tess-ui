@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.2
+
+### Changed
+
+- **The colour parser and the image decoder are `tesserae-utils`' (`tesserae-utils[image]>=0.2.2,<0.3`, `import tess_utils`).** Colour strings parse to the same values and fail with the same messages as before. Images change in three ways: `Image`, `image()` and a cursor's `src:` load **PNG, JPEG, GIF and WebP only** (BMP, TIFF, ICO and the other formats Pillow read are refused), the file's **EXIF orientation is applied** (a photo that was stored sideways is shown upright), and the error text for a file that cannot be read is the shared one (`cannot decode image '<path>': cannot read the image: ...`).
+
+### Removed
+
+- **`tess_ui.tokens.parse_color` and `tess_ui.images.decode_image`.** Use `tess_utils.parse_color` and `tess_utils.decode_image_file(path)`, which returns `(width, height, rgba)` (`decode_image` returned `(rgba, width, height)`).
+
 ## 0.6.1
 
 ### Removed
