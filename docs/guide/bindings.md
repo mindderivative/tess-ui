@@ -97,8 +97,16 @@ of their operands (`name or "Untitled"`), and `not` returns `True` or
 Every expression has limits, and a breach is an error that names it: 2000
 characters of source (a text with `<| |>` parts counts as one, so a text over 2000 characters is an error even when each part is short), 1000 nodes, nesting 40 deep, 200 000 evaluation
 steps, `range` up to 100 000, a result of up to 1 000 000 items,
-`**` with an exponent up to 64, and text up to 1 MB. `%` formatting and
+`**` with an exponent up to 64, and text up to 1 MB (the whole text, when it has several slots). `%` formatting and
 `str.format` are not available; use an f-string.
+
+## Text with slots
+
+Each slot of a text is an expression of its own: TEL is the language of the expressions and Tesserae splits the text, so `Battery <| level |>% (<| pluralize(n, 'cell') |>)` is
+two expressions with the text between them. A value that is exactly one slot keeps the type of the expression (a number, a list, `None`); a slot with text around it, or
+several slots, make text: each value is written as text (`None` is nothing, a number or a boolean its usual spelling) and the pieces are joined. An object of the application's cannot be put in text:
+`<| settings |>` beside other text is `a Settings cannot be used in text` (code `value-not-plain`), so read an attribute of it. Each slot has its own evaluation budget (a text of three
+slots may take three times the steps of one); the 2000 characters of source and the 1 MB of text count for the whole text. An error in a slot names that slot's own line and column.
 
 ## When a binding is wrong
 

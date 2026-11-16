@@ -60,7 +60,9 @@ for error in jsonschema.Draft7Validator(schema).iter_errors(data):
     print("/".join(map(str, error.absolute_path)), error.message)
 ```
 
-Keys in the data are the lower snake_case of the file's `Title_Case` (`Corner_Radius` is `corner_radius`), so that is how a schema names them.
+Keys in the data are the lower snake_case of the file's `Title_Case` (`Corner_Radius` is `corner_radius`), so that is how a schema names them. A text with a slot in it
+(`Label: Battery <| level |>%`) is a `tess_ui.tel.Parts` in the data: a `str` that holds the text as the file writes it (`Battery <| level |>%`), and the schemas take a string with
+`<|` in it as an expression wherever a value is allowed. A quoted string is plain text, whatever it holds.
 
 ## What it knows, and what it can't
 

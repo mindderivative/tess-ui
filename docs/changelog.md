@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.6.3
+
+### Changed
+
+- **Tesserae runs on TEL 0.2.0 (`tesserae-el==0.2.0`), which has no template form: the text around slots is split by Tesserae.** TEL is an expression language only now (`Template`, `compile_template`, `fill_template`, the codes `template-unclosed` and `template-empty` and the `{{ }}` delimiter are gone from it). The TDL front end already reads a slot as its own piece, so a text with slots goes to the view as `tess_ui.tel.Parts` (the literals and each slot's expression text, with where that text starts in the file) and `tess_ui.tel.compile_template(parts)` compiles every slot with `compile_expr`; nothing writes `{{ }}` between the front end and the node any more, and no text is searched for delimiters. For a view, a stylesheet or a theme in TDL the behaviour is the one of 0.6.2: a value that is one slot keeps its type, a slot with text around it or several slots make text (`None` is nothing), the names and reads of a text are the union over its slots, and an error in a slot names that slot's line and column. What an author can meet:
+  - **The step budget is each slot's.** A text of three slots may take three times `max_steps` (the limit that errors with `limit-steps`); it was one budget for the whole text. The 2000 characters of source and the 1 MB of text still count for the whole text (`limit-source`, `limit-string`).
+  - **A message that quotes a slot spells it as written.** `got '<| x |>'` where it said `got '{{ x }}'` (a name, a `Window_Region`, a tooltip placement given a slot).
+  - **An object of the application's in text says its own class.** `a Settings cannot be used in text` (`value-not-plain`, "read one of its attributes instead") where TEL said `a _Host cannot be used in text`.
+  - **A `{{ }}` in a Python dict is no longer an expression.** `App(stylesheet_spec={...})` and `RuleSheet.of({...})` with `"{{ h / 2 }}"` as a style value are refused (`style 'height' has {{ }} in its text, and {{ }} is not a slot`): a stylesheet is read from TDL, where the value is `Height: <| h / 2 |>`; a dict spec that must hold an expression takes the `Parts` the front end makes.
+  - **The mapping the front end gives holds a slot as `Parts`, not as `{{ x }}`.** `load_tdl_file`, `load_marked_tdl` and `load_marked_tdl_stylesheet` return a `str` subclass whose text is what the file says (`Battery <| level |>%`); the JSON schemas' pattern for an expression is `<|` (it was `{{`). Code that checked the mapping for `{{` checks `isinstance(value, Parts)`.
+  - **An unclosed or empty slot is a TDL error, as it was.** `This <| has no |> on its line` and `This slot is empty` come from `tess_dl` before TEL sees anything, so `template-unclosed` and `template-empty` never reached an author.
+- **API of `tess_ui.tel`:** `compile_template(parts, *, limits=)` takes a `Parts` (it took text and an origin and returned `None` for text without `{{`); `Slot` and `Parts` are new; `Template`, `NestedTemplate` and `Expr` keep their methods and attributes.
+
 ## 0.6.2
 
 ### Changed
