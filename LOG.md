@@ -3563,3 +3563,8 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 - Version 0.6.2: the colour parser and image decoder come from `tesserae-utils` 0.2.2 (the `## 0.6.2` section of `docs/changelog.md`). The release commit is merged by pull request; `release.yml` then builds, waits at the `pypi` environment for the maintainer's approval, publishes, installs the published package, and creates the tag `v0.6.2` and the GitHub Release itself. Nothing by hand: this is the first run of that path.
 - Checked: `check_version --expect 0.6.2 --pypi`, `docs_audit`, `tools/check.py`, the full suite on main in CI at the merge of #314 (and the series moves up, so CI runs `full` on this commit). Not verified: the release path of `release.yml` before this run.
+
+## 2026-11-16 Release 0.6.2 went through the release workflow; one fix
+
+- `tesserae-ui` 0.6.2 is on PyPI and v0.6.2 is the latest GitHub Release (wheel and sdist attached, target c937eb9), created by `release.yml` after the maintainer's approval of the `pypi` environment. Published package checked in a scratch venv: versions 0.6.2 / utils 0.2.2 / engine 0.6.8 / el 0.1.2, `parse_color` works.
+- Found by the first real run: the last job ("the published package installs") failed after PyPI had the files, because pip reused its cached index page (PyPI serves it with a ten minute max-age) and kept answering "0.6.2 is not there" for the whole wait. "Re-run failed jobs" finished the release (the upload skips files already there). Fix: `pip install --no-cache-dir`.

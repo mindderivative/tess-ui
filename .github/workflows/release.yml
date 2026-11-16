@@ -202,6 +202,8 @@ jobs:
           name: dist
           path: dist/
 
+      # pip must not reuse its cache: PyPI's index pages are cacheable for ten minutes, so a cached "not there yet" answer
+      # kept 0.6.2 invisible for the whole wait (the first release through this workflow failed here; PyPI had the files).
       # The index lags a few minutes behind an upload: wait for it, then install the published package in a clean
       # environment, as a user would, before calling the release done.
       - name: The published package installs
@@ -209,7 +211,7 @@ jobs:
           python -m venv /tmp/published
           installed=false
           for attempt in $(seq 1 30); do
-            if /tmp/published/bin/pip install --quiet "tesserae-ui==$VERSION"; then installed=true; break; fi
+            if /tmp/published/bin/pip install --quiet --no-cache-dir "tesserae-ui==$VERSION"; then installed=true; break; fi
             echo "tesserae-ui $VERSION is not installable yet (attempt $attempt)"; sleep 20
           done
           [ "$installed" = true ] || { echo "tesserae-ui $VERSION did not appear on PyPI"; exit 1; }
