@@ -9,6 +9,7 @@ pytest.importorskip("tess_dl", reason="TDL needs tess_dl, which needs Python 3.1
 from tess_ui.spec import tdl as T
 from tess_ui.spec.nodes import LoadError, PMap, PSeq, parse_data, parse_view
 from tess_ui.spec.widgets import Property, WidgetDecl
+from tess_ui.tel import Parts
 
 VIEWS = sorted((Path(__file__).parent.parent / "src" / "tess_ui" / "views").glob("*_View.tdl"))
 
@@ -27,6 +28,13 @@ def fails(body, message, *, text=None, **kw):
         T.load_marked_tdl(view(body) if text is None else text, "T_View.tdl", **kw)
     assert message in str(caught.value), str(caught.value)
     return caught.value
+
+
+def spelled(value):
+    """What the front end made of a text with slots: its literals as they are, and for each slot `(its text, line, column)` (the column 0-based)."""
+    assert isinstance(value, Parts)
+    assert all(item.origin.file == "T_View.tdl" for item in value.items if not isinstance(item, str))
+    return [item if isinstance(item, str) else (item.text, item.origin.line, item.origin.column) for item in value.items]
 
 
 def at(err, line, column):
@@ -92,17 +100,22 @@ def test_comments_are_skipped_wherever_they_stand():
     assert m == {"widget": "Container", "name": "root", "children": [{"widget": "Text", "text": "a"}], "handlers": {"on_click": "save"}}
 
 
-def test_a_slot_is_the_template_string_and_text_with_a_slot_is_a_template():
+def test_a_slot_is_read_as_parts_and_text_with_a_slot_is_parts_with_literals():
     m = load('Text {\n  Text: <| level |>\n  Label: Battery <| level |>%\n  Hint: "a <| plain |> string"\n  Tail: <| a |> and <| b |>\n}\n')
-    assert m == {"widget": "Text", "text": "{{ level }}", "label": "Battery {{ level }}%", "hint": "a <| plain |> string", "tail": "{{ a }} and {{ b }}"}
+    assert list(m) == ["widget", "text", "label", "hint", "tail"] and m["widget"] == "Text"
+    assert spelled(m["text"]) == [(" level ", 7, 10)]  # each slot's text as written, and where it starts (after the `<|`)
+    assert spelled(m["label"]) == ["Battery ", (" level ", 8, 19), "%"]
+    assert spelled(m["tail"]) == [(" a ", 10, 10), " and ", (" b ", 10, 22)]
+    assert m["hint"] == "a <| plain |> string" and not isinstance(m["hint"], Parts)  # a quoted string is plain text, whatever it holds
+    assert str(m["label"]) == "Battery <| level |>%" and str(m["tail"]) == "<| a |> and <| b |>"  # a message shows it as the author wrote it
 
 
 def test_braces_quotes_and_pipes_inside_a_slot_are_ordinary_text():
     m = load("Text {\n  Text: <| {'a': {'b': 1}}['a']['b'] |>\n  Label: <| \"}}\" + x |>\n  Hint: <| a if b else {'k': 'it\\'s'} |>\n  Pipe: <| a | b |>\n}\n")
-    assert m["text"] == "{{ {'a': {'b': 1}}['a']['b'] }}"
-    assert m["label"] == '{{ "}}" + x }}'
-    assert m["hint"] == "{{ a if b else {'k': 'it\\'s'} }}"
-    assert m["pipe"] == "{{ a | b }}"
+    assert spelled(m["text"])[0][0] == " {'a': {'b': 1}}['a']['b'] "
+    assert spelled(m["label"])[0][0] == ' "}}" + x '
+    assert spelled(m["hint"])[0][0] == " a if b else {'k': 'it\\'s'} "
+    assert spelled(m["pipe"])[0][0] == " a | b "
 
 
 def test_a_slot_is_not_read_in_a_comment():
@@ -113,13 +126,15 @@ def test_if_and_for_wrap_a_node_and_are_set_on_it_again():
     m = load("Container {\n  Children {\n    For item In <| items |> Key <| item['id'] |> {\n      If <| item['on'] |> {\n"
              "        Text { Name: row, Text: <| item['label'] |> }\n      }\n    }\n  }\n}\n")
     node = m["children"][0]
-    assert node == {"widget": "Text", "name": "row", "text": "{{ item['label'] }}", "for": "item in items", "key": "item['id']", "if": "item['on']"}
+    assert spelled(node["text"]) == [(" item['label'] ", 10, 34)]
+    assert node == {"widget": "Text", "name": "row", "text": "<| item['label'] |>", "for": "item in items", "key": "item['id']", "if": "item['on']"}
     assert list(node.key_at) == list(node.val_at)
 
 
 def test_a_for_without_a_real_key_has_no_key_and_an_if_alone_is_fine():
     m = load("Container {\n  Children {\n    For n In <| range(3) |> Key <| None |> {\n      Text { Text: <| n |> }\n    }\n    If <| shown |> { Text { Text: b } }\n  }\n}\n")
-    assert m["children"][0] == {"widget": "Text", "text": "{{ n }}", "for": "n in range(3)"}
+    assert spelled(m["children"][0]["text"]) == [(" n ", 9, 21)]
+    assert m["children"][0] == {"widget": "Text", "text": "<| n |>", "for": "n in range(3)"}
     assert m["children"][1] == {"widget": "Text", "text": "b", "if": "shown"}
 
 
@@ -335,7 +350,16 @@ def test_the_snake_case_conversion_is_exact_both_ways():
 
 def test_a_slot_is_read_by_tess_dl_and_a_slot_in_a_string_or_a_comment_stays_text():
     m = load('Text {\n  A: "x <| y |>"  # <| z |>\n  B: <| a |> # c\n  C: [<| p |>, "q <| r |>"]\n  D: Don\'t <| s |>\n}\n')
-    assert m["a"] == "x <| y |>" and m["b"] == "{{ a }}" and m["c"] == ["{{ p }}", "q <| r |>"] and m["d"] == "Don't {{ s }}"
+    assert m["a"] == "x <| y |>" and not isinstance(m["a"], Parts)
+    assert spelled(m["b"]) == [(" a ", 8, 7)] and spelled(m["d"]) == ["Don't ", (" s ", 10, 13)]
+    assert spelled(m["c"][0]) == [(" p ", 9, 8)] and m["c"][1] == "q <| r |>" and not isinstance(m["c"][1], Parts)
+
+
+def test_text_with_braces_is_refused_and_the_old_slot_is_never_a_template():
+    """A `{{ }}` in a quoted string or in text is the TDL 0.1 form: the front end refuses it, so it never reaches a view as a string that looks like a template."""
+    err = fails('Text {\n  A: "x {{ y }}"\n}\n', "A slot is written <| expression |>")
+    at(err, 7, 6)
+    fails("Text {\n  B: Hi {{ y }}\n}\n", "A slot is written <| expression |>")
 
 
 def test_a_file_in_language_0_1_is_refused_at_its_version_with_a_hint():

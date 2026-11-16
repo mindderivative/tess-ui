@@ -11,7 +11,7 @@ import pytest
 from tess_ui import tel
 from tess_ui.reactive import Computed, Effect, Signal
 from tess_ui.spec.compose import Scope
-from tests.helpers import MapScope
+from tests.helpers import MapScope, parts, slot
 
 
 def value(source, scope):
@@ -215,7 +215,7 @@ def test_an_effect_over_a_template_follows_a_signal_inside_an_object():
     state = SimpleNamespace(user=Signal("ada"))
     scope = MapScope({"app": SimpleNamespace(state=state)})
     seen: list[str] = []
-    template = tel.compile_template("Hello {{ app.state.user.upper() }}!")
+    template = tel.compile_template(parts("Hello ", slot(" app.state.user.upper() "), "!"))
     Effect(lambda: seen.append(template.evaluate(scope)))
     state.user.set("grace")
     assert seen == ["Hello ADA!", "Hello GRACE!"]
@@ -229,8 +229,10 @@ def test_tracked_evaluation_says_which_paths_were_read():
     assert value == "ada1" and reads == {"app.state.user", "a"}
     program = tel.compile_expr("a if flag else b")
     assert program.names == {"a", "b", "flag"} and program.paths == {"a", "b", "flag"}
-    _, reads = tel.compile_template("{{ flag }} {{ b }}").evaluate_tracked(scope)
-    assert reads == {"flag", "b"}
+    _, reads = tel.compile_template(parts(slot(" flag "), " ", slot(" b "))).evaluate_tracked(scope)
+    assert reads == {"flag", "b"}  # the union over the slots
+    _, reads = tel.compile_template(parts(slot(" a if flag else b "), " ", slot(" b "))).evaluate_tracked(scope)
+    assert reads == {"flag", "a", "b"}
 
 
 def test_names_and_reactivity_are_what_the_callers_ask():
@@ -335,26 +337,81 @@ def test_a_signal_inside_a_list_or_a_mapping_is_not_read_mid_expression():
     assert tel.compile_expr("rows[0]").evaluate(scope) == 1  # ending in a Signal, it is read
 
 
-# -- templates --------------------------------------------------------------------------------------------------------------------------------------------
+# -- templates: a text is literal parts and slots, split by Tesserae (TEL has no template form) ------------------------------------------------------------------
 
 
-def test_a_template_with_one_part_keeps_the_type_and_otherwise_makes_text():
-    scope = MapScope({"n": Signal(3), "name": None, "items": [1]})
-    template = tel.compile_template("{{ n }}")
-    assert template.single and template.evaluate(scope) == 3 and tel.compile_template("{{ items }}").evaluate(scope) == [1]
-    text = tel.compile_template("n is {{ n }} and name is [{{ name }}]")
-    assert not text.single and text.evaluate(scope) == "n is 3 and name is []"
+def test_a_template_with_one_slot_keeps_the_type_and_otherwise_makes_text():
+    scope = MapScope({"n": Signal(3), "name": None, "items": [1], "flag": True})
+    template = tel.compile_template(parts(slot(" n ")))
+    assert template.single and template.evaluate(scope) == 3
+    assert tel.compile_template(parts(slot(" items "))).evaluate(scope) == [1]
+    assert tel.compile_template(parts(slot(" flag "))).evaluate(scope) is True
+    text = tel.compile_template(parts("n is ", slot(" n "), " and name is [", slot(" name "), "]"))
+    assert not text.single and text.evaluate(scope) == "n is 3 and name is []"  # None is empty text
     assert text.names == {"n", "name"} and [type(p).__name__ for p in text.parts] == ["str", "Expr", "str", "Expr", "str"]
-    assert tel.compile_template("plain text") is None
-    assert tel.compile_template("a {{ {'k': {'j': 1}}['k']['j'] }} b").evaluate(scope) == "a 1 b"
-    assert tel.compile_template("{{ n }}").is_reactive(MapScope({}, reactive={"n"})) and not text.is_reactive(MapScope({}))
+    assert tel.compile_template(parts("a ", slot(" {'k': {'j': 1}}['k']['j'] "), " b")).evaluate(scope) == "a 1 b"
+    assert tel.compile_template(parts("[", slot(" n "), "]")).evaluate(scope) == "[3]"  # a literal around the one slot makes it text
+    assert tel.compile_template(parts(slot(" n "))).is_reactive(MapScope({}, reactive={"n"})) and not text.is_reactive(MapScope({}))
 
 
-def test_a_nested_template_works_out_each_string_and_keeps_the_shape():
+def test_several_slots_are_joined_as_text_with_each_value_as_text():
+    scope = MapScope({"a": 1.5, "b": True, "c": [1, "x"], "d": None, "e": "é"})
+    assert tel.compile_template(parts(slot("a"), slot("b"), slot("c"), slot("d"), slot("e"))).evaluate(scope) == "1.5True[1, 'x']é"
+    assert tel.compile_template(parts(slot(" e "), "")).evaluate(scope) == "é"
+
+
+def test_a_slots_text_is_compiled_as_written_and_braces_and_delimiters_in_it_are_ordinary_text():
+    scope = MapScope({"x": "q"})
+    assert tel.compile_template(parts("[", slot(" '}}' + x "), "]")).evaluate(scope) == "[}}q]"
+    assert tel.compile_template(parts(slot(" {'a': {'b': 1}}['a']['b'] "))).evaluate(scope) == 1
+    assert tel.compile_template(parts("{{ ", slot(" x "), " }}")).evaluate(scope) == "{{ q }}"  # literal braces are literal text, not a second slot syntax
+    assert tel.compile_template(parts(slot(" '<|' + x + '|>' "))).evaluate(scope) == "<|q|>"
+
+
+def test_parts_is_the_text_as_tdl_writes_it_and_a_plain_string_is_never_a_template():
+    made = parts("Battery ", slot(" level "), "%")
+    assert isinstance(made, str) and made == "Battery <| level |>%" and made.items[0] == "Battery " and made.items[1].text == " level "
+    assert repr(tel.compile_template(made)) == "Template('Battery <| level |>%')"
+    for plain in ("Battery {{ level }}%", "Battery <| level |>%"):
+        with pytest.raises(TypeError):
+            tel.compile_template(plain)
+    import copy
+    assert copy.deepcopy(made).items == made.items
+
+
+def test_a_value_that_is_not_plain_cannot_be_used_in_a_text_of_several_slots():
+    scope = MapScope({"obj": SimpleNamespace(v=1), "ok": "x"})
+    assert tel.compile_template(parts(slot(" obj.v "), slot(" ok "))).evaluate(scope) == "1x"
+    with pytest.raises(tel.ExprError) as error:
+        tel.compile_template(parts("a ", slot(" ok "), " b ", slot(" obj ", 12, 30))).evaluate(scope)
+    assert error.value.code == "value-not-plain" and str(error.value).startswith("Main_View.tdl:12:32: a SimpleNamespace cannot be used in text")
+    assert error.value.hint == "read one of its attributes instead"
+    assert tel.compile_template(parts(slot(" obj "))).evaluate(scope) is scope.values["obj"]  # one slot is the value itself
+
+
+def test_a_nested_template_works_out_each_text_and_keeps_the_shape():
     scope = MapScope({"who": "ada", "n": 2})
-    nested = tel.NestedTemplate([{"text": tel.compile_template("Hi {{ who }}"), "count": tel.compile_template("{{ n }}"), "plain": "x"}, "y"])
+    nested = tel.NestedTemplate([{"text": tel.compile_template(parts("Hi ", slot(" who "))), "count": tel.compile_template(parts(slot(" n "))), "plain": "x"}, "y"])
     assert nested.evaluate(scope) == [{"text": "Hi ada", "count": 2, "plain": "x"}, "y"]
     assert nested.names == {"who", "n"} and nested.is_reactive(MapScope({}, reactive={"n"})) and not nested.is_reactive(MapScope({}))
+
+
+def test_each_slot_has_a_budget_of_its_own_and_the_text_is_held_to_the_string_and_source_limits():
+    scope = MapScope({"items": list(range(30))})
+    expensive = " sum([i for i in items]) "
+    small = tel.Limits(max_steps=150)  # one such slot takes about 118 steps
+    with pytest.raises(tel.ExprError) as one:
+        tel.compile_template(parts(slot(expensive)), limits=tel.Limits(max_steps=100)).evaluate(scope)
+    assert one.value.code == "limit-steps"
+    two = tel.compile_template(parts(slot(expensive), "/", slot(expensive)), limits=small)
+    assert two.evaluate(scope) == "435/435"  # a text of two slots may take twice the steps of one: the budget is each slot's
+    with pytest.raises(tel.ExprError) as long:
+        tel.compile_template(parts(slot(" a "), slot(" b ")), limits=tel.Limits(max_string=10)).evaluate(MapScope({"a": "123456", "b": "123456"}))
+    assert long.value.code == "limit-string" and "over 10 characters" in str(long.value)
+    with pytest.raises(tel.ExprError) as source:
+        tel.compile_template(parts("x" * 2100, slot(" a ")))
+    assert source.value.code == "limit-source"
+    assert tel.compile_template(parts("x" * 1000, slot(" a "), "x" * 900)).evaluate(MapScope({"a": 1})) == "x" * 1000 + "1" + "x" * 900
 
 
 # -- errors -----------------------------------------------------------------------------------------------------------------------------------------------
@@ -407,23 +464,25 @@ def test_without_an_origin_the_position_is_in_the_text_and_has_no_file():
     assert error.value.file is None and (error.value.line, error.value.column) == (1, 5) and str(error.value).startswith("'zork'")
 
 
-def test_an_error_in_a_template_points_at_its_own_part():
-    text = "Hello {{ name }}, you have {{ coutn }} new"
+def test_an_error_in_a_template_points_at_its_own_slot():
+    made = parts("Hello ", slot(" name ", 12, 16), ", you have ", slot(" coutn ", 12, 37), " new")  # the text starts at column 8 of line 12, `coutn` at 38
     scope = MapScope({"name": "ada", "count": 2})
     with pytest.raises(tel.ExprError) as error:
-        tel.compile_template(text, origin=ORIGIN).evaluate(scope)
-    assert error.value.hint == "did you mean 'count'" and error.value.line == 12
-    assert error.value.column == 8 + text.index("coutn")
-    with pytest.raises(tel.ExprError) as multi:
-        tel.compile_template("line one\n  {{ zork }}", origin=ORIGIN).evaluate(scope)
-    assert multi.value.line == 13 and multi.value.column == 5
+        tel.compile_template(made).evaluate(scope)
+    assert error.value.hint == "did you mean 'count'" and where(error.value) == ("Main_View.tdl", 12, 38, 43)
+    with pytest.raises(tel.ExprError) as later:  # a slot on a later line of the file, with its own column
+        tel.compile_template(parts("line one", slot(" ok ", 12, 15), " and ", slot(" zork ", 13, 4))).evaluate(MapScope({"ok": 1}))
+    assert (later.value.line, later.value.column) == (13, 5) and str(later.value).startswith("Main_View.tdl:13:6: 'zork' is not defined")
+    with pytest.raises(tel.ExprError) as bare:  # no origin: the position is in the slot's own text
+        tel.compile_template(parts("a ", slot(" zork "))).evaluate(scope)
+    assert bare.value.file is None and (bare.value.line, bare.value.column) == (1, 0)  # the text of the slot, without its surrounding space
 
 
-@pytest.mark.parametrize("text", ["a {{ b", "a {{ }} b", "a {{ b + }} c", "{{ lambda: 1 }}", "{{ _x }}"])
-def test_a_template_that_does_not_read_is_an_error_at_the_part(text):
+@pytest.mark.parametrize("text, code", [(" b + ", "syntax-error"), (" lambda: 1 ", "disallowed-construct"), (" _x ", "private-name"), (" ", "empty-expression")])
+def test_a_slot_that_does_not_read_is_an_error_at_that_slot_when_the_text_is_compiled(text, code):
     with pytest.raises(tel.ExprError) as new:
-        tel.compile_template(text, origin=ORIGIN)
-    assert new.value.file == "Main_View.tdl" and new.value.line == 12
+        tel.compile_template(parts("a ", slot(" fine ", 12, 10), " b ", slot(text, 12, 30), " c"))
+    assert new.value.code == code and (new.value.file, new.value.line, new.value.column) == ("Main_View.tdl", 12, 31)
 
 
 def test_a_limit_is_an_error_with_its_code():
@@ -479,7 +538,7 @@ def test_what_the_sandbox_refused_when_it_ran_is_refused_when_the_text_is_read()
 def test_an_underscore_alone_is_refused_as_a_name_and_a_long_template_is_refused_as_a_whole():
     with pytest.raises(tel.ExprError):
         tel.compile_expr("_")
-    long = "x" * 2100 + " {{ a }}"
+    long = parts("x" * 2100, slot(" a "))
     with pytest.raises(tel.ExprError) as error:
         tel.compile_template(long)
     assert error.value.code == "limit-source"

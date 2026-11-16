@@ -22,6 +22,7 @@ from pathlib import Path
 import pytest
 
 import doc_blocks
+from tess_ui.tel import Parts
 
 ROOT = Path(__file__).resolve().parent.parent
 HEX = re.compile(r"^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$")
@@ -94,10 +95,10 @@ def test_no_glyph_color_is_translucent(label, data):
 @pytest.mark.parametrize("label,data", DOCS, ids=[label for label, _ in DOCS])
 def test_no_node_with_children_sets_opacity(label, data):
     """A *constant* opacity on a node with children is the scrim shape that fades its panel with it. An opacity that is an expression (`<| 0.38 if disabled else 1 |>`,
-    which the data holds as `{{ }}`) is a fade of the whole node on purpose: a disabled segment, a toolbar that hides; the widened scan (the `widget` nodes of the TDL
+    which the data holds as `Parts`) is a fade of the whole node on purpose: a disabled segment, a toolbar that hides; the widened scan (the `widget` nodes of the TDL
     views) found exactly those two in the shipped views."""
     for node in _nodes(data):
         style = node.get("style") if isinstance(node.get("style"), dict) else {}  # (a style file, M75: not read here)
         opacity = style.get("opacity")
-        if opacity is not None and node.get("children") and not (isinstance(opacity, str) and "{{" in opacity):
+        if opacity is not None and node.get("children") and not isinstance(opacity, Parts):
             pytest.fail(f"{label}: {node.get('id') or node.get('name')!r} sets opacity {opacity} and has children, which fade too on tre 0.3.4")

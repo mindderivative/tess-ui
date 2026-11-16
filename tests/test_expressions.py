@@ -15,7 +15,7 @@ import pytest
 from tess_ui import reactive
 from tess_ui.reactive import Computed, Signal
 from tess_ui.tel import BUILTIN_NAMES, ExprError, Limits, Origin, compile_expr, compile_statements, compile_template, is_action_name
-from tests.helpers import MapScope
+from tests.helpers import MapScope, parts, slot
 
 
 def run(source, **values):
@@ -275,36 +275,29 @@ def test_is_action_name_tells_a_name_from_statements():
     assert not any(is_action_name(t) for t in ("x = 1", "save()", "a b", "1x", "", "a;b"))
 
 
-# -- templates ------------------------------------------------------------------------------------------------------------------
+# -- templates: a text is literal parts and slots (the TDL front end splits it; `tess_ui.tel.compile_template` takes the parts) -----------------------------------
 
 
-def test_text_with_parts_is_a_template_and_a_single_part_keeps_its_type():
+def test_text_with_slots_is_a_template_and_a_single_slot_keeps_its_type():
     scope = MapScope({"name": "Ada", "n": 3, "flag": True, "nothing": None})
-    assert compile_template("Hello {{ name }}!").evaluate(scope) == "Hello Ada!"
-    assert compile_template("{{ n }}").evaluate(scope) == 3
-    assert compile_template("{{ flag }}").evaluate(scope) is True
-    assert compile_template("{{ n }} of {{ n * 2 }}").evaluate(scope) == "3 of 6"
-    assert compile_template("[{{ nothing }}]").evaluate(scope) == "[]"
-    assert compile_template("plain") is None and compile_template("") is None
+    assert compile_template(parts("Hello ", slot(" name "), "!")).evaluate(scope) == "Hello Ada!"
+    assert compile_template(parts(slot(" n "))).evaluate(scope) == 3
+    assert compile_template(parts(slot(" flag "))).evaluate(scope) is True
+    assert compile_template(parts(slot(" n "), " of ", slot(" n * 2 "))).evaluate(scope) == "3 of 6"
+    assert compile_template(parts("[", slot(" nothing "), "]")).evaluate(scope) == "[]"
 
 
-def test_a_closing_braces_inside_a_string_or_brackets_belongs_to_the_expression():
+def test_a_slots_text_is_the_whole_expression_whatever_braces_or_quotes_it_holds():
     scope = MapScope({"d": {"a": 1}})
-    assert compile_template("{{ {'a': 2}['a'] }}").evaluate(scope) == 2
-    assert compile_template("{{ '}}' + 'x' }}").evaluate(scope) == "}}x"
-    assert compile_template("a {{ d['a'] }} b").evaluate(scope) == "a 1 b"
-    assert compile_template("{{ [x for x in [1, 2]] }}").evaluate(scope) == [1, 2]
-
-
-def test_a_template_that_is_not_closed_is_an_error_with_a_position():
-    with pytest.raises(ExprError, match="never closed") as raised:
-        compile_template("Hello {{ name", origin=Origin("A_View.tdl", 4, 8))
-    assert (raised.value.line, raised.value.column) == (4, 14)
+    assert compile_template(parts(slot(" {'a': 2}['a'] "))).evaluate(scope) == 2
+    assert compile_template(parts(slot(" '}}' + 'x' "))).evaluate(scope) == "}}x"
+    assert compile_template(parts("a ", slot(" d['a'] "), " b")).evaluate(scope) == "a 1 b"
+    assert compile_template(parts(slot(" [x for x in [1, 2]] "))).evaluate(scope) == [1, 2]
 
 
 def test_a_template_reports_whether_it_is_reactive():
     scope = MapScope({"count": 1, "label": "x"}, reactive={"count"})
-    assert compile_template("a {{ count }}").is_reactive(scope) and not compile_template("a {{ label }}").is_reactive(scope)
+    assert compile_template(parts("a ", slot(" count "))).is_reactive(scope) and not compile_template(parts("a ", slot(" label "))).is_reactive(scope)
 
 
 # -- static and reactive (8.2) ----------------------------------------------------------------------------------------------------
