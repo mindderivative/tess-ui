@@ -10,6 +10,7 @@ pytest.importorskip("tess_dl", reason="the TDL front end needs tess_dl (Python 3
 from tess_ui.spec.nodes import LoadError, PMap, PSeq  # noqa: E402
 from tess_ui.spec.rules import RuleSheet  # noqa: E402
 from tess_ui.spec.tdl_stylesheet import load_marked_tdl_stylesheet, load_rule_sheet_tdl, load_tdl_stylesheet_file  # noqa: E402
+from tess_ui.tel import Parts  # noqa: E402
 
 VIEWS = Path(__file__).parent.parent / "src" / "tess_ui" / "views"
 SHIPPED = sorted(VIEWS.glob("*_Stylesheet.tdl"))
@@ -104,12 +105,14 @@ def test_a_stylesheet_is_a_styles_block_of_rule_blocks_with_title_case_keys_that
     assert list(m["styles"][0]) == ["widget", "variant", "style"]  # the order is the written order
 
 
-def test_values_are_typed_and_a_slot_is_the_template_string():
+def test_values_are_typed_and_a_slot_is_parts():
     m = load("Styles {\n  Rule {\n    Widget: Text\n    Classes: [a, b]\n    Style {\n      Opacity: 0.5\n      Clip_Children: true\n      Flex: null\n"
              "      Width: 50%\n      Height: <| a * 2 |>\n      Label: Hello <| name |>!\n      Font: \"<| not a slot |>\"\n    }\n  }\n}\n")
     style = m["styles"][0]["style"]
-    assert style == {"opacity": 0.5, "clip_children": True, "flex": None, "width": "50%", "height": "{{ a * 2 }}", "label": "Hello {{ name }}!",
+    assert style == {"opacity": 0.5, "clip_children": True, "flex": None, "width": "50%", "height": "<| a * 2 |>", "label": "Hello <| name |>!",
                      "font": "<| not a slot |>"}
+    assert isinstance(style["height"], Parts) and isinstance(style["label"], Parts) and not isinstance(style["font"], Parts)  # a quoted string is plain text
+    assert [i if isinstance(i, str) else (i.text, i.origin.file, i.origin.line, i.origin.column) for i in style["label"].items] == ["Hello ", (" name ", "T_Stylesheet.tdl", 16, 21), "!"]
     assert m["styles"][0]["classes"] == ["a", "b"] and isinstance(style["clip_children"], bool)
 
 

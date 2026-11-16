@@ -8,6 +8,7 @@ import pytest
 
 from tess_ui.spec import widgets as W
 from tess_ui.spec.widgets import Property, PropertyError, WidgetDecl, decl_from_params
+from tests.helpers import parts, slot
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -73,7 +74,10 @@ def test_an_unknown_icon_suggests_the_nearest():
 def test_an_expression_none_and_structural_types_pass_coercion():
     prop = Property("int")
     prop.name = "p"
-    assert prop.coerce("{{ n + 1 }}") == "{{ n + 1 }}"
+    made = parts(slot(" n + 1 "))
+    assert prop.coerce(made) is made
+    with pytest.raises(PropertyError):
+        prop.coerce("{{ n + 1 }}")  # a plain string is text, not an expression, whatever it holds
     assert prop.coerce(None) is None
     assert Property("nodes").coerce([1]) == [1]
     required = Property("str", required=True)

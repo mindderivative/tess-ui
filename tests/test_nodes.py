@@ -81,6 +81,22 @@ def test_state_declares_names_with_starting_values():
     fails("Text { State: [a] }", "'state:' takes a mapping")
 
 
+def test_a_text_with_slots_is_a_template_of_one_expression_per_slot_and_a_quoted_string_is_plain_text():
+    n = node('Text { Text: Hi <| a |> and <| b + 1 |>!, Tooltip: "<| a |>" }')
+    template = n.props["text"]
+    assert isinstance(template, Template) and [type(p).__name__ for p in template.parts] == ["str", "Expr", "str", "Expr", "str"] and not template.single
+    assert template.names == {"a", "b"}
+    assert n.tooltip == {"text": "<| a |>"}  # a quoted string is plain text, whatever it holds: it is never compiled
+    assert node("Text { Text: <| a |> }").props["text"].single
+
+
+def test_an_error_in_a_slot_of_a_text_names_that_slot_in_the_file():
+    first = fails("Text { Text: Hi <| a + |> and <| b |>! }", "syntax error")
+    assert (first.file, first.line, first.column) == ("T_View.tdl", 5, 19)
+    second = fails("Text { Text: Hi <| a |> and <| b + |>! }", "syntax error")
+    assert (second.file, second.line, second.column) == ("T_View.tdl", 5, 31)
+
+
 def test_style_takes_universal_fields_a_widgets_extras_and_expressions():
     n = node("Container { Style { Width: 100, Background: <| color |>, Flex_Direction: vertical } }")
     assert n.style["width"] == 100 and isinstance(n.style["background"], Template)

@@ -46,6 +46,20 @@ def view_from(spec, **kwargs):
     return View(spec, **kwargs)
 
 
+def slot(text: str, line: Optional[int] = None, column: int = 0):
+    """A slot of a text, as the TDL front end reads one: `text` is what lies between `<|` and `|>`, and `line` and `column` (0-based) where it starts in the file."""
+    from tess_ui import tel
+
+    return tel.Slot(text, None if line is None else tel.Origin("Main_View.tdl", line, column))
+
+
+def parts(*items):
+    """A text with slots (`tess_ui.tel.Parts`): the strings are literal text and the `slot(...)`s the expressions, in order."""
+    from tess_ui import tel
+
+    return tel.Parts(items)
+
+
 class MapScope:
     """A scope over a dict, for tests of expressions and handlers. `reactive` names read as reactive, `writable` names can be assigned in a handler,
     `actions` maps a dotted name (`window.close`, `save`) to a function a handler may call."""

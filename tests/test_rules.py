@@ -47,6 +47,26 @@ def compose(main, rules, views=None, vm=None):
     return Composer(docs, vm or VM(), rules=[sheet(r) if isinstance(r, str) else r for r in rules]).compose(doc)
 
 
+def test_a_rule_value_with_slots_is_a_template_and_an_error_names_its_slot():
+    from tess_ui.tel import Template
+
+    rules = sheet(one("Widget: Text", "Style { Background: c<| a |>-<| b |>, Height: <| h * 2 |>, Width: 50% }")).rules
+    style = rules[0].style
+    assert isinstance(style["background"], Template) and not style["background"].single and style["height"].single and style["width"] == "50%"
+    err = bad(one("Widget: Text", "Style { Background: c<| a |>-<| b + |> }"), "syntax error")
+    assert (err.file, err.line, err.column) == ("S_Stylesheet.tdl", 8, 36)
+
+
+def test_a_dict_stylesheet_value_with_braces_is_refused_because_braces_are_not_a_slot():
+    with pytest.raises(LoadError, match=r"style 'height' has \{\{ \}\} in its text, and \{\{ \}\} is not a slot") as caught:
+        RuleSheet.of({"styles": [{"widget": "Rect", "style": {"height": "{{ h / 2 }}"}}]})
+    assert "tess_ui.tel.Parts" in str(caught.value)
+    from tests.helpers import parts, slot
+
+    made = RuleSheet.of({"styles": [{"widget": "Rect", "style": {"height": parts(slot(" h / 2 "))}}]})
+    assert made.rules[0].style["height"].single
+
+
 # -- the shape -------------------------------------------------------------------------------------------------------------
 
 

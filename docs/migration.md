@@ -3,6 +3,10 @@
 What to change in an existing app when you upgrade. Each section is the release you are moving to; the
 [changelog](changelog.md) has everything else that changed.
 
+## To 0.6.3
+
+**Tesserae runs on TEL 0.2.0, and the text around slots is split by Tesserae.** A TDL view, stylesheet or theme needs no change. Two things can: a Python dict given to `App(stylesheet_spec=)` or `RuleSheet.of` that holds `"{{ expression }}"` as a style value is refused now (`{{ }}` is not a slot): move the rule into a `*_Stylesheet.tdl` file (`Height: <| h / 2 |>`), or build the value with `tess_ui.tel.Parts`. And a tool that reads the mapping `load_tdl_file` gives and looks for `{{` finds a `tess_ui.tel.Parts` instead, a `str` that holds the text as the file writes it (`Battery <| level |>%`): test `isinstance(value, Parts)`, and for the JSON schemas an expression is a string with `<|` in it. A text of several slots takes each slot's own evaluation budget, and a message that quotes a slot shows `<| x |>`, as written.
+
 ## To 0.6.2
 
 **The colour parser and the image decoder come from `tesserae-utils`.** `tess_ui.tokens.parse_color` is gone: write `from tess_utils import parse_color` (the same strings parse to the same values). `tess_ui.images.decode_image` is gone: use `tess_utils.decode_image_file(path)`, which returns `(width, height, rgba)` where `decode_image` returned `(rgba, width, height)`.

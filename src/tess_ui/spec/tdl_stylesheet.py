@@ -23,7 +23,7 @@ Styles {
 - the root block is `Styles`; it holds `Rule` blocks, in order (order breaks ties between rules of the same specificity);
 - a rule's keys are `Title_Case` properties (`Widget`, `Variant`, `Size`, `Shape`, `State`, `Part`, `Name`, `Classes: [a, b]`) and one `Style { }` block;
 - a style field is a property (`Height: 40`); a field that holds a map is a block (`Padding { Left: 12, Right: 12 }`); a value is read as the views read it
-  (`true`, `false`, `null`, numbers, `50%`, words, quoted text, a slot `<| expr |>` is the string `{{ expr }}`, text around a slot is a template);
+  (`true`, `false`, `null`, numbers, `50%`, words, quoted text, a slot `<| expr |>` is a `tess_ui.tel.Parts`, as is text around a slot);
 - nothing is a node here: no `If`, `For`, `Children` or `Handlers`; a block that holds nothing but `Item` blocks is a list of maps, as in a view.
 
 The lexical work (keys, values, slots, positions, the metadata block) is `spec/tdl.py`'s; this module only knows where a rule and a style are.

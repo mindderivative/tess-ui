@@ -16,6 +16,7 @@ from tess_ui.spec.rules import is_rule_sheet  # noqa: E402
 from tess_ui.spec.tdl import load_tdl_file  # noqa: E402
 from tess_ui.spec.tdl_stylesheet import load_tdl_stylesheet_file  # noqa: E402
 from tess_ui.spec.tdl_theme import plain  # noqa: E402
+from tests.helpers import parts, slot  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 SCHEMAS = ROOT / "src" / "tess_ui" / "schema"
@@ -67,7 +68,7 @@ def _flagged(data, project=None):
 
 def test_a_misspelt_style_field_is_flagged_and_a_real_one_is_not():
     assert _flagged({"widget": "Container", "style": {"foregorund": "red"}})
-    assert not _flagged({"widget": "Container", "style": {"width": "{{ w }}", "height": "50%", "background": "surface", "x": "10%"}})
+    assert not _flagged({"widget": "Container", "style": {"width": parts(slot(" w ")), "height": "50%", "background": "surface", "x": "10%"}})  # an expression is a `Parts`
 
 
 def test_a_style_value_of_the_wrong_kind_is_flagged():

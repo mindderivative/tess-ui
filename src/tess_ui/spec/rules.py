@@ -15,7 +15,7 @@ styles:
 a later rule wins a tie. **Layers** are applied lowest first (a widget's own shipped looks, then the app's), so the app's stylesheet beats what
 a widget ships. A node's inline `style:` beats every rule, for the fields it sets and no others.
 
-A value in a rule may be an expression (`"{{ height / 2 }}"`), read in the widget's own names: its properties for a built-in, its params for a
+A value in a rule may be an expression (`Height: <| height / 2 |>`), read in the widget's own names: its properties for a built-in, its params for a
 view. `RuleSheet.of` checks every rule against the registry; `Rule.matches` and `ordered` find a node's rules in the order they apply.
 """
 
@@ -26,7 +26,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Collection, Iterable, Optional
 
-from tess_ui.tel import ExprError, Origin, compile_template
+from tess_ui.tel import ExprError, Parts, compile_template
 from tess_ui.spec import marker, placement, sizes, widgets as registry
 from tess_ui.spec.nodes import LoadError
 from tess_ui.spec.widgets import style_fields_of
@@ -207,12 +207,15 @@ def _build(spec: Any, file: str, text: str, parts_of: Optional[Callable[[str], O
                     users = sorted(n for n in registry.names() if "foreground" in (registry.lookup(n).extras or ()))
                     raise fail(style_key_at.get(field_name, at), message, f"widgets that accept it: {', '.join(users)}")
                 raise fail(style_key_at.get(field_name, at), message, _near(field_name, allowed))
-            problem = None if not isinstance(value, (str, int, float)) or (isinstance(value, str) and "{{" in value) else sizes.size_problem(field_name, value)
-            if problem is None and field_name in placement.ANCHOR_FIELDS and not (isinstance(value, str) and "{{" in value):
+            if isinstance(value, str) and not isinstance(value, Parts) and "{{" in value:
+                raise fail(style_val_at.get(field_name, at), f"{widget or 'a rule'}: style '{field_name}' has {{{{ }}}} in its text, and {{{{ }}}} is not a slot",
+                           "an expression is written <| expression |> in a .tdl file; a dict spec takes it as a tess_ui.tel.Parts")
+            problem = None if not isinstance(value, (str, int, float)) or isinstance(value, Parts) else sizes.size_problem(field_name, value)
+            if problem is None and field_name in placement.ANCHOR_FIELDS and not isinstance(value, Parts):
                 problem = placement.style_problem(field_name, value)
             if problem:
                 raise fail(style_val_at.get(field_name, at), f"{widget or 'a rule'}: {problem}")
-            style[field_name] = _template(value, file, style_val_at.get(field_name, at), text)
+            style[field_name] = _template(value, file, text)
         for edge, others in (("x", ("left", "inset")), ("y", ("top", "inset"))):  # two ways to place one edge in one rule
             for other in others:
                 if style.get(edge) is not None and style.get(other) is not None:
@@ -221,10 +224,10 @@ def _build(spec: Any, file: str, text: str, parts_of: Optional[Callable[[str], O
     return RuleSheet(rules, file)
 
 
-def _template(value: Any, file: str, at: tuple[int, int], text: str) -> Any:
-    if isinstance(value, str) and "{{" in value:
+def _template(value: Any, file: str, text: str) -> Any:
+    if isinstance(value, Parts):
         try:
-            return compile_template(value, origin=Origin(file, at[0], at[1]))
+            return compile_template(value)
         except ExprError as exc:
             raise LoadError(exc.message, file=file, line=exc.line, column=exc.column, hint=exc.hint, text=text) from None
     return value

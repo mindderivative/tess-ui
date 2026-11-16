@@ -342,9 +342,9 @@ def _theme() -> dict[str, Any]:
 
 def _style_definitions() -> dict[str, Any]:
     """The style fields of a 0.5.0 node, as the editor should offer them: each with its type or choices, and anything that is an expression
-    (`"{{ height / 2 }}"`) accepted where a value is."""
+    (`Height: <| height / 2 |>`) accepted where a value is."""
     defs = _only(_definitions(fragment=False), "style", "color", "fill")
-    expression = {"type": "string", "pattern": r"\{\{"}
+    expression = {"type": "string", "pattern": r"<\|"}
     style = defs["style"]
     wrapped = {}
     for key, spec in style["properties"].items():
