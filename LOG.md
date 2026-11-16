@@ -3558,3 +3558,8 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 - The colour parser and the image decoder moved to the shared package `tesserae-utils[image]>=0.2.2,<0.3` (`import tess_utils`). On the 346 colour strings of tess-ui's tests, docs and views `tess_utils.parse_color` gave the same results and the same errors as `tess_ui.tokens.parse_color`.
 - Deleted: `src/tess_ui/_wide_gamut.py`, `src/tess_ui/images.py`, `tests/test_wide_gamut.py`, the parser in `tokens.py` and its pure parser tests in `tests/test_tokens.py` (`tesserae-utils` owns them). `tess_ui.tokens.parse_color` and `tess_ui.images.decode_image` are gone: callers import `tess_utils.parse_color` and `tess_utils.decode_image_file` (which returns `(width, height, rgba)`).
 - Behaviour: images load PNG, JPEG, GIF and WebP only, EXIF orientation is applied, and the error text is the shared one. Listed in `docs/changelog.md` (0.6.2) and `docs/migration.md`. The version is not bumped.
+
+## 2026-11-15 Release 0.6.2 (the first through the release workflow)
+
+- Version 0.6.2: the colour parser and image decoder come from `tesserae-utils` 0.2.2 (the `## 0.6.2` section of `docs/changelog.md`). The release commit is merged by pull request; `release.yml` then builds, waits at the `pypi` environment for the maintainer's approval, publishes, installs the published package, and creates the tag `v0.6.2` and the GitHub Release itself. Nothing by hand: this is the first run of that path.
+- Checked: `check_version --expect 0.6.2 --pypi`, `docs_audit`, `tools/check.py`, the full suite on main in CI at the merge of #314 (and the series moves up, so CI runs `full` on this commit). Not verified: the release path of `release.yml` before this run.
