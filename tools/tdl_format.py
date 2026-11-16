@@ -1,6 +1,6 @@
 """TDL text for the generators: a value or a small block shown on a docs page, in the spelling a `.tdl` file uses.
 
-The generators read the shipped `.tdl` files through the front ends, which hand back plain dicts (lower snake_case keys, `{{ expr }}` for a slot). A docs page
+The generators read the shipped `.tdl` files through the front ends, which hand back plain dicts (lower snake_case keys, a `tess_ui.tel.Parts` for a text with slots). A docs page
 shows them as an author writes them: `Title_Case` keys, `<| expr |>` slots. This is the one place that spelling is made.
 """
 
@@ -11,6 +11,7 @@ import re
 from typing import Any
 
 from tess_ui.spec.tdl import title_case
+from tess_ui.tel import Parts
 
 _SLOT = re.compile(r"\{\{\s*(.*?)\s*\}\}", re.S)
 _WORD = re.compile(r"^[A-Za-z][A-Za-z0-9_.\-]*$")
@@ -23,7 +24,7 @@ def key(name: str) -> str:
 
 
 def slots(text: str) -> str:
-    """A `{{ expr }}` template as TDL spells it, `<| expr |>`."""
+    """A `{{ expr }}` in prose (a property's description) as TDL spells it, `<| expr |>`."""
     return _SLOT.sub(lambda m: f"<| {m.group(1)} |>", text)
 
 
@@ -35,10 +36,10 @@ def value(item: Any) -> str:
         return "true" if item else "false"
     if isinstance(item, (int, float)):
         return repr(item)
+    if isinstance(item, Parts):  # a text with slots: its string is already the TDL spelling, `<| expr |>` or `Battery <| level |>%`
+        return str(item)
     if isinstance(item, str):
-        text = slots(item)
-        if text.startswith("<|") and text.endswith("|>") and text.count("<|") == 1:
-            return text
+        text = item
         if (_WORD.match(text) and text not in ("true", "false", "null")) or _PERCENT.match(text):
             return text
         return json.dumps(text, ensure_ascii=False)
