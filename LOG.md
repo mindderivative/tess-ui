@@ -3577,3 +3577,8 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 - **Timing** (headless, lavapipe, 150-row `For` with multi-slot texts, a tooltip, a style slot and a handler per row, median of 6, run twice each way): open 31 ms before (TEL 0.1.2) and 28-30 ms after; one Signal change plus a frame 26-28 ms before, 26-27 ms after; replacing the rows 27-28 ms before, 28 ms after.
 - **Verified.** Full suite 7720 passed, 21 skipped (`-n 4`, lavapipe); `tools/docs_audit.py`, `tools/check.py` (mypy ratchet unchanged: 334, schema, docs).
 - **NOT verified.** CI (Windows, macOS), the real running shell, TEL 0.2.0 on Python 3.12 jobs.
+
+## 2026-11-16 Release 0.6.3
+
+- Version 0.6.3: `tesserae-el` 0.2.0 (TEL has no template form; tess-ui splits the text around slots itself), the `## 0.6.3` section of `docs/changelog.md`. Released through `release.yml` after the maintainer's approval of the `pypi` environment.
+- Checked: `check_version --expect 0.6.3 --pypi`, `docs_audit`, `tools/check.py`, the full suite on main in CI (Linux, macOS, Windows) at the merge of #317. Not verified: a real running shell.
