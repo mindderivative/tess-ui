@@ -262,6 +262,10 @@ class View:
 
     # -- updates ----------------------------------------------------------------
 
+    #: Debugging and tests: `reconcile` tries the whole new spec on the side, as it did before `_validate` learned to build only what changed.
+    #: The two must accept and refuse the same specs, with the same message (`tests/test_view_validate.py`).
+    validate_everything = False
+
     def reconcile(self, spec: dict[str, Any], frames: Optional[dict[str, tuple[bytes, int, int]]] = None) -> None:
         """Brings the live tree in line with `spec`, in place."""
         spec = _expanded_shared(spec, self._expandable) if self._shares_specs else _expanded(spec)  # as in `__init__`
@@ -325,7 +329,7 @@ class View:
                 visit(before.get(child.get("id")), child, node_id, moved)
 
         try:
-            visit(old, new, None, False)
+            visit(None if self.validate_everything else old, new, None, False)
         finally:
             for control in trial.controls.values():
                 control.dispose()
