@@ -386,6 +386,7 @@ class Instance:
         if len(new) == len(self.children) and all(a is b for a, b in zip(new, self.children)):
             return
         old, self.children = self.children, new
+        _tree_version[0] += 1
         for child in new:
             child.parent = self
         self._mark_dirty()
@@ -728,12 +729,17 @@ class _Lazy(_Region):
         super().dispose()
 
 
+#: Counts every change to the shape of any instance tree (an instance's children replaced, a part set): `Composition.walk` is kept while it is the same.
+_tree_version = [0]
+
+
 class Composition:
     """The result: `root`, and every live instance by id."""
 
     def __init__(self, root: Instance, composer: "Composer") -> None:
         self.root = root
         self._composer = composer
+        self._walked: Optional[tuple[int, list[Instance]]] = None  # the instances in `walk` order, as of a `_tree_version`
 
     @property
     def routes(self) -> list[RouteRecord]:
@@ -745,7 +751,11 @@ class Composition:
         return found if found is not None and not found.disposed else None
 
     def walk(self) -> Iterator[Instance]:
-        return self.root.walk()
+        """Every instance, parts first and then children. A sync asks for this a dozen times (one wiring pass each) and the tree is the same for all of them, so the list is
+        kept until an instance's children or parts change (`_tree_version`)."""
+        if self._walked is None or self._walked[0] != _tree_version[0]:
+            self._walked = (_tree_version[0], list(self.root.walk()))
+        return iter(self._walked[1])
 
     def ids(self) -> list[str]:
         return [i.id for i in self.walk()]
@@ -1028,6 +1038,7 @@ class Composer:
                                 for i, sub in enumerate(nodes)]
             for sub in inst.parts[name]:
                 sub.parent = inst
+            _tree_version[0] += 1
         if node.widget == "Splitter":
             if len(node.children) != 2 or any(c.loop is not None or c.when is not None for c in node.children):
                 raise self._fail(ctx, node.at, "a Splitter has two panes: exactly two children, with no 'for:' or 'if:'")

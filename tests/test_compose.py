@@ -422,3 +422,20 @@ def test_built_in_actions_come_from_the_composers_actions_and_the_viewmodel_cann
     comp.root.fire("on_click")
     comp.root.fire("on_hover_enter")
     assert called == ["close", "Settings"]
+
+
+def test_the_kept_walk_follows_the_tree_as_it_changes():
+    """`Composition.walk` is kept between changes of shape; a row added, a row taken away or a card shown must be in the next walk."""
+    comp, vm, _ = make({"Card": CARD}, "Container { Children { Card { Name: c, Title: T, Children { For r In <| rows |> Key <| r.id |> { Text { Name: row, Text: <| r.t |> } } If <| show |> { Rect { Name: flag } } } } } }")
+
+    def agrees():
+        return [i.id for i in comp.walk()] == [i.id for i in comp.root.walk()]
+
+    first = [i.id for i in comp.walk()]
+    assert agrees()
+    vm.rows.set(vm.rows.get() + [{"id": 3, "t": "c"}])
+    assert agrees() and len(list(comp.walk())) == len(first) + 1
+    vm.show.set(False)
+    assert agrees() and len(list(comp.walk())) == len(first)
+    vm.rows.set([])
+    assert agrees() and len(list(comp.walk())) == len(first) - 3
