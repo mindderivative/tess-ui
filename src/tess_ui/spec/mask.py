@@ -1,8 +1,7 @@
 """`mask:` on a `TextInput`: the text is put in a pattern as the user types or pastes (#222).
 
-```yaml
-widget: TextInput
-mask: "(###) ###-####"
+```tdl
+TextInput { Mask: "(###) ###-####" }
 ```
 
 In a pattern `#` is a digit, `A` a letter and `*` a letter or digit; `\\` makes the next character a literal; any other character is a literal.

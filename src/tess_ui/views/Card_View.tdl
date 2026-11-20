@@ -6,7 +6,7 @@ Tesserae: "0.6"
 # The Material 3 card: a surface that holds content about one subject. `variant` is elevated, filled or outlined. It can have a `media` picture across the top, a
 # `headline`, a `subhead` and supporting `text`; your own content goes in the default slot, and a row of `actions` (buttons) in the `actions` slot. An
 # `actionable` card is one pressable surface (a state layer, a ripple, Enter, a lift for the elevated one): `handlers: {on_click: open}` on the call is what a press
-# does, and the buttons inside one are a conflict MD3 asks you to avoid. `selected` shows a chosen card; the caller decides when (`on_click: "picked = not picked"`). Colours, corners and how it lifts are in Card_Stylesheet.yaml.
+# does, and the buttons inside one are a conflict MD3 asks you to avoid. `selected` shows a chosen card; the caller decides when (`on_click: "picked = not picked"`). Colours, corners and how it lifts are in Card_Stylesheet.tdl.
 Container {
   Params {
     Variant {

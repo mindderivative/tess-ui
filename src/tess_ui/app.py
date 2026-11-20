@@ -246,7 +246,7 @@ class App:
     ) -> None:
         #: The app's shared state (M65): any object, typically a class of
         #: `Signal`s every screen reads. A ViewModel reaches it as
-        #: `self.state`, and a binding as `{{ state.<name>.get() }}`.
+        #: `self.state`, and a binding as `<| state.<name>.get() |>`.
         self.state = state
         #: The project's files, found by name: `Views/`, `ViewModels/`, `Components/`, `Themes/` and `Styles/`
         #: under `root` (the folder of the script that runs, by default), and the folders in `search`; with
@@ -308,7 +308,7 @@ class App:
         #: Whether the window is maximized, and whether it has the OS's
         #: focus (0.3.0 M2): read-only, following `tess_re`'s `maximized` and
         #: `active` events, for a title bar's bindings --
-        #: `{{ app.maximized.get() }}` swaps its maximize icon.
+        #: `<| app.maximized.get() |>` swaps its maximize icon.
         self._maximized = Signal(bool(self._window.get("maximized")))
         self._active = Signal(bool(self._window.get("active")))
         self.maximized = Computed(self._maximized.get)
@@ -371,7 +371,7 @@ class App:
         self._guards: dict[str, list[Callable[[dict[str, Any]], Any]]] = {}
         self._frame_guards: dict[str, Callable[[dict[str, Any]], Any]] = {}
         self._redirects = 0
-        #: The screen showing, as a value a binding can read: `{{ app.current_screen.get() == 'Main' }}`.
+        #: The screen showing, as a value a binding can read: `<| app.current_screen.get() == 'Main' |>`.
         self._screen_name = Signal(None)
         self.current_screen = Computed(self._screen_name.get)
         self._tre_app: _TreApp | None = None

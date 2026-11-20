@@ -4,7 +4,7 @@ Name: TextField
 Tesserae: "0.6"
 ---
 # The Material 3 text field: a labelled box around a text input, with an optional leading icon, prefix, suffix, trailing icon, supporting text,
-# character counter and an error state. `variant: filled | outlined`. What it looks like is in TextField_Stylesheet.yaml; this file is its
+# character counter and an error state. `variant: filled | outlined`. What it looks like is in TextField_Stylesheet.tdl; this file is its
 # structure. `text` is two-way: give it a bare reference (`text: "{{ query }}"`) and typing writes `query`.
 #
 # The label is raised (small, at the top) while the field has focus or text, and sits in the middle as a hint otherwise; it glides between
