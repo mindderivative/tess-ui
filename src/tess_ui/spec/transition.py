@@ -1,13 +1,15 @@
 """`transition:` in a style: a property that changes eases to its new value instead of jumping (#214).
 
-```yaml
-style:
-  background: primary
-  transition:
-    background: 150                                  # milliseconds, with the standard easing
-    opacity: {duration: 200, easing: emphasized_decelerate}
-    scale: {duration: 300, easing: spring, bounce: 0.3}
-    all: 100                                         # whatever else can ease
+```tdl
+Style {
+  Background: primary
+  Transition {
+    Background: 150                                  # milliseconds, with the standard easing
+    Opacity { Duration: 200, Easing: emphasized_decelerate }
+    Scale { Duration: 300, Easing: spring, Bounce: 0.3 }
+    All: 100                                         # whatever else can ease
+  }
+}
 ```
 
 Only a *change* eases: the first time a node is built it is where it says. The properties are the ones tess_re can animate (`background`,

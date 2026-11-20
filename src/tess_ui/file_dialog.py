@@ -3,21 +3,22 @@
 A `FileDialog` in a view is told what to do by names the view's ViewModel owns (`open`, `mode`, `start`, ...). `FileDialogRequest(viewmodel)` makes those names, as `Signal`s,
 on the ViewModel (`file_open`, `file_mode`, ..., or another prefix), with the two handlers the dialog calls (`file_accepted`, `file_cancelled`), so the view only has to say so:
 
-```yaml
-- widget: FileDialog
-  open: "{{ file_open }}"
-  mode: "{{ file_mode }}"
-  start: "{{ file_start }}"
-  root: "{{ file_root }}"
-  filters: "{{ file_filters }}"
-  filename: "{{ file_filename }}"
-  multiple: "{{ file_multiple }}"
-  headline: "{{ file_headline }}"
-  accept_label: "{{ file_accept_label }}"
-  show_hidden: "{{ file_show_hidden }}"
-  value: "{{ file_value }}"
-  on_accept: file_accepted
-  on_cancel: file_cancelled
+```tdl
+FileDialog {
+  Open: <| file_open |>
+  Mode: <| file_mode |>
+  Start: <| file_start |>
+  Root: <| file_root |>
+  Filters: <| file_filters |>
+  Filename: <| file_filename |>
+  Multiple: <| file_multiple |>
+  Headline: <| file_headline |>
+  Accept_Label: <| file_accept_label |>
+  Show_Hidden: <| file_show_hidden |>
+  Value: <| file_value |>
+  On_Accept: file_accepted
+  On_Cancel: file_cancelled
+}
 ```
 
 and the ViewModel opens it and hears the answer:

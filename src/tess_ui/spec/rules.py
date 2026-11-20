@@ -2,13 +2,16 @@
 
 A stylesheet (`<Name>_Stylesheet.tdl`) is a list of rules, shown here as the mapping it is read into:
 
-```yaml
-styles:
-  - widget: Button          # a widget (a built-in, or a view called by its name)
-    variant: tonal          # optional: variant, size, shape (properties the widget declares), classes, name
-    part: label             # optional: a named node inside the widget's view (default: the widget's root)
-    state: hovered          # optional: hovered, focused, pressed, disabled, selected, checked, expanded
-    style: {foreground: on_secondary_container}
+```tdl
+Styles {
+  Rule {
+    Widget: Button          # a widget (a built-in, or a view called by its name)
+    Variant: tonal          # optional: variant, size, shape (properties the widget declares), classes, name
+    Part: label             # optional: a named node inside the widget's view (default: the widget's root)
+    State: hovered          # optional: hovered, focused, pressed, disabled, selected, checked, expanded
+    Style { Foreground: on_secondary_container }
+  }
+}
 ```
 
 **Specificity**, high to low: `name`, then how many of `variant`/`size`/`shape`/`classes` the rule names, then `state`, then `widget` alone;

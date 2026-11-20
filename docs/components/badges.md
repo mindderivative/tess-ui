@@ -24,7 +24,7 @@ A view Tesserae ships is a `<Name>_View.tdl` (what it takes and what it is made 
 
 ### `Badge`
 
-The Material 3 badge: a 6 dp dot (no value) or a 16 dp pill holding a count or short text. Alone it is the mark itself, to place where you like; with `Anchored: true` its children are the host (an icon, a button, a tab) and the mark sits over the host's top right corner. The look is in Badge_Stylesheet.tdl; this file is the structure. A count over `Limit` shows as `999+`. Hide a zero count with `Show: "<| n > 0 |>"`. The mark is hidden from a screen reader: put the count in the host's label ("Inbox, 3 unread").
+The Material 3 badge: a 6 dp dot (no value) or a 16 dp pill holding a count or short text. Alone it is the mark itself, to place where you like; with `Anchored: true` its children are the host (an icon, a button, a tab) and the mark sits over the host's top right corner. The look is in Badge_Stylesheet.tdl; this file is the structure. A count over `Limit` shows as `999+`. Hide a zero count with `Show: <| n > 0 |>`. The mark is hidden from a screen reader: put the count in the host's label ("Inbox, 3 unread").
 
 | Parameter | Type | Default | Meaning |
 | --- | --- | --- | --- |

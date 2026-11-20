@@ -4,7 +4,7 @@ Name: Divider
 Tesserae: "0.6"
 ---
 # The Material 3 divider: a thin line that separates content. `variant: full | inset | middle`, `orientation: horizontal | vertical`.
-# What it looks like (the colour, the thickness, the insets) is in Divider_Stylesheet.yaml; this file is its structure. A screen reader hears it as a
+# What it looks like (the colour, the thickness, the insets) is in Divider_Stylesheet.tdl; this file is its structure. A screen reader hears it as a
 # `separator`.
 Container {
   Params {
