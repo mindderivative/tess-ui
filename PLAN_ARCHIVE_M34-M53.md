@@ -1,0 +1,233 @@
+!!! note "Archived 2026-11-20"
+    This is the plan of the building-block program (M34-M53, September 2026) and the notes after it. Nothing below changes. The current plan is `PLAN.md`; the history is `LOG.md`.
+
+# PLAN — `tre`'s Building-Block Program (M34–M43)
+
+*(Replaces the M33 plan in this file — M33 is complete, committed and pushed.)*
+
+## Goal
+
+User-directed: "scope tre's building-block program". `tre`'s approved plan (its M93–M103, D1–D11) moves the declarative layer, reactivity, the MD3 catalog and MD3 theming out of `tre` and into Tesserae. `tre` 0.3.4 has the building blocks with the old API still present. `tre` removes the old API (M98–M99, released as 0.3.5) only after its M97 gate confirms Tesserae no longer uses it. This program is Tesserae's side of that gate. Full write-up: `BUILD_TRACKER_ARCHIVE_0.2.md`, "Program — `tre`'s Building-Block Migration".
+
+## Status
+
+**Approved (2026-09-25)** with all eight recommendations. M34 Phase 1 Steps 1–2 done: `docs/design/building-blocks.md` written. Finding: `tre`'s reactivity is already pure Python apart from a native recording stack, so M35 is small. P3 corrected: `Computed` is eager, not lazy.
+
+## Evidence
+
+- **Inventory of `src/`:** nearly all of Tesserae's ~2,950 lines sit on `tre` APIs that M98–M99 delete: reactivity, `View`/`Component`/`reconcile`/bindings, the cascade and themes, ~50 MD3 factories, 12 MD3 kinds, the ripple and state layer, and the `Rect`/`Container`/`Icon` kinds in 67 fragments.
+- **Spike:** 2,000 boxes plus texts built from Python via `create`/`set` took 9.5 ms, against 10.9 ms through `tre`'s `View`. Re-coloring 4,000 nodes took 0.8 ms, against 2.3 ms for `set_theme`. Engine calls aren't the bottleneck; Tesserae's own cascade and binding cost is still to measure (M34).
+
+## Milestones
+
+| | Milestone | Replaces |
+|---|---|---|
+| M34 | Design and spikes (approval gate) | — |
+| M35 | Reactivity | `Signal`, `Computed`, `Effect`, `ViewModel`, `batch`, `untrack` |
+| M36 | Bindings and handlers | `binding.rs`, `View._attach` |
+| M37 | Declarative engine on primitives | `View`, `reconcile`, `Component`, cascade, `from_view`/`show_view` |
+| M38 | MD3 theme | `set_theme`, `Theme`, `engine-md3` color science and tokens |
+| M39 | Interaction and accessibility | state layer, ripple, focus rings, per-kind roles |
+| M40 | Widgets I: stateful controls | the 12 MD3 kinds |
+| M41 | Widgets II: composed catalog and overlays | ~40 composition factories, `open_*` overlays, icon set |
+| M42 | Widgets III: inputs, date/time, media, graphs, docking | text fields, pickers, video, node graph, `build_shell` |
+| M43 | Migration gate | `tre` M97 Phase 2 Step 2: suite green with removed names stubbed |
+
+## Decisions (M34) — recommendations
+
+1. **P1 YAML format:** keep Tesserae's schema unchanged for app authors, translated to primitives inside Tesserae.
+2. **P2 Color science:** a maintained Python port of `material-color-utilities`, accepted only if it matches `tre`'s schemes on reference seeds.
+3. **P3 Reactivity:** reproduce `tre`'s semantics exactly (`Computed` is eager), with one test suite run against both.
+4. **P4 Bindings:** port `binding.rs`'s safe grammar exactly, and check both evaluators agree on every expression in the repo.
+5. **P5 Order:** incremental, bottom-up, suite green after each step.
+6. **P6 Public API:** keep every public name. One break, written down: stateful `tesserae.widgets` factories return a small widget object (`.node` plus state) instead of a bare `tre.Node`.
+7. **P7 Scope:** rebuild the whole catalog, staged by category; the node graph, docking and app shell last.
+8. **P8 Names:** build on `tre` 0.3.4's new API only (`create`, `set`, `on`, `show_layer`, `fill`).
+
+Colour spike done: `materialyoucolor` with `spec_version="2021"` and tone 10 for the four light `on_*_container` roles matches `tre` exactly (784/784), so P2 is accepted. Message sent to `tre`; it agreed and is building the migration guide and the `TRE_FORBID_REMOVED=1` gate shim (its M97 Phase 2).
+
+Spikes (`tools/spikes/`): Python cascade and bindings build 4,000 nodes in 20.7 ms against `tre`'s 11.0 ms, with theme switches and bound updates on par; a full MD3 checkbox on primitives passes 12/12 checks. **M34 complete.**
+
+**M35 complete (2026-09-25):** `tesserae.reactive`, the parity suite (both implementations), and the recording bridge to `tre`'s bindings until M36; 455 passed.
+
+**M36 complete (2026-09-25):** `tesserae.binding`, identical to `tre`'s on 166 expressions. The wiring moved to M37 (user's choice), because `tre`'s new API can't drive the legacy Checkbox/Switch state; bindings on `checked`/`selected`/`value` move to M40.
+
+**M37 scoped in detail (2026-09-25):** six phases (tokens, compiler and cascade, tree parity, View/reconciler/bindings, components and screens, tests and docs) and four decisions, Q1–Q4, in `BUILD_TRACKER_ARCHIVE_0.2.md`.
+
+**M37:** decisions Q1–Q4 as recommended. Phase 1 done: `tesserae.tokens` matches `tre` on 74 checks (roles, shapes, elevation shadows, type scale, colour strings); 698 passed.
+
+Phase 2 done: the spec compiler (`spec/build.py`) and cascade (`spec/cascade.py`), checked against `tre`'s builder, with errors matching `tre`'s; 741 passed.
+
+Phase 3 done: 127 views identical to `tre`'s node by node (`tests/test_tree_parity.py`); 870 passed.
+
+Phase 4 done: `tesserae.View` with the reconciler and Tesserae's own binding, handler and `two_way:` wiring; `on_change` only for user edits; 900 passed.
+
+Phase 5 done: components on Tesserae's builder, with the host's theme and stylesheet (M31's gap closed); `App` builds screens in its own window; `tesserae.View`/`Component` are Tesserae's; 913 passed.
+
+Phase 6 done: `load_view`, `instantiate`, `ViewWatcher` and the suite off `tre`'s `View` (reference tests excepted); the recording bridge removed; atomic reconcile; theme key validation; 909 passed. **M37 complete.**
+
+**M38 scoped (2026-09-25):** a `tesserae.Theme` (roles, `components:`, `typography:`, motion), theme typography in views, light/dark with the OS, docs; decisions Q1–Q4 in `BUILD_TRACKER_ARCHIVE_0.2.md`.
+
+**M38 decisions (user):**
+- Q1: theme typography for display text, not text inputs.
+- Q2: `App(dark="system")` by default, plus `set_dark`.
+- Q3: `"system"` starts dark.
+- Q4: Emphasized as (0.2, 0, 0, 1).
+
+Phase 1 done: `tesserae.Theme`, matching `tre`'s `Window.theme`; 1019 passed.
+
+Phase 2 done: theme typography for Text and Link, not text inputs; 1029 passed.
+
+Phase 3 done: `App(dark="system")` by default, following the OS; `set_dark`; 1042 passed.
+
+Phase 4 done: final docs; a known gap for `"system"` starting dark. **M38 complete.**
+
+**M39 scoped (2026-09-25):** from `tre`'s legacy behaviour write-up. It found a keyboard regression from M37 (`on_click` nodes aren't Tab stops), which Phase 1 fixes. Decisions Q1–Q3 pending.
+
+**M39:** decisions Q1–Q3 as recommended. Phase 1 done: clickable nodes are keyboard-reachable buttons; 1048 passed. The dry-run gate report went to `tre`.
+
+Phase 2 done: MD3's state layer and ripple on clickable Rect/Container nodes (`tesserae.interaction`, `interaction:`); 1068 passed.
+
+Phase 3 done: the focus ring, YAML `a11y:`, `tesserae.a11y`; 1094 passed.
+
+Phase 4 done: examples labelled, a keyboard-only test of the counter, the parity differ strips Tesserae-only fields for `tre`. **M39 complete**; 1095 passed.
+
+**M40 scoped (2026-09-25):** 6 phases: a control foundation, then selection controls, slider and spin box, progress/loading/time dial, wiring (YAML kinds, bindings, fragments, factories), and tests and docs with the gate check. Found: YAML checkboxes, switches and radios never toggle and aren't Tab stops, as in `tre`. Decisions Q1–Q4 pending.
+
+**M40:** Q1–Q4 as recommended. Phase 1 done: `tesserae.controls.Control` (with `Listeners` and `tokens.BASELINE`), proved on MD3's checkbox; 1114 passed.
+
+Phase 2 done: RadioButton with RadioGroup, and Switch; 1127 passed.
+
+Phase 3 done: Slider and SpinBox; 1142 passed.
+
+Phase 4 done: progress (linear and circular, indeterminate too), the loading indicator, the time picker dial; 1157 passed.
+
+Phase 5 done: the YAML control kinds and the stateful factories are Tesserae's controls; the todo_list checkbox ticks; 1179 passed.
+
+Phase 6 done: the static gate, the examples clean under tre's removal shim, the controls guide. **M40 complete**; 1183 passed.
+
+**M41 scoped (2026-09-25):** 6 phases. The composed factories are to be built from the fragments through the compiler, returning `Widget` objects, with MD3 feedback and selection, `tesserae.overlays` on `show_layer`, and a gate. The window-theme removal moves to M42's end. Decisions Q1–Q4 pending.
+
+**M41:** Q1–Q4 as recommended. Phase 1 done: the `Widget` base (built from fragments) and `button`; content-sized text; an M37 patch bug fixed; 1198 passed.
+
+Phase 2 done: icon buttons, FABs, extended FABs, the split button and the button group; 1205 passed.
+
+Phase 3 done: cards, chips, badges, dividers, links, icons, lists, accordion headers, tree nodes; Links take pointer clicks again; 1209 passed.
+
+Phase 4 done: tabs, navigation rail and drawer, toolbars, top app bar, status bar; 1214 passed.
+
+Phase 5 done: `tesserae.overlays` (dialog, menu, snackbar, tooltip, side sheet, navigation drawer); 1227 passed.
+
+Phase 6 done: the gate covers M41's names; the examples and 152 widget tests are clean under tre's shim. **M41 complete**; 1227 passed.
+
+**M42 scoped (2026-09-25):** 6 phases. The migration only: search, date and time, media, the node graph, and off the window's theme, then the gate. Docking can't be built on 0.3.4 (its API is 0.3.5's). Decisions Q1–Q4 pending; Q1–Q2 would add M45 for new widgets, docking and the shell.
+
+**M42 decisions:** Q1 "Build them all in M42" (segmented button, pagination, popover, time input field, carousel, splitter join it; 8 phases); Q2–Q4 as recommended. Docking and the app shell are the new M45, after M43.
+
+Phase 1 done: the search bar and SearchView; 1233 passed.
+
+Phase 2 done: the date-picker day, period selector and time input field; 1242 passed.
+
+Phase 3 done: `image` and `video` on Tesserae's own image nodes; 1244 passed.
+
+Phase 4 done: the node graph (pan, zoom, drag, edges); no widget delegates to tre now; 1251 passed.
+
+Reviewed Phases 2–4 after the move to Nobara: three fixes (graph theming, the graph node's focus ring, the period selector's tablist); 1252 passed.
+
+Phase 5 done: the segmented button, pagination and the `Popover` overlay; 1273 passed.
+
+Phase 6 done: the carousel and the splitter; 1287 passed.
+
+Phase 7 done: `App` off the window's theme; 1287 passed.
+
+Phase 8 done, and M42 with it: the gate extended to M42's names and the window's theme; under `tre`'s switch the examples run clean and only the `tre`-reference tests fail (419); 1288 passed.
+
+**M43 scoped (2026-09-26):** 5 phases; the dry run (Phase 1) is done. Keep the `tre` reference proof (binding parity, tree parity, theme tokens, error messages) as data recorded on 0.3.4, run the suite and examples under `tre`'s switch in CI, and confirm to `tre` (its M97 Step 6) so M99 can start. Decisions Q1–Q3 pending: recorded reference data; a vendored copy of `_removed.py` for CI; the move to 0.3.5 as a new M46 after `tre`'s release.
+
+**M43 decisions:** Q1–Q3 as recommended — record `tre`'s answers as data; vendor `_removed.py` for CI; the move to 0.3.5 is the new M46 (after `tre`'s release), with M45 after it.
+
+Phase 3 done: the parity tests replay `tre`'s answers recorded on 0.3.4; the whole suite passes under `tre`'s switch; 1288 passed.
+
+Phase 4 done: `tre`'s switch vendored and in CI (the suite and examples run plain and switched); locally 1288 / 1289 passed.
+
+Phase 5 done, and M43 with it: CI run 36293860118 green plain and switched (1287 passed with the switch on); confirmed to `tre` (its M97 Phase 2 Step 6).
+
+**M47 scoped (2026-09-27):** bindable accessibility, 4 phases -- `a11y:` fields that follow a `Signal`, in YAML and (Q3) from Python. Decisions Q1–Q3 pending: bindings written inside `a11y:`; `label`/`hidden`/`level` bindable, `role`/`live` fixed; a Python `tesserae.a11y.bind`.
+
+**M47 decisions:** Q1–Q3 as recommended -- bindings inside `a11y:`; `label`/`hidden`/`level` bindable, `role`/`live` fixed; `tesserae.a11y.bind` for Python.
+
+Phase 2 done: bound `a11y:` in views; a control's dropped `a11y:` and a Link's overridden label fixed; 1308 passed.
+
+Phase 3 done: `tesserae.a11y.bind` for Python widgets; 1317 passed.
+
+Phase 4 done, and M47 with it: the counter example's button name follows its count; the gap moved to "Fixed gaps"; 1317 passed.
+
+**M48 scoped (2026-09-27):** hot reload for `register()`ed screens, 3 phases. A `View` built from a file keeps `view.path` (and `register()`'s `move_to` keeps it), so the watcher can take the file from the view. Decisions Q1–Q2 pending: find the file from the view (no `path=`); log a screen with no file once.
+
+**M48 decisions:** Q1–Q2 as recommended -- the file from the view, no `path=`; a screen with no file logged once.
+
+Phase 2 done: every file-built screen watched, `register()`ed ones too; runtime components found unwatched (known gap); 1321 passed.
+
+Phase 3 done, and M48 with it; the gap moved to "Fixed gaps".
+
+**M46 done (2026-09-27):** on `tre` v0.3.5 (`.venv` and CI); the switch retired; 1322 passed. Click bubbling raised as a design question (a known gap).
+
+**M45 scoped (2026-09-27):** docking and the app shell on 0.3.5, 4 phases. Decisions Q1–Q4 pending: a Python `Dock` and `AppShell` first, with `App.use_shell`; MD3 secondary tabs per zone, the tab as drag handle, a `primary` drop highlight and a keyboard "Move to" menu; splitters between zones and content; `dock.layout()`/`restore()`.
+
+**M45 decisions:** Q1–Q4 as recommended.
+
+Phase 2 done: `tesserae.docking.Dock`; 1337 passed.
+
+Phase 3 done: `AppShell`, `App.use_shell`, layouts; 1349 passed.
+
+Phase 4 done, and M45 with it: `center=True`, `examples/app_shell/`, the "App Shell & Docking" guide; 1356 passed.
+
+**M49–M52 scoped (2026-09-27):** the four named candidates, each its own milestone, decisions pending.
+- M49: a click goes to the innermost clickable only, 3 phases. Q1 the innermost handler calls `event.stop()`; Q2 a disabled control still takes the click; Q3 `secondary_click` too; Q4 no opt-out yet.
+- M50: `tesserae.widgets` follow the app's theme, 4 phases. Q1 implicitly, by the window; Q2 an explicit `theme=` pins; Q3 the shell, dock, overlays and views follow too.
+- M51: hot reload for runtime components, 4 phases. Q1 one watcher per component file, shared by its instances; Q2 components added mid-run are watched; Q3 a bad edit behaves as it does for screens.
+- M52: a declarative app shell, 5 phases, best after M50. Q1 a `*_Shell.yaml` via `app.load_shell`; Q2 panels are named view files; Q3 nav items name screens; Q4 the shell file is patched in place on reload.
+
+**M49 decisions:** Q1–Q4 as recommended.
+
+Phase 2 done: `listeners.handled` at every activation site; a click goes to the innermost clickable only; 1364 passed.
+
+Phase 3 done, and M49 with it: the controls guide and widget catalog; the gap moved to "Fixed gaps".
+
+**M50 decisions:** Q1–Q3 as recommended.
+
+Phase 2 done: `tesserae.follow`; widgets and controls with no `theme=` follow the app, held strongly and pruned when their node is gone; 1374 passed.
+
+Phase 3 done: views, the shell and dock, and overlays follow; a following shell leaves the widgets it was given alone; the example drops `theme=`; 1381 passed.
+
+Phase 4 done, and M50 with it: the docs pass; the gap moved to "Fixed gaps".
+
+**M51 decisions:** Q1–Q3 as recommended.
+
+Phase 2 done: components keep their file; a rebuilt root keeps its index; components a host reload destroyed are forgotten; 1385 passed.
+
+Phase 3 done: `ComponentWatcher`, one per component file for all its live instances, mid-run ones included; 1398 passed.
+
+Phase 4 done, and M51 with it: the components guide, README and todo-list example; the gap moved to "Fixed gaps".
+
+**M52 decisions:** Q1–Q4 as recommended.
+
+Phase 2 done: `tesserae.shell_file` and `app.load_shell`; the whole schema checked, named by file and key; 1429 passed.
+
+Phase 3 done: panels as named view files, navigation bound to `app.show` (or `on_navigate`); `show` leaves docked panels docked; 1445 passed.
+
+Phase 4 done: the shell file is hot-reloaded, patched in place where it can be; structural edits logged as needing a restart; 1458 passed.
+
+Phase 5 done, and M52 with it: `examples/app_shell_file/` (in CI), `App.screen`, the README's examples; 1473 passed.
+
+**Up next:** nothing scoped; M49–M52 done.
+
+**Known gaps scoped and filed (2026-09-28):** every gap re-checked against the source and `tre` 0.3.5.1, then scoped in its own issue: Tesserae #1–#17, and `tre` #18 (read the OS appearance) and #19 (PyPI; the name `tre` is taken), alongside #16 (undock). One gap was stale (`on_change` on reload, `tre` #12, closed; Tesserae fires `on_change` only for user edits since M37) and moved to "Fixed gaps".
+
+**Up next:** nothing scoped as a milestone; the issues are the backlog.
+
+**M53 (2026-09-28):** on `tre` 0.3.5.2, `Dock.remove_panel` and undocking on a shell-file reload (#3), and `dark="system"` starting in the OS's appearance (#17). Pushed; CI passed; #3 and #17 closed.
+
+**Up next:** nothing scoped; the open issues are the backlog.
+
+**Backlog milestones scoped up front (2026-09-28):** at the user's request ("update the build tracker with all known milestones and adjust the scopes as you start them"), the rest of the backlog is in the tracker as draft-scoped milestones: M56 (#9), M57 (#10), M58 (#5), M59 (#6), M60 (#7), M61 (#4), M62 (#2), M63 (#16), M64 (#11), M65 (#13), M66 (#12), M67 (#14). Each is refined when it starts. M54 (#1) and M55 (#8) are done locally, and their issues close once pushed.
