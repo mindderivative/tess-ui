@@ -124,3 +124,16 @@ window position code is a no-op there. Resizing a window on tre 0.5.4 stalls fra
 Some tests open a window (`App.run(max_frames=...)`, the example apps, the built executable) and write the OS clipboard through `tess_re`. `tests/conftest.py` therefore drops `DISPLAY`, `WAYLAND_DISPLAY`, `WAYLAND_SOCKET`, `DBUS_SESSION_BUS_ADDRESS` and `XDG_SESSION_*` from a local run, and points the `XDG_*` folders and `TESS_UI_STATE_DIR` at a private temporary folder; the tests that need a display skip, as on CI's Linux. The pytest header says what was dropped. `TESS_UI_ALLOW_REAL_SESSION=1` allows the real session, for a run by hand on purpose. A run on GitHub Actions (`GITHUB_ACTIONS=true`) is left alone, since its jobs run under their own `xvfb-run` display; a bare `CI` variable does not count, because other tools (an agent's shell) set it next to the real display. The same run renders on Mesa's software Vulkan (lavapipe, `VK_ICD_FILENAMES`) where it is installed, as CI does, not on the machine's own GPU. A test must never use a system-wide input device (`/dev/uinput`), the real pointer or clipboard, or a state-changing call to the person's bus or services; if it must, mark it opt-in with a stated reason.
 
 The whole suite runs in parallel: `pytest -n 4` (pytest-xdist, in the dev extra) took 1m42 on this machine against about five minutes serial, with the same tests passing; CI's full run uses `-n auto`.
+
+## 8. Agent tooling
+
+Moved from `AGENTS.md`.
+
+* **Hooks (omp):** TypeScript modules, `.omp/hooks/pre/*.ts` before a tool call and `post/*.ts` after it; omp does not run the shell hooks of `.claude/settings.json`, so `.claude/hooks/*.sh` act only under Claude Code. A hook is read when a session starts. Tests: `node --experimental-strip-types .omp/hooks/test_hooks.ts`.
+  * `pre/git-guard.ts`: blocks a force push and a push of tags; checks a `git commit` first with pyflakes-level ruff over the Python files it will hold (staged, a same-command `git add`, or `-a`).
+  * `post/ruff-edit.ts`: the same check on a file just edited under `src/` or `tools/`.
+  * `post/tests-for-edit.ts`: runs the tests `tools/tests_for.py` picks (capped at 25 seconds).
+  * `post/after-commit.ts`: the memory and board reminder. `post/stop-docs.ts`: asks once for docs when `src/` changed and no documentation did.
+* **`tools/tests_for.py [--run] [FILES]`** picks the tests that cover a change by imports and names; a changed `examples/<name>/` file picks `tests/test_examples_run.py` and the tests that name the example. It misses a test that reaches the code only through another module. It is not the full check.
+* **graphify under pi:** the Claude Code `hook-guard` and Stop hooks of `.claude/settings.json` do not fire under pi, so `~/.pi/agent/extensions/graphify/` (global, outside the repo) holds the first search or read of each prompt once with the graph's findings (query the graph, or repeat the call to run it) and refreshes the graph after a turn when source is newer. `/graphify off|on|status` switches the guard; tests: `node --experimental-strip-types test_graphify.ts` in that folder.
+* **CI:** `tools/ci_plan.py` picks docs, partial or full; a full run is a label, a `[full-ci]` mark or a manual run.
