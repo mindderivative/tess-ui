@@ -96,9 +96,12 @@ class View:
     def __init__(self, name: str) -> None:
         self.name = name
         self.path = VIEWS / f"{name}_View.tdl"
-        self.text = self.path.read_text(encoding="utf-8")
-        self.data = _read_view(self.path)
-        self.summary = _header(self.text)
+        if self.path.exists():
+            self.text = self.path.read_text(encoding="utf-8")
+            self.data = _read_view(self.path)
+            self.summary = _header(self.text)
+        else:  # a stylesheet for a built-in widget, with no view of its own
+            self.text, self.data, self.summary = "", {}, ""
         self.params: dict[str, Any] = self.data.get("params") or {}
         self.sheet_path = VIEWS / f"{name}_Stylesheet.tdl"
         self.sheet_text = self.sheet_path.read_text(encoding="utf-8") if self.sheet_path.exists() else None
@@ -206,7 +209,12 @@ def _view_section(view: View, entry: dict[str, Any]) -> list[str]:
     return out
 
 
-def _widget_section(name: str) -> list[str]:
+def sheeted(entry: dict[str, Any], views: dict[str, View]) -> list[str]:
+    """The names under a component (views, then widgets) that have a stylesheet."""
+    return [n for n in [*(entry.get("views") or []), *(entry.get("widgets") or [])] if (v := views.get(n)) and v.sheet_text]
+
+
+def _widget_section(name: str, entry: dict[str, Any], views: dict[str, View]) -> list[str]:
     decl = _widget(name)
     out = [f"### `{name}`", "", decl.doc or "A built-in widget.", ""]
     if decl.properties:
@@ -224,6 +232,8 @@ def _widget_section(name: str) -> list[str]:
         out += ["It takes no properties of its own (see [The View Language](../guide/view-language.md) for what every node takes).", ""]
     if decl.extras:
         out += ["Its `Style` also takes " + ", ".join(f"`{tdl_format.key(e)}`" for e in decl.extras) + ".", ""]
+    if (view := views.get(name)) and view.sheet_text:
+        out += [f"Its look is in [`{name}_Stylesheet.tdl`](../stylesheets/{entry['slug']}/{_kebab(name)}.md).", ""]
     return out
 
 
@@ -250,7 +260,7 @@ def component_page(entry: dict[str, Any], views: dict[str, View]) -> str:
         for view in shown_views:
             out += _view_section(view, entry)
         for name in widgets:
-            out += _widget_section(name)
+            out += _widget_section(name, entry, views)
     elif entry.get("shares"):
         out += ["## How it is built", "", f"It is the same view as the [{entry['shares'].replace('-', ' ')}](../components/{entry['shares']}.md): see there for what it takes and how it looks.", ""]
     if entry.get("usage_view"):
@@ -351,12 +361,12 @@ def overview_stylesheets(data: dict[str, Any], views: dict[str, View]) -> str:
             "- Hot reload watches the stylesheets a view uses.", "",
             "See [The View Language](../guide/view-language.md#style) for the rule syntax and [Themes](../themes/index.md) for colours, type and shape.", ""]
     for group in data["groups"]:
-        entries = [e for e in data["components"] if e["group"] == group and any(views[v].sheet_text for v in e.get("views") or [])]
+        entries = [e for e in data["components"] if e["group"] == group and sheeted(e, views)]
         if not entries:
             continue
         out += [f"## {group}", ""]
         for entry in entries:
-            links = ", ".join(f"[`{v}`]({entry['slug']}/{_kebab(v)}.md)" for v in entry["views"] if views[v].sheet_text)
+            links = ", ".join(f"[`{v}`]({entry['slug']}/{_kebab(v)}.md)" for v in sheeted(entry, views))
             out.append(f"- **{entry['title']}**: {links}")
         out.append("")
     return "\n".join(out)
@@ -371,15 +381,14 @@ def nav_block(data: dict[str, Any], views: dict[str, View]) -> str:
                 lines.append(f"          - {entry['title']}: components/{entry['slug']}.md")
     lines += ["  - Stylesheets:", "      - Overview: stylesheets/index.md"]
     for group in data["groups"]:
-        entries = [e for e in data["components"] if e["group"] == group and any(views[v].sheet_text for v in e.get("views") or [])]
+        entries = [e for e in data["components"] if e["group"] == group and sheeted(e, views)]
         if not entries:
             continue
         lines.append(f"      - {group}:")
         for entry in entries:
             lines.append(f"          - {entry['title']}:")
-            for name in entry["views"]:
-                if views[name].sheet_text:
-                    lines.append(f"              - {name}: stylesheets/{entry['slug']}/{_kebab(name)}.md")
+            for name in sheeted(entry, views):
+                lines.append(f"              - {name}: stylesheets/{entry['slug']}/{_kebab(name)}.md")
     return "\n".join(lines)
 
 
@@ -415,15 +424,16 @@ def build() -> dict[Path, str]:
     data = yaml.safe_load(DATA.read_text(encoding="utf-8"))
     shipped = shipped_views()
     check_coverage(data, shipped)
-    views = {name: View(name) for name in shipped}
+    sheet_only = sorted(p.name.removesuffix("_Stylesheet.tdl") for p in VIEWS.glob("*_Stylesheet.tdl")
+                        if not (VIEWS / p.name.replace("_Stylesheet", "_View")).exists())
+    views = {name: View(name) for name in [*shipped, *sheet_only]}
     help_ = _style_field_help()
     pages: dict[Path, str] = {DOCS / "components" / "index.md": overview_components(data),
                               DOCS / "stylesheets" / "index.md": overview_stylesheets(data, views)}
     for entry in data["components"]:
         pages[DOCS / "components" / f"{entry['slug']}.md"] = component_page(entry, views)
-        for name in entry.get("views") or []:
-            if views[name].sheet_text:
-                pages[DOCS / "stylesheets" / entry["slug"] / f"{_kebab(name)}.md"] = stylesheet_page(entry, views[name], help_)
+        for name in sheeted(entry, views):
+            pages[DOCS / "stylesheets" / entry["slug"] / f"{_kebab(name)}.md"] = stylesheet_page(entry, views[name], help_)
     pages = {path: text.rstrip("\n") + "\n" for path, text in pages.items()}
     pages[MKDOCS] = _with_nav(MKDOCS.read_text(encoding="utf-8"), nav_block(data, views))
     return pages
