@@ -12,7 +12,7 @@ Where tess-ui stands and what comes next. History is in `LOG.md` and `docs/chang
 ## Next
 
 1. Cutover leftovers: YAML-era wording in comments, docstrings and tools (a `{{ }}` or `.yaml` that should say `<| |>` or `.tdl`), and the JSON schema's `{{ parameter }}` pattern for a theme's style values (to check: it may be dead since YAML went).
-2. Speed of one sync (`View.reconcile`): about 12 ms for a window of a few hundred nodes, proportional to all nodes instead of the ones that changed. Plan in `LOG.md` (the Configuration Application, C5 part 3).
+2. Speed of one sync: step 1 (validate only what changed) and a kept instance walk are done and the shell-config select is about 11 ms, edit about 5 ms on a quiet machine (budget 16). A dirty flag for the `_wire_*` passes is not planned: see `LOG.md` 2026-11-20 for why. Measure with `apps/shell_config/tools/perf.py`.
 3. `COMPONENT_LIST.md`: the Material 3 components still to audit; it has no status marks yet.
 
 ## Not planned
