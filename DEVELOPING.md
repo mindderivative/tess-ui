@@ -24,7 +24,6 @@ Python 3.14 or newer. `gh auth login` once, with the `project` scope (`gh auth r
 
 ```bash
 git clone https://github.com/mindderivative/tess-ui.git && cd tess-ui
-git checkout 0.5.0            # the release line being built; main is the last release
 python3 -m venv .venv
 .venv/bin/pip install -e ".[dev]"
 .venv/bin/pip install mkdocs mkdocs-material   # the docs build; also pillow-based tools need no extra
@@ -80,11 +79,11 @@ once**, run the test file with an isolated bytecode cache (`PYTHONPYCACHEPREFIX=
 - `docs/` — the MkDocs site; `docs/changelog.md` and `CHANGELOG.md`; `LOG.md` and `PLAN.md` — the project log and plan.
 - Spec-generated node keys (`spin`, `dial`, `graph`, `tooltip`) must be added in two places: `build._NODE_KEYS` and `view._props_equal`.
 
-## 5. Working rules (from `CLAUDE.md`)
+## 5. Working rules (from `AGENTS.md`)
 
-- **Commit locally** as soon as a milestone, step or feature is finished and the tests that cover it pass (no full suite unless asked). Message style: `0.5.0 #<issues>: <what>`. **Never push, merge to `main`, tag or release without being told to.**
+- **Commit locally** as soon as a milestone, step or feature is finished and the tests that cover it pass (no full suite unless asked). Match the style of `git log`. Push the finished task to its own `feat/<id>` or `fix/<id>` branch and open a PR; **never push to `main`, force-push, push a tag, merge or release without being told to.**
 - Update the docs (the changelog, `design/yaml-language.md`, the component page, a `mkdocs build --strict`) with each finished piece.
-- The board is the GitHub project "Tesserae UI Framework" (owner `mindderivative`, number 2): Backlog → Ready → In progress → In review → **Done only when the maintainer says so**. Move items with `python3 tools/board.py 124=review 125=done`; comment on the issue with what was built, how it was tested, and what was not built or not checked.
+- The board is the GitHub project "Tesserae UI Framework" (owner `mindderivative`, number 2): Backlog → Ready → In progress → In review → **Done only after the merge and a green suite on `main`**. Move items with `python3 tools/board.py move 124 "In review"`; comment on the issue with what was built, how it was tested, and what was not built or not checked.
 - Report outcomes as they are: say what was not run or not seen.
 
 ## 6. A release (continuous delivery; the maintainer's word starts it, one approval ends it)
