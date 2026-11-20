@@ -2,6 +2,10 @@
 
 ## 0.6.3
 
+### Added
+
+- **Every shipped stylesheet has a generated page, `Link_Stylesheet.tdl` included (#291).** `tools/generate_component_docs.py` reads a stylesheet that has no `_View.tdl` (a built-in widget's look) and writes `docs/stylesheets/links/link.md`; the Links component page links to it. A property or a second root block after `Styles` in a stylesheet was already refused with the file named; a test pins it.
+
 ### Changed
 
 - **Tesserae runs on TEL 0.2.0 (`tesserae-el==0.2.0`), which has no template form: the text around slots is split by Tesserae.** TEL is an expression language only now (`Template`, `compile_template`, `fill_template`, the codes `template-unclosed` and `template-empty` and the `{{ }}` delimiter are gone from it). The TDL front end already reads a slot as its own piece, so a text with slots goes to the view as `tess_ui.tel.Parts` (the literals and each slot's expression text, with where that text starts in the file) and `tess_ui.tel.compile_template(parts)` compiles every slot with `compile_expr`; nothing writes `{{ }}` between the front end and the node any more, and no text is searched for delimiters. For a view, a stylesheet or a theme in TDL the behaviour is the one of 0.6.2: a value that is one slot keeps its type, a slot with text around it or several slots make text (`None` is nothing), the names and reads of a text are the union over its slots, and an error in a slot names that slot's line and column. What an author can meet:

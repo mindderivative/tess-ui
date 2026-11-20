@@ -6,14 +6,13 @@ must work: each TDL usage loads as a view, and each Python one runs.
 
 import importlib.util
 from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
 import yaml  # the generator's own data file (tools/component_docs.yaml) is YAML: tooling data read by tools/ only
 
 pytest.importorskip("tess_dl", reason="the generators read the shipped .tdl files, which needs tess_dl (Python 3.14)")
 
-from tess_ui import App, View
+from tess_ui import App
 
 ROOT = Path(__file__).resolve().parent.parent
 SEED = (0x67, 0x50, 0xA4, 0xFF)
@@ -90,3 +89,15 @@ def test_every_page_links_to_its_stylesheets_and_back():
         if path.parent.parent == GENERATOR.DOCS / "stylesheets":
             slug = path.parent.name
             assert f"../../components/{slug}.md" in text
+
+
+def test_a_stylesheet_with_no_view_of_its_own_still_gets_its_page():
+    """`Link` is a built-in widget with a `Link_Stylesheet.tdl` and no `Link_View.tdl` (#291): its page exists and its component page links to it."""
+    pages = GENERATOR.build()
+    page = pages[GENERATOR.DOCS / "stylesheets" / "links" / "link.md"]
+    assert "Link_Stylesheet.tdl" in page and "State: visited" in page
+    assert "../stylesheets/links/link.md" in pages[GENERATOR.DOCS / "components" / "links.md"]
+    written = {(p.parent.name, p.stem) for p in pages if p.parent.parent == GENERATOR.DOCS / "stylesheets"}
+    for sheet in (ROOT / "src" / "tess_ui" / "views").glob("*_Stylesheet.tdl"):
+        name = sheet.name.removesuffix("_Stylesheet.tdl")
+        assert any(stem == GENERATOR._kebab(name) for _, stem in written), f"{sheet.name} has no stylesheet page"

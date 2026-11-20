@@ -42,6 +42,8 @@ Text that can be activated.
 
 Its `Style` also takes `Foreground`.
 
+Its look is in [`Link_Stylesheet.tdl`](../stylesheets/links/link.md).
+
 ## Using it
 
 ```tdl

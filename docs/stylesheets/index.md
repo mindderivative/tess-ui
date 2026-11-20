@@ -65,6 +65,7 @@ See [The View Language](../guide/view-language.md#style) for the rule syntax and
 - **Menus**: [`Menu`](menus/menu.md), [`MenuItem`](menus/menu-item.md)
 - **Search**: [`SearchBar`](search/search-bar.md), [`SearchView`](search/search-view.md)
 - **Toolbars**: [`Toolbar`](toolbars/toolbar.md)
+- **Links**: [`Link`](links/link.md)
 
 ## Selection and input
 

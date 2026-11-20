@@ -313,3 +313,11 @@ Styles {
 SMALL = "tesserae: 0.6\nstyles:\n  - {widget: Button, style: {gap: 4}}\n"
 
 
+
+
+@pytest.mark.parametrize("extra", ["Seed: red\n", "Theme { Seed: red }\n"])
+def test_nothing_may_follow_the_styles_block(extra):
+    """A stray property or a second root block after `Styles` is an error naming the file, not ignored."""
+    with pytest.raises(LoadError) as caught:
+        load("Styles {\n  Rule {\n    Widget: Link\n    Style { Foreground: primary }\n  }\n}\n" + extra)
+    assert caught.value.file == "T_Stylesheet.tdl" and "more than one root block" in caught.value.message

@@ -203,6 +203,8 @@ nav:
               - SearchView: stylesheets/search/search-view.md
           - Toolbars:
               - Toolbar: stylesheets/toolbars/toolbar.md
+          - Links:
+              - Link: stylesheets/links/link.md
       - Selection and input:
           - Chips:
               - Chip: stylesheets/chips/chip.md
