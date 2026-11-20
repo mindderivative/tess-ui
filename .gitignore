@@ -13,3 +13,4 @@ graphify-out/
 
 # pi agent session state (local, per machine)
 .pi/
+.mcp.json
