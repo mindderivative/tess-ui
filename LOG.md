@@ -3582,3 +3582,8 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 - Version 0.6.3: `tesserae-el` 0.2.0 (TEL has no template form; tess-ui splits the text around slots itself), the `## 0.6.3` section of `docs/changelog.md`. Released through `release.yml` after the maintainer's approval of the `pypi` environment.
 - Checked: `check_version --expect 0.6.3 --pypi`, `docs_audit`, `tools/check.py`, the full suite on main in CI (Linux, macOS, Windows) at the merge of #317. Not verified: a real running shell.
+
+## 2026-11-20 Sync performance, step 1: already there; a debug switch and a differential test
+- Step 1 of the sync-speed plan (`View._validate` builds only what changed) was already merged with the Configuration Application's part 3, so the plan in `PLAN.md` was stale on it. What was missing is what this adds: `View.validate_everything` (debug: try the whole new spec, as `reconcile` once did) and `tests/test_view_validate.py` (twelve kinds of edit; the partial path must accept and refuse as the full one does, with the same message, and a refused spec leaves the nodes as they were; a mutation that skips the changed-node build is caught by 3 tests).
+- Numbers (`apps/shell_config/tools/perf.py`, 240 nodes, headless, the machine at load average 5-15 from other agents, so only a same-moment pair means anything; quietest pair): select a block 13.6 ms partial vs 19.1 ms full, one committed edit 6.2 ms vs 13.2 ms. Unloaded earlier runs: 25-30 ms / 13.9-14.4 ms with the partial path.
+- Checked: full suite 7732 passed, 30 skipped; check.py, docs_audit. Step 2 (a dirty flag per composition instance) waits for the Orchestrator.
