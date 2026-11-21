@@ -435,7 +435,7 @@ The font size, weight, line height and tracking of the MD3 type role `role`, or 
 
 - `BASELINE` = `dict of 24`
 - `BASELINE_SEED` = `(103, 80, 164, 255)`
-- `DENSITY` = `dict of 10`
+- `DENSITY` = `dict of 12`
 - `DENSITY_LEVELS` = `('default', 'compact', 'dense')`
 - `ELEVATION_LEVELS` = `dict of 6`
 - `ROLES` = `tuple of 49`
