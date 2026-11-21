@@ -16,18 +16,18 @@ from typing import Any
 
 import tess_re
 
-from tess_ui import motion
+from tess_ui import motion, tokens
 
 __all__ = ["RippleShader", "shader_for", "use_shader", "uses_shader"]
 
 SLOTS = 3
 TICK_MS = 16
-PRESS_GROW_MS = 450
-PRESS_FADE_IN_MS = 105
-MINIMUM_PRESS_MS = 225
-RELEASE_FADE_MS = 375
-INITIAL_SCALE = 0.2
-PRESSED = 0.10
+PRESS_GROW_MS = tokens.RIPPLE_MS["press_grow"]
+PRESS_FADE_IN_MS = tokens.RIPPLE_MS["press_fade_in"]
+MINIMUM_PRESS_MS = tokens.RIPPLE_MS["minimum_press"]
+RELEASE_FADE_MS = tokens.RIPPLE_MS["release_fade"]
+INITIAL_SCALE = tokens.RIPPLE_INITIAL_SCALE
+PRESSED = tokens.STATE_LAYER["pressed"]
 
 WGSL = """
 fn ring(px: vec2<f32>, r: vec4<f32>) -> f32 {
