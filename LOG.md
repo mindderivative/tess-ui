@@ -3666,3 +3666,8 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 ## 2026-11-21 Density, step 5: the text field at compact and dense (ADR-0023, AC-TXF-3, AC-TXF-17, AC-TXF-19)
 - At the app's `compact` or `dense` density the `TextField`'s label is above the container, outside it (`external_label`, body_small, 4 or 2 px above); the container is 32 or 28 px high with 8 px horizontal padding and the input is `body_medium`. At `default` density, and with no density, the label floats in the 56 px container as before. The accessible name is the Label either way (the input's A11y label is unchanged).
 - Not done: a 40 px default-density field with an external label (the spec's non-floating default variant); the leading/trailing icon sizes at compact (20), and the multiline minimum.
+
+## 2026-11-21 Draft: two-axis scroll panes (needs tre 0.6.11)
+- `ScrollView` takes `Orientation: both` (the engine's `scroll_view` with `orientation='both'`, tre main 0.6.11): each axis shows its own bar when the content overflows it, Shift+wheel scrolls sideways, the content keeps its own width. The config window's Files, Structure, Form and Problems panes use it (AC-SCB-03, AC-SCB-18, AC-FRM-15, AC-TRE-13). Seen in a render at 900 px wide: the Files pane gets a horizontal bar under a wide file name, the Structure pane its vertical one.
+- DRAFT: with the released 0.6.10 `orientation='both'` is refused, so the config window would not start; merge only after the 0.6.11 release and the pin move. The test of the new property skips on an older engine.
+- Not here: the Text pane (a text editor with its own scrolling) and the scrollbar look properties (`scrollbar_*`: radius, show policy, per-state colours), which tre main has and the stylesheet does not yet set.

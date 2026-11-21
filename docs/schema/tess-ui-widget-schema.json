@@ -15320,7 +15320,8 @@
               {
                 "enum": [
                   "vertical",
-                  "horizontal"
+                  "horizontal",
+                  "both"
                 ]
               },
               {
@@ -15328,7 +15329,7 @@
                 "pattern": "<\\|"
               }
             ],
-            "description": "Which way it scrolls. Horizontal lays its children out in a row and `scroll_direction` is 'right' or 'left'."
+            "description": "Which way it scrolls. Horizontal lays its children out in a row and `scroll_direction` is 'right' or 'left'. `both` scrolls on both axes (tre 0.6.11): each axis shows its own bar when the content overflows it; the children are laid out in a column at their own width."
           },
           "snap": {
             "anyOf": [

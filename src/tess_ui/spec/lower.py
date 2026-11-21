@@ -86,9 +86,9 @@ def _lower(inst: Instance) -> dict[str, Any]:
         folded = {"scroll_offset", "at_top", "at_end", "scroll_direction", "item_height", "overscan", "orientation", "snap"}  # the outputs are the renderer's to write
         if inst.virtual is not None:  # the whole list's height is its length; the rows built are placed in it
             node["virtual"] = {"count": inst.virtual.count, "extent": float(inst.virtual.extent())}
-        if values.get("orientation") not in (None, "vertical", "horizontal"):
-            raise ValueError(f"orientation is vertical or horizontal, not {values['orientation']!r}")
-        if "scroll_offset" in values or values.get("orientation") == "horizontal" or values.get("snap") not in (None, "none"):
+        if values.get("orientation") not in (None, "vertical", "horizontal", "both"):
+            raise ValueError(f"orientation is vertical, horizontal or both, not {values['orientation']!r}")
+        if "scroll_offset" in values or values.get("orientation") in ("horizontal", "both") or values.get("snap") not in (None, "none"):
             node["scroll"] = {k: v for k, v in (("offset", values.get("scroll_offset")), ("orientation", values.get("orientation")),
                                                   ("snap", values.get("snap"))) if v is not None}
     elif widget in ("Checkbox", "RadioButton", "Switch", "Slider", "RangeSlider"):

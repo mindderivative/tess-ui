@@ -262,3 +262,49 @@ def test_a_shortcut_does_not_scroll_but_shift_does(modifier, scrolls):  # tre 0.
     scroll.focus()
     view.window.simulate("key_down", key="page_down", **{modifier: True})
     assert scroll.get("scroll_offset") == (100.0 if scrolls else 0.0) and vm.pos.get() == scroll.get("scroll_offset")
+
+
+def _engine_scrolls_both():
+    import tess_re
+
+    try:
+        tess_re.Window().create("scroll_view", orientation="both")
+    except Exception:  # an engine before tre 0.6.11
+        return False
+    return True
+
+
+@pytest.mark.skipif(not _engine_scrolls_both(), reason="needs tre 0.6.11 (a scroll_view with orientation='both')")
+def test_a_scroll_view_can_scroll_on_both_axes_AC_SCB_03(tmp_path):
+    (tmp_path / "Views").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "Views" / "Main_View.tdl").write_text("""---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Flex_Direction: vertical, Width: 200, Height: 120 }
+  Children {
+    ScrollView {
+      Name: s
+      Orientation: both
+      Style { Width: 200, Height: 120 }
+      Children { Container { Name: wide, Style { Width: 600, Height: 400, Background: primary } } }
+    }
+  }
+}
+""")
+    from tess_ui import App
+
+    app = App(root=tmp_path, width=200, height=120)
+    view = app.open_view("Main")
+    app.show("main")
+    for _ in range(6):
+        view.window.advance(16)
+    node = view._built.outer["root.s"]
+    assert node.get("orientation") == "both"
+    view.window.simulate("wheel", node=node, delta_x=0.0, delta_y=40.0)
+    view.window.simulate("wheel", node=node, delta_x=0.0, delta_y=40.0, shift=True)
+    for _ in range(6):
+        view.window.advance(16)
+    assert node.get("scroll_offset") == 40.0 and node.get("scroll_offset_x") == 40.0

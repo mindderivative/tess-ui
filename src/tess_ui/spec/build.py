@@ -699,8 +699,10 @@ def _scroll_props(ctx, node, style):
     if isinstance(virtual, dict):  # the content is as tall as the whole list; the rows that are built are placed in it
         content["height"] = float(virtual["count"]) * float(virtual["extent"])
     scroll = node.get("scroll")
-    horizontal = isinstance(scroll, dict) and scroll.get("orientation") == "horizontal"
-    outer["orientation"] = "horizontal" if horizontal else "vertical"
+    way = scroll.get("orientation") if isinstance(scroll, dict) else None
+    horizontal = way == "horizontal"
+    both = way == "both"
+    outer["orientation"] = "both" if both else "horizontal" if horizontal else "vertical"
     snap = scroll.get("snap") if isinstance(scroll, dict) else None
     outer["scroll_snap"] = snap if snap in ("start", "center", "end") else "none"
     if isinstance(scroll, dict) and scroll.get("offset") is not None:
@@ -709,7 +711,7 @@ def _scroll_props(ctx, node, style):
             raise SpecBuildError(f'widget {_q(node["id"])}: scroll_offset is a distance in pixels, 0 or more, not {offset!r}')
         outer["scroll_offset"] = float(offset)
     # the content fills the cross axis and is as long as its children along the scrolling one
-    fill = {"height": "100%"} if horizontal else {"width": "100%"}
+    fill = {} if both else {"height": "100%"} if horizontal else {"width": "100%"}
     content.update(flex_direction=style.get("flex_direction", "horizontal" if horizontal else "vertical"), **fill,
                    **{k: style.get(k, _ALIGNMENT_DEFAULTS[k]) for k in _ALIGNMENT_DEFAULTS})
     return outer, content
