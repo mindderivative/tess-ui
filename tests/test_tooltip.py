@@ -513,3 +513,30 @@ def test_enter_and_space_on_the_focused_trigger_dismiss_the_tooltip_AC_TIP_7(tmp
         view.window.simulate("key_down", key=key)
         run(view, 32)
         assert not view._tips, key
+
+
+def _tip_pixels(tmp_path, dark):
+    (tmp_path / "Views").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(view_text())
+    app = App(root=tmp_path, dark=dark, theme_seed=tokens.BASELINE_SEED)
+    app.bind(VM)
+    view = app.open_view("Main")
+    app.show("main")
+    view.window.advance(16)
+    hover(view)
+    run(view, 700)
+    (layer, _), = view._tips.values()
+    for _ in range(4):
+        view.window.advance(16)
+    rgba, width, _ = view.window.snapshot()
+    x, y = layer.get("layout_x"), layer.get("layout_y")
+    pad = lambda dx, dy: tuple(rgba[(int(y + dy) * width + int(x + dx)) * 4:][:3])  # noqa: E731 - a pixel
+    return view, pad(3, layer.get("layout_height") / 2), pad(layer.get("layout_width") / 2, 2)
+
+
+def test_the_tooltip_container_is_opaque_inverse_surface_in_light_and_dark_AC_TIP_11_AC_TIP_21(tmp_path):
+    """The owner saw tooltip text with no background (F9): the pixels in the container's padding, where no glyph is, are the scheme's `inverse_surface`."""
+    for dark in (False, True):
+        view, left, top = _tip_pixels(tmp_path / str(dark), dark)
+        wanted = tuple(view._scheme["inverse_surface"][:3])
+        assert left == wanted and top == wanted, (dark, left, top, wanted)

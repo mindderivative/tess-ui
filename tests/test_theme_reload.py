@@ -115,7 +115,7 @@ def test_the_window_is_never_themed(tmp_path: Path):
 
 
 def test_an_app_with_no_seed_has_no_scheme(tmp_path: Path):
-    app = App(root=tmp_path)
+    app = App(root=tmp_path, dark=False)
     _open(app, tmp_path, "Home")
     assert app.theme.role("primary") is None
 

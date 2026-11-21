@@ -100,7 +100,7 @@ def test_a_title_bar_works_in_an_app_with_no_theme_seed(tmp_path):
 
     (tmp_path / "Views").mkdir(exist_ok=True)
     (tmp_path / "Views" / "Home_View.tdl").write_text(HOME, encoding="utf-8")
-    app = App(root=tmp_path, width=600, height=400, borderless=True)
+    app = App(root=tmp_path, width=600, height=400, borderless=True, dark=False)
     app.bind(ViewModel, views=["home"])
     view = app.open_view("Home")
     app.show("home")
