@@ -46,6 +46,7 @@ REGIONS = (("files_tree", "files_pane"), ("structure_tree", "structure_pane"), (
 _SERVICES: dict[str, Any] = {
     "r": lambda services: services.reload_shell(),
     "a": lambda services: services.apply_changed(not services.apply_on_edit.get()),
+    "t": lambda services: services.theme_cycle(),
     "l": lambda services: services.disk_reload(),
     "u": lambda services: services.disk_keep(),
 }

@@ -23,7 +23,7 @@ from tess_ui import Signal, batch
 
 from tess_shell_config.files import ChangedOnDisk, SaveError
 from tess_shell_config.problems import failure_rows, locate, relative_to_folder, rows_for, title_for
-from tess_shell_config.settings import Settings
+from tess_shell_config.settings import THEMES, Settings
 from tess_shell_config.shell import CheckResult, InlineOffload, Offload, ShellCommandError, Status
 from tess_shell_config.watcher import FileWatch
 
@@ -34,6 +34,7 @@ __all__ = ["Services", "TEXT_SAVE_DELAY_MS"]
 
 #: How long typing in the text view rests before "Apply as I edit" writes it.
 TEXT_SAVE_DELAY_MS = 200
+THEME_LABELS = {"system": "Theme: System", "light": "Theme: Light", "dark": "Theme: Dark"}
 
 
 class Services:
@@ -53,6 +54,9 @@ class Services:
         self.shell_state = Signal("Shell: not asked yet")
         self.shell_running = Signal(False)
         self.apply_on_edit = Signal(self.settings.apply_as_i_edit)
+        self.theme_mode = Signal(self.settings.theme)
+        self.theme_label = Signal(THEME_LABELS[self.settings.theme])
+        self.theme_setter: Callable[[str], None] | None = None  # set by `build`: tells the App
         self.disk_message = Signal("")
         self.has_disk_change = Signal(False)
         self.last_check: CheckResult | None = None
@@ -63,10 +67,10 @@ class Services:
         self._pending_disk: dict[str, bytes] = {}
         self._findings: list[Any] = []
         for name, signal in {"problems": self.problems, "problems_title": self.problems_title, "has_problems": self.has_problems, "checking": self.checking, "shell_state": self.shell_state,
-                             "shell_running": self.shell_running, "apply_on_edit": self.apply_on_edit, "disk_message": self.disk_message, "has_disk_change": self.has_disk_change}.items():
+                             "shell_running": self.shell_running, "apply_on_edit": self.apply_on_edit, "theme_label": self.theme_label, "disk_message": self.disk_message, "has_disk_change": self.has_disk_change}.items():
             setattr(viewmodel, name, signal)
         for name, handler in {"check_run": self.request_check, "problem_pick": self.pick_problem, "shell_reload": self.reload_shell, "disk_reload": self.disk_reload, "disk_keep": self.disk_keep,
-                              "apply_changed": self.apply_changed}.items():
+                              "apply_changed": self.apply_changed, "theme_cycle": self.theme_cycle}.items():
             setattr(viewmodel, name, handler)
 
     # -- starting and stopping ---------------------------------------------------------------------------------------------------
@@ -265,6 +269,24 @@ class Services:
             model = self.session.model
             if model is not None and model.dirty and model.valid:
                 self.save(quiet=True)
+
+    def theme_cycle(self) -> None:
+        """The Theme button: System (follow the desktop) -> Light -> Dark -> System. Remembered in the state folder."""
+        order = THEMES
+        self.set_theme(order[(order.index(self.theme_mode.get()) + 1) % len(order)])
+
+    def set_theme(self, mode: str, *, remember: bool = True) -> None:
+        self.theme_mode.set(mode)
+        self.theme_label.set(THEME_LABELS[mode])
+        if self.theme_setter is not None:
+            self.theme_setter(mode)
+        if remember:
+            try:
+                self.settings.set_theme(mode)
+            except SaveError as error:
+                self.vm._say(f"{error} The choice holds for this session only.", error=True)
+                return
+            self.vm._say(f"{THEME_LABELS[mode]}.")
 
     def apply_changed(self, on: Any) -> None:
         """The "Apply as I edit" switch: remembered in the state folder. Switching it on writes what is unsaved at once."""

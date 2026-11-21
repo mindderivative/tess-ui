@@ -35,11 +35,25 @@ class Built:
         self.viewmodel.services.stop()
 
 
-def build(session: ConfigSession, *, width: int = 1280, height: int = 800, dark: bool | str = "system", live: bool = False, **options: Any) -> Built:
+#: The window's accent seed (Material's baseline purple); the light and dark schemes are made from it.
+THEME_SEED = (0x67, 0x50, 0xA4, 0xFF)
+_DARK: dict[str, bool | str] = {"system": "system", "light": False, "dark": True}
+
+
+def build(session: ConfigSession, *, width: int = 1280, height: int = 800, dark: bool | str | None = None, live: bool = False, **options: Any) -> Built:
     """The app for `session`. `options` go to `App` (a test passes `reduced_motion=True`, a theme seed...). `live` starts what runs beside the window: the file watch, the first `status` and `check`, each
     command on a worker thread whose answer is posted to the loop (`close` stops the watch). Without it nothing runs a command or watches the folder."""
-    app = App(root=ROOT, width=width, height=height, title=TITLE, dark=dark, stylesheet=ROOT / "Views" / "Main_Stylesheet.tdl", **options)
+    from tess_shell_config.settings import Settings
+
+    # `dark`: True, False or "system" for this run (the `--theme` flag); None is what the window remembered. The roles only have a dark scheme when the App has a seed: without one the window
+    # kept the engine's light roles whatever `dark` said, which is why the window was white on a dark desktop.
+    options.setdefault("theme_seed", THEME_SEED)
+    remembered = Settings(session.state_dir).theme
+    app = App(root=ROOT, width=width, height=height, title=TITLE, dark=_DARK[remembered] if dark is None else dark, stylesheet=ROOT / "Views" / "Main_Stylesheet.tdl", **options)
     viewmodel = ShellConfigViewModel(session)
+    viewmodel.services.theme_setter = lambda mode: app.set_dark(_DARK[mode])
+    if dark is not None:
+        viewmodel.services.set_theme({True: "dark", False: "light"}.get(dark, "system"), remember=False)
     app.bind(viewmodel)
     view = app.open_view("Main")
     window = app.show("main")

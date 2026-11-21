@@ -43,6 +43,7 @@ The toolbar has Save, Undo, Redo, Format file (formatting is never done unless y
 | F5 | Run `check` on the folder (the Check button) |
 | Ctrl+Shift+R | Ask the running shell to reload (Reload shell) |
 | Ctrl+Shift+A | Switch "Apply as I edit" on or off |
+| Ctrl+Shift+T | Theme: System (follow the desktop), Light or Dark; the toolbar button does the same, the choice is kept in the state folder, and `--theme` sets it for one run |
 | Ctrl+Shift+L, Ctrl+Shift+U | The file changed on disk: reload it from disk (L), or use your version, Keep mine (U; Ctrl+K and Ctrl+J are the text editor's own) |
 | Ctrl+N | A new file from a type (a list of the types, then a name) |
 | F2 | Rename the file chosen in the Files area |
