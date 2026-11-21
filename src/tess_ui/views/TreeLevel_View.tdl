@@ -38,9 +38,10 @@ Container {
                 }
               }
               On_Key {
+                Call { Action: "tree_focus", Args: [<| event.key |>, <| n['value'] in expanded |>, <| len(n.get('children', [])) > 0 |>, <| level |>] }
                 Set {
                   Target: expanded
-                  Value: <| (expanded + [n['value']]) if (event.key == 'arrow_right' and len(n.get('children', [])) > 0 and n['value'] not in expanded) else (([v for v in expanded if v != n['value']]) if (event.key == 'arrow_left' and n['value'] in expanded) else expanded) |>
+                  Value: <| (expanded + [n['value']]) if (event.key == 'arrow_right' and len(n.get('children', [])) > 0 and n['value'] not in expanded) else (([v for v in expanded if v != n['value']]) if (event.key == 'arrow_left' and n['value'] in expanded) else (expanded + [m['value'] for m in nodes if len(m.get('children', [])) > 0 and m['value'] not in expanded] if event.key == '*' else expanded)) |>
                 }
               }
             }

@@ -105,6 +105,8 @@ def builtin_actions(view_ref: Callable[[], Any], window: Any = None) -> Callable
         view = view_ref()
         if path == "focus":
             return lambda name: view.focus(scope, name)
+        if path == "tree_focus":
+            return lambda key, is_open, is_branch, level: view.tree_focus(key, bool(is_open), bool(is_branch), int(level))
         if path == "open_url":
             return lambda url: urls.open_url(url)
         if path == "copy":
@@ -167,7 +169,7 @@ def builtin_actions(view_ref: Callable[[], Any], window: Any = None) -> Callable
     resolve.app = lambda: app_of(window if window is not None else getattr(view_ref(), "window", None))  # type: ignore[attr-defined]  # `app` in an expression
     resolve.families = {"window": ("window action", WINDOW_ACTIONS), "surface": ("surface action", SURFACE_ACTIONS)}  # type: ignore[attr-defined]  # the actions `window.<name>` and `surface.<name>` may name, checked when a view loads
     resolve.wants_scope = True  # type: ignore[attr-defined]  # `focus` needs the widget the handler was written in
-    resolve.names = ("focus", "open_url", "copy", "paste", "capture", "release", "cursor", "after", "every", "cancel", "open_window",  # type: ignore[attr-defined]
+    resolve.names = ("focus", "tree_focus", "open_url", "copy", "paste", "capture", "release", "cursor", "after", "every", "cancel", "open_window",  # type: ignore[attr-defined]
                      "navigate_to", "navigate_route")  # the bare names, offered when a handler calls one that does not exist (#251)
     return resolve
 
@@ -176,7 +178,7 @@ class _SpecTip:
     """The tooltip of a node the language did not write (a title bar's buttons), in the shape `_wire_tooltips` reads."""
 
     def __init__(self, node_id: str, tooltip: dict[str, Any]) -> None:
-        self.id, self.tooltip, self.a11y = node_id, tooltip, {}
+        self.id, self.tooltip, self.a11y, self.parent = node_id, tooltip, {}, None
 
 
 class _Screen:
@@ -831,11 +833,19 @@ class ComposedView(View):
         self.window.show_layer(layer, anchor=self._built.outer[inst.id], placement=self._tip_value(inst, "placement", "below"), modal=False,
                                dismissible=False)
 
-        def escape(event: Any, inst_id: str = inst.id) -> None:
-            if event.key == "escape":
+        def dismiss(event: Any, inst_id: str = inst.id) -> None:
+            if event.key in ("escape", "enter", "space"):  # Escape, and activating the trigger from the keyboard (WCAG 1.4.13 dismissible; ADR-0004)
                 self._hide_tip(inst_id)
 
-        undos.append(self._listen(self.window.root, "key_down", escape))
+        def scrolled(event: Any = None, inst_id: str = inst.id) -> None:
+            self._hide_tip(inst_id)  # a scroll of any ancestor moves the trigger from under the tip (AC-TIP-6)
+
+        undos.append(self._listen(self.window.root, "key_down", dismiss))
+        ancestor = inst.parent
+        while ancestor is not None:  # the scroll event does not reach the root, so each scrolling ancestor is listened to
+            if ancestor.widget == "ScrollView" and ancestor.id in self._built.outer:
+                undos.append(self._listen(self._built.outer[ancestor.id], "scroll", scrolled))
+            ancestor = ancestor.parent
         self._tips[inst.id] = (layer, lambda: [undo() for undo in undos])
 
     def _hide_tip(self, inst_id: str) -> None:
@@ -1126,6 +1136,30 @@ class ComposedView(View):
                 node.focus()
                 return
         raise ValueError(f"focus({name!r}): no node by that name in this view")
+
+    def tree_focus(self, key: str, is_open: bool, is_branch: bool, level: int) -> None:
+        """A tree row's arrow keys that move the focus (the Tree note): Right on an open branch goes to its first child, Left on a leaf or a closed branch that is not a root goes
+        to its parent. What the row's handler knows is passed in (`is_open`, `is_branch`, `level` as of the key press, before the handler opens or closes anything)."""
+        if not self._firing:
+            raise ValueError("tree_focus() acts on the row whose handler is running")
+        row = self._firing[-1]
+        group = row.parent
+        while group is not None and group.focus_group is None:
+            group = group.parent
+        if group is None:
+            return
+        items = self._focus_items(group)
+        index = next((i for i, (inst, _) in enumerate(items) if inst is row), None)
+        if index is None:
+            return
+        if key == "arrow_right" and is_branch and is_open and index + 1 < len(items):
+            items[index + 1][1].focus()
+        elif key == "arrow_left" and not (is_branch and is_open) and level > 0:
+            for i in range(index - 1, -1, -1):
+                held: Any = items[i][0].a11y.get("level")
+                if int((held.get() if hasattr(held, "get") else held) or 1) - 1 == level - 1:
+                    items[i][1].focus()
+                    return
 
     def _focus_items(self, group: Instance) -> list[tuple[Instance, Any]]:
         """The focus group's items: every focusable node under it, in order, not counting what a group inside it looks after."""

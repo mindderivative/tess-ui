@@ -232,3 +232,45 @@ Container {{
     view.window.simulate("click", node=row(view, "pics"))
     settle(view, 6)
     assert "root.t.top.entry[pics].children" in view._built.specs and row(view, "pics").get("selected") is True
+
+
+def focused_label(view):
+    return next(r for r in ("docs", "pics", "readme") if row(view, r).get("focused"))
+
+
+def test_right_on_an_open_branch_focuses_its_first_child_AC_TRE_04(tmp_path):
+    view, vm = opened(tmp_path)  # docs is open: its children are Letter (a) and Reports (b)
+    row(view, "docs").focus()
+    settle(view, 2)
+    view.window.simulate("key_down", key="arrow_right")
+    settle(view, 6)
+    assert vm.open.get() == ["docs"] and row(view, "docs", "a").get("focused") and not row(view, "docs").get("focused")
+    view.window.simulate("key_down", key="arrow_right")  # a leaf: nothing
+    settle(view, 4)
+    assert row(view, "docs", "a").get("focused")
+
+
+def test_left_on_a_leaf_or_a_closed_child_branch_focuses_its_parent_AC_TRE_05(tmp_path):
+    view, vm = opened(tmp_path)
+    row(view, "docs", "a").focus()
+    settle(view, 2)
+    view.window.simulate("key_down", key="arrow_left")
+    settle(view, 6)
+    assert row(view, "docs").get("focused") and vm.open.get() == ["docs"]
+    view.window.simulate("key_down", key="arrow_left")  # docs is open at the root: it closes, focus stays
+    settle(view, 6)
+    assert vm.open.get() == [] and row(view, "docs").get("focused")
+    view.window.simulate("key_down", key="arrow_left")  # a closed root: nothing
+    settle(view, 4)
+    assert row(view, "docs").get("focused") and vm.open.get() == []
+
+
+def test_star_opens_every_closed_sibling_branch_and_no_others_AC_TRE_08(tmp_path):
+    view, vm = opened(tmp_path)
+    vm.open.set([])
+    settle(view, 6)
+    row(view, "docs").focus()
+    settle(view, 2)
+    view.window.simulate("key_down", key="*")
+    settle(view, 6)
+    assert sorted(vm.open.get()) == ["docs", "pics"]  # the two root branches; readme is a leaf and b (a deeper branch) is not a sibling
