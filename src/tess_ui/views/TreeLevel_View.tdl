@@ -11,6 +11,7 @@ Container {
     Expanded { Type: list, Default: [], Model: true, Doc: "The values of the branches that are open." }
     Selected { Type: any, Default: "", Model: true, Doc: "The value of the chosen row." }
     Compact { Type: bool, Default: false, Doc: "40 pixel rows." }
+    Density { Type: str, Default: "", Doc: "The density of the rows (see Tree)." }
   }
   Style { Flex_Direction: vertical, Width: 100% }
   Children {
@@ -28,6 +29,7 @@ Container {
             Expanded: <| n['value'] in expanded |>
             Selected: <| n['value'] == selected |>
             Compact: <| compact |>
+            Density: <| density |>
             Disabled: <| n.get('disabled', False) |>
             Handlers {
               On_Click {
@@ -54,6 +56,7 @@ Container {
               Expanded: <| expanded |>
               Selected: <| selected |>
               Compact: <| compact |>
+              Density: <| density |>
             }
           }
         }

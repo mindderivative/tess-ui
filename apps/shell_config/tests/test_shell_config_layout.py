@@ -26,7 +26,7 @@ def named(w, name):
 def test_tree_rows_are_dense_four_pixels_in_and_sixteen_per_level(w):
     view = w.built.view
     pads = sorted({view._built.outer[inst.id].get("padding_left") for inst, _ in named(w, "row") if "structure_tree" in inst.id})
-    assert pads[0] == 4, f"a root row is 4 px in (the toolkit's default is 16): {pads}"
+    assert pads[0] == 8, f"a root row is 8 px in at the compact density (the toolkit default is 16): {pads}"
     assert {b - a for a, b in zip(pads, pads[1:])} == {16}, f"16 px per level (the default is 24): {pads}"
 
 

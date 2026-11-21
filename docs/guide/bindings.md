@@ -42,7 +42,7 @@ expressions: `Text: <| app.state.user + "'s tasks" |>`.
 | logic and choice | `a and b`, `a or b`, `not a`, `x if cond else y` |
 | literals and displays | `42`, `1.5`, `"text"`, `True`, `None`, `[1, 2]`, `{"a": 1}`, `f"{n} items"` |
 | comprehensions | `[t.upper() for t in tags if t]` |
-| built-in functions | `len min max abs round sum str int float bool sorted reversed range enumerate zip any all list dict tuple set isinstance` (`isinstance` takes `str int float bool list dict`), `format_number pluralize clamp`, and the date functions `date_add_days date_weekday days_in_month format_date current_date` (dates are `year-month-day` text) |
+| built-in functions | `len min max abs round sum str int float bool sorted reversed range enumerate zip any all list dict tuple set isinstance` (`isinstance` takes `str int float bool list dict`), `format_number pluralize clamp`, and the date functions `date_add_days date_weekday days_in_month format_date current_date` (dates are `year-month-day` text), and `density_token app_density` (the density table of the UX spec) |
 | methods of text | `lower upper title capitalize strip lstrip rstrip split splitlines join startswith endswith replace find count zfill isdigit isalpha center ljust rjust removeprefix removesuffix` |
 | methods of lists, tuples, dicts | lists and tuples: `index`, `count` only (they are read-only: `items.append(x)` and `items.sort()` are errors, so assign a new list); dicts: `get keys values items` |
 

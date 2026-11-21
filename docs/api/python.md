@@ -45,6 +45,7 @@ class App(
     *,
     theme_seed: tuple[int, int, int, int] | None = None,
     dark: bool | str = 'system',
+    density: str | None = None,
     default_theme: str | Path | None = None,
     default_theme_spec: dict[str, Any] | None = None,
     custom_theme: str | Path | None = None,
@@ -125,6 +126,7 @@ class App(
 - `scale_factor` *(property)*: The display's scale (2.0 on a 2x screen); 1.0 until the window opens.
 - `screen(name: str) -> tuple[Any, Any]`: The `(view, viewmodel)` registered under `name` -- by `register`, `load` or an embedded view; `viewmodel` is `None` for a view with none.
 - `set_dark(dark: bool | str) -> None`: `True`/`False` fixes the app dark or light, re-theming every screen in place; `"system"` goes back to following the OS from its next switch.
+- `set_density(level: str) -> None`: Changes the density of every view that follows the app's (`default`, `compact` or `dense`; `""` is the components' own Material sizes).
 - `set_high_contrast(value: bool | str) -> None`: `True` or `False` fixes the app's contrast, re-theming every screen in place; `"system"` follows the OS.
 - `set_icon(icon: str | Path | None) -> None`: The window's icon, from an image file (a PNG, best square), or `None` for none.
 - `set_reduced_motion(value: bool | str) -> None`: `True` or `False` fixes the app's motion; `"system"` goes back to following the OS.
@@ -334,6 +336,14 @@ class TypeStyle(
 
 TypeStyle(font_family: 'str', font_weight: 'float', font_size: 'float', line_height: 'float', tracking: 'float' = 0.0)
 
+### `density_token`
+
+```python
+density_token(level: str, token: str) -> float
+```
+
+The value of density token `token` at `level` (`default`, `compact` or `dense`).
+
 ### `baseline_scheme`
 
 ```python
@@ -423,6 +433,8 @@ The font size, weight, line height and tracking of the MD3 type role `role`, or 
 **Constants**
 
 - `BASELINE` = `dict of 24`
+- `DENSITY` = `dict of 10`
+- `DENSITY_LEVELS` = `('default', 'compact', 'dense')`
 - `ELEVATION_LEVELS` = `dict of 6`
 - `ROLES` = `tuple of 49`
 - `SHAPES` = `dict of 6`

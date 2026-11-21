@@ -12,7 +12,8 @@ Container {
     Nodes { Type: list, Default: [], Doc: "The rows: {value, label} and optionally {icon, children, disabled}; children are the same shape." }
     Expanded { Type: list, Default: [], Model: true, Doc: "The values of the branches that are open." }
     Selected { Type: any, Default: "", Model: true, Doc: "The value of the chosen row." }
-    Compact { Type: bool, Default: false, Doc: "40 pixel rows instead of 56." }
+    Compact { Type: bool, Default: false, Doc: "40 pixel rows instead of 56 (at no density)." }
+    Density { Type: str, Default: "", Doc: "`default`, `compact` or `dense`: the spec's density table for the rows; empty follows the app's `App(density=)`." }
   }
   Focus_Group: vertical
   A11y { Role: tree, Label: Tree }
@@ -25,6 +26,7 @@ Container {
       Expanded: <| expanded |>
       Selected: <| selected |>
       Compact: <| compact |>
+      Density: <| density |>
     }
   }
 }
