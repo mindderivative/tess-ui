@@ -148,3 +148,26 @@ def test_a_press_runs_the_calls_handler_unless_disabled(tmp_path):
     view2, vm2 = opened(tmp_path / "x", "Disabled: true")
     view2.window.simulate("click", node=f(view2))
     assert vm2.clicks.get() == 0 and f(view2).get("disabled") is True and f(view2).get("opacity") < 0.5
+
+
+def test_an_icon_only_fab_has_an_accessible_name_and_its_tooltip_AC_FAB_8_AC_FAB_9(tmp_path):
+    view, _ = opened(tmp_path, icon="music_note")
+    node = view.node("root.f")
+    assert node.get("role") == "button" and node.get("label") == "music note"
+    x, y = node.get("layout_x") + 8, node.get("layout_y") + 8
+    view.window.simulate("pointer_move", x=x, y=y)
+    for _ in range(40):
+        view.window.advance(16)
+    assert [t.get("text") for layer, _ in view._tips.values() for t in layer.children()] == ["music note"]
+    view.window.simulate("pointer_down", x=x, y=y)
+    view.window.advance(16)
+    assert not view._tips
+
+
+def test_a_label_still_names_a_fab_and_an_extended_one_has_no_tooltip_AC_FAB_8(tmp_path):
+    view, _ = opened(tmp_path, props="Label: Compose")
+    assert view.node("root.f").get("label") == "Compose"
+    view.window.simulate("pointer_move", x=view.node("root.f").get("layout_x") + 8, y=view.node("root.f").get("layout_y") + 8)
+    for _ in range(40):
+        view.window.advance(16)
+    assert not view._tips

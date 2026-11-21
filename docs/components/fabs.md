@@ -26,7 +26,7 @@ A view Tesserae ships is a `<Name>_View.tdl` (what it takes and what it is made 
 
 ### `Fab`
 
-The Material 3 floating action button, and its extended form: an icon in a prominent container, with a label beside it when `Label` is given. In four colours (`Variant`: primary, secondary, tertiary, surface) and three sizes (`Size`: small 40, medium 56, large 96). An extended FAB collapses to just its icon when `Collapsed` is true; bind that to the way a list scrolls (`Collapsed: "<| way == 'down' |>"`) for the usual behaviour. `Label` names it for a screen reader and, when it is only an icon, is its tooltip. `Handlers: {On_Click: add}` on the call is what a press does. Colours, sizes and how it lifts are in Fab_Stylesheet.tdl.
+The Material 3 floating action button, and its extended form: an icon in a prominent container, with a label beside it when `Label` is given. In four colours (`Variant`: primary, secondary, tertiary, surface) and three sizes (`Size`: small 40, medium 56, large 96). An extended FAB collapses to just its icon when `Collapsed` is true; bind that to the way a list scrolls (`Collapsed: "<| way == 'down' |>"`) for the usual behaviour. `Label` names it for a screen reader and, when it is only an icon, is its tooltip; with no `Label` the icon's name (`add`, `edit note`) is the name and the tooltip, so it is never unnamed. `Handlers: {On_Click: add}` on the call is what a press does. Colours, sizes and how it lifts are in Fab_Stylesheet.tdl.
 
 | Parameter | Type | Default | Meaning |
 | --- | --- | --- | --- |
