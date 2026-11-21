@@ -3608,3 +3608,8 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 - Single-line fields: padding 7 above and below in a 32 px box, so the text is centred (it was 4 and 4, which put it high).
 - Horizontal scrolling: not added. A `ScrollView` scrolls one way (`Orientation`), so a pane that scrolls both would need two nested ones; instead the content fits (ellipsis, denser trees). Say so if a real horizontal scroll bar is still wanted.
 - Pinned: `apps/shell_config/tests/test_shell_config_layout.py`. App tests 672 passed, 9 skipped.
+## 2026-11-20 Shell config window: dark mode (the owner's feedback on the live demo, point 1)
+- Cause: the window's `App` had no `theme_seed`, and without a seed no colour scheme exists: roles fall back to the engine's static light ones whatever `dark=` says, so `App(dark=True)` and `set_dark` changed nothing (`View._scheme` is `None`). The window now has a seed (the Material baseline purple) and follows the desktop; where the desktop cannot be asked, `"system"` starts dark (the toolkit's rule).
+- A Theme button in the toolbar (and Ctrl+Shift+T) cycles System, Light, Dark; the choice is kept in the state folder (`settings.json`); `--theme system|light|dark` is for one run and is not kept.
+- Pinned: `apps/shell_config/tests/test_shell_config_theme.py` (a dark run and a light run differ in the pixels, the button cycles and the next run starts as left). Rendered in dark: all five areas, the Add dialog and the Problems list. App tests 672 passed, 9 skipped.
+- Toolkit note, not changed: an `App` with no seed silently ignoring `dark` deserves a warning or a default seed; worth its own issue.

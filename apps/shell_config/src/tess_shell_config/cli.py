@@ -42,6 +42,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--config-dir", help="the configuration folder to open (default: the one the shell names, else the shell's own default place)")
     parser.add_argument("--shell-command", default=DEFAULT_COMMAND, help=f"the shell command to run (default: {DEFAULT_COMMAND})")
     parser.add_argument("--state-dir", help="the application's own state folder, for backups and settings (default: under XDG_STATE_HOME)")
+    parser.add_argument("--theme", choices=("system", "light", "dark"), help="light or dark for this run (default: what the Theme button last chose, else follow the desktop)")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     args = parser.parse_args(argv)
     try:
@@ -51,7 +52,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return CANNOT_START
     from tess_shell_config.app import build
 
-    built = build(session, live=True)
+    built = build(session, live=True, dark={"system": "system", "light": False, "dark": True}.get(args.theme))
     try:
         built.app.run()
     finally:

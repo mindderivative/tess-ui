@@ -82,6 +82,15 @@ Container {
             On_Click: shell_reload
           }
         }
+        Button {
+          Name: theme_button
+          Label: <| theme_label |>
+          Variant: outlined
+          A11y { Label: <| theme_label |>, Description: "Light or dark: System follows the desktop's setting; each press goes to the next (System, Light, Dark). Kept for next time (Ctrl+Shift+T)" }
+          Handlers {
+            On_Click: theme_cycle
+          }
+        }
         Switch {
           Name: apply_switch
           Label: "Apply as I edit"

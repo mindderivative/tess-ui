@@ -340,7 +340,7 @@ def test_the_apply_choice_is_kept_in_the_state_folder_and_read_back(tmp_path, fa
     rig = Rig(tmp_path, fake_shell, schema)
     assert rig.vm.apply_on_edit.get() is False
     rig.services.apply_changed(True)
-    assert json.loads((rig.state / "settings.json").read_text()) == {"apply_as_i_edit": True}
+    assert json.loads((rig.state / "settings.json").read_text()) == {"apply_as_i_edit": True, "theme": "system"}
     assert not any(p.name == "settings.json" for p in rig.folder.rglob("*")) or (rig.folder / "settings.json").read_text() == (CONFIG / "settings.json").read_text()
     rig.start()
     assert rig.vm.apply_on_edit.get() is True
