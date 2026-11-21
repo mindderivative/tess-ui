@@ -172,7 +172,7 @@ def test_a_splitter_shares_its_width_between_two_panes_around_a_handle():
     handle = s.part("handle")
     assert (handle.get("layout_x"), handle.get("layout_width")) == (100.0, 16.0)
     assert handle.get("cursor") == "col_resize" and handle.get("focusable")
-    assert (handle.get("role"), handle.get("label"), handle.get("value")) == ("slider", "Resize panes", 0.25)
+    assert (handle.get("role"), handle.get("label"), handle.get("value")) == ("separator", "Resize panes", 0.25)
     grip = s.part("handle.grip")
     assert (grip.get("layout_width"), grip.get("layout_height")) == (4.0, 48.0)
     assert grip.get("fill") == BASE["outline"]

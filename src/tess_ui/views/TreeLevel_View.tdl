@@ -13,6 +13,7 @@ Container {
     Compact { Type: bool, Default: false, Doc: "40 pixel rows." }
     Density { Type: str, Default: "", Doc: "The density of the rows (see Tree)." }
   }
+  A11y { Role: <| 'group' if level > 0 else 'none' |> }  # the children of an open branch are a group (AC-TRE-10)
   Style { Flex_Direction: vertical, Width: 100% }
   Children {
     For n In <| nodes |> Key <| n['value'] |> {
