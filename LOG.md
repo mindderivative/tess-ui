@@ -3653,3 +3653,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-21 The engine pin moves from 0.6.8 to 0.6.10 (the owner approved it)
 - `tesserae-engine==0.6.10` in `pyproject.toml`, the font checkout of CI and the release workflow at `v0.6.10`, and the README, DEVELOPING and PLAN lines. The pin stays one exact release (`tests/test_dependencies.py`), so the owner's `>=0.6.10` is the exact `0.6.10` until the next engine release. Not run here (the machine is on hold for measurements): the suite on 0.6.10; CI runs it. 0.6.10 adds `Window.announce` (0.6.9), hit-testing and role groundwork; tre 0.6.11 (unreleased) is what the draft adoption PR uses. The changelog line belongs with the next release's section, which is the maintainer's to open.
+
+## 2026-11-21 Density, step 3: Button and Icon button (AC-BTN-1, AC-ICB-1)
+- At a density, the default-size (`s`) Button is 40/32/28 high and the default Icon button container 40/32/28 (icon 24/20/20); other sizes (xs, m, l, xl: the Expressive sizes) and no density are as before. Fields are not changed: the shipped `TextField` is the 56 dp floating-label (touch) variant, which the spec keeps; a compact single-line field is a different component and not built yet (the config window's inputs are plain `TextInput`s).
