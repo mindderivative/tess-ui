@@ -35,7 +35,7 @@ Overlay {
   Children {
     Container {
       Name: bar
-      A11y { Role: alert, Live: polite, Label: <| message |> }
+      A11y { Role: status, Live: polite, Label: <| message |> }
       Style {
         Flex_Direction: horizontal
         Align_Content: left

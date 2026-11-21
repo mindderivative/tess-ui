@@ -275,7 +275,7 @@ class Snackbar(Overlay):
     button (`inverse_primary`, calling `on_action` and closing) and an
     optional close icon button. It opens 24 px in and 72 px up from the
     bottom, isn't modal, ignores outside presses and Escape, and hides
-    itself after `duration` ms (4000; `None` keeps it). `role="alert"`,
+    itself after `duration` ms (4000; `None` keeps it). `role="status"`,
     announced politely."""
 
     dismissible = False
@@ -301,7 +301,7 @@ class Snackbar(Overlay):
                                         "align_content": "left", "padding": {"left": 16, "right": 16, "top": 0, "bottom": 0}}, children=children)
         widget = Widget(window, call=call, components={None: "snackbar"}, theme=theme, name=name, attach=False)
         super().__init__(window, widget)
-        a11y.describe(self.node, role="alert", live="polite")
+        a11y.describe(self.node, role="status", live="polite")
         self._timer = _Timer(window)
         if action is not None:
             widget.on_click(lambda: (on_action() if on_action else None, self.close()), part="action")

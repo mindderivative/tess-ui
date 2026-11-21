@@ -3655,6 +3655,13 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 - Rows follow the app's density (`App(density=)`; no density asked keeps the Material sizes): List item 40/32/24 (a second line adds 20, a third 40; padding row_padding_x, gap icon_label_gap, vertical padding centres a 20 line), Accordion header 40/32/24, Menu item 40/32/28 (AC-LSI-02, AC-ACC-01, AC-MEN-1). The multi-line growth of a list item is my reading: the spec's table gives single-line rows only; ux-vault to confirm.
 - These three read the app's density only (`app_density()`); a per-component `Density` property is not added yet.
 
+## 2026-11-21 Draft: adopting what tre main (0.6.11, unreleased) gives (merge only after the release and the pin move)
+- Tried in a scratch venv with `tess_re` built from tre main (`~/tre-scratch-venv`): the whole suite passes except the pin test, which says the installed engine is not 0.6.8 (the draft does not touch the pin: moving it is a release step).
+- Roles: the 18 new roles are in `a11y.ROLES`; the snackbar is `status` (polite, not the assertive `alert`; AC-SNK-3), the spin box field is a `spinbutton` with value, min, max and step (AC-SPN-10, TUI-043).
+- Announcements: `App.show` tells the engine's `Window.announce` the new screen's name, politely, when the screen changes (AC-RTV-10, TUI-051). An engine without `announce` stays silent.
+- Text: a `Text` node is hovered now, so the config form's doc tooltip is the label Text's (AC-TIP-1, AC-TRN-08); a single-line text input is centred by the engine, so the window's 7/7 padding workaround is gone (TUI-024).
+- `hit_testable` is `None` when unset (the old test expected True).
+- Not in this draft: the two-axis scroll view for the config panes (orientation='both') and the scheme baseline (`scheme=`/`scheme_colors`), which touch more; next drafts.
 ## 2026-11-21 The engine pin moves from 0.6.8 to 0.6.10 (the owner approved it)
 - `tesserae-engine==0.6.10` in `pyproject.toml`, the font checkout of CI and the release workflow at `v0.6.10`, and the README, DEVELOPING and PLAN lines. The pin stays one exact release (`tests/test_dependencies.py`), so the owner's `>=0.6.10` is the exact `0.6.10` until the next engine release. Not run here (the machine is on hold for measurements): the suite on 0.6.10; CI runs it. 0.6.10 adds `Window.announce` (0.6.9), hit-testing and role groundwork; tre 0.6.11 (unreleased) is what the draft adoption PR uses. The changelog line belongs with the next release's section, which is the maintainer's to open.
 
