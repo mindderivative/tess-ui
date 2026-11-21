@@ -18,13 +18,13 @@ Styles {
   Rule {
     Widget: Button
     Style {
-      Height: 40
+      Height: <| 40 if app_density() == '' else density_token(app_density(), 'control_height') |>
       Transition { Corner_Radius: 200, Elevation: 200, Background: 150 }
     }
   }
   # sizes
   Rule { Widget: Button, Size: xs, Style { Height: 32, Gap: 4 } }
-  Rule { Widget: Button, Size: s, Style { Height: 40, Gap: 8 } }
+  Rule { Widget: Button, Size: s, Style { Height: <| 40 if app_density() == '' else density_token(app_density(), 'control_height') |>, Gap: 8 } }
   Rule { Widget: Button, Size: m, Style { Height: 56, Gap: 8 } }
   Rule { Widget: Button, Size: l, Style { Height: 96, Gap: 12 } }
   Rule { Widget: Button, Size: xl, Style { Height: 136, Gap: 16 } }
@@ -188,11 +188,11 @@ Each rule names `Widget: Button` and may add the properties the view declares (a
 
 | When | Field | Value | What it does |
 | --- | --- | --- | --- |
-| always | `Height` | `40` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| always | `Height` | `<\| 40 if app_density() == '' else density_token(app_density(), 'control_height') \|>` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
 | always | `Transition` | `{ Corner_Radius: 200, Elevation: 200, Background: 150 }` | Which style changes ease to their new value: a duration in milliseconds, or `{Duration, easing, bounce}`. `all` covers every one that can. A node is where it says when first drawn; only a change eases. |
 | `Size: xs` | `Height` | `32` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
 | `Size: xs` | `Gap` | `4` | Space between its children. |
-| `Size: s` | `Height` | `40` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| `Size: s` | `Height` | `<\| 40 if app_density() == '' else density_token(app_density(), 'control_height') \|>` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
 | `Size: s` | `Gap` | `8` | Space between its children. |
 | `Size: m` | `Height` | `56` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
 | `Size: m` | `Gap` | `8` | Space between its children. |

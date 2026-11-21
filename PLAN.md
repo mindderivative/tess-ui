@@ -4,7 +4,7 @@ Where tess-ui stands and what comes next. History is in `LOG.md` and `docs/chang
 
 ## Where it stands (2026-11-20)
 
-- Released: tesserae-ui 0.6.3 (PyPI, import `tess_ui`), on `tesserae-engine` 0.6.8 (`tess_re`), `tesserae-el` 0.2.0 (expressions), `tesserae-dl` 0.2 (TDL files) and `tesserae-utils` 0.2.2 (colours, images). Python 3.14 is the floor.
+- Released: tesserae-ui 0.6.3 (PyPI, import `tess_ui`), on `tesserae-engine` 0.6.11 (`tess_re`), `tesserae-el` 0.2.0 (expressions), `tesserae-dl` 0.2 (TDL files) and `tesserae-utils` 0.2.2 (colours, images). Python 3.14 is the floor.
 - Views, stylesheets and themes are TDL (`*_View.tdl`, `*_Stylesheet.tdl`, `*_Theme.tdl`); YAML is no longer read. The switch is finished: `design/tdl-switch-plan.md` (history).
 - Releases run through `release.yml` after green CI on `main`; the maintainer approves the `pypi` environment. See `DEVELOPING.md`, section 6.
 - Every shipped stylesheet has a generated docs page (#291).

@@ -302,7 +302,7 @@ def test_the_shipped_view_validates_against_the_widget_schema_all_the_way_down()
         errors = list(validator.iter_errors(unwrapped(plain(load_marked_tdl(path.read_text(encoding="utf-8"), path.name)))))
         assert not errors, f"{path.name}: {errors[0].message[:200]}"
     broken = plain(load_marked_tdl(views["TextField"].read_text(encoding="utf-8"), "TextField_View.tdl"))
-    broken["children"][1]["children"][1]["children"][1]["valu"] = 1  # a misspelt property deep inside
+    broken["children"][2]["children"][1]["children"][1]["valu"] = 1  # a misspelt property deep inside
     assert list(validator.iter_errors(broken))
     json.dumps(schema)
 

@@ -1279,7 +1279,7 @@ splitter(
 ) -> Widget
 ```
 
-Two panes and the handle between them: `first` and `second` (nodes or widgets) share `width` (a `horizontal` splitter) or `height` (`vertical`) less the 16 px handle, `first` getting `.position` (a `Signal`, 0..1) of it. The handle holds MD3's 4x48 `outline` drag handle, shows a `col_resize` (or `row_resize`) cursor, and is a focusable `role="slider"`: dragging it (with pointer capture) puts the split under the pointer, clamped, at once; the arrow keys move it by 5%, Home and End to the ends.
+Two panes and the handle between them: `first` and `second` (nodes or widgets) share `width` (a `horizontal` splitter) or `height` (`vertical`) less the 16 px handle, `first` getting `.position` (a `Signal`, 0..1) of it. The handle holds MD3's 4x48 `outline` drag handle, shows a `col_resize` (or `row_resize`) cursor, and is a focusable `role="separator"`: dragging it (with pointer capture) puts the split under the pointer, clamped, at once; the arrow keys move it by 5%, Home and End to the ends.
 
 ### `split_button`
 

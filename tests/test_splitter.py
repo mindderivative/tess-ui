@@ -101,7 +101,7 @@ def test_a_vertical_one_stacks_the_panes(tmp_path):
 def test_the_handle_is_a_slider_with_a_cursor_and_a_tab_stop(tmp_path):
     view, _ = opened(tmp_path, "Label: Resize the sidebar")
     h = handle(view)
-    assert (h.get("role"), h.get("label")) == ("slider", "Resize the sidebar") and h.get("focusable") is True
+    assert (h.get("role"), h.get("label")) == ("separator", "Resize the sidebar") and h.get("focusable") is True
     assert (h.get("value"), h.get("value_min"), h.get("value_max")) == (0.5, 0.0, 1.0) and h.get("cursor") == "col_resize"
 
 

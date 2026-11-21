@@ -210,6 +210,7 @@ Container {
               Children {
                 Tree {
                   Name: files_tree
+                  Label: Files
                   Nodes: <| file_nodes |>
                   Expanded: <| file_expanded |>
                   Selected: <| file_selected |>
@@ -344,6 +345,7 @@ Container {
                 Children {
                   Tree {
                     Name: structure_tree
+                    Label: Structure
                     Nodes: <| structure_nodes |>
                     Expanded: <| structure_expanded |>
                     Selected: <| structure_selected |>
