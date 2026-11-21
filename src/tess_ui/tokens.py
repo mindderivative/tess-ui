@@ -32,7 +32,7 @@ from tess_utils import parse_color
 
 __all__ = [
     "BASELINE", "BASELINE_SEED", "ELEVATION_LEVELS", "baseline_scheme", "ROLES", "SHAPES", "TYPE_SCALE", "TypeStyle", "color_scheme",
-    "RIPPLE_INITIAL_SCALE", "RIPPLE_MS", "STATE_LAYER", "color_scheme",
+    "RIPPLE_INITIAL_SCALE", "RIPPLE_MS", "STATE_LAYER",
     "elevation", "elevation_shadows", "FULL_RADIUS", "HEIGHT_CLASSES", "MD3_TRACKING", "MD3_TRACKING_TYPOGRAPHY", "WIDTH_CLASSES", "height_class", "width_class", "resolve_color", "resolve_scheme", "shape", "type_style",
 ]
 

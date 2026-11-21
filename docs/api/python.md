@@ -429,6 +429,9 @@ The font size, weight, line height and tracking of the MD3 type role `role`, or 
 - `ROLES` = `tuple of 49`
 - `SHAPES` = `dict of 6`
 - `TYPE_SCALE` = `dict of 15`
+- `RIPPLE_INITIAL_SCALE` = `0.2`
+- `RIPPLE_MS` = `dict of 5`
+- `STATE_LAYER` = `{'hover': 0.08, 'focus': 0.1, 'pressed': 0.1, 'dragged': 0.16}`
 - `FULL_RADIUS` = `9999.0`
 - `HEIGHT_CLASSES` = `(('compact', 0.0), ('medium', 480.0), ('expanded', 900.0))`
 - `MD3_TRACKING` = `dict of 15`
