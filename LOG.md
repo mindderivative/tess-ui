@@ -3660,3 +3660,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-21 Density, step 3: Button and Icon button (AC-BTN-1, AC-ICB-1)
 - At a density, the default-size (`s`) Button is 40/32/28 high and the default Icon button container 40/32/28 (icon 24/20/20); other sizes (xs, m, l, xl: the Expressive sizes) and no density are as before. Fields are not changed: the shipped `TextField` is the 56 dp floating-label (touch) variant, which the spec keeps; a compact single-line field is a different component and not built yet (the config window's inputs are plain `TextInput`s).
+
+## 2026-11-21 The density holder is not reactive (the pytest -n flake)
+- The shell-config a11y test errored under a parallel run with `root.vp.stage.picture: a frame is (rgba bytes, width, height)`. Cause: `tel._app_density` was a `Signal`, and `App(...)` sets it; any live view whose effect had read `app_density()` (a finished test's video player, kept alive by the run) ran again and raised on its old 2x2 frame, in whichever test was running. A plain holder with `get`/`set` fixes it (`App.set_density` already recomposes the views that are showing). Reproduced deterministically with `tests/test_video_player.py` followed by the a11y test; pinned by `test_making_an_app_does_not_run_the_effects_of_views_that_are_still_alive`.
