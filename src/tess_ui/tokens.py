@@ -32,6 +32,7 @@ from tess_utils import parse_color
 
 __all__ = [
     "BASELINE", "BASELINE_SEED", "DENSITY", "DENSITY_LEVELS", "density_token", "ELEVATION_LEVELS", "baseline_scheme", "ROLES", "SHAPES", "TYPE_SCALE", "TypeStyle", "color_scheme",
+    "RIPPLE_INITIAL_SCALE", "RIPPLE_MS", "STATE_LAYER",
     "elevation", "elevation_shadows", "FULL_RADIUS", "HEIGHT_CLASSES", "MD3_TRACKING", "MD3_TRACKING_TYPOGRAPHY", "WIDTH_CLASSES", "height_class", "width_class", "resolve_color", "resolve_scheme", "shape", "type_style",
 ]
 
@@ -92,6 +93,13 @@ def density_token(level: str, token: str) -> float:
 
 #: The seed of Material 3's baseline colours (#6750A4): the scheme an app with no seed and no theme seed is drawn in, light or dark.
 BASELINE_SEED: RGBA = (0x67, 0x50, 0xA4, 0xFF)
+#: The state-layer opacities (the spec's State Layers, ADR-0009, ADR-0013): one definition, which `interaction` and `ripple` read. Precedence when several hold: dragged, pressed, focused, hovered.
+STATE_LAYER: dict[str, float] = {"hover": 0.08, "focus": 0.10, "pressed": 0.10, "dragged": 0.16}
+#: Material Web's `md-ripple` timing, in ms, and the ripple's start size as a fraction of the larger side.
+RIPPLE_MS: dict[str, int] = {"hover_fade": 15, "press_grow": 450, "press_fade_in": 105, "minimum_press": 225, "release_fade": 375}
+RIPPLE_INITIAL_SCALE = 0.2
+
+
 BASELINE: dict[str, RGBA] = {role: _hex(value) for role, value in {
     "error": "#B3261E", "inverse_on_surface": "#F4EFF4", "inverse_primary": "#D0BCFF",
     "inverse_surface": "#313033", "on_error": "#FFFFFF", "on_primary": "#FFFFFF",
