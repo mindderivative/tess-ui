@@ -20,7 +20,7 @@ def w(tmp_path, schema):
 
 
 def row_parts(w):
-    """(row id, row doc, label_box node, the focusable control node) for each form row that has a doc."""
+    """(row id, row doc, label node, the focusable control node) for each form row that has a doc."""
     view = w.built.view
     found = {}
     for inst in view.handle.composition.walk():
@@ -29,7 +29,7 @@ def row_parts(w):
             found.setdefault(key, {}).setdefault(inst.name, inst)
     docs = {item["id"]: item["doc"] for item in w.vm.form_items.get() if item["type"] == "row"}
     for key, parts in found.items():
-        if docs.get(key) and "label_box" in parts and "row" in parts:
+        if docs.get(key) and "label" in parts and "row" in parts:
             yield key, docs[key], parts
 
 
@@ -53,13 +53,13 @@ def test_the_label_shows_its_keys_doc_and_nothing_else_does(w):
     assert len(rows) >= 3
     key, doc, parts = rows[0]
     assert not parts["row"].tooltip, "the row itself must not carry the doc: it covers the control and the reset button"
-    x, y = point(view, parts["label_box"])
+    x, y = point(view, parts["label"])
     view.window.simulate("pointer_move", x=x, y=y)
     run(view, 700)
     assert tip_texts(view) == [doc]
     # onto another row's label: the first tooltip is gone, the second is shown, never both
     key2, doc2, parts2 = rows[1]
-    x, y = point(view, parts2["label_box"])
+    x, y = point(view, parts2["label"])
     view.window.simulate("pointer_move", x=x, y=y)
     run(view, 700)
     assert tip_texts(view) == [doc2]

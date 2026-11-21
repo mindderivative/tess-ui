@@ -365,7 +365,7 @@ Handlers {
 | Key | Values | What it does |
 | --- | --- | --- |
 | `Label` | text | The name a screen reader says. |
-| `Role` | one of 24 names | What kind of thing it is. |
+| `Role` | one of 42 names | What kind of thing it is. |
 | `Hidden` | `true` or `false` | Hide it from assistive technology. |
 | `Live` | `assertive` \| `off` \| `polite` | How changes to it are announced. |
 | `Level` | an integer | A heading's level. |

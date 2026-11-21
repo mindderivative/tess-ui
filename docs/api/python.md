@@ -2507,7 +2507,7 @@ Routes `node`'s `a11y_action` events to `handlers[action]`, each given the event
 - `EXTRAS` = `('pressed', 'invalid', 'description', 'current', 'value_now', 'value_text', 'busy')`
 - `LIVE` = `{'assertive', 'off', 'polite'}`
 - `RELATIONS` = `('describedby', 'controls')`
-- `ROLES` = `frozenset of 24`
+- `ROLES` = `frozenset of 42`
 
 ## Bindings
 

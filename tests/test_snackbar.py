@@ -159,7 +159,7 @@ def test_it_is_not_modal_and_a_press_elsewhere_does_not_close_it(tmp_path):
 def test_it_is_announced_politely_as_an_alert(tmp_path):
     view, _ = opened(tmp_path)
     bar = sb(view, "bar")
-    assert bar.get("role") == "alert" and bar.get("live") == "polite" and bar.get("label") == "Message deleted"
+    assert bar.get("role") == "status" and bar.get("live") == "polite" and bar.get("label") == "Message deleted"
 
 
 def test_it_can_be_centred_and_follows_the_window(tmp_path):
