@@ -850,7 +850,11 @@ class ComposedView(View):
             self._hide_tip(inst_id)  # a scroll of any ancestor moves the trigger from under the tip (AC-TIP-6)
 
         undos.append(self._listen(self.window.root, "key_down", dismiss))
-        undos.append(listen_window(self.window, "active", lambda event, inst_id=inst.id: None if getattr(event, "active", True) else self._hide_tip(inst_id)))  # focus loss (AC-TIP-8c)
+        def deactivated(event: Any, inst_id: str = inst.id) -> None:
+            if not getattr(event, "active", True):
+                self._hide_tip(inst_id)  # the window lost the focus (AC-TIP-8c)
+
+        undos.append(listen_window(self.window, "active", deactivated))
         ancestor = inst.parent
         while ancestor is not None:  # the scroll event does not reach the root, so each scrolling ancestor is listened to
             if ancestor.widget == "ScrollView" and ancestor.id in self._built.outer:
