@@ -6,7 +6,7 @@ Tesserae: "0.6"
 # The Material 3 floating action button, and its extended form: an icon in a prominent container, with a label beside it when `label` is given. In four
 # colours (`variant`: primary, secondary, tertiary, surface) and three sizes (`size`: small 40, medium 56, large 96). An extended FAB collapses to just its icon
 # when `collapsed` is true; bind that to the way a list scrolls (`collapsed: "{{ way == 'down' }}"`) for the usual behaviour. `label` names it for a screen
-# reader and, when it is only an icon, is its tooltip. `handlers: {on_click: add}` on the call is what a press does. Colours, sizes and how it lifts are in Fab_Stylesheet.tdl.
+# reader and, when it is only an icon, is its tooltip; with no `label` the icon's name (`add`, `edit note`) is the name and the tooltip, so it is never unnamed. `handlers: {on_click: add}` on the call is what a press does. Colours, sizes and how it lifts are in Fab_Stylesheet.tdl.
 Container {
   Params {
     Icon { Type: str, Default: "", Doc: "The icon." }
@@ -24,9 +24,9 @@ Container {
   }
   A11y {
     Role: button
-    Label: <| label |>
+    Label: <| label if label != '' else icon.replace('_', ' ') |>
   }
-  Tooltip: <| label if (label != '' and collapsed) else '' |>
+  Tooltip: <| (label if label != '' else icon.replace('_', ' ')) if (collapsed or label == '') else '' |>
   Children {
     If <| icon != '' |> {
       Icon {

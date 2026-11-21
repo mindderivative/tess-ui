@@ -3620,3 +3620,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 - Tests: `tests/test_tooltip.py`, `tests/test_tree.py` (new cases named by AC). Suite 7748 passed, 30 skipped (after fixing the title-bar tips that have no parent).
 ## 2026-11-21 An App with no seed and dark=True says so
 - `App(dark=True)` (and `set_dark(True)`, and an OS switch to dark) on an app with no `theme_seed` and no theme seed changed nothing: no seed means no colour scheme, and the roles are the engine's light ones. It now logs one warning naming the fix. The default `dark="system"` does not warn (most apps without a seed never asked for dark). `tests/test_app_dark_seed.py`.
+
+## 2026-11-21 An icon-only FAB is named (UX spec AC-FAB-8, AC-FAB-9)
+- `Fab` with no `Label` had an empty accessible name and no tooltip. Its name is now the label, else the icon's name with underscores as spaces (`music_note` is "music note"), and that is also its tooltip whenever no text shows beside the icon. Pinned in `tests/test_fab.py`. The audit asked for a required Label; a fallback keeps every existing FAB working and never leaves one unnamed. A real label is still better and says more.
