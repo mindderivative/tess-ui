@@ -3601,3 +3601,10 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 - Cause, in the app: the form row's doc was the `tooltip:` of the whole row container, so the doc showed over the label, the control and the reset button alike. It is the label box's tooltip now.
 - Pinned: `tests/test_tooltip.py` (each node hides its own, one at a time, a press hides it; these fail without the fix) and `apps/shell_config/tests/test_shell_config_tooltips.py` (the row has no tooltip; the label shows the doc, another label replaces it, leaving clears it). The click-on-a-switch symptom (text without a background) is not reproduced headless; it may have been a leftover tooltip layer, so it needs the owner's recheck.
 - Checked: full suite 7737 passed, 30 skipped; check.py.
+
+## 2026-11-20 Shell config window: density and fit (the owner's feedback on the live demo, points 3-7)
+- Trees: the app's `Main_Stylesheet.tdl` overrides the shipped `TreeNode` padding: 4 px in and 16 per level (it was 16 and 24), 4 px between the parts; the row label gets `Min_Width: 0` so a long name ends in an ellipsis instead of being cut. The toolkit's Tree is unchanged (56/40 px Material rows are right for other apps).
+- Files: the folder path is `Width: 100%, Min_Width: 0` (the ellipsis it already asked for had no width to work against) and its tooltip is the whole path.
+- Single-line fields: padding 7 above and below in a 32 px box, so the text is centred (it was 4 and 4, which put it high).
+- Horizontal scrolling: not added. A `ScrollView` scrolls one way (`Orientation`), so a pane that scrolls both would need two nested ones; instead the content fits (ellipsis, denser trees). Say so if a real horizontal scroll bar is still wanted.
+- Pinned: `apps/shell_config/tests/test_shell_config_layout.py`. App tests 672 passed, 9 skipped.
