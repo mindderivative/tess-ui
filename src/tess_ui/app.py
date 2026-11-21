@@ -364,6 +364,9 @@ class App:
             os_dark = _os_dark(self._window)
             if os_dark is not None:
                 self._dark = os_dark
+        self._warned_no_seed = False
+        if dark is True:
+            self._warn_dark_needs_a_seed()
         self._current: str | None = None
         #: The window view (a `Window` root) once one is opened: its `Frame` (0.4.4)
         self._frame: Any = None
@@ -683,9 +686,22 @@ class App:
         if self._high_contrast_mode == "system":
             self._apply_contrast(self._wanted("high_contrast", "system"))
 
+    def _has_scheme(self) -> bool:
+        """Whether roles resolve to a colour scheme at all: that needs a seed, the app's own or a theme's (`tokens.resolve_scheme`)."""
+        return tokens.resolve_scheme(self._theme_seed, False, self._default_theme_spec, self._custom_theme_spec, 0.0) is not None
+
+    def _warn_dark_needs_a_seed(self) -> None:
+        """A dark app with no seed stays light: without a seed there is no scheme and the roles are the engine's fixed light ones. Said once, where it is asked for."""
+        if not self._warned_no_seed and not self._has_scheme():
+            self._warned_no_seed = True
+            logger.warning("App: dark was asked for but the app has no `theme_seed` (nor a theme with a `seed`), so there is no colour scheme and it stays light; "
+                           "give App(theme_seed=(r, g, b, a)) or a theme with a seed")
+
     def _apply_dark(self, dark: bool) -> None:
         if dark == self._dark:
             return
+        if dark:
+            self._warn_dark_needs_a_seed()
         old_theme = self._view_theme()
         self._dark = dark
         new_theme = self._view_theme()

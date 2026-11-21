@@ -53,7 +53,7 @@ def build(session: ConfigSession, *, width: int = 1280, height: int = 800, dark:
     viewmodel = ShellConfigViewModel(session)
     viewmodel.services.theme_setter = lambda mode: app.set_dark(_DARK[mode])
     if dark is not None:
-        viewmodel.services.set_theme({True: "dark", False: "light"}.get(dark, "system"), remember=False)
+        viewmodel.services.set_theme("dark" if dark is True else "light" if dark is False else "system", remember=False)
     app.bind(viewmodel)
     view = app.open_view("Main")
     window = app.show("main")
