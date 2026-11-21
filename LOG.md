@@ -3666,3 +3666,7 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 ## 2026-11-21 Density, step 5: the text field at compact and dense (ADR-0023, AC-TXF-3, AC-TXF-17, AC-TXF-19)
 - At the app's `compact` or `dense` density the `TextField`'s label is above the container, outside it (`external_label`, body_small, 4 or 2 px above); the container is 32 or 28 px high with 8 px horizontal padding and the input is `body_medium`. At `default` density, and with no density, the label floats in the 56 px container as before. The accessible name is the Label either way (the input's A11y label is unchanged).
 - Not done: a 40 px default-density field with an external label (the spec's non-floating default variant); the leading/trailing icon sizes at compact (20), and the multiline minimum.
+
+## 2026-11-21 The engine pin moves from 0.6.10 to 0.6.11
+- `tesserae-engine==0.6.11` (on PyPI; tag `v0.6.11` exists) in `pyproject.toml`, the CI and release font checkouts, README, DEVELOPING and PLAN. 0.6.11 brings what the drafts need: `scroll_view` with `orientation='both'` and the scrollbar properties, `hit_testable`, `vertical_align`, the new roles, state layers, focus outline, scheme baseline colours, `set_defaults`, `first_present`. The suite on the real wheel is CI's job; locally the venv is moved to 0.6.11 first.
+- On the real 0.6.11 wheel the suite passes but for one test: `hit_testable` reads `None` when unset (it was `True`), so `tests/test_pointer_events.py` now asserts "not False".
