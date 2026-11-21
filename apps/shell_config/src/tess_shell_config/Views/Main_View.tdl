@@ -432,11 +432,11 @@ Container {
                           If <| item['type'] == 'row' |> {
                             Container {
                               Name: row
-                              Tooltip: <| item['doc'] |>
                               Style { Flex_Direction: horizontal, Align_Content: left, Gap: 8, Width: 100% }
                               Children {
                                 Container {
                                   Name: label_box
+                                  Tooltip: <| item['doc'] |>
                                   Style { Flex_Direction: vertical, Width: 120, Gap: 0 }
                                   Children {
                                     Text {
