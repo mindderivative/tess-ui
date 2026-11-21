@@ -64,7 +64,7 @@ class _Handle:
         grip_w, grip_h = GRIP if horizontal else GRIP[::-1]
         self.grip = host.window.create("box", width=grip_w, height=grip_h, corner_radius=2.0, hit_testable=False, a11y_hidden=True)
         node.add_child(self.grip)
-        a11y.describe(node, role="slider", label=label, value_step=STEP)
+        a11y.describe(node, role="separator", label=label, value_step=STEP)
         self.interaction = Interaction(host.window, node, host._color("on_surface"), host._events.listen, host._color("secondary"))
         self._drag: Optional[tuple[float, float]] = None
         for event, fn in (("pointer_down", self._down), ("pointer_move", self._move), ("pointer_up", self._up),

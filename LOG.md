@@ -3635,3 +3635,8 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 - AC-TIP-8c: losing the window focus (the `active` window event) removes the tooltip.
 - AC-TYP-3, AC-TIP-13: the text of a tooltip reads the theme's type roles (`body_small` plain, `body_medium` rich text, `title_small`, `label_large`) with the theme's `typography:` overrides, not literal Roboto sizes. Rich body text is 14 now (it was 12), as the spec says.
 - Tests: `tests/test_tooltip.py` (grace, hoverable plain tooltip, focus loss, type-role override); the old tests that assumed an instant leave or an unhoverable plain tooltip were rewritten to the new rule.
+
+## 2026-11-21 Adoption batch C: roles (stacked on batch B)
+- TUI-055 (AC-SPL-10, AC-DCK-10): the splitter handle (Python `splitter()`, the TDL `Splitter`) and the dock's handle have role `separator` (they were `slider`); the engine has had the role since 0.5.6. Value, min, max, step and the keys are as before.
+- TUI-031 (AC-TRE-01, AC-TRE-10): `Tree` takes `Label` (the pane's name; the default stays "Tree" so nothing breaks) and the config app names its two trees Files and Structure; the children of an open branch are a `group`.
+- Not done, engine: TUI-043 `spinbutton` and TUI-056 `status` are not roles `tess_re` accepts (the node property lists button, checkbox, radio, switch, slider, progressbar, link, textbox, tab, tablist, tabpanel, menu, menuitem, dialog, alert, list, listitem, tree, treeitem, heading, img, group, separator, none), and TUI-051 needs `Window.announce`, which the engine does not have (the spec calls it). Reported as engine requests; no hidden live region in the meantime.

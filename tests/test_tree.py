@@ -274,3 +274,12 @@ def test_star_opens_every_closed_sibling_branch_and_no_others_AC_TRE_08(tmp_path
     view.window.simulate("key_down", key="*")
     settle(view, 6)
     assert sorted(vm.open.get()) == ["docs", "pics"]  # the two root branches; readme is a leaf and b (a deeper branch) is not a sibling
+
+
+def test_the_tree_is_named_by_what_it_is_and_the_children_of_an_open_branch_are_a_group_AC_TRE_01_AC_TRE_10(tmp_path):
+    view, _ = opened(tmp_path, "Label: Files")
+    assert view.node("root.t").get("role") == "tree" and view.node("root.t").get("label") == "Files"
+    children = view._built.outer["root.t.top.entry[docs].children"]
+    assert children.get("role") == "group"
+    assert view._built.outer["root.t.top"].get("role") != "group"
+    assert view.node("root.t").get("label") != "Tree"
