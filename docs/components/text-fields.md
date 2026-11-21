@@ -51,7 +51,7 @@ A view Tesserae ships is a `<Name>_View.tdl` (what it takes and what it is made 
 
 ### `TextField`
 
-The Material 3 text field: a labelled box around a text input, with an optional leading icon, prefix, suffix, trailing icon, supporting text, character counter and an error state. `Variant: filled | outlined`. What it looks like is in TextField_Stylesheet.tdl; this file is its structure. `Text` is two-way: give it a bare reference (`Text: "<| query |>"`) and typing writes `Query`. The label is raised (small, at the top) while the field has focus or text, and sits in the middle as a hint otherwise; it glides between the two (`Transition:` on its position).
+The Material 3 text field: a labelled box around a text input, with an optional leading icon, prefix, suffix, trailing icon, supporting text, character counter and an error state. `Variant: filled | outlined`. What it looks like is in TextField_Stylesheet.tdl; this file is its structure. `Text` is two-way: give it a bare reference (`Text: "<| query |>"`) and typing writes `Query`. At the `Compact` and `dense` density of the app the label is above the field, outside its 32 or 28 pixel container (ADR-0023); the floating label below is the default density's, and the Material size when no density is asked. The label is raised (small, at the top) while the field has focus or text, and sits in the middle as a hint otherwise; it glides between the two (`Transition:` on its position).
 
 | Parameter | Type | Default | Meaning |
 | --- | --- | --- | --- |
@@ -82,7 +82,7 @@ The Material 3 text field: a labelled box around a text input, with an optional 
 | `On_Edit` | `handler` |  | Called after each edit the user makes, once `Text` has been written. |
 | `Suggestions` | `list` | `[]` | Texts to offer while typing: those that contain what is typed show in a menu under the field, and pressing one fills it in. |
 
-Its parts, by name (a stylesheet rule's `Part` or `Name` addresses one): `offers` (Menu), `box` (Container), `leading_icon` (Icon), `body` (Container), `prefix` (Text), `input` (TextInput), `suffix` (Text), `error_icon` (Icon), `trailing_icon` (Icon), `reveal_button` (Rect), `reveal_icon` (Icon), `label_box` (Container), `label` (Text), `indicator` (Rect), `footer` (Container), `supporting` (Text), `counter` (Text).
+Its parts, by name (a stylesheet rule's `Part` or `Name` addresses one): `offers` (Menu), `external_label` (Text), `box` (Container), `leading_icon` (Icon), `body` (Container), `prefix` (Text), `input` (TextInput), `suffix` (Text), `error_icon` (Icon), `trailing_icon` (Icon), `reveal_button` (Rect), `reveal_icon` (Icon), `label_box` (Container), `label` (Text), `indicator` (Rect), `footer` (Container), `supporting` (Text), `counter` (Text).
 
 Its look is in [`TextField_Stylesheet.tdl`](../stylesheets/text-fields/text-field.md).
 

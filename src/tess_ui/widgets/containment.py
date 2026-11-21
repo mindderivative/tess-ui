@@ -293,7 +293,7 @@ def splitter(
     (`vertical`) less the 16 px handle, `first` getting `.position` (a
     `Signal`, 0..1) of it. The handle holds MD3's 4x48 `outline` drag
     handle, shows a `col_resize` (or `row_resize`) cursor, and is a
-    focusable `role="slider"`: dragging it (with pointer capture) puts
+    focusable `role="separator"`: dragging it (with pointer capture) puts
     the split under the pointer, clamped, at once; the arrow keys move it
     by 5%, Home and End to the ends. `.on_change(fn)` hears the user's
     moves. Parts `first`, `handle`, `second`."""
@@ -332,7 +332,7 @@ def splitter(
         widget.part(part).add_child(node)
     handle = widget.part("handle")
     handle.set(focusable=True, cursor="col_resize" if horizontal else "row_resize")
-    a11y.describe(handle, role="slider", label=label, value_min=0.0, value_max=1.0, value_step=SPLIT_STEP)
+    a11y.describe(handle, role="separator", label=label, value_min=0.0, value_max=1.0, value_step=SPLIT_STEP)
     widget.orientation = orientation
     widget.position = Signal(float(position))
     changes: list[Callable[[float], Any]] = []
