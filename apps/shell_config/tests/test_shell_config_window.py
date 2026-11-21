@@ -260,7 +260,10 @@ def test_the_format_button_formats_only_when_asked(folder, tmp_path):
 
 def test_a_failed_save_says_why_in_the_status_and_keeps_the_edit(folder, tmp_path):
     import os
+    import sys
 
+    if sys.platform == "win32":
+        pytest.skip("a folder's mode bits do not stop a write on Windows (and there is no geteuid)")
     if os.geteuid() == 0:
         pytest.skip("root can write to a read-only folder")
     w = opened(folder, tmp_path)

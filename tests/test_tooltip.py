@@ -380,3 +380,81 @@ def test_a_touch_held_in_place_shows_it(tmp_path):
     assert not view._tips
     run(view, 600)
     assert texts(view) == ["Delete"]
+
+
+NESTED = TDL + """Container {
+  Name: main
+  Style { Flex_Direction: vertical, Width: 400, Height: 200 }
+  Children {
+    Container {
+      Name: row
+      Tooltip: The row
+      Style { Flex_Direction: horizontal, Gap: 8, Width: 100%, Height: 40 }
+      Children {
+        Container { Name: first, Tooltip: First, Style { Width: 120, Height: 30, Background: primary } }
+        Container { Name: second, Tooltip: Second, Style { Width: 30, Height: 30, Background: secondary } }
+      }
+    }
+    Container { Name: other, Style { Width: 80, Height: 40, Background: secondary } }
+  }
+}
+"""
+
+
+def nested(tmp_path):
+    (tmp_path / "Views").mkdir(exist_ok=True)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(NESTED)
+    app = App(root=tmp_path)
+    app.bind(VM)
+    view = app.open_view("Main")
+    app.show("main")
+    view.window.advance(16)
+    return view
+
+
+def move_onto(view, path):
+    node = view.node(f"root.{path}")
+    view.window.simulate("pointer_move", x=node.get("layout_x") + 8, y=node.get("layout_y") + 8)
+
+
+def shown(view):
+    return sorted(texts(view)[i] for i in range(len(texts(view))))
+
+
+def test_every_node_hides_its_own_tooltip_when_the_pointer_leaves_it(tmp_path):
+    """Leaving a node hid the tooltip of the LAST node that has one (a closure over the loop's last `away`), so the others stayed for ever."""
+    view = nested(tmp_path)
+    move_onto(view, "row.first")
+    run(view, 600)
+    assert shown(view) == ["First"]
+    move_onto(view, "row.second")
+    run(view, 100)
+    assert shown(view) == []
+    run(view, 600)
+    assert shown(view) == ["Second"]
+    move_onto(view, "other")
+    run(view, 100)
+    assert shown(view) == []
+    run(view, 1000)
+    assert shown(view) == []
+
+
+def test_only_one_tooltip_is_shown_at_a_time_and_the_row_does_not_come_back(tmp_path):
+    view = nested(tmp_path)
+    move_onto(view, "row")  # the row's own box (its first child is the point under the pointer, so the row is entered first)
+    run(view, 600)
+    assert len(view._tips) <= 1
+    move_onto(view, "row.first")
+    run(view, 600)
+    assert shown(view) == ["First"]
+
+
+def test_a_press_hides_the_tooltip_and_none_is_shown_again_until_the_pointer_re_enters(tmp_path):
+    view = nested(tmp_path)
+    move_onto(view, "row.first")
+    run(view, 600)
+    node = view.node("root.row.first")
+    view.window.simulate("pointer_down", x=node.get("layout_x") + 8, y=node.get("layout_y") + 8)
+    view.window.simulate("pointer_up", x=node.get("layout_x") + 8, y=node.get("layout_y") + 8)
+    run(view, 1000)
+    assert shown(view) == []

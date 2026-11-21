@@ -779,7 +779,7 @@ class ComposedView(View):
                 self.timers.cancel(f"tip:{inst.id}")
                 self._hide_tip(inst.id)
 
-            def leave(event: Any = None, inst: Instance = inst) -> None:
+            def leave(event: Any = None, inst: Instance = inst, away: Callable[..., None] = away) -> None:  # `away` bound now: the loop rebinds the name
                 """A rich tooltip stays while the pointer moves onto it: it goes a moment after the pointer leaves the node, unless it has arrived."""
                 if inst.id in self._tips and self._tip_rich(inst):
                     self.timers.cancel(f"tip:{inst.id}")
@@ -797,6 +797,8 @@ class ComposedView(View):
         text = self._tip_value(inst, "text")
         if inst.id in self._tips or not text or not str(text).strip() or inst.id not in self._built.outer:
             return
+        for other in list(self._tips):  # one tooltip at a time: the node the pointer is on now (or the focus) is the one that explains itself
+            self._hide_tip(other)
         scheme = self._scheme or tokens.BASELINE
         title = self._tip_value(inst, "title")
         actions = inst.tooltip.get("actions") or []
