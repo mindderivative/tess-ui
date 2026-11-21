@@ -3613,3 +3613,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 - A Theme button in the toolbar (and Ctrl+Shift+T) cycles System, Light, Dark; the choice is kept in the state folder (`settings.json`); `--theme system|light|dark` is for one run and is not kept.
 - Pinned: `apps/shell_config/tests/test_shell_config_theme.py` (a dark run and a light run differ in the pixels, the button cycles and the next run starts as left). Rendered in dark: all five areas, the Add dialog and the Problems list. App tests 672 passed, 9 skipped.
 - Toolkit note, not changed: an `App` with no seed silently ignoring `dark` deserves a warning or a default seed; worth its own issue.
+
+## 2026-11-21 An App with no seed and dark=True says so
+- `App(dark=True)` (and `set_dark(True)`, and an OS switch to dark) on an app with no `theme_seed` and no theme seed changed nothing: no seed means no colour scheme, and the roles are the engine's light ones. It now logs one warning naming the fix. The default `dark="system"` does not warn (most apps without a seed never asked for dark). `tests/test_app_dark_seed.py`.
