@@ -52,7 +52,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return CANNOT_START
     from tess_shell_config.app import build
 
-    built = build(session, live=True, dark={"system": "system", "light": False, "dark": True}.get(args.theme))
+    modes: dict[str | None, bool | str | None] = {None: None, "system": "system", "light": False, "dark": True}
+    built = build(session, live=True, dark=modes[args.theme])
     try:
         built.app.run()
     finally:
