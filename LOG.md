@@ -3629,3 +3629,9 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 - TUI-010 not done, with a reason: the spec wants the tooltip on the label Text, but a `Text` node gets no pointer enter or leave from the engine (the container does), so a tooltip on it never shows. The tooltip stays on the label's container (`label_box`, no role, no descendant with a tooltip). Engine need reported.
 ## 2026-11-21 An icon-only FAB is named (UX spec AC-FAB-8, AC-FAB-9)
 - `Fab` with no `Label` had an empty accessible name and no tooltip. Its name is now the label, else the icon's name with underscores as spaces (`music_note` is "music note"), and that is also its tooltip whenever no text shows beside the icon. Pinned in `tests/test_fab.py`. The audit asked for a required Label; a fallback keeps every existing FAB working and never leaves one unnamed. A real label is still better and says more.
+
+## 2026-11-21 Adoption batch B: tooltips (stacked on batch A)
+- ADR-0011 (AC-TIP-4, AC-TIP-17): every tooltip, plain too, is hit testable and stays 150 ms after the pointer leaves its trigger, so the pointer can move onto it; leaving the tooltip closes it after the same grace; a press still removes it at once. A consequence the spec accepts: a plain tooltip below its trigger can sit over the next control for 150 ms and take the pointer.
+- AC-TIP-8c: losing the window focus (the `active` window event) removes the tooltip.
+- AC-TYP-3, AC-TIP-13: the text of a tooltip reads the theme's type roles (`body_small` plain, `body_medium` rich text, `title_small`, `label_large`) with the theme's `typography:` overrides, not literal Roboto sizes. Rich body text is 14 now (it was 12), as the spec says.
+- Tests: `tests/test_tooltip.py` (grace, hoverable plain tooltip, focus loss, type-role override); the old tests that assumed an instant leave or an unhoverable plain tooltip were rewritten to the new rule.

@@ -783,7 +783,7 @@ class ComposedView(View):
 
             def leave(event: Any = None, inst: Instance = inst, away: Callable[..., None] = away) -> None:  # `away` bound now: the loop rebinds the name
                 """A rich tooltip stays while the pointer moves onto it: it goes a moment after the pointer leaves the node, unless it has arrived."""
-                if inst.id in self._tips and self._tip_rich(inst):
+                if inst.id in self._tips:
                     self.timers.cancel(f"tip:{inst.id}")
                     self.timers.after(self.TIP_GRACE, lambda: self._hide_tip(inst.id), name=f"tipclose:{inst.id}")
                 else:
@@ -794,6 +794,15 @@ class ComposedView(View):
                 self._tip_undos.append(self._listen(node, event_name, fn))
         for gone in set(self._tips) - live:
             self._hide_tip(gone)
+
+    def _tip_text(self, role: str, **extra: Any) -> dict[str, Any]:
+        """The text properties of a type role as the theme has it (its `typography:` override included), for a tooltip's text (AC-TYP-3, AC-TIP-13)."""
+        style = tokens.type_style(role)
+        assert style is not None
+        override = (getattr(self._layers, "typography", None) or {}).get(role)
+        if override:
+            style = tokens.TypeStyle(**{f: override.get(f, getattr(style, f)) for f in ("font_family", "font_weight", "font_size", "line_height", "tracking")})
+        return {"font_family": style.font_family, "font_size": style.font_size, "font_weight": style.font_weight, **extra}
 
     def _show_tip(self, inst: Instance) -> None:
         text = self._tip_value(inst, "text")
@@ -810,23 +819,23 @@ class ComposedView(View):
         layer = self.window.create(
             "box", flex_direction="vertical", gap=4.0, fill=scheme["surface_container" if rich else "inverse_surface"],
             corner_radius=12.0 if rich else 4.0, max_width=self.TIP_WIDTH, padding_left=pad_x, padding_right=pad_x, padding_top=pad_y,
-            padding_bottom=pad_y, hit_testable=rich, a11y_hidden=True,
+            padding_bottom=pad_y, hit_testable=True, a11y_hidden=True,
             shadows=tokens.elevation_shadows(2) if rich else [])
         if title:
-            layer.add_child(self.window.create("text", text=str(title), font_family="Roboto", font_size=14.0, font_weight=500.0, fill=ink))
-        layer.add_child(self.window.create("text", text=str(text), font_family="Roboto", font_size=12.0, fill=ink, wrap="word"))
+            layer.add_child(self.window.create("text", text=str(title), fill=ink, **self._tip_text("title_small")))
+        layer.add_child(self.window.create("text", text=str(text), fill=ink, wrap="word", **self._tip_text("body_medium" if rich else "body_small")))
         undos = []
         if actions:
             row = self.window.create("box", flex_direction="horizontal", gap=8.0, margin_top=8.0, justify_content="end")
             for label, held in actions:
                 button = self.window.create("box", padding_left=12.0, padding_right=12.0, padding_top=6.0, padding_bottom=6.0, corner_radius=16.0,
                                             focusable=True, role="button", label=str(label.get() if hasattr(label, "get") else label))
-                button.add_child(self.window.create("text", text=str(label.get() if hasattr(label, "get") else label), font_family="Roboto",
-                                                    font_size=14.0, font_weight=500.0, fill=scheme["primary"]))
+                button.add_child(self.window.create("text", text=str(label.get() if hasattr(label, "get") else label), fill=scheme["primary"],
+                                                    **self._tip_text("label_large")))
                 undos.append(self._listen(button, "click", lambda event, held=held, inst_id=inst.id: (self._run_handler(held), self._hide_tip(inst_id))))
                 row.add_child(button)
             layer.add_child(row)
-        if rich:  # the pointer on the card keeps it; leaving it closes it
+        if True:  # the pointer on the tooltip keeps it (plain too, ADR-0011); leaving it closes it after the grace
             undos.append(self._listen(layer, "pointer_enter", lambda event, inst_id=inst.id: self.timers.cancel(f"tipclose:{inst_id}")))
             undos.append(self._listen(layer, "pointer_leave", lambda event, inst_id=inst.id: self.timers.after(
                 self.TIP_GRACE, lambda: self._hide_tip(inst_id), name=f"tipclose:{inst_id}")))
@@ -841,6 +850,7 @@ class ComposedView(View):
             self._hide_tip(inst_id)  # a scroll of any ancestor moves the trigger from under the tip (AC-TIP-6)
 
         undos.append(self._listen(self.window.root, "key_down", dismiss))
+        undos.append(listen_window(self.window, "active", lambda event, inst_id=inst.id: None if getattr(event, "active", True) else self._hide_tip(inst_id)))  # focus loss (AC-TIP-8c)
         ancestor = inst.parent
         while ancestor is not None:  # the scroll event does not reach the root, so each scrolling ancestor is listened to
             if ancestor.widget == "ScrollView" and ancestor.id in self._built.outer:
