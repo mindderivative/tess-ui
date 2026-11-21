@@ -22799,6 +22799,18 @@
               }
             ],
             "description": "40 pixel rows instead of 56."
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "The tree's accessible name: what the pane is (Files, Structure), not the word Tree (AC-TRE-01)."
           }
         },
         "required": [
@@ -22830,7 +22842,8 @@
             "nodes",
             "expanded",
             "selected",
-            "compact"
+            "compact",
+            "label"
           ]
         }
       }

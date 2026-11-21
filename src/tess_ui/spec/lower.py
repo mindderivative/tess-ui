@@ -230,7 +230,7 @@ def _split(inst: Instance, node: dict[str, Any], values: dict[str, Any]) -> None
               "style": {main: SPLIT_HANDLE, "background": "transparent", "align_content": "center",
                         "cursor": "col_resize" if horizontal else "row_resize"},
               "handlers": {"on_click": _PLACEHOLDER},  # what makes the builder give it a Tab stop; the renderer wires its real events
-              "a11y": {"role": "slider", "label": values.get("label", "Resize panes"), "value": share, "value_min": 0.0, "value_max": 1.0, "value_step": 0.05},
+              "a11y": {"role": "separator", "label": values.get("label", "Resize panes"), "value": share, "value_min": 0.0, "value_max": 1.0, "value_step": 0.05},
               "children": [{"id": f"{inst.id}.handle.grip", "kind": "Rect",
                             "style": {"width": grip[0], "height": grip[1], "corner_radius": 2, "background": "outline"}}]}
     node["children"] = [pane("first", inst.children[0], mins[0]), handle, pane("second", inst.children[1], mins[1])]

@@ -35,6 +35,7 @@ A tree (the WAI-ARIA tree pattern in Material 3's list terms): rows that open to
 | `Expanded` | `list` | `[]` | The values of the branches that are open. Two-way: give it a bare reference and the view writes it back. |
 | `Selected` | `any` |  | The value of the chosen row. Two-way: give it a bare reference and the view writes it back. |
 | `Compact` | `bool` | `false` | 40 pixel rows instead of 56. |
+| `Label` | `str` | `Tree` | The tree's accessible name: what the pane is (Files, Structure), not the word Tree (AC-TRE-01). |
 
 Its parts, by name (a stylesheet rule's `Part` or `Name` addresses one): `top` (TreeLevel).
 

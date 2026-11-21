@@ -13,9 +13,10 @@ Container {
     Expanded { Type: list, Default: [], Model: true, Doc: "The values of the branches that are open." }
     Selected { Type: any, Default: "", Model: true, Doc: "The value of the chosen row." }
     Compact { Type: bool, Default: false, Doc: "40 pixel rows instead of 56." }
+    Label { Type: str, Default: "Tree", Doc: "The tree's accessible name: what the pane is (Files, Structure), not the word Tree (AC-TRE-01)." }
   }
   Focus_Group: vertical
-  A11y { Role: tree, Label: Tree }
+  A11y { Role: tree, Label: <| label |> }
   Style { Flex_Direction: vertical, Width: 100% }
   Children {
     TreeLevel {
