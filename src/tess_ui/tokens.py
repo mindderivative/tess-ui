@@ -31,7 +31,7 @@ from materialyoucolor.scheme.scheme_tonal_spot import SchemeTonalSpot
 from tess_utils import parse_color
 
 __all__ = [
-    "BASELINE", "DENSITY", "DENSITY_LEVELS", "density_token", "ELEVATION_LEVELS", "baseline_scheme", "ROLES", "SHAPES", "TYPE_SCALE", "TypeStyle", "color_scheme",
+    "BASELINE", "BASELINE_SEED", "DENSITY", "DENSITY_LEVELS", "density_token", "ELEVATION_LEVELS", "baseline_scheme", "ROLES", "SHAPES", "TYPE_SCALE", "TypeStyle", "color_scheme",
     "elevation", "elevation_shadows", "FULL_RADIUS", "HEIGHT_CLASSES", "MD3_TRACKING", "MD3_TRACKING_TYPOGRAPHY", "WIDTH_CLASSES", "height_class", "width_class", "resolve_color", "resolve_scheme", "shape", "type_style",
 ]
 
@@ -90,6 +90,8 @@ def density_token(level: str, token: str) -> float:
         raise ValueError(f"no density token {token!r} (known: {', '.join(DENSITY)})") from None
 
 
+#: The seed of Material 3's baseline colours (#6750A4): the scheme an app with no seed and no theme seed is drawn in, light or dark.
+BASELINE_SEED: RGBA = (0x67, 0x50, 0xA4, 0xFF)
 BASELINE: dict[str, RGBA] = {role: _hex(value) for role, value in {
     "error": "#B3261E", "inverse_on_surface": "#F4EFF4", "inverse_primary": "#D0BCFF",
     "inverse_surface": "#313033", "on_error": "#FFFFFF", "on_primary": "#FFFFFF",

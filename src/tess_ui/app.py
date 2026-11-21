@@ -214,6 +214,7 @@ class App:
         theme_seed: tuple[int, int, int, int] | None = None,
         dark: bool | str = "system",
         density: str | None = None,
+        theme_store: str | Path | None = None,
         default_theme: str | Path | None = None,
         default_theme_spec: dict[str, Any] | None = None,
         custom_theme: str | Path | None = None,
@@ -269,6 +270,11 @@ class App:
         self._density = Signal(density or "")
         self.density = Computed(self._density.get)
         tel._app_density.set(density or "")
+        #: Where the user's light/dark choice is kept (a file holding `system`, `light` or `dark`); what it holds wins over `dark=` (AC-TH-4). A value that is not one of the three is ignored (AC-TH-6).
+        self._theme_store = Path(theme_store) if theme_store is not None else None
+        stored = self._stored_theme()
+        if stored is not None:
+            dark = stored
         #: "system" follows the OS; True/False is the app's own fixed choice (M38).
         self._dark_mode: bool | str = dark
         #: The appearance in use. "system" starts with the OS's, once the window
@@ -372,9 +378,6 @@ class App:
             os_dark = _os_dark(self._window)
             if os_dark is not None:
                 self._dark = os_dark
-        self._warned_no_seed = False
-        if dark is True:
-            self._warn_dark_needs_a_seed()
         self._current: str | None = None
         #: The window view (a `Window` root) once one is opened: its `Frame` (0.4.4)
         self._frame: Any = None
@@ -685,8 +688,33 @@ class App:
         if dark not in (True, False, "system"):
             raise ValueError(f'App.set_dark: dark must be True, False or "system", got {dark!r}')
         self._dark_mode = dark
+        self._store_theme(dark)
         if dark != "system":
             self._apply_dark(bool(dark))
+        else:  # back to following: the OS's answer now, not at its next switch (AC-TH-5)
+            os_dark = _os_dark(self._window)
+            if os_dark is not None:
+                self._apply_dark(os_dark)
+
+    _THEME_WORDS: dict[str, bool | str] = {"system": "system", "light": False, "dark": True}
+
+    def _stored_theme(self) -> bool | str | None:
+        if self._theme_store is None:
+            return None
+        try:
+            return self._THEME_WORDS.get(self._theme_store.read_text(encoding="utf-8").strip())
+        except OSError:
+            return None
+
+    def _store_theme(self, dark: bool | str) -> None:
+        if self._theme_store is None:
+            return
+        word = next(w for w, v in self._THEME_WORDS.items() if v == dark)
+        try:
+            self._theme_store.parent.mkdir(parents=True, exist_ok=True)
+            self._theme_store.write_text(word + "\n", encoding="utf-8")
+        except OSError as error:
+            logger.warning("the light/dark choice could not be kept in {}: {}", self._theme_store, error)
 
     def _on_color_scheme(self, event: Any) -> None:
         """The OS switched between light and dark: following the OS, the
@@ -708,21 +736,12 @@ class App:
             self._apply_contrast(self._wanted("high_contrast", "system"))
 
     def _has_scheme(self) -> bool:
-        """Whether roles resolve to a colour scheme at all: that needs a seed, the app's own or a theme's (`tokens.resolve_scheme`)."""
+        """Whether roles resolve to a colour scheme from the app's own seed or a theme's (`tokens.resolve_scheme`)."""
         return tokens.resolve_scheme(self._theme_seed, False, self._default_theme_spec, self._custom_theme_spec, 0.0) is not None
-
-    def _warn_dark_needs_a_seed(self) -> None:
-        """A dark app with no seed stays light: without a seed there is no scheme and the roles are the engine's fixed light ones. Said once, where it is asked for."""
-        if not self._warned_no_seed and not self._has_scheme():
-            self._warned_no_seed = True
-            logger.warning("App: dark was asked for but the app has no `theme_seed` (nor a theme with a `seed`), so there is no colour scheme and it stays light; "
-                           "give App(theme_seed=(r, g, b, a)) or a theme with a seed")
 
     def _apply_dark(self, dark: bool) -> None:
         if dark == self._dark:
             return
-        if dark:
-            self._warn_dark_needs_a_seed()
         old_theme = self._view_theme()
         self._dark = dark
         new_theme = self._view_theme()
@@ -754,6 +773,8 @@ class App:
         theme: dict[str, Any] = {"dark": self._dark, "contrast": 1.0 if self._high_contrast else 0.0}
         if self._theme_seed is not None:
             theme["theme_seed"] = self._theme_seed
+        elif self._dark and not self._has_scheme():  # no seed anywhere and dark: the baseline's, or the roles stay the engine's light ones whatever `dark` says (AC-TH-9, AC-TH-11). Light keeps the engine's own baseline roles (TUI-062: they are the 2021 table)
+            theme["theme_seed"] = tokens.BASELINE_SEED
         if self._default_theme_spec is not None:
             theme["default_theme_spec"] = self._default_theme_spec
         if self._custom_theme_spec is not None:

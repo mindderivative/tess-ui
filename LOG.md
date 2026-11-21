@@ -3621,6 +3621,12 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 ## 2026-11-21 An App with no seed and dark=True says so
 - `App(dark=True)` (and `set_dark(True)`, and an OS switch to dark) on an app with no `theme_seed` and no theme seed changed nothing: no seed means no colour scheme, and the roles are the engine's light ones. It now logs one warning naming the fix. The default `dark="system"` does not warn (most apps without a seed never asked for dark). `tests/test_app_dark_seed.py`.
 
+## 2026-11-21 Adoption batch A: dark without a seed, one easing curve, a kept light/dark choice, tooltip pixels
+- TUI-001 (AC-TH-9, AC-TH-11): an app with no seed and no theme seed is now drawn in the baseline scheme (`tokens.BASELINE_SEED`, #6750A4) when it is dark, so `dark=True`, `set_dark` and a dark desktop reach every surface (dark surface #141218 exactly). The #331 warning is gone (there is nothing left to warn about). Light keeps the engine's own baseline roles, which are the 2021 table (#FFFBFE); the spec says #FEF7FF (2022): TUI-062 stays open and the spec's exact-match wording needs the published table or a tolerance (the seed-generated light surface is #FDF7FF). Because a headless or unknown-OS `"system"` starts dark, tests that assert light baseline values now say `dark=False`.
+- TUI-070 (AC-MOT-2): `emphasized` is (0.2, 0, 0, 1) in both `theme.py` and `spec/transition.py` (it was 0.3 in the latter).
+- TUI-061 (AC-TH-4, AC-TH-5, AC-TH-6): `App(theme_store=path)` keeps the user's choice (`system`, `light` or `dark`) in a file; it wins over `dark=`; a value that is none of the three is ignored; `set_dark("system")` goes back to the OS's answer at once.
+- TUI-013 (AC-TIP-11, AC-TIP-21): a pixel test that the tooltip's padding pixels are `inverse_surface` in light and dark. The owner's "text with no background" (F9) is still not reproduced.
+- TUI-010 not done, with a reason: the spec wants the tooltip on the label Text, but a `Text` node gets no pointer enter or leave from the engine (the container does), so a tooltip on it never shows. The tooltip stays on the label's container (`label_box`, no role, no descendant with a tooltip). Engine need reported.
 ## 2026-11-21 An icon-only FAB is named (UX spec AC-FAB-8, AC-FAB-9)
 - `Fab` with no `Label` had an empty accessible name and no tooltip. Its name is now the label, else the icon's name with underscores as spaces (`music_note` is "music note"), and that is also its tooltip whenever no text shows beside the icon. Pinned in `tests/test_fab.py`. The audit asked for a required Label; a fallback keeps every existing FAB working and never leaves one unnamed. A real label is still better and says more.
 
@@ -3631,3 +3637,8 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 - The configuration window asks for `compact` and drops its own TreeNode stylesheet override (the earlier 4/16 numbers are replaced by the spec's 8/16).
 - Not yet: the 24 dp hit area around the chevron at compact and dense (the whole row is the target here), List, Accordion, Menu, buttons, fields, dock, title bar (the next density PRs).
 - Tests: `tests/test_tree.py` (the table at three levels, the unchanged default, a change while showing, a per-tree level), the config layout test.
+## 2026-11-21 Adoption batch B: tooltips (stacked on batch A)
+- ADR-0011 (AC-TIP-4, AC-TIP-17): every tooltip, plain too, is hit testable and stays 150 ms after the pointer leaves its trigger, so the pointer can move onto it; leaving the tooltip closes it after the same grace; a press still removes it at once. A consequence the spec accepts: a plain tooltip below its trigger can sit over the next control for 150 ms and take the pointer.
+- AC-TIP-8c: losing the window focus (the `active` window event) removes the tooltip.
+- AC-TYP-3, AC-TIP-13: the text of a tooltip reads the theme's type roles (`body_small` plain, `body_medium` rich text, `title_small`, `label_large`) with the theme's `typography:` overrides, not literal Roboto sizes. Rich body text is 14 now (it was 12), as the spec says.
+- Tests: `tests/test_tooltip.py` (grace, hoverable plain tooltip, focus loss, type-role override); the old tests that assumed an instant leave or an unhoverable plain tooltip were rewritten to the new rule.

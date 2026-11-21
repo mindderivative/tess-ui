@@ -86,8 +86,10 @@ def test_it_goes_when_the_pointer_leaves_and_is_cancelled_if_it_leaves_first(tmp
     hover(view)
     run(view, 800)
     assert view._tips
-    hover(view, "other")
-    run(view, 32)
+    far(view)
+    run(view, 100)
+    assert view._tips  # the 150 ms grace (ADR-0011): the pointer may be on its way onto the tooltip
+    run(view, 100)
     assert not view._tips
 
 
@@ -163,11 +165,11 @@ def test_the_text_can_be_an_expression_read_when_it_shows(tmp_path):
     assert texts(view) == ["Remove"]
 
 
-def test_the_layer_does_not_take_the_pointer(tmp_path):
+def test_the_layer_is_hoverable_so_the_pointer_can_move_onto_it_AC_TIP_17(tmp_path):
     view, _ = opened(tmp_path)
     hover(view)
     run(view, 800)
-    assert next(iter(view._tips.values()))[0].get("hit_testable") is False
+    assert next(iter(view._tips.values()))[0].get("hit_testable") is True
 
 
 def test_the_text_is_the_nodes_description_where_it_has_none(tmp_path, monkeypatch):
@@ -239,8 +241,11 @@ def test_a_click_elsewhere_while_it_shows_still_lands(tmp_path):
     hover(view)
     run(view, 800)
     assert view._tips
+    view.window.simulate("pointer_move", x=290, y=190)  # off the node and off the tooltip: it goes after the grace
+    run(view, 250)
+    assert not view._tips
     view.window.simulate("click", node=view.node("root.other"))
-    assert vm.clicks.get() == 1  # a tooltip is not a layer that eats the next press
+    assert vm.clicks.get() == 1  # a tooltip is not a layer that eats the next press once it has gone
 
 
 def test_a_node_that_leaves_the_view_takes_its_tooltip_with_it(tmp_path):
@@ -307,11 +312,17 @@ def test_a_rich_tooltip_shows_a_subhead_text_and_its_actions(tmp_path):
     assert layer.get("hit_testable") is True and layer.get("shadows")
 
 
-def test_a_plain_tooltip_cannot_be_entered(tmp_path):
+def test_a_plain_tooltip_can_be_entered_and_the_pointer_on_it_keeps_it_AC_TIP_17(tmp_path):
     view, _ = opened(tmp_path)
     hover(view)
     run(view, 800)
-    assert layer_of(view).get("hit_testable") is False
+    assert layer_of(view).get("hit_testable") is True
+    move_to(view, layer_of(view))  # off the node, onto the tooltip
+    run(view, 600)
+    assert view._tips
+    far(view)
+    run(view, 250)
+    assert not view._tips
 
 
 def test_pressing_an_action_runs_its_handler_and_closes_the_tooltip(tmp_path):
@@ -428,12 +439,10 @@ def test_every_node_hides_its_own_tooltip_when_the_pointer_leaves_it(tmp_path):
     run(view, 600)
     assert shown(view) == ["First"]
     move_onto(view, "row.second")
-    run(view, 100)
-    assert shown(view) == []
     run(view, 600)
     assert shown(view) == ["Second"]
     move_onto(view, "other")
-    run(view, 100)
+    run(view, 250)
     assert shown(view) == []
     run(view, 1000)
     assert shown(view) == []
@@ -513,3 +522,50 @@ def test_enter_and_space_on_the_focused_trigger_dismiss_the_tooltip_AC_TIP_7(tmp
         view.window.simulate("key_down", key=key)
         run(view, 32)
         assert not view._tips, key
+
+
+def _tip_pixels(tmp_path, dark):
+    (tmp_path / "Views").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(view_text())
+    app = App(root=tmp_path, dark=dark, theme_seed=tokens.BASELINE_SEED)
+    app.bind(VM)
+    view = app.open_view("Main")
+    app.show("main")
+    view.window.advance(16)
+    hover(view)
+    run(view, 700)
+    (layer, _), = view._tips.values()
+    for _ in range(4):
+        view.window.advance(16)
+    rgba, width, _ = view.window.snapshot()
+    x, y = layer.get("layout_x"), layer.get("layout_y")
+    pad = lambda dx, dy: tuple(rgba[(int(y + dy) * width + int(x + dx)) * 4:][:3])  # noqa: E731 - a pixel
+    return view, pad(3, layer.get("layout_height") / 2), pad(layer.get("layout_width") / 2, 2)
+
+
+def test_the_tooltip_container_is_opaque_inverse_surface_in_light_and_dark_AC_TIP_11_AC_TIP_21(tmp_path):
+    """The owner saw tooltip text with no background (F9): the pixels in the container's padding, where no glyph is, are the scheme's `inverse_surface`."""
+    for dark in (False, True):
+        view, left, top = _tip_pixels(tmp_path / str(dark), dark)
+        wanted = tuple(view._scheme["inverse_surface"][:3])
+        assert left == wanted and top == wanted, (dark, left, top, wanted)
+
+
+def test_losing_the_window_focus_removes_the_tooltip_AC_TIP_8(tmp_path):
+    view, _ = opened(tmp_path)
+    hover(view)
+    run(view, 700)
+    assert view._tips
+    view.window.simulate("active", active=True)  # an event only fires on a change; a headless window starts inactive
+    view.window.simulate("active", active=False)
+    run(view, 32)
+    assert not view._tips
+
+
+def test_the_tooltip_text_follows_the_themes_type_roles_AC_TYP_3_AC_TIP_13(tmp_path):
+    view, _ = opened(tmp_path)
+    view._layers.typography["body_small"] = {"font_size": 21.0}
+    hover(view)
+    run(view, 700)
+    (layer, _), = view._tips.values()
+    assert layer.children()[0].get("font_size") == 21.0

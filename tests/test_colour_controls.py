@@ -12,7 +12,7 @@ class Rig:
     """An app's window with a column the controls are added to; the window's own methods (`simulate`, `advance`, `snapshot`) are reachable on it."""
 
     def __init__(self, tmp_path):
-        self.app = App(root=tmp_path, width=320, height=640)
+        self.app = App(root=tmp_path, width=320, height=640, dark=False)
         self.window = self.app.window
         self.column = self.window.create("box", flex_direction="vertical", gap=12.0, padding_left=16.0, padding_top=16.0)
         self.window.root.add_child(self.column)

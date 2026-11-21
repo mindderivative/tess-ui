@@ -46,6 +46,7 @@ class App(
     theme_seed: tuple[int, int, int, int] | None = None,
     dark: bool | str = 'system',
     density: str | None = None,
+    theme_store: str | Path | None = None,
     default_theme: str | Path | None = None,
     default_theme_spec: dict[str, Any] | None = None,
     custom_theme: str | Path | None = None,
@@ -433,6 +434,7 @@ The font size, weight, line height and tracking of the MD3 type role `role`, or 
 **Constants**
 
 - `BASELINE` = `dict of 24`
+- `BASELINE_SEED` = `(103, 80, 164, 255)`
 - `DENSITY` = `dict of 10`
 - `DENSITY_LEVELS` = `('default', 'compact', 'dense')`
 - `ELEVATION_LEVELS` = `dict of 6`

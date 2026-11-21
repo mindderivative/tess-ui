@@ -1,31 +1,51 @@
-"""An App with no seed has no colour scheme, so `dark` cannot change anything: it says so once, where dark is asked for."""
+"""An app with no seed is drawn in the baseline scheme, light or dark (AC-TH-9, AC-TH-11): without a seed there was no scheme and `dark` changed nothing."""
 
-from loguru import logger
+from tess_ui import App, tokens
 
-from tess_ui import App
-
-SEED = (0x67, 0x50, 0xA4, 0xFF)
+VIEW = "---\nTDL: 0.2\nName: main\n---\nContainer { Name: main, Style { Width: 200, Height: 100, Background: surface } }\n"
 
 
-def test_dark_true_without_a_seed_warns_once(tmp_path):
-    handle_seen = []
-    handle = logger.add(lambda m: handle_seen.append(m.record["message"]) if m.record["level"].name == "WARNING" else None)
-    try:
-        app = App(root=tmp_path, dark=True)
-        app.set_dark(False)
-        app.set_dark(True)
-    finally:
-        logger.remove(handle)
-    assert len([m for m in handle_seen if "no `theme_seed`" in m]) == 1
+def corner_pixel(tmp_path, dark):
+    (tmp_path / "Views").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(VIEW)
+    app = App(root=tmp_path, width=200, height=100, dark=dark)
+    view = app.open_view("Main")
+    app.show("main")
+    for _ in range(6):
+        view.window.advance(16)
+    rgba, width, _ = view.window.snapshot()
+    return tuple(rgba[:3])
 
 
-def test_a_seed_or_the_default_system_mode_does_not_warn(tmp_path):
-    seen = []
-    handle = logger.add(lambda m: seen.append(m.record["message"]) if m.record["level"].name == "WARNING" else None)
-    try:
-        App(root=tmp_path, dark=True, theme_seed=SEED)
-        App(root=tmp_path, dark=False)
-        App(root=tmp_path)
-    finally:
-        logger.remove(handle)
-    assert [m for m in seen if "theme_seed" in m] == []
+def test_an_app_with_no_seed_gets_the_baseline_surface_in_dark_and_light_keeps_the_engines_AC_TH_9(tmp_path):
+    dark = corner_pixel(tmp_path / "d", True)
+    light = corner_pixel(tmp_path / "l", False)
+    assert dark == (0x14, 0x12, 0x18)  # #141218, exact
+    # light keeps the engine's own baseline roles, which are the 2021 table (#FFFBFE); the spec's AC-TH-9 says #FEF7FF (the 2022 table): TUI-062, a finding of its own
+    assert light == tuple(tokens.BASELINE["surface"][:3])
+
+
+def test_set_dark_reaches_the_surfaces_of_an_app_with_no_seed_AC_TH_11(tmp_path):
+    (tmp_path / "Views").mkdir()
+    (tmp_path / "Views" / "Main_View.tdl").write_text(VIEW)
+    app = App(root=tmp_path, width=200, height=100, dark=False)
+    view = app.open_view("Main")
+    app.show("main")
+    app.set_dark(True)
+    for _ in range(6):
+        view.window.advance(16)
+    rgba, _, _ = view.window.snapshot()
+    assert tuple(rgba[:3]) == (0x14, 0x12, 0x18)
+
+
+def test_the_light_dark_choice_is_kept_and_a_corrupt_store_is_ignored_AC_TH_4_AC_TH_6(tmp_path):
+    store = tmp_path / "state" / "theme"
+    first = App(root=tmp_path, theme_store=store, dark=False)
+    first.set_dark(True)
+    assert store.read_text().strip() == "dark"
+    again = App(root=tmp_path, theme_store=store, dark=False)  # the stored choice wins over the default
+    assert again.dark_mode is True and again.dark
+    again.set_dark("system")
+    assert store.read_text().strip() == "system" and App(root=tmp_path, theme_store=store, dark=False).dark_mode == "system"
+    store.write_text("purple")
+    assert App(root=tmp_path, theme_store=store, dark=False).dark_mode is False  # ignored, no error
