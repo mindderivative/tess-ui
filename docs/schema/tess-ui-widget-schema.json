@@ -22811,6 +22811,18 @@
               }
             ],
             "description": "`default`, `compact` or `dense`: the spec's density table for the rows; empty follows the app's `App(density=)`."
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "The tree's accessible name: what the pane is (Files, Structure), not the word Tree (AC-TRE-01)."
           }
         },
         "required": [
@@ -22843,7 +22855,8 @@
             "expanded",
             "selected",
             "compact",
-            "density"
+            "density",
+            "label"
           ]
         }
       }

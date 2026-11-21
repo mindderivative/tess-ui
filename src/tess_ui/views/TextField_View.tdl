@@ -7,6 +7,9 @@ Tesserae: "0.6"
 # character counter and an error state. `variant: filled | outlined`. What it looks like is in TextField_Stylesheet.tdl; this file is its
 # structure. `text` is two-way: give it a bare reference (`text: "{{ query }}"`) and typing writes `query`.
 #
+# At the `compact` and `dense` density of the app the label is above the field, outside its 32 or 28 pixel container (ADR-0023); the floating label below is the default
+# density's, and the Material size when no density is asked.
+#
 # The label is raised (small, at the top) while the field has focus or text, and sits in the middle as a hint otherwise; it glides between
 # the two (`transition:` on its position).
 Container {
@@ -89,12 +92,20 @@ Container {
         On_Pick: "text = picked; ac_open = False"
       }
     }
+    If <| label != '' and (app_density() in ('compact', 'dense')) |> {
+      Text {
+        Name: external_label
+        Text: <| label |>
+        Typography_Role: body_small
+        Style { Foreground: on_surface_variant, Margin: <| {'left': 0, 'right': 0, 'top': 0, 'bottom': 4 if app_density() == 'compact' else 2} |> }
+      }
+    }
     Container {
       Name: box
       Handlers {
         On_Press { Call { Action: "focus", Args: [<| 'input' |>] } }
       }
-      Style { Flex_Direction: horizontal, Align_Content: left, Gap: 12, Padding { Left: 16, Right: 16, Top: 0, Bottom: 0 }, Min_Height: 56 }
+      Style { Flex_Direction: horizontal, Align_Content: left, Gap: 12, Padding: <| {'left': density_token(app_density(), 'field_padding_x') if app_density() in ('compact', 'dense') else 16, 'right': density_token(app_density(), 'field_padding_x') if app_density() in ('compact', 'dense') else 16, 'top': 0, 'bottom': 0} |>, Min_Height: <| density_token(app_density(), 'control_height') if app_density() in ('compact', 'dense') else 56 |> }
       Children {
         If <| leading != '' |> {
           Icon {
@@ -110,7 +121,7 @@ Container {
             Flex: fill
             Align_Content: left
             Gap: 4
-            Padding: <| {'left': 0, 'right': 0, 'top': 16 if label != '' else 0, 'bottom': 0} |>
+            Padding: <| {'left': 0, 'right': 0, 'top': 16 if (label != '' and not (app_density() in ('compact', 'dense'))) else 0, 'bottom': 0} |>
           }
           Children {
             If <| prefix != '' |> {
@@ -137,7 +148,7 @@ Container {
               Caret_Blink: <| caret_blink |>
               Read_Only: <| read_only |>
               Disabled: <| disabled |>
-              Typography_Role: body_large
+              Typography_Role: <| 'body_medium' if app_density() in ('compact', 'dense') else 'body_large' |>
               Handlers {
                 On_Change {
                   Set { Target: ac_open, Value: <| True |> }
@@ -193,7 +204,7 @@ Container {
             }
           }
         }
-        If <| label != '' |> {
+        If <| label != '' and not (app_density() in ('compact', 'dense')) |> {
           Container {
             Name: label_box
             Style {
