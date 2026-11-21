@@ -166,7 +166,7 @@ def test_a_snackbar_sits_at_the_bottom_and_hides_itself_after_4s():
     s.open()
     window.advance(16)
     assert (s.node.get("layout_x"), s.node.get("layout_y")) == (24.0, 600 - 72.0)
-    assert (s.node.get("role"), s.node.get("live"), s.node.get("fill")) == ("alert", "polite", BASE["inverse_surface"])
+    assert (s.node.get("role"), s.node.get("live"), s.node.get("fill")) == ("status", "polite", BASE["inverse_surface"])
     assert s.widget.part("action.label").get("fill") == BASE["inverse_primary"]
     window.simulate("key_down", key="escape")
     _outside(window)

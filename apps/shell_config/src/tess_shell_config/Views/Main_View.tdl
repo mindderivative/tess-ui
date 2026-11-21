@@ -446,12 +446,12 @@ Container {
                               Children {
                                 Container {
                                   Name: label_box
-                                  Tooltip: <| item['doc'] |>
                                   Style { Flex_Direction: vertical, Width: 120, Gap: 0 }
                                   Children {
                                     Text {
                                       Name: label
                                       Text: <| item['label'] |>
+                                      Tooltip: <| item['doc'] |>
                                       Typography_Role: body_medium
                                       Max_Lines: 2
                                       Style { Width: 100% }
@@ -548,7 +548,7 @@ Container {
                                                       Flex: expand_horizontal
                                                       Min_Width: 48
                                                       Height: 32
-                                                      Padding { Left: 8, Right: 8, Top: 7, Bottom: 7 }
+                                                      Padding { Left: 8, Right: 8, Top: 4, Bottom: 4 }
                                                     }
                                                     Handlers {
                                                       On_Submit {
@@ -622,7 +622,7 @@ Container {
                                                     Flex: expand_horizontal
                                                     Min_Width: 36
                                                     Height: 32
-                                                    Padding { Left: 8, Right: 8, Top: 7, Bottom: 7 }
+                                                    Padding { Left: 8, Right: 8, Top: 4, Bottom: 4 }
                                                   }
                                                   Handlers {
                                                     On_Submit {
@@ -652,7 +652,7 @@ Container {
                                                       Flex: expand_horizontal
                                                       Min_Width: 36
                                                       Height: 32
-                                                      Padding { Left: 8, Right: 8, Top: 7, Bottom: 7 }
+                                                      Padding { Left: 8, Right: 8, Top: 4, Bottom: 4 }
                                                     }
                                                     Handlers {
                                                       On_Submit {
@@ -683,7 +683,7 @@ Container {
                                                       Flex: expand_horizontal
                                                       Min_Width: 36
                                                       Height: 32
-                                                      Padding { Left: 8, Right: 8, Top: 7, Bottom: 7 }
+                                                      Padding { Left: 8, Right: 8, Top: 4, Bottom: 4 }
                                                     }
                                                     Handlers {
                                                       On_Submit {
@@ -714,7 +714,7 @@ Container {
                                                       Flex: expand_horizontal
                                                       Min_Width: 36
                                                       Height: 32
-                                                      Padding { Left: 8, Right: 8, Top: 7, Bottom: 7 }
+                                                      Padding { Left: 8, Right: 8, Top: 4, Bottom: 4 }
                                                     }
                                                     Handlers {
                                                       On_Submit {
@@ -1021,7 +1021,7 @@ Container {
     Container {
       Name: problems_pane
       A11y { Role: group, Label: Problems, Description: "What check found in the files on disk. Enter on a finding selects its block and key." }
-      Style { Flex_Direction: vertical, Gap: 2, Padding { Left: 8, Right: 8, Top: 7, Bottom: 7 }, Width: 100% }
+      Style { Flex_Direction: vertical, Gap: 2, Padding { Left: 8, Right: 8, Top: 4, Bottom: 4 }, Width: 100% }
       Children {
         Text {
           Name: problems_heading
@@ -1206,7 +1206,7 @@ Container {
                   Text: <| typed |>
                   Typography_Role: body_medium
                   A11y { Label: <| prompt_title |>, Description: "Letters, digits and underscores, starting with a letter" }
-                  Style { Width: 100%, Height: 36, Padding { Left: 8, Right: 8, Top: 7, Bottom: 7 } }
+                  Style { Width: 100%, Height: 36, Padding { Left: 8, Right: 8, Top: 4, Bottom: 4 } }
                   Handlers {
                     On_Submit { Call { Action: "prompt_accept", Args: [<| typed |>] } }
                   }

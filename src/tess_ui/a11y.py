@@ -27,6 +27,9 @@ ROLES = frozenset({
     "button", "checkbox", "radio", "switch", "slider", "progressbar", "link", "textbox", "tab", "tablist",
     "tabpanel", "menu", "menuitem", "dialog", "alert", "list", "listitem", "tree", "treeitem", "heading",
     "img", "group", "separator", "none",
+    # tre 0.6.11 (UXREQ-004)
+    "status", "spinbutton", "radiogroup", "option", "listbox", "toolbar", "navigation", "complementary", "region", "grid", "row", "gridcell",
+    "columnheader", "rowheader", "searchbox", "combobox", "tooltip", "scrollbar",
 })
 #: How a changing node is announced.
 LIVE = frozenset({"off", "polite", "assertive"})
