@@ -26,7 +26,7 @@ Container {
         }
       }
       A11y { Role: button, Label: <| title |>, Expanded: <| expanded |>, Controls: content }
-      Style { Flex_Direction: horizontal, Align_Content: left, Height: 56, Width: 100% }
+      Style { Flex_Direction: horizontal, Align_Content: left, Height: <| 56 if app_density() == '' else density_token(app_density(), 'row_height') |>, Width: 100% }
       Children {
         Text {
           Name: title

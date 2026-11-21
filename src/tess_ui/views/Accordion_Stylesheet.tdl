@@ -8,7 +8,7 @@ Styles {
   Rule {
     Widget: Accordion
     Part: header
-    Style { Padding { Left: 16, Right: 16, Top: 0, Bottom: 0 }, Gap: 12 }
+    Style { Padding: <| {'left': 16 if app_density() == '' else density_token(app_density(), 'row_padding_x'), 'right': 16 if app_density() == '' else density_token(app_density(), 'row_padding_x'), 'top': 0, 'bottom': 0} |>, Gap: <| 12 if app_density() == '' else density_token(app_density(), 'icon_label_gap') |> }
   }
   Rule { Widget: Accordion, Part: title, Style { Foreground: on_surface } }
   Rule { Widget: Accordion, Part: chevron, Style { Width: 24, Height: 24, Foreground: on_surface_variant } }

@@ -3642,3 +3642,7 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 - AC-TIP-8c: losing the window focus (the `active` window event) removes the tooltip.
 - AC-TYP-3, AC-TIP-13: the text of a tooltip reads the theme's type roles (`body_small` plain, `body_medium` rich text, `title_small`, `label_large`) with the theme's `typography:` overrides, not literal Roboto sizes. Rich body text is 14 now (it was 12), as the spec says.
 - Tests: `tests/test_tooltip.py` (grace, hoverable plain tooltip, focus loss, type-role override); the old tests that assumed an instant leave or an unhoverable plain tooltip were rewritten to the new rule.
+
+## 2026-11-21 Density, step 2: List item, Accordion, Menu item (needs step 1)
+- Rows follow the app's density (`App(density=)`; no density asked keeps the Material sizes): List item 40/32/24 (a second line adds 20, a third 40; padding row_padding_x, gap icon_label_gap, vertical padding centres a 20 line), Accordion header 40/32/24, Menu item 40/32/28 (AC-LSI-02, AC-ACC-01, AC-MEN-1). The multi-line growth of a list item is my reading: the spec's table gives single-line rows only; ux-vault to confirm.
+- These three read the app's density only (`app_density()`); a per-component `Density` property is not added yet.

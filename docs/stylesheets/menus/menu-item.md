@@ -17,8 +17,8 @@ Styles {
   Rule {
     Widget: MenuItem
     Style {
-      Padding { Left: 12, Right: 12, Top: 0, Bottom: 0 }
-      Gap: 12
+      Padding: <| {'left': 12 if app_density() == '' else density_token(app_density(), 'row_padding_x'), 'right': 12 if app_density() == '' else density_token(app_density(), 'row_padding_x'), 'top': 0, 'bottom': 0} |>
+      Gap: <| 12 if app_density() == '' else density_token(app_density(), 'icon_label_gap') |>
     }
   }
   Rule { Widget: MenuItem, Part: label, Style { Foreground: on_surface } }
@@ -38,8 +38,8 @@ Each rule names `Widget: MenuItem` and may add the properties the view declares 
 
 | When | Field | Value | What it does |
 | --- | --- | --- | --- |
-| always | `Padding` | `{ Left: 12, Right: 12, Top: 0, Bottom: 0 }` | Space inside it: one number, or `{Left, Right, Top, Bottom}`. |
-| always | `Gap` | `12` | Space between its children. |
+| always | `Padding` | `<\| {'left': 12 if app_density() == '' else density_token(app_density(), 'row_padding_x'), 'right': 12 if app_…` | Space inside it: one number, or `{Left, Right, Top, Bottom}`. |
+| always | `Gap` | `<\| 12 if app_density() == '' else density_token(app_density(), 'icon_label_gap') \|>` | Space between its children. |
 
 ### `label` (Text)
 
