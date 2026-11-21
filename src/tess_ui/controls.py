@@ -1123,10 +1123,13 @@ class SpinBox:
         self.field = window.create("box", width=self.FIELD[0], height=self.FIELD[1], corner_radius=8.0,
                                    padding_left=8.0, padding_right=8.0, align_items="center")
         self.input = window.create("text_input", text=self._format(self.value.get()), font_family="Roboto",
-                                   font_size=14.0, flex_grow=1.0, focusable=True, role="textbox")
+                                   font_size=14.0, flex_grow=1.0, focusable=True, role="spinbutton")
         self.field.add_child(self.input)
         if label is not None:
             a11y.describe(self.input, label=label)
+        bounds = {key: float(held) for key, held in (("value_min", self.min), ("value_max", self.max), ("value_step", self.step)) if held is not None}
+        a11y.describe(self.input, **bounds)  # a spinbutton states its range and step (AC-SPN-10)
+        self._undo.append(Effect(lambda: a11y.describe(self.input, value=float(self.value.get()))).dispose)
         self.increment, self._inc_icon, self._inc_it = self._button("add", "Increase", 1)
         for child in (self.decrement, self.field, self.increment):
             self.node.add_child(child)
