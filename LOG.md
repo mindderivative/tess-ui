@@ -3669,3 +3669,4 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-21 The engine pin moves from 0.6.10 to 0.6.11
 - `tesserae-engine==0.6.11` (on PyPI; tag `v0.6.11` exists) in `pyproject.toml`, the CI and release font checkouts, README, DEVELOPING and PLAN. 0.6.11 brings what the drafts need: `scroll_view` with `orientation='both'` and the scrollbar properties, `hit_testable`, `vertical_align`, the new roles, state layers, focus outline, scheme baseline colours, `set_defaults`, `first_present`. The suite on the real wheel is CI's job; locally the venv is moved to 0.6.11 first.
+- On the real 0.6.11 wheel the suite passes but for one test: `hit_testable` reads `None` when unset (it was `True`), so `tests/test_pointer_events.py` now asserts "not False".

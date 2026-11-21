@@ -130,7 +130,7 @@ def test_a_value_that_is_not_auto_or_none_is_refused_naming_the_node(tmp_path, v
 def test_only_a_style_that_gives_it_touches_the_property(tmp_path):
     """The builder sets `hit_testable=False` on its own decoration nodes; a node that does not say `pointer_events` keeps what it was built with."""
     app, view, vm = opened(tmp_path)
-    assert view.node("root.under").get("hit_testable") is True and view.node("root.over.kid").get("hit_testable") is True
+    assert view.node("root.under").get("hit_testable") is not False and view.node("root.over.kid").get("hit_testable") is not False  # tre 0.6.11 reports None for "not set"
 
 
 def test_a_control_and_a_link_take_pointer_events_too(tmp_path):
