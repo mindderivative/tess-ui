@@ -445,7 +445,7 @@ def field_view(extra):
 def test_a_text_field_passes_the_settings_to_its_input(tmp_path):
     (tmp_path / "Views").mkdir()
     (tmp_path / "Views" / "Main_View.tdl").write_text(field_view("      Typing_Duration: 700\n      Flash_Color: tertiary\n      Flash_Opacity: 0.6\n      Glide_Duration: 300\n      Caret_Blink: 0\n"))
-    app = App(root=tmp_path)
+    app = App(root=tmp_path, dark=False)
     app.bind(VM)
     view = app.open_view("Main")
     app.show("main")

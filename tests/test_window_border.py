@@ -109,7 +109,7 @@ def test_it_rethemes_with_the_app():
 
 
 def test_an_unthemed_app_gets_the_baseline_colour():
-    app = App(borderless=True)
+    app = App(borderless=True, dark=False)
     assert _border(app).get("stroke_color") == tokens.BASELINE["outline_variant"]
     assert _border(app).get("stroke_width") == 1.0
 

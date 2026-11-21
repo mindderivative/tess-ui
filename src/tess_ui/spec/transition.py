@@ -35,7 +35,7 @@ EASINGS: dict[str, Easing] = {
     "standard": (0.2, 0.0, 0.0, 1.0),
     "standard_accelerate": (0.3, 0.0, 1.0, 1.0),
     "standard_decelerate": (0.0, 0.0, 0.0, 1.0),
-    "emphasized": (0.3, 0.0, 0.0, 1.0),
+    "emphasized": (0.2, 0.0, 0.0, 1.0),  # one curve: the same as `tess_ui.theme` and the spec (Motion)
     "emphasized_accelerate": (0.3, 0.0, 0.8, 0.15),
     "emphasized_decelerate": (0.05, 0.7, 0.1, 1.0),
 }
