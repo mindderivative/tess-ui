@@ -9,7 +9,4 @@ Styles {
   Rule { Widget: Text, Style { Foreground: on_surface } }
   Rule { Widget: TextInput, Style { Foreground: on_surface, Background: surface, Corner_Radius: 8, Padding: 8 } }
   Rule { Widget: Icon, Style { Foreground: on_surface } }
-  # Trees here are dense lists of blocks and files, not 56 pixel Material rows: 4 pixels in, 16 per level, 4 between the parts.
-  Rule { Widget: TreeNode, Style { Padding: <| {'left': 4 + 16 * level, 'right': 4, 'top': 0, 'bottom': 0} |>, Gap: 4 } }
-  Rule { Widget: TreeNode, Part: label, Style { Flex: expand_horizontal, Min_Width: 0 } }
 }

@@ -3630,6 +3630,13 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 ## 2026-11-21 An icon-only FAB is named (UX spec AC-FAB-8, AC-FAB-9)
 - `Fab` with no `Label` had an empty accessible name and no tooltip. Its name is now the label, else the icon's name with underscores as spaces (`music_note` is "music note"), and that is also its tooltip whenever no text shows beside the icon. Pinned in `tests/test_fab.py`. The audit asked for a required Label; a fallback keeps every existing FAB working and never leaves one unnamed. A real label is still better and says more.
 
+## 2026-11-21 Density, step 1: the token table, `App(density=)`, the tree (UX spec ADR-0002, AC-TRN-01..06, AC-DEN)
+- `tokens.DENSITY` holds the spec's table (three values per token: default, compact, dense) and `tokens.density_token(level, token)`, also a TEL function `density_token` in views and stylesheets. `App(density=None|'default'|'compact'|'dense')` and `App.density` (a Signal, `<| app.density.get() |>`), `App.set_density` re-sizes what is showing.
+- No density asked for (the default) is the Material sizes every component already had, so nothing changes for an app that does not opt in. This departs from the spec text where `default` is 40 px rows: the spec's `default` is what you get by asking for `default`.
+- `Tree`/`TreeLevel`/`TreeNode` take `Density` (empty follows the app): rows 40/32/24, padding 12/8/4 on both sides, indent 20/16/12, chevron box and leaf spacer 24/20/16, icon-label gap 8/8/4. The tree label also gets `Flex: expand_horizontal, Min_Width: 0` so a long name ends in an ellipsis (TUI-023, AC-TRN-07).
+- The configuration window asks for `compact` and drops its own TreeNode stylesheet override (the earlier 4/16 numbers are replaced by the spec's 8/16).
+- Not yet: the 24 dp hit area around the chevron at compact and dense (the whole row is the target here), List, Accordion, Menu, buttons, fields, dock, title bar (the next density PRs).
+- Tests: `tests/test_tree.py` (the table at three levels, the unchanged default, a change while showing, a per-tree level), the config layout test.
 ## 2026-11-21 Adoption batch B: tooltips (stacked on batch A)
 - ADR-0011 (AC-TIP-4, AC-TIP-17): every tooltip, plain too, is hit testable and stays 150 ms after the pointer leaves its trigger, so the pointer can move onto it; leaving the tooltip closes it after the same grace; a press still removes it at once. A consequence the spec accepts: a plain tooltip below its trigger can sit over the next control for 150 ms and take the pointer.
 - AC-TIP-8c: losing the window focus (the `active` window event) removes the tooltip.

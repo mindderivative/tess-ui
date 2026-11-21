@@ -31,7 +31,7 @@ from tess_re import Window
 from tess_ui.follow import alive, app_of, register_app, register_window, retheme
 from tess_ui.listeners import Listeners, listen_window
 from tess_ui.project import Project, is_name, view_stem
-from tess_ui import focusring as _focusring, ripple as _ripple
+from tess_ui import focusring as _focusring, ripple as _ripple, tel
 from tess_ui.spec.window import window_of
 from tess_ui.window_view import Frame
 from tess_ui import tokens
@@ -213,6 +213,7 @@ class App:
         *,
         theme_seed: tuple[int, int, int, int] | None = None,
         dark: bool | str = "system",
+        density: str | None = None,
         theme_store: str | Path | None = None,
         default_theme: str | Path | None = None,
         default_theme_spec: dict[str, Any] | None = None,
@@ -262,6 +263,13 @@ class App:
         self._theme_seed = theme_seed
         if dark not in (True, False, "system"):
             raise ValueError(f'App: dark must be True, False or "system", got {dark!r}')
+        if density is not None and density not in tokens.DENSITY_LEVELS:
+            raise ValueError(f"App: density must be None or one of {', '.join(tokens.DENSITY_LEVELS)}, got {density!r}")
+        #: The density level (`default`, `compact`, `dense`: the spec's Spacing and Density) that components follow, read as `<| app.density.get() |>`; `""` (no `density=`) is the Material sizes
+        #: the components always had, so an app that does not ask for a level looks as it did. A component may be given its own.
+        self._density = Signal(density or "")
+        self.density = Computed(self._density.get)
+        tel._app_density.set(density or "")
         #: Where the user's light/dark choice is kept (a file holding `system`, `light` or `dark`); what it holds wins over `dark=` (AC-TH-4). A value that is not one of the three is ignored (AC-TH-6).
         self._theme_store = Path(theme_store) if theme_store is not None else None
         stored = self._stored_theme()
@@ -659,6 +667,19 @@ class App:
     def dark_mode(self) -> bool | str:
         """`"system"` (following the OS), or the app's fixed `True`/`False`."""
         return self._dark_mode
+
+    def set_density(self, level: str) -> None:
+        """Changes the density of every view that follows the app's (`default`, `compact` or `dense`; `""` is the components' own Material sizes)."""
+        if level and level not in tokens.DENSITY_LEVELS:
+            raise ValueError(f"App.set_density: density must be one of {', '.join(tokens.DENSITY_LEVELS)}, got {level!r}")
+        self._density.set(level)
+        tel._app_density.set(level)
+        from tess_ui.composed import ComposedView
+
+        library = self._composed_docs_library()
+        for built in self._built:  # `app_density()` is read when a view is composed, not tracked: each view is composed again, keeping its state
+            if isinstance(built.view, ComposedView):
+                built.view.restyle(self._composed_rules(library, self._stylesheet_spec, built.view.handle.doc)[0])
 
     def set_dark(self, dark: bool | str) -> None:
         """`True`/`False` fixes the app dark or light, re-theming every
