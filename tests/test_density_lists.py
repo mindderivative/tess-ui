@@ -81,6 +81,17 @@ def test_no_density_keeps_the_buttons_as_they_were(tmp_path):
     assert controls_at(tmp_path, None) == (40, 40, 40)
 
 
+def test_making_an_app_does_not_run_the_effects_of_views_that_are_still_alive(tmp_path):
+    """A reactive density made every view of a finished test run its effect again when the next App was made (a video player's old frame then raised in the next test)."""
+    from tess_ui import Effect, tel
+
+    runs = []
+    keep = Effect(lambda: runs.append(tel.HOST_FUNCTIONS["app_density"]()))
+    before = len(runs)
+    App(root=tmp_path, density="compact")
+    App(root=tmp_path)
+    assert len(runs) == before
+    keep.dispose()
 FIELD = """Container {
   Name: main
   Style { Flex_Direction: vertical, Align_Content: top_left, Width: 400, Height: 500 }
