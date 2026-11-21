@@ -31,7 +31,7 @@ Container {
     Flex_Direction: horizontal
     Align_Content: left
     Width: 100%
-    Height: <| {1: 56, 2: 72, 3: 88}[lines if lines in (1, 2, 3) else (3 if (overline != '' and supporting != '') else (2 if (overline != '' or supporting != '') else 1))] |>
+    Height: <| ({1: 56, 2: 72, 3: 88}[lines if lines in (1, 2, 3) else (3 if (overline != '' and supporting != '') else (2 if (overline != '' or supporting != '') else 1))]) if app_density() == '' else density_token(app_density(), 'row_height') + 20 * ((lines if lines in (1, 2, 3) else (3 if (overline != '' and supporting != '') else (2 if (overline != '' or supporting != '') else 1))) - 1) |>
   }
   Handlers {
     On_Click { Set { Target: selected, Value: <| (not selected) if selectable else selected |> } }

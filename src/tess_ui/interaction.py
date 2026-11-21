@@ -29,7 +29,7 @@ from __future__ import annotations
 
 import math
 from typing import Any, Callable
-from tess_ui import focusring, motion, ripple
+from tess_ui import focusring, motion, ripple, tokens
 
 __all__ = ["DRAGGED", "FOCUSED", "HOVERED", "Interaction", "PRESSED"]
 
@@ -40,19 +40,19 @@ RGBA = tuple[int, int, int, int]
 Listen = Callable[[Any, str, Callable[[Any], None]], Callable[[], None]]
 
 #: MD3's state-layer opacities.
-HOVERED, FOCUSED, PRESSED, DRAGGED = 0.08, 0.10, 0.10, 0.16
+HOVERED, FOCUSED, PRESSED, DRAGGED = (tokens.STATE_LAYER[k] for k in ("hover", "focus", "pressed", "dragged"))
 
 #: Material Web's `md-ripple` timing, in ms.
-HOVER_MS = 15
-PRESS_GROW_MS = 450
-PRESS_FADE_IN_MS = 105
-MINIMUM_PRESS_MS = 225
-RELEASE_FADE_MS = 375
+HOVER_MS = tokens.RIPPLE_MS["hover_fade"]
+PRESS_GROW_MS = tokens.RIPPLE_MS["press_grow"]
+PRESS_FADE_IN_MS = tokens.RIPPLE_MS["press_fade_in"]
+MINIMUM_PRESS_MS = tokens.RIPPLE_MS["minimum_press"]
+RELEASE_FADE_MS = tokens.RIPPLE_MS["release_fade"]
 #: MD3's focus indicator, in px: its thickness, and its gap outside the node.
 RING_WIDTH = 3.0
 RING_OFFSET = 2.0
 #: The ripple starts at this fraction of the node's larger side.
-INITIAL_SCALE = 0.2
+INITIAL_SCALE = tokens.RIPPLE_INITIAL_SCALE
 #: MD3's standard easing, which `md-ripple` grows with.
 STANDARD = (0.2, 0.0, 0.0, 1.0)
 

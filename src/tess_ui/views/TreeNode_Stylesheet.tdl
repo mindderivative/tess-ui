@@ -9,13 +9,14 @@ Styles {
   Rule {
     Widget: TreeNode
     Style {
-      Padding: <| {'left': 16 + 24 * level, 'right': 16, 'top': 0, 'bottom': 0} |>
-      Gap: 8
+      Padding: <| {'left': (16 + 24 * level) if (density or app_density()) == '' else density_token((density or app_density()), 'row_padding_x') + density_token((density or app_density()), 'tree_indent') * level, 'right': 16 if (density or app_density()) == '' else density_token((density or app_density()), 'row_padding_x'), 'top': 0, 'bottom': 0} |>
+      Gap: <| 8 if (density or app_density()) == '' else density_token((density or app_density()), 'icon_label_gap') |>
       Background: <| 'secondary_container' if selected else 'transparent' |>
       Transition { Background: 150 }
     }
   }
-  Rule { Widget: TreeNode, Part: chevron, Style { Width: 24, Height: 24, Foreground: on_surface_variant } }
+  Rule { Widget: TreeNode, Part: label, Style { Flex: expand_horizontal, Min_Width: 0 } }  # a long label ends in an ellipsis instead of being cut (AC-TRN-07)
+  Rule { Widget: TreeNode, Part: chevron, Style { Width: <| 24 if (density or app_density()) == '' else density_token((density or app_density()), 'chevron_box') |>, Height: <| 24 if (density or app_density()) == '' else density_token((density or app_density()), 'chevron_box') |>, Foreground: on_surface_variant } }
   Rule {
     Widget: TreeNode
     Part: icon

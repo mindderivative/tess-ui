@@ -34,7 +34,8 @@ A tree (the WAI-ARIA tree pattern in Material 3's list terms): rows that open to
 | `Nodes` | `list` | `[]` | The rows: {value, label} and optionally {icon, children, disabled}; children are the same shape. |
 | `Expanded` | `list` | `[]` | The values of the branches that are open. Two-way: give it a bare reference and the view writes it back. |
 | `Selected` | `any` |  | The value of the chosen row. Two-way: give it a bare reference and the view writes it back. |
-| `Compact` | `bool` | `false` | 40 pixel rows instead of 56. |
+| `Compact` | `bool` | `false` | 40 pixel rows instead of 56 (at no density). |
+| `Density` | `str` |  | `default`, `Compact` or `dense`: the spec's density table for the rows; empty follows the app's `App(density=)`. |
 | `Label` | `str` | `Tree` | The tree's accessible name: what the pane is (Files, Structure), not the word Tree (AC-TRE-01). |
 
 Its parts, by name (a stylesheet rule's `Part` or `Name` addresses one): `top` (TreeLevel).
@@ -51,7 +52,8 @@ One row of a tree: a leaf or a branch with a chevron that turns a quarter when i
 | `Branch` | `bool` | `false` | It has children: a chevron shows. |
 | `Expanded` | `bool` | `false` | For a branch: whether its children show. |
 | `Selected` | `bool` | `false` | Whether this is the chosen row. |
-| `Compact` | `bool` | `false` | A 40 pixel row instead of 56. |
+| `Compact` | `bool` | `false` | A 40 pixel row instead of 56 at density `default`. |
+| `Density` | `str` |  | `default`, `Compact` or `dense`: the spec's density table (row height, padding, indent, chevron box). Empty follows the app's (`App(density=)`). At `default` a row keeps its Material size, 56 pixels (40 with `Compact`). |
 | `Disabled` | `bool` | `false` | Dimmed and not pressable. |
 
 Its parts, by name (a stylesheet rule's `Part` or `Name` addresses one): `chevron` (Icon), `chevron_space` (Container), `icon` (Icon), `label` (Text).
@@ -69,6 +71,7 @@ The rows of one level of a tree, each followed by its children's level while it 
 | `Expanded` | `list` | `[]` | The values of the branches that are open. Two-way: give it a bare reference and the view writes it back. |
 | `Selected` | `any` |  | The value of the chosen row. Two-way: give it a bare reference and the view writes it back. |
 | `Compact` | `bool` | `false` | 40 pixel rows. |
+| `Density` | `str` |  | The density of the rows (see Tree). |
 
 Its parts, by name (a stylesheet rule's `Part` or `Name` addresses one): `entry` (Container), `row` (TreeNode), `children` (TreeLevel).
 

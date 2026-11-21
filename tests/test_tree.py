@@ -283,3 +283,62 @@ def test_the_tree_is_named_by_what_it_is_and_the_children_of_an_open_branch_are_
     assert children.get("role") == "group"
     assert view._built.outer["root.t.top"].get("role") != "group"
     assert view.node("root.t").get("label") != "Tree"
+def opened_at(tmp_path, density, props=""):
+    (tmp_path / "Views").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Align_Content: top_left, Width: 400, Height: 600 }}
+  Children {{
+    Tree {{
+      Name: t
+      {NODES}
+      Expanded: <| open |>
+      Selected: <| sel |>
+      {props}
+    }}
+  }}
+}}
+""")
+    app = App(root=tmp_path, width=400, height=600, density=density)
+    app.bind(VM)
+    view = app.open_view("Main")
+    app.show("main")
+    for _ in range(8):
+        view.window.advance(16)
+    return view, app
+
+
+@pytest.mark.parametrize("level, height, pad, indent, box", [("default", 40, 12, 20, 24), ("compact", 32, 8, 16, 20), ("dense", 24, 4, 12, 16)])
+def test_the_tree_follows_the_density_table_AC_TRN_01_to_06(tmp_path, level, height, pad, indent, box):
+    view, _ = opened_at(tmp_path, level)
+    docs, a, b_ = row(view, "docs"), row(view, "docs", "a"), row(view, "docs", "b")
+    assert docs.get("layout_height") == height == a.get("layout_height")  # all rows alike (AC-TRN-02)
+    d0 = view._built.outer["root.t.top.entry[docs].row"].get("padding_left")
+    d1 = view._built.outer["root.t.top.entry[docs].children.entry[a].row"].get("padding_left")
+    assert d0 == pad and d1 - d0 == indent  # AC-TRN-03, AC-TRN-04
+    chevron = view._built.outer["root.t.top.entry[docs].row.chevron"]
+    spacer = view._built.outer["root.t.top.entry[docs].children.entry[a].row.chevron_space"]
+    assert (chevron.get("width"), chevron.get("height"), spacer.get("width")) == (box, box, box)  # AC-TRN-06
+
+
+def test_an_app_with_no_density_keeps_the_material_tree(tmp_path):
+    view, app = opened_at(tmp_path, None)
+    assert app.density.get() == "" and row(view, "docs").get("layout_height") == 56
+    assert view._built.outer["root.t.top.entry[docs].row"].get("padding_left") == 16
+
+
+def test_a_density_change_reaches_a_tree_that_is_showing(tmp_path):
+    view, app = opened_at(tmp_path, "default")
+    app.set_density("dense")
+    for _ in range(8):
+        view.window.advance(16)
+    assert row(view, "docs").get("layout_height") == 24
+
+
+def test_a_tree_can_have_a_density_of_its_own(tmp_path):
+    view, _ = opened_at(tmp_path, "default", "Density: compact")
+    assert row(view, "docs").get("layout_height") == 32
