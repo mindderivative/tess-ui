@@ -38,6 +38,7 @@ from typing import Any, Callable, Optional
 
 import tess_el
 
+from tess_ui import tokens
 from tess_ui.reactive import Computed, Signal
 
 __all__ = [
@@ -207,9 +208,14 @@ def _recorded(name: str, function: Callable[..., Any]) -> Callable[..., Any]:
 
 #: What an expression may call besides TEL's own built-ins (`len min max abs round sum str int float bool sorted reversed range enumerate zip any all
 #: list dict tuple set isinstance clamp`): the functions TEL leaves to its host.
+#: The density the app asked for (`""`: none), which `app_density()` reads in a view or a stylesheet where there is no `app` name (a widget a Python factory builds has none). `App` sets it.
+_app_density: Signal = Signal("")
+
 HOST_FUNCTIONS: dict[str, Callable[..., Any]] = {
     "format_number": _format_number, "pluralize": _pluralize, "date_add_days": _date_add_days, "date_weekday": _date_weekday,
     "days_in_month": _days_in_month, "format_date": _format_date, "current_date": _today,
+    "density_token": tokens.density_token,
+    "app_density": lambda: _app_density.get(),
 }
 
 

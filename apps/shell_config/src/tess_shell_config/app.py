@@ -49,6 +49,7 @@ def build(session: ConfigSession, *, width: int = 1280, height: int = 800, dark:
     # kept the engine's light roles whatever `dark` said, which is why the window was white on a dark desktop.
     options.setdefault("theme_seed", THEME_SEED)
     remembered = Settings(session.state_dir).theme
+    options.setdefault("density", "compact")  # a configuration tool: the spec's compact level (rows 32, 8 px in, 16 per level), which replaces the tree override the window had
     app = App(root=ROOT, width=width, height=height, title=TITLE, dark=_DARK[remembered] if dark is None else dark, stylesheet=ROOT / "Views" / "Main_Stylesheet.tdl", **options)
     viewmodel = ShellConfigViewModel(session)
     viewmodel.services.theme_setter = lambda mode: app.set_dark(_DARK[mode])

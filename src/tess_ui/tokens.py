@@ -31,7 +31,7 @@ from materialyoucolor.scheme.scheme_tonal_spot import SchemeTonalSpot
 from tess_utils import parse_color
 
 __all__ = [
-    "BASELINE", "BASELINE_SEED", "ELEVATION_LEVELS", "baseline_scheme", "ROLES", "SHAPES", "TYPE_SCALE", "TypeStyle", "color_scheme",
+    "BASELINE", "BASELINE_SEED", "DENSITY", "DENSITY_LEVELS", "density_token", "ELEVATION_LEVELS", "baseline_scheme", "ROLES", "SHAPES", "TYPE_SCALE", "TypeStyle", "color_scheme",
     "RIPPLE_INITIAL_SCALE", "RIPPLE_MS", "STATE_LAYER",
     "elevation", "elevation_shadows", "FULL_RADIUS", "HEIGHT_CLASSES", "MD3_TRACKING", "MD3_TRACKING_TYPOGRAPHY", "WIDTH_CLASSES", "height_class", "width_class", "resolve_color", "resolve_scheme", "shape", "type_style",
 ]
@@ -65,6 +65,32 @@ def _hex(text: str) -> RGBA:
 #: no-theme colours (its MD3 handover's `baseline`), plus `on_surface` and
 #: `secondary` from MD3's baseline scheme. They differ from the scheme the
 #: baseline seed generates, as `tess_re`'s did.
+#: Density levels (the spec's Spacing and Density, ADR-0002): each token is (default, compact, dense).
+DENSITY_LEVELS = ("default", "compact", "dense")
+DENSITY: dict[str, tuple[float, float, float]] = {
+    "control_height": (40.0, 32.0, 28.0),
+    "row_height": (40.0, 32.0, 24.0),
+    "menu_item_height": (40.0, 32.0, 28.0),
+    "icon_button_container": (40.0, 32.0, 28.0),
+    "icon_button_icon": (24.0, 20.0, 20.0),
+    "row_padding_x": (12.0, 8.0, 4.0),
+    "icon_label_gap": (8.0, 8.0, 4.0),
+    "field_padding_x": (12.0, 8.0, 8.0),
+    "tree_indent": (20.0, 16.0, 12.0),
+    "chevron_box": (24.0, 20.0, 16.0),
+}
+
+
+def density_token(level: str, token: str) -> float:
+    """The value of density token `token` at `level` (`default`, `compact` or `dense`)."""
+    if level not in DENSITY_LEVELS:
+        raise ValueError(f"density must be one of {', '.join(DENSITY_LEVELS)}, got {level!r}")
+    try:
+        return DENSITY[token][DENSITY_LEVELS.index(level)]
+    except KeyError:
+        raise ValueError(f"no density token {token!r} (known: {', '.join(DENSITY)})") from None
+
+
 #: The seed of Material 3's baseline colours (#6750A4): the scheme an app with no seed and no theme seed is drawn in, light or dark.
 BASELINE_SEED: RGBA = (0x67, 0x50, 0xA4, 0xFF)
 #: The state-layer opacities (the spec's State Layers, ADR-0009, ADR-0013): one definition, which `interaction` and `ripple` read. Precedence when several hold: dragged, pressed, focused, hovered.
