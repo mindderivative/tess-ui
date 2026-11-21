@@ -3660,3 +3660,7 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-21 Density, step 3: Button and Icon button (AC-BTN-1, AC-ICB-1)
 - At a density, the default-size (`s`) Button is 40/32/28 high and the default Icon button container 40/32/28 (icon 24/20/20); other sizes (xs, m, l, xl: the Expressive sizes) and no density are as before. Fields are not changed: the shipped `TextField` is the 56 dp floating-label (touch) variant, which the spec keeps; a compact single-line field is a different component and not built yet (the config window's inputs are plain `TextInput`s).
+
+## 2026-11-21 Density, step 5: the text field at compact and dense (ADR-0023, AC-TXF-3, AC-TXF-17, AC-TXF-19)
+- At the app's `compact` or `dense` density the `TextField`'s label is above the container, outside it (`external_label`, body_small, 4 or 2 px above); the container is 32 or 28 px high with 8 px horizontal padding and the input is `body_medium`. At `default` density, and with no density, the label floats in the 56 px container as before. The accessible name is the Label either way (the input's A11y label is unchanged).
+- Not done: a 40 px default-density field with an external label (the spec's non-floating default variant); the leading/trailing icon sizes at compact (20), and the multiline minimum.

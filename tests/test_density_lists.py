@@ -79,3 +79,41 @@ def test_button_and_icon_button_follow_the_density_table_AC_BTN_1_AC_ICB_1(tmp_p
 
 def test_no_density_keeps_the_buttons_as_they_were(tmp_path):
     assert controls_at(tmp_path, None) == (40, 40, 40)
+
+
+FIELD = """Container {
+  Name: main
+  Style { Flex_Direction: vertical, Align_Content: top_left, Width: 400, Height: 500 }
+  Children {
+    TextField { Name: f, Label: Name, Variant: outlined }
+  }
+}
+"""
+
+
+def field_at(tmp_path, density):
+    (tmp_path / "Views").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "Views" / "Main_View.tdl").write_text("---\nTDL: 0.2\nName: main\n---\n" + FIELD)
+    app = App(root=tmp_path, width=400, height=500, density=density)
+    app.bind(VM)
+    view = app.open_view("Main")
+    app.show("main")
+    for _ in range(6):
+        view.window.advance(16)
+    return view
+
+
+@pytest.mark.parametrize("level, height, gap", [("compact", 32, 4), ("dense", 28, 2)])
+def test_a_compact_or_dense_field_has_its_label_above_the_container_AC_TXF_3_AC_TXF_17(tmp_path, level, height, gap):
+    view = field_at(tmp_path, level)
+    box, label = view._built.outer["root.f.box"], view._built.outer["root.f.external_label"]
+    assert box.get("layout_height") == height  # the container height is the table's, the label is outside it
+    assert label.get("layout_y") + label.get("layout_height") + gap == pytest.approx(box.get("layout_y"), abs=0.6)
+    assert "root.f.box.label_box" not in view._built.outer
+
+
+@pytest.mark.parametrize("density", [None, "default"])
+def test_the_default_keeps_the_floating_label_in_a_56_container_AC_TXF_19(tmp_path, density):
+    view = field_at(tmp_path, density)
+    assert view._built.outer["root.f.box"].get("layout_height") >= 56
+    assert "root.f.box.label_box" in view._built.outer and "root.f.external_label" not in view._built.outer
