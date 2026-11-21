@@ -528,9 +528,13 @@ def test_the_watch_reports_a_changed_tdl_file_with_its_bytes_and_ignores_other_f
         (folder / "Shells" / "A_Shell.tdl").write_text("two")
         (folder / "Shells" / ".A_Shell.tdl.abc.tmp").write_text("temporary")
         wait_for(posted)
-        assert seen == [{"Shells/A_Shell.tdl": b"two"}]
+        # Only the `.tdl` file is reported, with the bytes it holds when the report is made. How many reports one write makes is the platform's: macOS FSEvents can report the same
+        # write twice (and the file's creation just before the watch started), so the reports are compared as a set, not counted.
+        assert seen and all(report == {"Shells/A_Shell.tdl": b"two"} for report in seen)
         (folder / "Shells" / "A_Shell.tdl").unlink()
-        wait_for(posted)
+        deadline = time.monotonic() + 5
+        while seen[-1] != {"Shells/A_Shell.tdl": None} and time.monotonic() < deadline:
+            wait_for(posted)
         assert seen[-1] == {"Shells/A_Shell.tdl": None}
     finally:
         started = time.monotonic()
