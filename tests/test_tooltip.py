@@ -458,3 +458,58 @@ def test_a_press_hides_the_tooltip_and_none_is_shown_again_until_the_pointer_re_
     view.window.simulate("pointer_up", x=node.get("layout_x") + 8, y=node.get("layout_y") + 8)
     run(view, 1000)
     assert shown(view) == []
+
+
+SCROLLED = TDL + """Container {
+  Name: main
+  Style { Flex_Direction: vertical, Width: 300, Height: 200 }
+  Children {
+    ScrollView {
+      Name: pane
+      Style { Width: 300, Height: 120 }
+      Children {
+        Container {
+          Name: tall
+          Style { Flex_Direction: vertical, Width: 100%, Height: 600 }
+          Children {
+            Container { Name: first, Tooltip: First, Style { Width: 80, Height: 40, Background: primary }, Handlers { On_Click { Set { Target: clicks, Value: <| clicks + 1 |> } } } }
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
+
+def scrolled_view(tmp_path):
+    (tmp_path / "Views").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "Views" / "Main_View.tdl").write_text(SCROLLED)
+    app = App(root=tmp_path)
+    app.bind(VM)
+    view = app.open_view("Main")
+    app.show("main")
+    view.window.advance(16)
+    return view
+
+
+def test_a_scroll_of_an_ancestor_dismisses_the_tooltip_AC_TIP_6(tmp_path):
+    view = scrolled_view(tmp_path)
+    node = view.node("root.pane.tall.first")
+    view.window.simulate("pointer_move", x=node.get("layout_x") + 8, y=node.get("layout_y") + 8)
+    run(view, 600)
+    assert len(view._tips) == 1
+    view.window.simulate("wheel", node=view._built.outer["root.pane"], delta_x=0.0, delta_y=40.0)
+    run(view, 32)
+    assert not view._tips
+
+
+def test_enter_and_space_on_the_focused_trigger_dismiss_the_tooltip_AC_TIP_7(tmp_path):
+    for key in ("enter", "space"):
+        view = scrolled_view(tmp_path / key)
+        node = view.node("root.pane.tall.first")
+        view._show_tip(next(i for i in view.handle.composition.walk() if i.id == "root.pane.tall.first"))
+        assert len(view._tips) == 1
+        view.window.simulate("key_down", key=key)
+        run(view, 32)
+        assert not view._tips, key
