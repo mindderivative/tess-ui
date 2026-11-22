@@ -51,13 +51,14 @@ A view Tesserae ships is a `<Name>_View.tdl` (what it takes and what it is made 
 
 ### `TextField`
 
-The Material 3 text field: a labelled box around a text input, with an optional leading icon, prefix, suffix, trailing icon, supporting text, character counter and an error state. `Variant: filled | outlined`. What it looks like is in TextField_Stylesheet.tdl; this file is its structure. `Text` is two-way: give it a bare reference (`Text: "<| query |>"`) and typing writes `Query`. At the `Compact` and `dense` density of the app the label is above the field, outside its 32 or 28 pixel container (ADR-0023); the floating label below is the default density's, and the Material size when no density is asked. The label is raised (small, at the top) while the field has focus or text, and sits in the middle as a hint otherwise; it glides between the two (`Transition:` on its position).
+The Material 3 text field: a labelled box around a text input, with an optional leading icon, prefix, suffix, trailing icon, supporting text, character counter and an error state. `Variant: filled | outlined`. What it looks like is in TextField_Stylesheet.tdl; this file is its structure. `Text` is two-way: give it a bare reference (`Text: "<| query |>"`) and typing writes `Query`. At the `Compact` and `dense` density of the app, or with `Label_Placement: external`, the label is above the field, outside its 32 or 28 pixel container (ADR-0023); the floating label below is the default density's, and the Material size when no density is asked. The label is raised (small, at the top) while the field has focus or text, and sits in the middle as a hint otherwise; it glides between the two (`Transition:` on its position).
 
 | Parameter | Type | Default | Meaning |
 | --- | --- | --- | --- |
 | `Variant` | `filled` or `outlined` | `filled` | filled has a fill and a line under it; outlined has a border. |
 | `Label` | `str` |  | The field's name; it also names the field for a screen reader. |
 | `Text` | `str` |  | What the user has typed. Two-way: give it a bare reference and the view writes it back. |
+| `Label_Placement` | `auto` or `external` | `auto` | Where the label sits: auto is the floating label in a 56 pixel container at the default density and the Material size, above the field at compact and dense; external puts it above the container at every density, and the container is 40, 32 or 28 pixels (ADR-0023). |
 | `Placeholder` | `str` |  | Shown while the field is empty and focused (or has no label). |
 | `Supporting` | `str` |  | Help under the field. |
 | `Error` | `str` |  | An error message. When it is not empty the field shows the error look and the message replaces the supporting text. |
