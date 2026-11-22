@@ -154,3 +154,9 @@ def test_the_engine_draws_the_focus_outline_on_keyboard_focus_only_AC_FOC(tmp_pa
     assert after[0] == before[0]  # the 2 px gap (a fractional node edge antialiases pixel 1)
     assert after[2] == after[3] == after[4] != before[2]  # the 3 px ring, one colour
     assert after[5] == before[5]
+
+
+def test_the_layers_fade_at_105_pressed_150_focus_and_the_engines_100_hover(tmp_path):
+    view = opened(tmp_path, COMPONENTS["button"])
+    node = view._built.outer["root.c"]
+    assert [node.get(k) for k in ("hover_layer_ms", "pressed_layer_ms", "focus_layer_ms")] == [100.0, 105.0, 150.0]
