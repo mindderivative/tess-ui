@@ -3709,5 +3709,7 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 ## 2026-11-21 The dark baseline is the engine's (`scheme_colors("dark")`, tre 0.6.12)
 - An app with no seed anywhere and `dark` now resolves its roles to `tess_re.scheme_colors("dark")` in `tokens.resolve_scheme`; the seeding with `BASELINE_SEED` (a scheme generated from #6750A4, which differed from MD3's published dark baseline) and the constant itself are gone, as is `App._has_scheme`. Light with no seed still resolves nothing, so the engine's own baseline shows (it equals `BASELINE` since #353).
 
+## 2026-11-21 Scroll panes take the spec's scrollbar look (tre 0.6.11 `scrollbar_*`)
+- A ScrollView's scrollbar is an 8 dp pill thumb (the engine drew 4 dp, radius 2) in a 12 dp hit area (was 20), 2 dp from the edge, at least 32 dp long, 70 percent opaque at rest, 80 under the pointer and 100 while dragged (`spec.build.SCROLLBAR`), in `on_surface_variant` (was `outline`). The gutter, the per-state colours and the lane/arrow options are not set yet; the text pane and the config app's own panes are separate.
 ## 2026-11-21 The baseline text look is declared once (`Window.set_defaults`, tre 0.6.12)
 - `App` (and every window it opens) declares MD3's body medium (Roboto 400, 14 px) as the default of `text` and `text_input` nodes, so one the toolkit builds without a type role is in the type scale and not in the engine's own 16 px; the `font_family="Roboto"` the Python-built nodes repeated is gone. Sizes that differ are still passed at the node.
