@@ -928,7 +928,9 @@ list_(
     x: float | None = None,
     y: float | None = None,
     *,
-    theme: 'Theme | None' = None
+    theme: 'Theme | None' = None,
+    selectable: str | None = None,
+    selected: int | None = None
 ) -> Widget
 ```
 
@@ -950,7 +952,8 @@ list_item(
     border_width: float | None = None,
     *,
     theme: 'Theme | None' = None,
-    on_click: Callable[[], Any] | None = None
+    on_click: Callable[[], Any] | None = None,
+    selected: bool = False
 ) -> Widget
 ```
 

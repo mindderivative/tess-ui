@@ -11,7 +11,8 @@ import math
 from typing import TYPE_CHECKING, Any, Callable
 
 from tess_ui import a11y
-from tess_ui.reactive import Signal
+from tess_ui.behavior import Gate, GatedSignal, caused_by
+from tess_ui.reactive import Effect, Signal
 from tess_ui.widgets._composed import Widget
 from tess_ui.widgets._views import Call
 from tess_ui.widgets.buttons import _border, _hex, _variant
@@ -56,22 +57,96 @@ def list_(
     y: float | None = None,
     *,
     theme: "Theme | None" = None,
+    selectable: str | None = None,
+    selected: int | None = None,
 ) -> Widget:
     """Lays out `list_item(...)`s (or any nodes) as MD3's list: a column
     `width` wide. The items move into it. An empty list is an error, as
-    `tess_re`'s was."""
+    `tess_re`'s was.
+
+    With `selectable="single"` the list is a listbox of options: one Tab
+    stop for the list (the selected row, else the first), the arrows, Home
+    and End move between rows, and a click, Enter or Space selects one.
+    `.selected` is a `GatedSignal` of the selected row's index (or `None`),
+    which `selected` starts at: the rows should be `list_item`s, which show
+    the selection. `.on_before_change(fn)` and `.on_change(fn)` hear a
+    user's selection (`reason` `pointer` or `keyboard`, `detail`
+    `select`), and `event.cancel()` refuses it."""
     if not items:
         raise ValueError("a list needs at least one item")
+    if selectable not in (None, "single"):
+        raise ValueError(f"list_: selectable is None or 'single', got {selectable!r}")
     widget = Widget(window, spec={"id": "list", "kind": "Container",
                                   "style": {"width": width, "flex_direction": "vertical"}},
                     theme=theme, x=x, y=y, name="list")
-    a11y.describe(widget.node, role="list")
+    a11y.describe(widget.node, role="listbox" if selectable else "list")
+    nodes = []
     for item in items:
         node = getattr(item, "node", item)
         node.set(width=float(width))
         widget.node.add_child(node)
-        a11y.describe(node, role="listitem")
+        a11y.describe(node, role="option" if selectable else "listitem")
+        nodes.append(node)
+    if selectable:
+        _selectable(widget, items, nodes, selected)
     return widget
+
+
+def _hear(listeners: list[Callable[[Any], None]], fn: Callable[[Any], None]) -> Callable[[], None]:
+    """Adds `fn` to `listeners`; returns the function that removes it."""
+    listeners.append(fn)
+    return lambda: listeners.remove(fn) if fn in listeners else None
+
+
+def _selectable(widget: Widget, items: list[Any], nodes: list[Any], start: int | None) -> None:
+    """The single-selection list: selection in a `GatedSignal`, the roving Tab stop, the keys."""
+    gate = Gate(detail_of=lambda source: "select")
+    chosen = GatedSignal(start if start is not None and 0 <= start < len(nodes) else None, gate)
+    active = [chosen.get() or 0]  # the row that holds the Tab stop
+
+    def show() -> None:
+        index = chosen.get()
+        for i, (item, node) in enumerate(zip(items, nodes)):
+            if hasattr(item, "selected"):
+                item.selected.set(i == index)  # the row's own look (secondary container)
+            a11y.describe(node, role="option", selected=(i == index))  # after the row's own view patched it back to listitem
+            node.set(tab_index=0 if i == active[0] else -1)
+
+    def pick(i: int, reason: str) -> None:
+        with caused_by(reason, "select"):
+            chosen.set(i)
+        active[0] = i
+        show()
+
+    def rove(i: int) -> Callable[[Any], None]:
+        def moved(event: Any) -> None:
+            active[0] = i
+            for j, node in enumerate(nodes):
+                node.set(tab_index=0 if j == i else -1)
+        return moved
+
+    def key(i: int) -> Callable[[Any], None]:
+        def pressed(event: Any) -> None:
+            target = {"arrow_down": min(i + 1, len(nodes) - 1), "arrow_up": max(i - 1, 0), "home": 0, "end": len(nodes) - 1}.get(event.key)
+            if target is not None and target != i:
+                nodes[target].focus()
+            elif event.key in ("enter", "space"):
+                pick(i, "keyboard")
+        return pressed
+
+    def clicked(i: int) -> Callable[[Any], None]:
+        return lambda event: pick(i, "pointer" if getattr(event, "button", None) else "keyboard")  # no button: Enter or Space activated it
+
+    for i, node in enumerate(nodes):
+        node.set(focusable=True)
+        widget._undo.append(widget.view._listen(node, "focus", rove(i)))
+        widget._undo.append(widget.view._listen(node, "key_down", key(i)))
+        widget._undo.append(widget.view._listen(node, "click", clicked(i)))
+    widget.selected = chosen  # type: ignore[attr-defined]
+    widget_any: Any = widget
+    widget_any.on_before_change = lambda fn: _hear(gate.before, fn)
+    widget_any.on_change = lambda fn: _hear(gate.after, fn)
+    widget._undo.append(Effect(show).dispose)
 
 
 def list_item(
@@ -88,16 +163,22 @@ def list_item(
     *,
     theme: "Theme | None" = None,
     on_click: Callable[[], Any] | None = None,
+    selected: bool = False,
 ) -> Widget:
     """One MD3 list row: a `body_large`
     headline, 56 px tall, or 72 with `supporting_text` (`body_medium`,
     `on_surface_variant`) under it; 24 px `on_surface_variant` icons either
-    side. Parts: `headline`, `supporting`, `leading`, `trailing`."""
-    call = Call("ListItem", props={"headline": headline, "supporting": supporting_text, "leading_icon": leading_icon, "trailing_icon": trailing_icon},
+    side. Parts: `headline`, `supporting`, `leading`, `trailing`. `.selected`
+    is a `Signal`: while true the row is a secondary container (`list_`
+    drives it in a selectable list)."""
+    selected_signal = Signal(bool(selected))
+    call = Call("ListItem", props={"headline": headline, "supporting": supporting_text, "leading_icon": leading_icon, "trailing_icon": trailing_icon,
+                                   "selected": selected_signal},
                 style={"width": width, **_border(border_color, border_width)})
     widget = Widget(window, call=call, components={None: "list_item"},
                     parts={"headline": "text.headline", "supporting": "text.supporting", "leading": "leading_icon", "trailing": "trailing_icon"},
                     theme=theme, x=x, y=y, name="list_item")
+    widget.selected = selected_signal  # type: ignore[attr-defined]
     if on_click is not None:
         widget.on_click(on_click)
     return widget
