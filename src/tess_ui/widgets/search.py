@@ -57,6 +57,20 @@ def search_bar(
             fn(text)
 
     widget._undo.append(widget.view._listen(field, "change", typed))
+    held: Any = widget  # the widget the view registers itself on: `search_view(bar=...)` sets `search_view`
+    held.search_view = None
+
+    def escape(event: Any) -> None:
+        """Escape: with the view open it closes and the query stays; otherwise a typed query clears (Search, Keyboard)."""
+        if event.key != "escape":
+            return
+        shown = held.search_view
+        if shown is not None and shown.is_open:
+            shown.close()
+        elif query.get():
+            query.set("")
+
+    widget._undo.append(widget.view._listen(field, "key_down", escape))
     widget.on_query = lambda fn: (queries.append(fn), lambda: queries.remove(fn) if fn in queries else None)[1]
     return widget
 

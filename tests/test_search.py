@@ -143,3 +143,37 @@ def test_search_follows_the_theme():
     bar.set_theme(dark)
     assert bar.node.get("fill") == dark.role("surface_container_high")
     assert bar.part("field").get("placeholder_fill") == dark.role("on_surface_variant")
+
+
+def _typed(with_view):
+    window = _window()
+    bar = search_bar(window, "Search mail", 360)
+    view = search_view(window, 360, 300, bar=bar, results=[("Alice", None)]) if with_view else None
+    window.advance(16)
+    bar.part("field").focus()
+    window.advance(16)
+    window.simulate("input", text="ab")
+    window.advance(32)
+    return window, bar, view
+
+
+def _escape(window):
+    window.simulate("key_down", key="escape")
+    window.advance(48)
+
+
+def test_escape_closes_the_open_view_and_keeps_the_query_then_clears_it_AC_SRB_5():
+    window, bar, view = _typed(True)
+    assert view.is_open and bar.query.get() == "ab"
+    _escape(window)
+    assert not view.is_open and bar.query.get() == "ab"
+    _escape(window)
+    assert bar.query.get() == "" and bar.part("field").get("text") == ""
+
+
+def test_escape_clears_a_typed_query_when_there_is_no_view_and_does_nothing_when_it_is_empty_AC_SRB_5():
+    window, bar, _ = _typed(False)
+    _escape(window)
+    assert bar.query.get() == ""
+    _escape(window)
+    assert bar.query.get() == "" and bar.part("field").get("focused")

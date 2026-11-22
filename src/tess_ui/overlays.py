@@ -555,6 +555,7 @@ class SearchView(Overlay):
             row.remove()
         self.set_results(results or [])
         if bar is not None:
+            setattr(bar, "search_view", self)  # Escape in the bar's field closes this view first (`search_bar`)
             field = bar.part("field")
             listen = bar.view._listen
             self._undo += [
