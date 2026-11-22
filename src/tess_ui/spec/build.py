@@ -832,6 +832,8 @@ def _text_field_props(ctx, node, style):
         inner["placeholder_fill"] = _role(ctx, "on_surface_variant")
     if given.get("multiline"):  # a field of several lines grows from the top, not the middle
         inner["align_self"] = "stretch"
+        # vertical overflow shows the spec's scrollbar (Text Field: Multi-line; the engine's `scrollbar_*` on a multiline input, tre 0.6.13)
+        inner.update(SCROLLBAR, scrollbar_fill=_role(ctx, "on_surface_variant"), scrollbar_show="overflow")
     return outer, inner
 
 
