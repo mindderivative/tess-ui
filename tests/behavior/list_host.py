@@ -118,7 +118,10 @@ class _Host:
         return Outcome(list(self._heard), consumed=bool(self._heard))
 
 
-def _require(given: dict[str, Any], what: str, controlled: bool) -> None:
+def _require(given: dict[str, Any], what: str, controlled: bool, focus_model: str = "roving") -> None:
+    if focus_model != "roving":
+        raise NotRun(f"{what} keeps focus on its rows (roving tabindex); neither tess-ui nor the engine has an active-descendant model "
+                     "(a container that holds focus and names the active child to assistive technology)")
     if controlled:
         raise NotRun(f"{what}'s selection is not controlled by the host")
 
@@ -129,9 +132,9 @@ DEFAULTS = {"items": [], "selection": [], "selection_mode": "multiple", "select_
 class ListHost(_Host):
     """A `list_` in a headless window."""
 
-    def __init__(self, spec: Spec, options: dict[str, Any] | None, controlled: bool, responses: list[str]) -> None:
+    def __init__(self, spec: Spec, options: dict[str, Any] | None, controlled: bool, responses: list[str], focus_model: str = "roving") -> None:
         given = {**DEFAULTS, **(options or {})}
-        _require(given, "list_", controlled)
+        _require(given, "list_", controlled, focus_model)
         self.single = given["selection_mode"] == "single"
         self.ids = [entry["id"] for entry in given["items"]]
         self.window = tess_re.Window(width=600, height=600)
@@ -221,9 +224,9 @@ def _item(entry: dict[str, Any]) -> str:
 class TreeHost(_Host):
     """A `Tree` (flat rows, `Multiple` for the multiple mode) in a headless window."""
 
-    def __init__(self, tmp_path: Any, spec: Spec, options: dict[str, Any] | None, controlled: bool, responses: list[str]) -> None:
+    def __init__(self, tmp_path: Any, spec: Spec, options: dict[str, Any] | None, controlled: bool, responses: list[str], focus_model: str = "roving") -> None:
         given = {**DEFAULTS, **(options or {})}
-        _require(given, "the Tree", controlled)
+        _require(given, "the Tree", controlled, focus_model)
         if any(entry.get("unselectable") for entry in given["items"]):
             raise NotRun("the Tree has no unselectable rows")
         if given["select_on_focus"]:

@@ -15,7 +15,7 @@ CASES = {c.name.removesuffix(".case.json"): c for c in behaviour_cases(corpus_ro
 
 WHY = {
     "tree": "not applicable: the Tree is a tree (roles tree and treeitem), the standard's list primitive is a listbox of options",
-    "focus_model": "the adapter takes no focus_model yet: `list_` and the Tree keep the focus on the rows",
+    "focus_model": "no active-descendant model: `list_` and the Tree keep the focus on their rows (roving tabindex), and the engine has no container that holds focus and names the active child",
     "anchor": "a single-mode list or tree has no anchor to read: the engine keeps one only for a multiple selection",
     "order": "the focus moves after the engine has made the range (Shift+Arrow), the standard has focus_move first",
     "announce": "the engine's announcement (`selection_announce`) cannot be read back from a headless window",
@@ -46,7 +46,7 @@ def test_the_corpus_has_the_list_cases_and_every_recorded_gap_names_its_reason()
 
 
 def _tree_host(tmp_path):
-    return lambda spec, options, controlled, responses: TreeHost(tmp_path, spec, options, controlled, responses)
+    return lambda spec, options, controlled, responses, **extra: TreeHost(tmp_path, spec, options, controlled, responses, **extra)
 
 
 @pytest.mark.parametrize("name", sorted(CASES))
