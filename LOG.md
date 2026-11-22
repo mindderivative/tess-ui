@@ -3711,3 +3711,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-21 The baseline text look is declared once (`Window.set_defaults`, tre 0.6.12)
 - `App` (and every window it opens) declares MD3's body medium (Roboto 400, 14 px) as the default of `text` and `text_input` nodes, so one the toolkit builds without a type role is in the type scale and not in the engine's own 16 px; the `font_family="Roboto"` the Python-built nodes repeated is gone. Sizes that differ are still passed at the node.
+
+## 2026-11-21 State layers fade at the spec's per-state timings (tre `*_layer_ms`)
+- The surface sets `pressed_layer_ms` 105 and `focus_layer_ms` 150 (it set one `state_layer_ms` of 15 for all three); hover stays at the engine's 100 ms until tre fixes the 15 ms hover (it leaves one layer pixel behind on the real compositor). Reduced motion sets all three to 0.

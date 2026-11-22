@@ -43,7 +43,11 @@ Listen = Callable[[Any, str, Callable[[Any], None]], Callable[[], None]]
 HOVERED, FOCUSED, PRESSED, DRAGGED = (tokens.STATE_LAYER[k] for k in ("hover", "focus", "pressed", "dragged"))
 
 #: Material Web's `md-ripple` timing, in ms.
-HOVER_MS = tokens.RIPPLE_MS["hover_fade"]
+#: The state layers' fades, per state (the engine's `hover_layer_ms`, `pressed_layer_ms`, `focus_layer_ms`): the spec's 105 ms for pressed and 150 ms for focus. Hover is
+#: the engine's own 100 ms, not the spec's 15 ms, until tre fixes its 15 ms hover leaving a layer pixel behind on the real compositor.
+HOVER_MS = 100
+PRESSED_LAYER_MS = tokens.RIPPLE_MS["press_fade_in"]
+FOCUS_LAYER_MS = 150
 PRESS_GROW_MS = tokens.RIPPLE_MS["press_grow"]
 PRESS_FADE_IN_MS = tokens.RIPPLE_MS["press_fade_in"]
 MINIMUM_PRESS_MS = tokens.RIPPLE_MS["minimum_press"]
@@ -127,7 +131,9 @@ class Interaction:
         alpha = self.tint[3] / 255 if len(self.tint) > 3 else 1.0  # a tint with its own alpha scales the layer
         hover = DRAGGED if self.dragged else HOVERED
         self.surface.set(hover_layer=(r, g, b, round(255 * hover * alpha)), focus_layer=(r, g, b, round(255 * (DRAGGED if self.dragged else FOCUSED) * alpha)), focus_layer_any_modality=False,
-                         state_layer_ms=float(motion.duration(self.window, HOVER_MS)))
+                         hover_layer_ms=float(motion.duration(self.window, HOVER_MS)),
+                         pressed_layer_ms=float(motion.duration(self.window, PRESSED_LAYER_MS)),
+                         focus_layer_ms=float(motion.duration(self.window, FOCUS_LAYER_MS)))
 
     @property
     def enabled(self) -> bool:
