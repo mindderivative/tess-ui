@@ -121,10 +121,6 @@ class _Host:
 def _require(given: dict[str, Any], what: str, controlled: bool) -> None:
     if controlled:
         raise NotRun(f"{what}'s selection is not controlled by the host")
-    if given["select_on_focus"]:
-        raise NotRun(f"{what} never selects on focus")
-    if given["select_all_key"] is not True and given["selection_mode"] == "multiple":
-        raise NotRun(f"{what} always has Ctrl+A")
 
 
 DEFAULTS = {"items": [], "selection": [], "selection_mode": "multiple", "select_all_key": True, "select_on_focus": False}
@@ -144,7 +140,8 @@ class ListHost(_Host):
         start = [self.ids.index(i) for i in given["selection"]]
         self.box = list_(self.window, self.rows, selectable="single" if self.single else "multiple",
                          selected=(start[0] if start else None) if self.single else start, announce="{count} selected",
-                         unselectable=[i for i, entry in enumerate(given["items"]) if entry.get("unselectable")], label="Items")
+                         unselectable=[i for i, entry in enumerate(given["items"]) if entry.get("unselectable")], label="Items",
+                         select_all_key=bool(given["select_all_key"]), select_on_focus=bool(given["select_on_focus"]))
         self.box.node.set(min_height=56.0 * len(self.rows) + 120.0)  # room below the rows, where a press chooses none
         self._begin()
         if self.single:
@@ -229,11 +226,14 @@ class TreeHost(_Host):
         _require(given, "the Tree", controlled)
         if any(entry.get("unselectable") for entry in given["items"]):
             raise NotRun("the Tree has no unselectable rows")
+        if given["select_on_focus"]:
+            raise NotRun("the Tree never selects on focus (a focus event does not say whether Ctrl was held)")
         self.single = given["selection_mode"] == "single"
         self.ids = [entry["id"] for entry in given["items"]]
         (tmp_path / "Views").mkdir(exist_ok=True)
         nodes = "\n".join(_item(entry) for entry in given["items"])
-        multiple = "" if self.single else "Multiple: true\n      Selection: <| picked |>\n      On_Change: \"heard(event.reason, event.detail, event.count, event.anchor)\""
+        every = str(bool(given["select_all_key"])).lower()
+        multiple = "" if self.single else f"Multiple: true\n      Selection: <| picked |>\n      Select_All_Key: {every}\n      On_Change: \"heard(event.reason, event.detail, event.count, event.anchor)\""
         (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
 TDL: 0.2
 Name: main

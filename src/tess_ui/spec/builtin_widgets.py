@@ -27,6 +27,7 @@ declare("Container", {**_DISABLED,
                                                "Ctrl+A (the Selection pattern's rules); `none` chooses nothing. The container then has no key handler on its rows: the engine's keys are blocked by one."),
                        "selection": P("list", model=True, doc="With a `selection_mode`: the keys (`selection_key`) of the chosen children. Two-way. A key that no child has now (a row not built, a closed branch's child) stays in it "
                                                                 "until its child is chosen or cleared again."),
+                       "select_all_key": P("bool", default=True, doc="With a `selection_mode` of `multiple`: Ctrl+A chooses every child that can be chosen; false leaves the key to the app."),
                        "selection_announce": P("str", doc="What assistive technology reads when the selection changes, `{count}` being how many; empty is silent."),
                        "selection_key": P("any", doc="On a child of a container with a `selection_mode`: what names it in `selection`."),
                        "item_selectable": P("bool", default=True, doc="On a child of a container with a `selection_mode`: false keeps it from being chosen or reached by Tab and click.")}, container=True, doc="A box with an optional fill that lays out its children.")

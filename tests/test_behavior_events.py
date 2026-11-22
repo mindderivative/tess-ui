@@ -347,3 +347,44 @@ def test_a_list_has_the_accessible_name_it_is_given_and_none_otherwise():
     window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, align_items="flex_start", flex_direction="vertical")
     named = list_(window, [list_item(window, "Apple")], selectable="multiple", label="Fruit")
     assert named.node.get("label") == "Fruit" and named.node.get("role") == "listbox"
+
+
+def test_ctrl_a_can_be_taken_from_a_multiple_list_and_it_then_chooses_nothing():
+    from tess_ui.widgets import list_, list_item
+
+    window = tess_re.Window(width=600, height=400)
+    window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, align_items="flex_start", flex_direction="vertical")
+    rows = [list_item(window, text) for text in ("Apple", "Banana", "Cherry")]
+    box = list_(window, rows, selectable="multiple", select_all_key=False)
+    window.advance(32)
+    rows[0].node.focus()
+    window.advance(16)
+    window.simulate("key_down", key="a", ctrl=True)
+    window.advance(32)
+    assert box.selection.get() == () and box.node.get("select_all_key") is False
+    assert _rows("multiple")[1].node.get("select_all_key") is True
+
+
+def test_a_single_list_that_selects_on_focus_chooses_the_row_an_arrow_moves_to_but_not_with_ctrl():
+    from tess_ui.widgets import list_, list_item
+
+    window = tess_re.Window(width=600, height=400)
+    window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, align_items="flex_start", flex_direction="vertical")
+    rows = [list_item(window, text) for text in ("Apple", "Banana", "Cherry", "Date")]
+    box = list_(window, rows, selectable="single", select_on_focus=True)
+    window.advance(32)
+    heard = []
+    box.on_change(lambda e: heard.append((e.reason, e.detail, e.value)))
+    rows[0].node.focus()
+    window.advance(16)
+    assert box.selected.get() is None  # focus alone (Tab, a call) chooses nothing
+    window.simulate("key_down", key="arrow_down")
+    window.advance(32)
+    assert box.selected.get() == 1 and heard == [("keyboard", "select", 1)]
+    window.simulate("key_down", key="arrow_down", ctrl=True)
+    window.advance(32)
+    assert rows[2].node.get("focused") and box.selected.get() == 1
+    import pytest
+
+    with pytest.raises(ValueError, match="single"):
+        list_(window, [list_item(window, "x")], selectable="multiple", select_on_focus=True)

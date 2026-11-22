@@ -36,6 +36,7 @@ A tree (the WAI-ARIA tree pattern in Material 3's list terms): rows that open to
 | `Selected` | `any` |  | The value of the chosen row. Two-way: give it a bare reference and the view writes it back. |
 | `Selection` | `list` | `[]` | With `Multiple`: the values of the chosen rows. Two-way. A chosen row inside a closed branch stays in it. Two-way: give it a bare reference and the view writes it back. |
 | `Multiple` | `bool` | `false` | Choose several rows: click chooses one, Ctrl+click toggles, Shift+click and Shift+Arrow choose a range, Space toggles, Ctrl+A chooses every row that shows (AC-SLT-7). `Selected` then follows the last row pressed. |
+| `Select_All_Key` | `bool` | `true` | With `Multiple`: whether Ctrl+A chooses every row that shows. |
 | `On_Change` | `handler` |  | With `Multiple`: called after the chosen rows change, with `event.reason` (`pointer`, `keyboard` or `api`), `event.detail` (`select`, `Toggle`, `range`, `all` or `clear`), `event.count`, `event.selection` (the chosen values) and `event.anchor`. |
 | `Compact` | `bool` | `false` | 40 pixel rows instead of 56 (at no density). |
 | `Density` | `str` |  | `default`, `Compact` or `dense`: the spec's density table for the rows; empty follows the app's `App(density=)`. |

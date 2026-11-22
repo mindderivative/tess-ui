@@ -78,7 +78,7 @@ def _lower(inst: Instance) -> dict[str, Any]:
         folded = {"src", "fit", "alt", "frame"}
         node["image"] = {k: values[k] for k in ("src", "fit") if k in values}
     elif widget == "Container":
-        folded = {"measured_width", "measured_height", "selection_mode", "selection", "selection_announce", "selection_key", "item_selectable"}  # the view writes the outputs and wires the selection (`_wire_measures`, `_wire_selection`)
+        folded = {"measured_width", "measured_height", "selection_mode", "selection", "select_all_key", "selection_announce", "selection_key", "item_selectable"}  # the view writes the outputs and wires the selection (`_wire_measures`, `_wire_selection`)
     elif widget == "Svg":
         folded = {"src", "content", "alt"}
         node["svg"] = {k: values[k] for k in ("src", "content") if k in values}

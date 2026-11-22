@@ -21,20 +21,20 @@ WHY = {
     "announce": "the engine's announcement (`selection_announce`) cannot be read back from a headless window",
     "consumed": "`consumed` is not observable: the adapter reports whether any event came, and a Space on an unselectable row is consumed without one",
     "unselectable": "the Tree has no unselectable rows (a row that takes focus but is never chosen)",
-    "ctrl_a": "Ctrl+A cannot be switched off",
-    "on_focus": "selection never follows focus",
+    "on_focus": "the Tree never selects on focus: a focus event does not say whether Ctrl was held, and Ctrl+Arrow moves the focus alone",
 }
 _UNSEL = ("unselectable-arrow-lands-on-row", "unselectable-row-skipped-by-range", "unselectable-select-all-skips", "unselectable-set-from-code-ignores-row",
           "unselectable-space-selects-nothing")
 _COMMON = {
     "announce-clear": (NOT_RUN, "announce"), "announce-once-after-300ms": (NOT_RUN, "announce"), "announce-range": (NOT_RUN, "announce"),
     "announce-select-all": (NOT_RUN, "announce"), "announce-single-none": (FAIL, "anchor"), "api-set-is-not-announced": (NOT_RUN, "announce"),
-    "select-all-key-off": (NOT_RUN, "ctrl_a"), "single-mode-keeps-before-change": (FAIL, "anchor"), "single-select-on-focus": (NOT_RUN, "on_focus"),
+    "single-mode-keeps-before-change": (FAIL, "anchor"), "single-select-on-focus": (FAIL, "anchor"),
     "single-space-chooses": (FAIL, "anchor"),
 }
 _VARIANTS = {name: (NOT_RUN, "focus_model") for name in CASES if name.endswith("-active-descendant")}
 LIST_DIAG = {**_COMMON, **_VARIANTS}
-TREE_DIAG = {**_COMMON, **_VARIANTS, **dict.fromkeys(_UNSEL, (NOT_RUN, "unselectable")), "a11y-tree-multiple": (FAIL, "tree"), "a11y-tree-single": (FAIL, "tree")}
+TREE_DIAG = {**_COMMON, **_VARIANTS, **dict.fromkeys(_UNSEL, (NOT_RUN, "unselectable")), "a11y-tree-multiple": (FAIL, "tree"), "a11y-tree-single": (FAIL, "tree"),
+             "single-select-on-focus": (NOT_RUN, "on_focus")}
 TREE_STRICT = {**TREE_DIAG, "shift-arrow-range": (FAIL, "order")}
 LIST_STRICT = {**LIST_DIAG, "shift-arrow-range": (FAIL, "order"), "unselectable-space-selects-nothing": (FAIL, "consumed")}
 
