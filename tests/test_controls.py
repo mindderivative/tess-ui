@@ -5,6 +5,7 @@ progress and loading indicators and time picker dial. Driven headlessly
 with `simulate`/`advance`.
 """
 
+from layers import layer_of
 import math
 
 import pytest
@@ -13,6 +14,7 @@ import tess_re
 from tess_ui import Effect, Signal, Theme, interaction, tokens
 from tess_ui.controls import DISABLED_CONTENT, STATE_LAYER_SIZE, TARGET_SIZE, Checkbox, SpinBox
 from tess_ui.listeners import Listeners
+
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 
@@ -131,10 +133,10 @@ def test_tab_focuses_it_with_a_ring_and_space_and_enter_toggle_it():
 
 def test_the_state_layer_is_on_surface_unchecked_and_primary_checked():
     cb, window, _ = _checkbox()
-    assert cb.interaction.layer.get("fill") == tokens.BASELINE["on_surface"]
+    assert layer_of(cb.interaction).get("fill") == tokens.BASELINE["on_surface"]
     window.simulate("click", node=cb.node)
     window.advance(16)
-    assert cb.interaction.layer.get("fill") == tokens.BASELINE["primary"]
+    assert layer_of(cb.interaction).get("fill") == tokens.BASELINE["primary"]
 
 
 def test_hover_shows_the_state_layer_in_the_circle():
@@ -142,8 +144,8 @@ def test_hover_shows_the_state_layer_in_the_circle():
     x, y = cb.node.get("layout_x"), cb.node.get("layout_y")
     window.simulate("pointer_move", x=x + 24, y=y + 24)
     _frames(window, 32)
-    assert cb.interaction.layer.get("opacity") == pytest.approx(interaction.HOVERED)
-    assert cb.interaction.layer.parent() == cb.interaction.clip and cb.interaction.clip.parent() == cb.surface
+    assert layer_of(cb.interaction).get("opacity") == pytest.approx(interaction.HOVERED, abs=0.005)
+    assert cb.interaction.clip.parent() == cb.surface
 
 
 def test_a_press_ripples_from_the_press_point_inside_the_circle():
@@ -170,7 +172,7 @@ def test_a_disabled_checkbox_cant_be_focused_or_used_and_draws_disabled():
     window.simulate("pointer_move", x=x + 24, y=y + 24)
     window.simulate("pointer_down", x=x + 24, y=y + 24)
     _frames(window, 32)
-    assert cb.interaction.layer.get("opacity") == 0.0 and cb.interaction.ripples == []
+    assert layer_of(cb.interaction).get("opacity") == 0.0 and cb.interaction.ripples == []
     cb.disabled.set(False)
     window.advance(16)
     assert cb.node.get("focusable") is True
@@ -185,7 +187,7 @@ def test_disabling_mid_hover_clears_the_feedback():
     _frames(window, 32)
     cb.disabled.set(True)
     window.advance(16)
-    assert cb.interaction.layer.get("opacity") == 0.0
+    assert layer_of(cb.interaction).get("opacity") == 0.0
 
 
 def test_unchecked_disabled_outline_is_on_surface_at_38_percent():
@@ -204,13 +206,13 @@ def test_colours_come_from_the_theme_and_follow_it():
     cb.set_theme(dark)
     assert cb.box.get("fill") == dark.role("primary") != light.role("primary")
     assert cb.mark.get("stroke_color") == dark.role("on_primary")
-    assert cb.interaction.layer.get("fill") == dark.role("primary")
+    assert layer_of(cb.interaction).get("fill") == dark.role("primary")
 
 
 def test_a_colour_override_replaces_primary():
     cb, window, _ = _checkbox(checked=True, color=(0xFF, 0x00, 0x00, 0xFF))
     assert cb.box.get("fill") == (0xFF, 0x00, 0x00, 0xFF)
-    assert cb.interaction.layer.get("fill") == (0xFF, 0x00, 0x00, 0xFF)
+    assert layer_of(cb.interaction).get("fill") == (0xFF, 0x00, 0x00, 0xFF)
 
 
 def test_the_baseline_is_md3s_published_colours():
@@ -452,7 +454,7 @@ def test_pressing_and_dragging_set_the_value_and_change_fires_once_at_the_end():
     window.simulate("pointer_up", x=x + 900, y=y + 300)
     assert seen == [1.0] and not s.interaction.dragged
     window.advance(16)
-    assert s.interaction.layer.get("opacity") != pytest.approx(interaction.DRAGGED)
+    assert layer_of(s.interaction).get("opacity") != pytest.approx(interaction.DRAGGED, abs=0.005)
 
 
 def test_the_dragged_state_layer_is_16_percent():
@@ -460,7 +462,7 @@ def test_the_dragged_state_layer_is_16_percent():
     x, y = s.node.get("layout_x"), s.node.get("layout_y")
     window.simulate("pointer_down", x=x + 10, y=y + 24)
     _frames(window, 32)
-    assert s.interaction.layer.get("opacity") == pytest.approx(interaction.DRAGGED)
+    assert layer_of(s.interaction).get("opacity") == pytest.approx(interaction.DRAGGED, abs=0.005)
 
 
 def test_the_keys_step_the_value():

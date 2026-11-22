@@ -3,6 +3,7 @@ by Tesserae's compiler (`tess_ui.widgets._composed.Widget`). Phase 1:
 the base, proved on `button`.
 """
 
+from layers import layer_of
 import math
 
 import pytest
@@ -12,6 +13,7 @@ from tess_ui import Theme, interaction, tokens
 
 from tess_ui.widgets import button
 from tess_ui.widgets._composed import Widget
+
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 BASE = tokens.baseline_scheme()
@@ -40,7 +42,7 @@ def test_each_variant_is_md3s_button(variant, fill, ink):
     assert b.node.get("fill") == (BASE[fill] if fill else (0, 0, 0, 0))
     label = b.part("label")
     assert label.get("text") == "Save" and label.get("fill") == BASE[ink]
-    assert b.interaction().layer.get("fill") == BASE[ink]  # MD3: the state layer is the content's colour
+    assert layer_of(b.interaction()).get("fill") == BASE[ink]  # MD3: the state layer is the content's colour
     if variant == "outlined":
         assert (b.node.get("stroke_color"), b.node.get("stroke_width")) == (BASE["outline"], 1.0)
 
@@ -104,7 +106,7 @@ def test_a_theme_colours_it_and_set_theme_follows():
     b.set_theme(dark)
     assert b.node.get("fill") == dark.role("primary") != light.role("primary")
     assert b.part("label").get("fill") == dark.role("on_primary")
-    assert b.interaction().layer.get("fill") == dark.role("on_primary")
+    assert layer_of(b.interaction()).get("fill") == dark.role("on_primary")
 
 
 def test_arguments_reach_the_button():
@@ -171,7 +173,7 @@ def test_icon_buttons_are_md3s(variant, fill, ink):
     window.advance(16)
     assert (ib.node.get("layout_width"), ib.node.get("corner_radius"), ib.node.get("label")) == (40.0, 20.0, "Close")
     assert ib.node.get("fill") == (BASE[fill] if fill else (0, 0, 0, 0))
-    assert ib.part("icon").get("fill") == BASE[ink] and ib.interaction().layer.get("fill") == BASE[ink]
+    assert ib.part("icon").get("fill") == BASE[ink] and layer_of(ib.interaction()).get("fill") == BASE[ink]
     assert _offset(ib.part("icon"), ib.node) == (8.0, 8.0)  # centred
 
 

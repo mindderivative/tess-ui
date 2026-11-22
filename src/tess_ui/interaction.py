@@ -85,11 +85,8 @@ class Interaction:
         decoration = dict(position="absolute", hit_testable=False, a11y_hidden=True)
         self.clip = window.create("box", x=0, y=0, width="100%", height="100%", clip_children=True,
                                   **decoration)
-        self.layer = window.create("box", x=0, y=0, width="100%", height="100%", fill=tint, opacity=0.0,
-                                   **decoration)
         self.ring = window.create("box", stroke_color=ring_color, stroke_width=RING_WIDTH, visible=False,
                                   **decoration)
-        self.clip.add_child(self.layer)
         self._glow: Any = None
         self.sparks: Any = None  # the ripple shader's node, when the window draws ripples that way (`tess_ui.ripple`)
         self._shader: Any = None
@@ -102,6 +99,7 @@ class Interaction:
         if focusring.uses_gradient(window):
             self._glow = focusring.GradientRing(window, self.ring, self._glow_colors())
         self.refresh()
+        self._paint_layers()
         _INTERACTIVE.append(node)
         self._undo = [listen(node, event, handler) for event, handler in (
             ("pointer_enter", self._on_enter), ("pointer_leave", self._on_leave),
@@ -112,14 +110,18 @@ class Interaction:
 
     # -- state --------------------------------------------------------------
 
-    @property
-    def opacity(self) -> float:
-        """The state layer's resting opacity for the current state."""
-        if self.dragged:
-            return DRAGGED
-        if self.focused:
-            return FOCUSED
-        return HOVERED if self.hovered else 0.0
+    def _paint_layers(self) -> None:
+        """The state layers are the engine's (tre 0.6.11): `hover_layer` and `focus_layer` on the surface are the tint at 8 and 10 percent, drawn over its fill and under its content, hover when the
+        pointer is over it (children included) and focus on keyboard focus only, one at a time, faded by the engine, so no node and no per-frame code here. Dragged (16 percent) is the
+        hover and the focus layer raised while a drag holds (dragged beats focus beats hover). Pressed is the ripple. A disabled control has no layers."""
+        if not self._enabled:
+            self.surface.set(hover_layer=None, focus_layer=None)
+            return
+        r, g, b = self.tint[0], self.tint[1], self.tint[2]
+        alpha = self.tint[3] / 255 if len(self.tint) > 3 else 1.0  # a tint with its own alpha scales the layer
+        hover = DRAGGED if self.dragged else HOVERED
+        self.surface.set(hover_layer=(r, g, b, round(255 * hover * alpha)), focus_layer=(r, g, b, round(255 * (DRAGGED if self.dragged else FOCUSED) * alpha)), focus_layer_any_modality=False,
+                         state_layer_ms=float(motion.duration(self.window, HOVER_MS)))
 
     @property
     def enabled(self) -> bool:
@@ -131,6 +133,7 @@ class Interaction:
         """Turning it off clears the feedback at once and shows none until
         it's turned on again."""
         self._enabled = enabled
+        self._paint_layers()
         if not enabled:
             self.hovered = self.focused = self.dragged = False
             self.ring.set(visible=False)
@@ -141,7 +144,7 @@ class Interaction:
                 each.release()
             if self._shader is not None:
                 self._shader.clear()
-            self.layer.animate("opacity", 0.0, 0)
+            self._paint_layers()
 
     @property
     def ripples(self) -> list[Any]:
@@ -174,7 +177,7 @@ class Interaction:
         self.tint, self.ring_color = tint, ring_color
         if glow is not None:
             self.glow = glow
-        self.layer.set(fill=tint)
+        self._paint_layers()
         self.ring.set(stroke_color=ring_color)
         if self._glow is not None:
             self._glow.recolor(self._glow_colors(), paint=self.ring_visible)
@@ -216,7 +219,7 @@ class Interaction:
             _INTERACTIVE.remove(self.node)
 
     def _update(self) -> None:
-        self.layer.animate("opacity", self.opacity, motion.duration(self.window, HOVER_MS))
+        self._paint_layers()  # the dragged state changes the hover layer's strength; hover and focus are the engine's
 
     # -- events ------------------------------------------------------------
 

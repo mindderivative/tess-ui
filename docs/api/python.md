@@ -2436,7 +2436,6 @@ The state layer, ripple and focus ring on one `box` node: the layer and ripple t
 
 - `detach() -> None`: Removes the listeners, the layer and any ripples.
 - `enabled` *(property)*: Whether the node shows state feedback (hover, focus, press); set it to turn that on or off.
-- `opacity` *(property)*: The state layer's resting opacity for the current state.
 - `refresh() -> None`: Follows the node's corners (and, for the ring, its size).
 - `release() -> None`: Lets go of every press held, for a widget whose pointer was taken by another node (a captured drag), so the release never came here.
 - `retint(tint: RGBA, ring_color: RGBA, glow: tuple[RGBA, RGBA] | None = None) -> None`: New colours (a theme change), for the layer, live ripples and ring.
