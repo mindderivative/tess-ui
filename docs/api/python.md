@@ -932,7 +932,8 @@ list_(
     selectable: str | None = None,
     selected: int | list[int] | None = None,
     announce: str | None = '{count} selected',
-    unselectable: list[int] | None = None
+    unselectable: list[int] | None = None,
+    label: str | None = None
 ) -> Widget
 ```
 

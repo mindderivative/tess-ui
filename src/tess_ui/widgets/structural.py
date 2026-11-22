@@ -64,6 +64,7 @@ def list_(
     selected: int | list[int] | None = None,
     announce: str | None = "{count} selected",
     unselectable: list[int] | None = None,
+    label: str | None = None,
 ) -> Widget:
     """Lays out `list_item(...)`s (or any nodes) as MD3's list: a column
     `width` wide. The items move into it. An empty list is an error, as
@@ -86,7 +87,8 @@ def list_(
     choose rows from code), `selected=` starts it with a list, and `announce`
     is what assistive technology reads as it changes (`{count}` is how many;
     `None` is silent). A row made with `list_item(disabled=True)` is skipped by the keys, never chosen and
-    does not respond; `unselectable=[indices]` names rows that take focus but are never chosen (a range
+    does not respond; `label` is the list's accessible name (what the list is: Files, Fruit; a screen reader
+    says it on entering the list); `unselectable=[indices]` names rows that take focus but are never chosen (a range
     passes over them, Ctrl+A leaves them out, a write from code ignores them). Only `.on_change(fn)` hears it (`reason` `pointer`,
     `keyboard` or `api`; `detail` `select`, `toggle` (Ctrl+click, Space), `range` (Shift), `all` (Ctrl+A) or `clear` (a click on the empty part), as the Selection pattern names them): the engine makes the change, so
     there is nothing to refuse beforehand."""
@@ -97,7 +99,7 @@ def list_(
     widget = Widget(window, spec={"id": "list", "kind": "Container",
                                   "style": {"width": width, "flex_direction": "vertical"}},
                     theme=theme, x=x, y=y, name="list")
-    a11y.describe(widget.node, role="listbox" if selectable else "list")
+    a11y.describe(widget.node, role="listbox" if selectable else "list", **({} if label is None else {"label": label}))
     nodes = []
     for item in items:
         node = getattr(item, "node", item)
