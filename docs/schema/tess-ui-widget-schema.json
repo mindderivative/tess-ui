@@ -19959,6 +19959,21 @@
             ],
             "description": "What the user has typed."
           },
+          "label_placement": {
+            "anyOf": [
+              {
+                "enum": [
+                  "auto",
+                  "external"
+                ]
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "Where the label sits: auto is the floating label in a 56 pixel container at the default density and the Material size, above the field at compact and dense; external puts it above the container at every density, and the container is 40, 32 or 28 pixels (ADR-0023)."
+          },
           "placeholder": {
             "anyOf": [
               {
@@ -20277,6 +20292,7 @@
             "variant",
             "label",
             "text",
+            "label_placement",
             "placeholder",
             "supporting",
             "error",

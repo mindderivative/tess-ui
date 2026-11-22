@@ -3777,3 +3777,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-21 The dock tab's close button is a 24 dp hit area (AC-DKP-2)
 - `docking.CLOSE_SIZE` is 24 (was 18): the close button's hit area meets the spec's 24 dp minimum target, around the 14 dp glyph, still 8 dp after the label, centred in the tab at every density (48, 40 and 32 dp tabs). A test pins the extents, the centring and the gap at the four density settings.
+
+## 2026-11-21 Text field: `Label_Placement: external` at any density (ADR-0023, AC-TXF-3)
+- `TextField` takes `Label_Placement` (`auto` or `external`; default `auto`, so nothing changes for existing views). `external` puts the label above the container at every density, and the container is 40, 32 or 28 dp (the table's control height, 40 at the default density and when no density is asked) instead of the floating label's 56 dp; its side padding is the density's (12 at default), and the text stays `body_large` at default density (`body_medium` is compact and dense's). `auto` is as before: floating at default, external at compact and dense.

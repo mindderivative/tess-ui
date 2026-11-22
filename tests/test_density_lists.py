@@ -102,9 +102,10 @@ FIELD = """Container {
 """
 
 
-def field_at(tmp_path, density):
+def field_at(tmp_path, density, placement=None):
     (tmp_path / "Views").mkdir(parents=True, exist_ok=True)
-    (tmp_path / "Views" / "Main_View.tdl").write_text("---\nTDL: 0.2\nName: main\n---\n" + FIELD)
+    text = FIELD.replace("Variant: outlined", f"Variant: outlined, Label_Placement: {placement}") if placement else FIELD
+    (tmp_path / "Views" / "Main_View.tdl").write_text("---\nTDL: 0.2\nName: main\n---\n" + text)
     app = App(root=tmp_path, width=400, height=500, density=density)
     app.bind(VM)
     view = app.open_view("Main")
@@ -128,3 +129,19 @@ def test_the_default_keeps_the_floating_label_in_a_56_container_AC_TXF_19(tmp_pa
     view = field_at(tmp_path, density)
     assert view._built.outer["root.f.box"].get("layout_height") >= 56
     assert "root.f.box.label_box" in view._built.outer and "root.f.external_label" not in view._built.outer
+
+
+@pytest.mark.parametrize("density, height, gap", [(None, 40, 4), ("default", 40, 4), ("compact", 32, 4), ("dense", 28, 2)])
+def test_an_external_label_is_available_at_every_density_with_the_40_32_28_container_AC_TXF_3(tmp_path, density, height, gap):
+    view = field_at(tmp_path, density, "external")
+    box, label = view._built.outer["root.f.box"], view._built.outer["root.f.external_label"]
+    assert box.get("layout_height") == height
+    assert label.get("layout_y") + label.get("layout_height") + gap == pytest.approx(box.get("layout_y"), abs=0.6)
+    assert "root.f.box.label_box" not in view._built.outer
+
+
+def test_an_external_label_at_the_default_density_keeps_the_body_large_text_and_the_12_dp_padding_AC_TXF(tmp_path):
+    view = field_at(tmp_path, "default", "external")
+    box = view._built.outer["root.f.box"]
+    assert box.get("padding_left") == 12.0 and box.get("padding_right") == 12.0
+    assert view._built.nodes["root.f.box.body.input"].get("font_size") == 16.0  # body_large at the default density; body_medium is compact and dense's

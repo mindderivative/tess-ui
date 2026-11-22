@@ -7,7 +7,7 @@ Tesserae: "0.6"
 # character counter and an error state. `variant: filled | outlined`. What it looks like is in TextField_Stylesheet.tdl; this file is its
 # structure. `text` is two-way: give it a bare reference (`text: "{{ query }}"`) and typing writes `query`.
 #
-# At the `compact` and `dense` density of the app the label is above the field, outside its 32 or 28 pixel container (ADR-0023); the floating label below is the default
+# At the `compact` and `dense` density of the app, or with `label_placement: external`, the label is above the field, outside its 32 or 28 pixel container (ADR-0023); the floating label below is the default
 # density's, and the Material size when no density is asked.
 #
 # The label is raised (small, at the top) while the field has focus or text, and sits in the middle as a hint otherwise; it glides between
@@ -17,6 +17,12 @@ Container {
     Variant { Type: enum, Choices: [filled, outlined], Default: filled, Doc: "filled has a fill and a line under it; outlined has a border." }
     Label { Type: str, Default: "", Doc: "The field's name; it also names the field for a screen reader." }
     Text { Type: str, Default: "", Model: true, Doc: "What the user has typed." }
+    Label_Placement {
+      Type: enum
+      Choices: [auto, external]
+      Default: auto
+      Doc: "Where the label sits: auto is the floating label in a 56 pixel container at the default density and the Material size, above the field at compact and dense; external puts it above the container at every density, and the container is 40, 32 or 28 pixels (ADR-0023)."
+    }
     Placeholder { Type: str, Default: "", Doc: "Shown while the field is empty and focused (or has no label)." }
     Supporting { Type: str, Default: "", Doc: "Help under the field." }
     Error {
@@ -92,12 +98,12 @@ Container {
         On_Pick: "text = picked; ac_open = False"
       }
     }
-    If <| label != '' and (app_density() in ('compact', 'dense')) |> {
+    If <| label != '' and (label_placement == 'external' or (label_placement == 'external' or app_density() in ('compact', 'dense'))) |> {
       Text {
         Name: external_label
         Text: <| label |>
         Typography_Role: body_small
-        Style { Foreground: on_surface_variant, Margin: <| {'left': 0, 'right': 0, 'top': 0, 'bottom': 4 if app_density() == 'compact' else 2} |> }
+        Style { Foreground: on_surface_variant, Margin: <| {'left': 0, 'right': 0, 'top': 0, 'bottom': 2 if app_density() == 'dense' else 4} |> }
       }
     }
     Container {
@@ -105,7 +111,7 @@ Container {
       Handlers {
         On_Press { Call { Action: "focus", Args: [<| 'input' |>] } }
       }
-      Style { Flex_Direction: horizontal, Align_Content: left, Gap: 12, Padding: <| {'left': density_token(app_density(), 'field_padding_x') if app_density() in ('compact', 'dense') else 16, 'right': density_token(app_density(), 'field_padding_x') if app_density() in ('compact', 'dense') else 16, 'top': 0, 'bottom': 0} |>, Min_Height: <| density_token(app_density(), 'control_height') if app_density() in ('compact', 'dense') else 56 |> }
+      Style { Flex_Direction: horizontal, Align_Content: left, Gap: 12, Padding: <| {'left': density_token(app_density() or 'default', 'field_padding_x') if (label_placement == 'external' or app_density() in ('compact', 'dense')) else 16, 'right': density_token(app_density() or 'default', 'field_padding_x') if (label_placement == 'external' or app_density() in ('compact', 'dense')) else 16, 'top': 0, 'bottom': 0} |>, Min_Height: <| density_token(app_density() or 'default', 'control_height') if (label_placement == 'external' or app_density() in ('compact', 'dense')) else 56 |> }
       Children {
         If <| leading != '' |> {
           Icon {
@@ -121,7 +127,7 @@ Container {
             Flex: fill
             Align_Content: left
             Gap: 4
-            Padding: <| {'left': 0, 'right': 0, 'top': 16 if (label != '' and not (app_density() in ('compact', 'dense'))) else 0, 'bottom': 0} |>
+            Padding: <| {'left': 0, 'right': 0, 'top': 16 if (label != '' and not (label_placement == 'external' or (label_placement == 'external' or app_density() in ('compact', 'dense')))) else 0, 'bottom': 0} |>
           }
           Children {
             If <| prefix != '' |> {
@@ -204,7 +210,7 @@ Container {
             }
           }
         }
-        If <| label != '' and not (app_density() in ('compact', 'dense')) |> {
+        If <| label != '' and not (label_placement == 'external' or (label_placement == 'external' or app_density() in ('compact', 'dense'))) |> {
           Container {
             Name: label_box
             Style {
