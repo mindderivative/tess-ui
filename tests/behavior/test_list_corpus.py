@@ -16,7 +16,7 @@ CASES = {c.name.removesuffix(".case.json"): c for c in behaviour_cases(corpus_ro
 
 WHY = {
     "name": "the list has no accessible name (`list_` takes no label) and the Tree's roles are tree and treeitem, not listbox and option",
-    "anchor": "the anchor differs: the single `list_` exposes none, and an engine write (`selection=` from code) anchors on the first chosen row where the standard leaves the anchor alone",
+    "anchor": "a single-mode list or tree has no anchor to read: the engine keeps one only for a multiple selection",
     "order": "the focus moves after the engine has made the range (Shift+Arrow), the standard has focus_move first",
     "announce": "the engine's announcement (`selection_announce`) cannot be read back from a headless window",
     "disabled": "a `list_item` has no disabled state",
@@ -29,8 +29,7 @@ _UNSEL = ("unselectable-arrow-lands-on-row", "unselectable-row-skipped-by-range"
 _COMMON = {
     "a11y-tree-multiple": (FAIL, "name"), "a11y-tree-single": (FAIL, "name"),
     "announce-clear": (NOT_RUN, "announce"), "announce-once-after-300ms": (NOT_RUN, "announce"), "announce-range": (NOT_RUN, "announce"),
-    "announce-select-all": (NOT_RUN, "announce"), "announce-single-none": (FAIL, "anchor"), "api-set-is-not-announced": (FAIL, "anchor"),
-    "api-sets-selection": (FAIL, "anchor"), "press-on-selected-selects-only-on-release": (FAIL, "anchor"),
+    "announce-select-all": (NOT_RUN, "announce"), "announce-single-none": (FAIL, "anchor"), "api-set-is-not-announced": (NOT_RUN, "announce"),
     "select-all-key-off": (NOT_RUN, "ctrl_a"), "single-mode-keeps-before-change": (FAIL, "anchor"), "single-select-on-focus": (NOT_RUN, "on_focus"),
     "single-space-chooses": (FAIL, "anchor"), **dict.fromkeys(_UNSEL, (NOT_RUN, "unselectable")),
 }
@@ -40,7 +39,7 @@ LIST_STRICT = {**LIST_DIAG, "shift-arrow-range": (FAIL, "order")}
 
 
 def test_the_corpus_has_the_list_cases_and_every_recorded_gap_names_its_reason():
-    assert len(CASES) == 25
+    assert len(CASES) == 26
     for table in (LIST_STRICT, LIST_DIAG, TREE_DIAG):
         assert set(table) <= set(CASES) and all(why in WHY for _, why in table.values())
 
