@@ -69,14 +69,15 @@ class HandlerRef:
     def __init__(self, handler: Optional[Handler] = None, scope: Optional["Scope"] = None) -> None:
         self.handler, self.scope = handler, scope
 
-    def __call__(self) -> None:
+    def __call__(self, payload: Any = None) -> None:
+        """Runs the caller's handler; `payload` (`on_change(event)`) is the `event` of its statements."""
         if self.handler is None or self.scope is None:
             return
         if self.handler.action is not None:
             self.scope.call_action(self.handler.action, [], {})
         else:
             assert self.handler.statements is not None
-            self.handler.statements.run(self.scope, event=None)
+            self.handler.statements.run(self.scope, event=payload)
 
 
 class Scope:
@@ -156,7 +157,7 @@ class Scope:
     def _action(self, path: str) -> Optional[Callable[..., Any]]:
         held = self._frame(path)
         if held is not None and isinstance(held.values[path], HandlerRef):  # a handler parameter, called by its name
-            return lambda: held.values[path]()
+            return lambda *payload: held.values[path](*payload)
         if self.actions is not None:
             built_in = self.actions(path, self) if getattr(self.actions, "wants_scope", False) else self.actions(path)
             if built_in is not None:

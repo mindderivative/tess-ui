@@ -130,3 +130,18 @@ def test_without_multiple_the_tree_chooses_one_row_as_before(tmp_path):
     assert view.node("root.t").get("selection_mode") in (None, "none")
     click(view, "Pictures")
     assert vm.sel.get() == "pics" and vm.picked.get() == []
+
+
+def test_on_change_says_the_reason_and_the_detail_of_each_change_to_the_chosen_rows(tmp_path):
+    view, vm = opened(tmp_path, "Multiple: true\n      Selection: <| picked |>\n      On_Change: \"heard(event.reason, event.detail, event.count, event.selection, event.anchor)\"")
+    click(view, "Letter")
+    click(view, "Pictures", ctrl=True)
+    click(view, "Readme", shift=True)
+    focus(view, "Letter")
+    press(view, "a", ctrl=True)
+    vm.picked.set(["a"])
+    settle(view, 6)
+    heard = vm.log
+    assert [(r, d, c) for r, d, c, *_ in heard] == [
+        ("pointer", "select", 1), ("pointer", "toggle", 2), ("pointer", "range", 2), ("keyboard", "all", 5), ("api", "select", 1)]
+    assert heard[0][3:] == (["a"], "a") and heard[1][3:] == (["a", "pics"], "pics")

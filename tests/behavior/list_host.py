@@ -209,6 +209,12 @@ class _VM(ViewModel):
         self.picked = Signal([])
         self.chosen = Signal("")
         self.open = Signal([])
+        self.sink: Any = None
+
+    def heard(self, reason: Any, detail: Any, count: Any, anchor: Any) -> None:
+        """The Tree's `On_Change`: what the widget says about a change to the chosen rows."""
+        if self.sink is not None:
+            self.sink(Event("selection_change", {"count": count, "anchor": anchor, "reason": reason, "detail": detail}))
 
 
 def _item(entry: dict[str, Any]) -> str:
@@ -227,7 +233,7 @@ class TreeHost(_Host):
         self.ids = [entry["id"] for entry in given["items"]]
         (tmp_path / "Views").mkdir(exist_ok=True)
         nodes = "\n".join(_item(entry) for entry in given["items"])
-        multiple = "" if self.single else "Multiple: true\n      Selection: <| picked |>"
+        multiple = "" if self.single else "Multiple: true\n      Selection: <| picked |>\n      On_Change: \"heard(event.reason, event.detail, event.count, event.anchor)\""
         (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
 TDL: 0.2
 Name: main
@@ -255,11 +261,15 @@ Container {{
         (self.vm.chosen if self.single else self.vm.picked).set(given["selection"][0] if self.single and given["selection"] else
                                                                  "" if self.single else list(given["selection"]))
         self._begin()
+        self.vm.sink = self._heard_change
         for ident in self.ids:
             self.view._listen(self._row(ident), "focus", lambda event, ident=ident: self._moved(f"option#{ident}"))
         self.view.node("root.t").set(min_height=56.0 * len(self.ids) + 120.0)  # room below the rows, where a press chooses none
         for _ in range(8):
             self.window.advance(16)
+
+    def _heard_change(self, event: Event) -> None:
+        self._heard.append(event)
 
     def _row(self, item: Any) -> Any:
         return self.view.node(f"root.t.row[{item}]")

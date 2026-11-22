@@ -169,7 +169,7 @@ A call's own `Style`, `Classes`, `A11y`, `Interaction` and `Handlers` lie over t
 the caller's names. A view may call itself (a tree), to a depth of 64.
 
 A param of type `handler` takes the caller's action name or statements, read in the caller's names. At a call the param is a property whose value is the text
-(`On_Remove: "remove(item.id)"`), or a block of steps; the view runs it by calling the param like an action, `on_remove()`; a param the caller left out does nothing when called.
+(`On_Remove: "remove(item.id)"`), or a block of steps; the view runs it by calling the param like an action, `on_remove()`, or with one value for the handler to read as `event` (`on_change(event)`); a param the caller left out does nothing when called.
 A handler param is called with no arguments: if the caller needs a value, it writes it in its own text (`On_Remove: "remove(item.id)"`).
 
 A param that is `Model: true` and is given a bare Signal (`Dark_On: <| dark |>`) passes the Signal itself, so the view's own `Switch` edits the

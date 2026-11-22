@@ -22927,6 +22927,18 @@
             ],
             "description": "Choose several rows: click chooses one, Ctrl+click toggles, Shift+click and Shift+Arrow choose a range, Space toggles, Ctrl+A chooses every row that shows (AC-SLT-7). `Selected` then follows the last row pressed."
           },
+          "on_change": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "With `Multiple`: called after the chosen rows change, with `event.reason` (`pointer`, `keyboard` or `api`), `event.detail` (`select`, `toggle`, `range`, `all` or `clear`), `event.count`, `event.selection` (the chosen values) and `event.anchor`."
+          },
           "compact": {
             "anyOf": [
               {
@@ -22995,6 +23007,7 @@
             "selected",
             "selection",
             "multiple",
+            "on_change",
             "compact",
             "density",
             "label"
