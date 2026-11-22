@@ -267,3 +267,18 @@ def test_a_layer_keeps_8_dp_from_the_window_edge_when_it_is_shifted_to_fit_AC_AN
     window.show_layer(layer, anchor=anchor, placement="below")
     window.advance(16)
     assert layer.get("layout_x") + layer.get("layout_width") == 300.0 - 8.0
+
+
+def test_escape_during_a_tab_drag_cancels_it_AC_DCK_6():
+    window, dock, panels = _dock()
+    tab = dock._zones["left"].tabs[0]
+    right = dock._zones["right"]
+    _drag(window, tab.node, right.body, release=False)
+    assert dock.highlight.parent() == right.body and tab.interaction.dragged
+    window.simulate("key_down", key="escape")
+    window.advance(16)
+    assert dock.highlight.parent() is None and not tab.interaction.dragged
+    assert dock.side_of(panels["Files"]) == "left"
+    window.simulate("pointer_up", x=_centre(right.body)[0], y=_centre(right.body)[1])
+    window.advance(16)
+    assert dock.side_of(panels["Files"]) == "left"  # the release after the Escape moves nothing

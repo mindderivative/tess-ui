@@ -476,6 +476,20 @@ def test_the_os_taking_the_press_cancels_a_tab_drag_of_a_half():
     assert host.half_of("outline") == "left_half" and host.dock._dragging is None and host.dock.highlight.parent() is None
 
 
+def test_escape_during_a_tab_drag_of_a_half_cancels_it_AC_DCK_6():
+    app, view = _view()
+    host = view.dock_host("dock")
+    _join(app, host, "left_half")
+    _pick_up(app, _half_tab(host, "left_half", "Outline"))
+    _move_to(app, _centre(host.dock._zones["bottom"].body))
+    assert host.dock.highlight.parent() is not None
+    app.window.simulate("key_down", key="escape")
+    app.window.advance(16)
+    assert host.half_of("outline") == "left_half" and host.dock._dragging is None and host.dock.highlight.parent() is None
+    app.window.simulate("pointer_up", x=_centre(host.dock._zones["bottom"].body)[0], y=_centre(host.dock._zones["bottom"].body)[1])
+    app.window.advance(16)
+    assert host.half_of("outline") == "left_half"  # the release after the Escape drops nothing
+
 # -- a half a split made collapses when it empties ------------------------------------------------------
 
 def _structure(view, host):

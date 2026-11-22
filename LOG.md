@@ -3725,3 +3725,5 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-21 Placed layers keep 8 dp from the window edge (tre 0.6.12 `layer_viewport_margin`, `layer_flip_threshold`)
 - Every window the app makes sets `layer_viewport_margin` to `tokens.LAYER_VIEWPORT_MARGIN` (8) and `layer_flip_threshold` to `tokens.LAYER_FLIP_THRESHOLD` (0): a menu, tooltip or popover that flips or shifts to fit no longer touches the edge. The per-window setup (`_set_up_window`) now also holds the drag start distance. The per-layer `align` and `shift` are not set (the defaults are the spec's).
+## 2026-11-21 Escape cancels a dock tab drag (tre 0.6.12 `dock_cancel`)
+- The `Dock` listens for the engine's `dock_cancel` (Escape during a drag it runs): the panel stays in its zone, nothing moves, the highlight and the tab's dragged state go, and the release after it drops nothing (AC-DCK-6). A drag of a half's tab, which the dock runs itself with the pointer captured, takes Escape the same way from a root key listener that lives as long as that drag.
