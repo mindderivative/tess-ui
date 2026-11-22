@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
-from tess_ui.behavior import Gate, GatedSignal, caused_by
+from tess_ui.behavior import Gate, GatedSignal, caused_by, current
 from tess_ui.reactive import Effect
 from tess_ui.widgets._composed import Widget
 from tess_ui.widgets._views import Call
@@ -99,17 +99,12 @@ def search_bar(
     typed_before = [""]
 
     def recover() -> None:
-        """Focus recovery: the clear button goes when the query empties, and if it held the focus the field takes it (a press on it, by pointer or
-        keyboard, or the query emptied some other way): focus is not lost to the window (AC-SRB-4)."""
+        """The clear button goes when the query empties, and it does not hold the focus (a press on it does not take it): the field takes the focus
+        after a press on it, by pointer or keyboard, so it is not lost (AC-SRB-4, Press Focus: input)."""
         text, before = query.get(), typed_before[0]
         typed_before[0] = text
-        if text or not before:
-            return
-        try:
-            clear = widget.part("clear")
-        except ValueError:
-            return
-        if clear.get("focused"):
+        cause = current()
+        if not text and before and cause is not None and cause[1].rsplit(".", 1)[-1] == "clear":
             field.focus()
 
     widget._undo.append(Effect(recover).dispose)
