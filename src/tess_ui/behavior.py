@@ -18,7 +18,7 @@ from typing import Any
 
 from tess_ui.reactive import Signal, _schedule_notify
 
-__all__ = ["ChangeEvent", "Gate", "GatedSignal", "caused_by", "reason_of"]
+__all__ = ["ChangeEvent", "Gate", "GatedSignal", "caused_by", "current", "reason_of"]
 
 REASONS = ("pointer", "keyboard", "api")
 
@@ -69,6 +69,11 @@ def caused_by(reason: str, source: str) -> Iterator[None]:
         yield
     finally:
         _cause.pop()
+
+
+def current() -> tuple[str, str] | None:
+    """The `(reason, source)` of what is running a write right now, or `None` outside any handler or key."""
+    return _cause[-1] if _cause else None
 
 
 def reason_of(event: str, payload: Any) -> str:

@@ -208,3 +208,16 @@ def test_a_disabled_bar_takes_no_typing_and_shows_no_clear_button_and_clear_labe
     named.query.set("abc")
     other.advance(32)
     assert (named.part("clear").get("label"), named.part("clear").get("role")) == ("Erase", "button")
+
+
+def test_the_clear_button_is_not_a_tab_stop_and_a_press_on_it_does_not_take_the_focus_AC_SRB_4():
+    window, bar, _ = _typed(False)
+    clear = bar.part("clear")
+    assert clear.get("focusable") is False and clear.get("role") == "button"
+    window.simulate("key_down", key="tab")
+    window.advance(16)
+    assert not clear.get("focused")
+    bar.part("field").focus()
+    window.simulate("click", node=clear)
+    window.advance(48)
+    assert bar.query.get() == "" and bar.part("field").get("focused")  # the press cleared it and handed the focus to the field

@@ -944,7 +944,7 @@ def focus_ring_color(scheme: Optional[dict[str, RGBA]]) -> RGBA:
 
 #: The `a11y:` fields a YAML node may set; widget states (`checked`, ...)
 #: belong to Tesserae's widgets (M40).
-_A11Y_YAML = ("label", "role", "hidden", "live", "level", "expanded", "selected", "checked", "value", "value_min", "value_max", "value_step",
+_A11Y_YAML = ("label", "role", "hidden", "live", "level", "expanded", "selected", "checked", "value", "value_min", "value_max", "value_step", "focusable",
               *a11y.EXTRAS, *a11y.RELATIONS)
 #: The states `a11y:` may set on a node that is not a control; a control kind sets its own (a Checkbox is checked or not by its state).
 _A11Y_STATES = frozenset({"expanded", "selected", "checked", "value", "value_min", "value_max", "value_step"})
@@ -1019,7 +1019,7 @@ def _a11y_props(node: dict[str, Any], *, patching: bool) -> dict[str, Any]:
         k: v for k, v in fields.items() if k != "role"}
     if node["kind"] not in _OWN_ROLE:
         if _clickable(node):
-            props.update(focusable=True, role=fields.get("role", "button"))
+            props.update(focusable=fields.get("focusable", True), role=fields.get("role", "button"))  # `focusable: false`: a press does not take the focus
         elif "role" in fields or patching:
             props["role"] = fields.get("role", "none")
             if patching:

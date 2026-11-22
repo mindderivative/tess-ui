@@ -95,7 +95,7 @@ Container {
         Handlers {
           On_Click { Set { Target: query, Value: <| '' |> } }
         }
-        A11y { Role: button, Label: <| clear_label |> }
+        A11y { Role: button, Label: <| clear_label |>, Focusable: false }
         Children {
           Icon {
             Name: clear_icon

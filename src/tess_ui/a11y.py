@@ -41,7 +41,7 @@ EXTRAS = ("pressed", "invalid", "description", "current", "value_now", "value_te
 #: `describedby` and `controls` name other nodes of the view (by their `name:`), or a list of them; the view resolves them to nodes.
 RELATIONS = ("describedby", "controls")
 CURRENT = frozenset({"page", "step", "location", "date", "time"})
-_BOOLS = ("checked", "selected", "expanded", "disabled", "hidden", "invalid", "busy")
+_BOOLS = ("checked", "selected", "expanded", "disabled", "hidden", "invalid", "busy", "focusable")
 _NUMBERS = ("value", "value_min", "value_max", "value_step")
 #: The states and numbers tess_re holds as "not set" (`None`) until a node says: `expanded` is absent on a node that cannot expand, and
 #: `checked: null` is a box that is neither on nor off to a screen reader. `hidden` and `disabled` are always one or the other.
