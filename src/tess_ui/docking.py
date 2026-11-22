@@ -149,6 +149,7 @@ class Dock:
                                        stroke_width=HIGHLIGHT_OUTLINE, hit_testable=False, a11y_hidden=True)
         window.on("dock_target", self._on_target)
         window.on("dock_drop", self._on_drop)
+        window.on("dock_cancel", self._on_cancel)
         self._paint_highlight()
 
     # -- zones and panels ----------------------------------------------------
@@ -300,6 +301,7 @@ class Dock:
         """Stops the dock: its window events, its tabs' listeners. The zones' nodes are the caller's to destroy."""
         self.window.off("dock_target")
         self.window.off("dock_drop")
+        self.window.off("dock_cancel")
         for zone in self._zones.values():
             for tab in zone.tabs:
                 for undo in tab.undo:
@@ -500,6 +502,8 @@ class Dock:
         if self._zones[entry.side].half:  # `tess_re` does not know this panel: the tab holds the pointer and Tesserae finds the target
             self._own_drag = True
             press["tab"].node.capture_pointer()
+            # the engine is not dragging this tab, so its Escape is ours to take
+            self._tracking = [self._events.listen(self.window.root, "key_down", self._own_key)]
             return
         if self._half_drop is not None and not self._tracking:
             root = self.window.root
@@ -528,6 +532,17 @@ class Dock:
         if entry is None or event.side is None or event.side == entry.side or event.side not in self._zones:
             return
         self._moved(entry, event.side)
+
+    def _own_key(self, event: Any) -> None:
+        if event.key == "escape":
+            self._own_drop(apply=False)
+
+    def _on_cancel(self, event: Any = None) -> None:
+        """Escape during a drag (the engine's `dock_cancel`): the panel stays in its zone, nothing moves, the highlight goes (AC-DCK-6)."""
+        self._end_drag()
+        press, self._press, self._dragging = self._press, None, None
+        if press is not None:
+            press["tab"].interaction.set_dragged(False)
 
     # -- dragging a tab of a half --------------------------------------------
 

@@ -3722,3 +3722,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-21 The text selection is `primary` at 30 percent (tre `selection_fill`)
 - A text field's `selection_fill` is the scheme's `primary` at 30 percent (alpha 76), the text colour unchanged (`selection_foreground` stays unset), as the Text Field spec says; the engine's own selection colour is gone from fields. `selection_radius` and read-only/static `Text` selection are not set.
+
+## 2026-11-21 Escape cancels a dock tab drag (tre 0.6.12 `dock_cancel`)
+- The `Dock` listens for the engine's `dock_cancel` (Escape during a drag it runs): the panel stays in its zone, nothing moves, the highlight and the tab's dragged state go, and the release after it drops nothing (AC-DCK-6). A drag of a half's tab, which the dock runs itself with the pointer captured, takes Escape the same way from a root key listener that lives as long as that drag.
