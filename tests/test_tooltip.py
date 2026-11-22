@@ -569,3 +569,61 @@ def test_the_tooltip_text_follows_the_themes_type_roles_AC_TYP_3_AC_TIP_13(tmp_p
     run(view, 700)
     (layer, _), = view._tips.values()
     assert layer.children()[0].get("font_size") == 21.0
+
+
+def _heard(view):
+    got = []
+    view.on_tooltip_before_change(lambda e: got.append((e.name, e.reason, e.detail, e.previous, e.value, e.target)))
+    view.on_tooltip_change(lambda e: got.append((e.name, e.reason, e.detail, e.previous, e.value, e.target)))
+    return got
+
+
+def test_a_tooltip_reports_opening_and_closing_with_reason_and_detail_AC_TIP_BEHAVIOR(tmp_path):
+    view, _ = opened(tmp_path)
+    got = _heard(view)
+    hover(view)
+    run(view, 600)
+    view.window.simulate("pointer_move", x=290, y=190)
+    run(view, 400)
+    assert got == [("before_change", "pointer", "hover", False, True, "root.b"), ("change", "pointer", "hover", False, True, "root.b"),
+                   ("before_change", "pointer", "grace", True, False, "root.b"), ("change", "pointer", "grace", True, False, "root.b")]
+
+
+def test_a_listener_can_refuse_a_tooltip_and_a_scroll_or_window_change_is_not_asked_about(tmp_path):
+    view, _ = opened(tmp_path)
+    view.on_tooltip_before_change(lambda e: e.cancel())
+    hover(view)
+    run(view, 700)
+    assert not view._tips  # refused
+    (tmp_path / "b").mkdir()
+    view2, _ = opened(tmp_path / "b")
+    got = _heard(view2)
+    hover(view2)
+    run(view2, 700)
+    got.clear()
+    view2.on_tooltip_before_change(lambda e: e.cancel())  # would refuse anything it is asked
+    view2.window.simulate("active", active=True)
+    view2.window.simulate("active", active=False)
+    run(view2, 32)
+    assert not view2._tips and [g[:3] for g in got] == [("change", "api", "window")]
+
+
+def test_coming_back_onto_the_trigger_while_the_tooltip_closes_keeps_it_open(tmp_path):
+    view, _ = opened(tmp_path)
+    hover(view)
+    run(view, 600)
+    view.window.simulate("pointer_move", x=290, y=190)
+    run(view, 100)  # inside the 150 ms grace
+    hover(view)
+    run(view, 200)  # past the old grace: it did not close
+    assert len(view._tips) == 1
+    run(view, 1000)
+    assert len(view._tips) == 1
+
+
+def test_the_tip_layer_has_the_role_tooltip_and_stays_hidden_from_assistive_technology(tmp_path):
+    view, _ = opened(tmp_path)
+    hover(view)
+    run(view, 600)
+    layer = next(iter(view._tips.values()))[0]
+    assert layer.get("role") == "tooltip" and layer.get("a11y_hidden") is True

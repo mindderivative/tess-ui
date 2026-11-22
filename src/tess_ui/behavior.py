@@ -35,6 +35,8 @@ class ChangeEvent:
     detail: str
     cancelled: bool = False
     accepted: bool = False
+    #: What changed, when the gate has many things it can change (a tooltip: the id of its trigger).
+    target: Any = None
 
     def cancel(self) -> None:
         self.cancelled = True
