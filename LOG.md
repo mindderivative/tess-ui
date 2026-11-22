@@ -3774,3 +3774,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-21 Plain list rows are not Tab stops; a row with an action is a button (SPEC 2.3a `list`/`listitem` are none)
 - `list_item(...)` is a Tab stop only when it does something: with `on_click` it is a button (as before); without, it only shows something and takes no focus (`ListItem`'s new `Actionable` parameter, default true for TDL callers, bound to `A11y { Focusable: }`, which is now bindable; `a11y.BINDABLE` gains `focusable`). `list_(selectable="single")` makes its rows actionable. Tab order change: a plain list used to be a Tab stop per row; it is none now, and an action row is one each. The last disagreement of `tests/test_focus_table.py` is gone.
+
+## 2026-11-21 The dock tab's close button is a 24 dp hit area (AC-DKP-2)
+- `docking.CLOSE_SIZE` is 24 (was 18): the close button's hit area meets the spec's 24 dp minimum target, around the 14 dp glyph, still 8 dp after the label, centred in the tab at every density (48, 40 and 32 dp tabs). A test pins the extents, the centring and the gap at the four density settings.
