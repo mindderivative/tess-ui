@@ -248,12 +248,22 @@ def _tree_rows(nodes: Any, expanded: Any) -> list[dict[str, Any]]:
     return rows
 
 
+_NO_ROW: dict[str, Any] = {"value": None, "label": "", "icon": "", "disabled": False, "level": 0, "branch": False, "open": False, "set_size": 0, "pos_in_set": 0, "siblings_branches": []}
+
+
+def _tree_row(nodes: Any, expanded: Any, value: Any) -> dict[str, Any]:
+    """The row of `tree_rows(nodes, expanded)` whose value is `value`; a row with no value and no children when none shows (a tree's key handler asks
+    about the row that has the focus, which can be one that has just closed)."""
+    return next((row for row in _tree_rows(nodes, expanded) if row["value"] == value), _NO_ROW)
+
+
 HOST_FUNCTIONS: dict[str, Callable[..., Any]] = {
     "format_number": _format_number, "pluralize": _pluralize, "date_add_days": _date_add_days, "date_weekday": _date_weekday,
     "days_in_month": _days_in_month, "format_date": _format_date, "current_date": _today,
     "density_token": tokens.density_token,
     "app_density": lambda: _app_density.get(),
     "tree_rows": _tree_rows,
+    "tree_row": _tree_row,
 }
 
 

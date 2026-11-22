@@ -21,7 +21,15 @@ _DISABLED = {"disabled": P("bool", doc="Dimmed, not focusable, and its handlers 
 declare("Rect", _DISABLED, container=True, doc="A filled box that can hold children.")
 declare("Container", {**_DISABLED,
                        "measured_width": P("float", model=True, doc="Output: how wide it is laid out. Bind a Signal or a state name to read it (written after layout and when the window resizes)."),
-                       "measured_height": P("float", model=True, doc="Output: how tall it is laid out.")}, container=True, doc="A box with an optional fill that lays out its children.")
+                       "measured_height": P("float", model=True, doc="Output: how tall it is laid out."),
+                       "selection_mode": P("enum", choices=("none", "single", "multiple"), default="none",
+                                           doc="Whether the engine chooses among the children that have a `selection_key`: `multiple` is click, Ctrl and Shift click and Shift+Arrow ranges, Space, "
+                                               "Ctrl+A (the Selection pattern's rules); `none` chooses nothing. The container then has no key handler on its rows: the engine's keys are blocked by one."),
+                       "selection": P("list", model=True, doc="With a `selection_mode`: the keys (`selection_key`) of the chosen children. Two-way. A key that no child has now (a row not built, a closed branch's child) stays in it "
+                                                                "until its child is chosen or cleared again."),
+                       "selection_announce": P("str", doc="What assistive technology reads when the selection changes, `{count}` being how many; empty is silent."),
+                       "selection_key": P("any", doc="On a child of a container with a `selection_mode`: what names it in `selection`."),
+                       "item_selectable": P("bool", default=True, doc="On a child of a container with a `selection_mode`: false keeps it from being chosen or reached by Tab and click.")}, container=True, doc="A box with an optional fill that lays out its children.")
 
 _TEXT = {
     "text": P("str", default="", doc="The text shown."),

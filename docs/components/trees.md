@@ -18,7 +18,7 @@ and `Selected` (the value of the chosen row) are two-way. Rows are 56 pixels tal
 A row is indented 16 pixels plus 24 for each level, has a 24 pixel chevron that turns a quarter when its branch opens (a leaf keeps the room), an optional icon and a `body_large`
 label; the chosen row is `secondary_container`. A press chooses a row and opens or closes a branch. One Tab stop; the up and down arrows move through the rows that show, Right
 opens a branch and Left closes it, and typing the start of a label jumps to a row. A screen reader hears a tree whose items are flat rows with their level, their place among their siblings (`pos_in_set` of `set_size`)
-and, for a branch, whether it is expanded: there is no group around the children of an open branch. `TreeNode` can be used alone for a custom tree. Not built: loading children when a branch first opens, selecting several, dragging to reorder, a context menu, and
+and, for a branch, whether it is expanded: there is no group around the children of an open branch. `TreeNode` can be used alone for a custom tree. `Multiple: true` chooses several rows (the engine's rules: click chooses one, Ctrl+click toggles, Shift+click and Shift+Arrow choose a range, Space toggles, Ctrl+A chooses the rows that show); `Selection` holds the chosen values, two-way, and a chosen row inside a closed branch stays chosen. Not built: loading children when a branch first opens, dragging to reorder, a context menu, and
 building only the rows in view for a very large tree.
 
 ## How it is built
@@ -34,6 +34,8 @@ A tree (the WAI-ARIA tree pattern in Material 3's list terms): rows that open to
 | `Nodes` | `list` | `[]` | The rows: {value, label} and optionally {icon, children, disabled}; children are the same shape. |
 | `Expanded` | `list` | `[]` | The values of the branches that are open. Two-way: give it a bare reference and the view writes it back. |
 | `Selected` | `any` |  | The value of the chosen row. Two-way: give it a bare reference and the view writes it back. |
+| `Selection` | `list` | `[]` | With `Multiple`: the values of the chosen rows. Two-way. A chosen row inside a closed branch stays in it. Two-way: give it a bare reference and the view writes it back. |
+| `Multiple` | `bool` | `false` | Choose several rows: click chooses one, Ctrl+click toggles, Shift+click and Shift+Arrow choose a range, Space toggles, Ctrl+A chooses every row that shows (AC-SLT-7). `Selected` then follows the last row pressed. |
 | `Compact` | `bool` | `false` | 40 pixel rows instead of 56 (at no density). |
 | `Density` | `str` |  | `default`, `Compact` or `dense`: the spec's density table for the rows; empty follows the app's `App(density=)`. |
 | `Label` | `str` | `Tree` | The tree's accessible name: what the pane is (Files, Structure), not the word Tree (AC-TRE-01). |
@@ -56,6 +58,7 @@ One row of a tree: a leaf or a branch with a chevron that turns a quarter when i
 | `Selected` | `bool` | `false` | Whether this is the chosen row. |
 | `Compact` | `bool` | `false` | A 40 pixel row instead of 56 at density `default`. |
 | `Density` | `str` |  | `default`, `Compact` or `dense`: the spec's density table (row height, padding, indent, chevron box). Empty follows the app's (`App(density=)`). At `default` a row keeps its Material size, 56 pixels (40 with `Compact`). |
+| `Selection_Key` | `any` |  | What names the row in a `Tree`'s `Selection`; the tree sets it. |
 | `Disabled` | `bool` | `false` | Dimmed and not pressable. |
 
 Its parts, by name (a stylesheet rule's `Part` or `Name` addresses one): `chevron` (Icon), `chevron_space` (Container), `icon` (Icon), `label` (Text).
