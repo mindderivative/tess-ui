@@ -50,6 +50,9 @@ class _Host:
     def _set_selection(self, value: list[Any]) -> None:
         raise NotImplementedError
 
+    def _container(self) -> Any:
+        raise NotImplementedError
+
     def _begin(self) -> None:
         self._heard: list[Event] = []
         self._focused: str | None = None
@@ -77,11 +80,13 @@ class _Host:
         match event:
             case PressInput(_, via, item, modifiers):
                 self._reason = via
-                if item is None:
-                    raise NotRun("a press on the empty part of the list cannot be aimed at")
                 if via != "pointer":
                     raise NotRun("a keyboard press on a row is Space or Enter: the case should send the key")
-                self.window.simulate("click", node=self._node(item), **_held(modifiers))
+                if item is None:  # the part of the container that no row covers
+                    node = self._container()
+                    self.window.simulate("click", node=node, x=10.0, y=float(node.get("layout_height")) - 10.0, **_held(modifiers))
+                else:
+                    self.window.simulate("click", node=self._node(item), **_held(modifiers))
             case PointerInput(_, kind, item, modifiers):
                 self._reason = "pointer"
                 if item is None or kind not in ("down", "up"):
@@ -143,6 +148,7 @@ class ListHost(_Host):
         start = [self.ids.index(i) for i in given["selection"]]
         self.box = list_(self.window, self.rows, selectable="single" if self.single else "multiple",
                          selected=(start[0] if start else None) if self.single else start, announce="{count} selected")
+        self.box.node.set(min_height=56.0 * len(self.rows) + 120.0)  # room below the rows, where a press chooses none
         self._begin()
         if self.single:
             self.box.on_before_change(lambda change: self._heard.append(Event("before_change", self._fields(change), cancelable=True)))
@@ -156,6 +162,9 @@ class ListHost(_Host):
 
     def _row(self, item: Any) -> Any:
         return self.rows[self.ids.index(item)].node
+
+    def _container(self) -> Any:
+        return self.box.node
 
     def _set_selection(self, value: list[Any]) -> None:
         if self.single:
@@ -249,11 +258,15 @@ Container {{
         self._begin()
         for ident in self.ids:
             self.view._listen(self._row(ident), "focus", lambda event, ident=ident: self._moved(f"option#{ident}"))
+        self.view.node("root.t").set(min_height=56.0 * len(self.ids) + 120.0)  # room below the rows, where a press chooses none
         for _ in range(8):
             self.window.advance(16)
 
     def _row(self, item: Any) -> Any:
         return self.view.node(f"root.t.row[{item}]")
+
+    def _container(self) -> Any:
+        return self.view.node("root.t")
 
     def _set_selection(self, value: list[Any]) -> None:
         if self.single:
