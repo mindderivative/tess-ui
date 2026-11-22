@@ -683,6 +683,12 @@ _CONTENT = frozenset({"flex_direction", "gap", "padding_top", "padding_right", "
                       "grid_auto_rows", "grid_auto_flow", "row_gap", "column_gap", "justify_items", "align_content"})
 
 
+#: The scrollbar's look, as the spec's Scrollbar and Scroll Container sets it (the engine's `scrollbar_*`, tre 0.6.11): an 8 dp pill thumb in a 12 dp hit area,
+#: 2 dp from the edge, at least 32 dp long, 70 percent opaque at rest, 80 under the pointer and 100 while dragged.
+SCROLLBAR: dict = {"scrollbar_width": 8.0, "scrollbar_radius": 4.0, "scrollbar_hit_width": 12.0, "scrollbar_margin": 2.0,
+                   "scrollbar_min_length": 32.0, "scrollbar_opacity": 0.7, "scrollbar_opacity_hover": 0.8, "scrollbar_opacity_drag": 1.0}
+
+
 def _scroll_props(ctx, node, style):
     """A ScrollView is `tess_re`'s `scroll_view` holding one content box,
     which is where its children go: several children straight in a
@@ -690,11 +696,11 @@ def _scroll_props(ctx, node, style):
     child out unshrunk, and ignores its own padding). The content is
     vertical unless the style says otherwise, and the full width. The
     scroll view is a Tab stop (its keys are `tess_re`'s since 0.4.2), and its
-    scrollbar is the theme's `outline`."""
+    scrollbar is the spec's (`SCROLLBAR`, the theme's `on_surface_variant`)."""
     outer, _ = _box_props(ctx, node, style)
     content = {k: v for k, v in outer.items() if k in _CONTENT}
     outer = {k: v for k, v in outer.items() if k not in _CONTENT}
-    outer.update(scrollbar_fill=_role(ctx, "outline"), focusable=True)
+    outer.update(scrollbar_fill=_role(ctx, "on_surface_variant"), focusable=True, **SCROLLBAR)
     virtual = node.get("virtual")
     if isinstance(virtual, dict):  # the content is as tall as the whole list; the rows that are built are placed in it
         content["height"] = float(virtual["count"]) * float(virtual["extent"])

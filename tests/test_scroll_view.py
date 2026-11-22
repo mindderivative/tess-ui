@@ -49,7 +49,7 @@ def test_it_is_a_scroll_view_holding_a_content_box():
     assert [view.node(f"r{i}").parent() == content for i in range(3)] == [True] * 3
     assert [view.node(f"r{i}").get("layout_y") for i in range(3)] == [8.0, 52.0, 96.0]  # vertical, gap, padding
     assert content.get("layout_height") == 8 + 10 * 40 + 9 * 4 + 8 and content.get("layout_width") == 200.0
-    assert scroll.get("focusable") and scroll.get("scrollbar_fill") == Theme.resolve(theme_seed=SEED).role("outline")
+    assert scroll.get("focusable") and scroll.get("scrollbar_fill") == Theme.resolve(theme_seed=SEED).role("on_surface_variant")
 
 
 def test_a_horizontal_content_and_paint_on_the_scroll_view():
@@ -154,7 +154,7 @@ def test_it_scrolls_without_a_viewmodel_and_survives_a_re_theme_and_reconcile():
     view.window.simulate("key_down", key="page_down")
     view.set_theme(theme_seed=SEED, dark=True)
     assert scroll.get("scroll_offset") == 100.0
-    assert scroll.get("scrollbar_fill") == Theme.resolve(theme_seed=SEED, dark=True).role("outline")
+    assert scroll.get("scrollbar_fill") == Theme.resolve(theme_seed=SEED, dark=True).role("on_surface_variant")
     view.reconcile(_spec({"gap": 2}, children=_rows(12)))
     view.window.advance(16)
     assert view._built.outer["list"] == scroll and scroll.get("scroll_offset") == 100.0
@@ -308,3 +308,13 @@ Container {
     for _ in range(6):
         view.window.advance(16)
     assert node.get("scroll_offset") == 40.0 and node.get("scroll_offset_x") == 40.0
+
+
+def test_the_scrollbar_has_the_specs_look():
+    """An 8 dp pill thumb in a 12 dp hit area, 2 dp in, at least 32 long, 70/80/100 percent opaque at rest/hover/drag."""
+    _, _, scroll = _view(_spec({"gap": 4, "padding": 8}))
+    got = {k: scroll.get(k) for k in ("scrollbar_width", "scrollbar_radius", "scrollbar_hit_width", "scrollbar_margin", "scrollbar_min_length",
+                                       "scrollbar_opacity", "scrollbar_opacity_hover", "scrollbar_opacity_drag")}
+    assert got == {"scrollbar_width": 8.0, "scrollbar_radius": 4.0, "scrollbar_hit_width": 12.0, "scrollbar_margin": 2.0,
+                   "scrollbar_min_length": 32.0, "scrollbar_opacity": pytest.approx(0.7), "scrollbar_opacity_hover": pytest.approx(0.8),
+                   "scrollbar_opacity_drag": 1.0}
