@@ -92,6 +92,12 @@ def list_(
     return widget
 
 
+def _hear(listeners: list[Callable[[Any], None]], fn: Callable[[Any], None]) -> Callable[[], None]:
+    """Adds `fn` to `listeners`; returns the function that removes it."""
+    listeners.append(fn)
+    return lambda: listeners.remove(fn) if fn in listeners else None
+
+
 def _selectable(widget: Widget, items: list[Any], nodes: list[Any], start: int | None) -> None:
     """The single-selection list: selection in a `GatedSignal`, the roving Tab stop, the keys."""
     gate = Gate(detail_of=lambda source: "select")
@@ -137,8 +143,9 @@ def _selectable(widget: Widget, items: list[Any], nodes: list[Any], start: int |
         widget._undo.append(widget.view._listen(node, "key_down", key(i)))
         widget._undo.append(widget.view._listen(node, "click", clicked(i)))
     widget.selected = chosen  # type: ignore[attr-defined]
-    widget.on_before_change = lambda fn: (gate.before.append(fn), lambda: gate.before.remove(fn) if fn in gate.before else None)[1]  # type: ignore[attr-defined]
-    widget.on_change = lambda fn: (gate.after.append(fn), lambda: gate.after.remove(fn) if fn in gate.after else None)[1]  # type: ignore[attr-defined]
+    widget_any: Any = widget
+    widget_any.on_before_change = lambda fn: _hear(gate.before, fn)
+    widget_any.on_change = lambda fn: _hear(gate.after, fn)
     widget._undo.append(Effect(show).dispose)
 
 
