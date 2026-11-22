@@ -55,3 +55,10 @@ def test_the_text_shows_light_on_the_dark_field():
     rgba, width, _ = app.window.snapshot()
     brightest = max(max(rgba[(y * width + x) * 4:(y * width + x) * 4 + 3]) for y in range(0, 40) for x in range(0, 60))
     assert brightest > 180  # the dark field and its dark ink would be nothing above ~60
+
+
+def test_the_selection_is_primary_at_30_percent_and_the_text_colour_is_unchanged_AC_TXF():
+    app, view = _view(True)
+    primary = app.theme.role("primary")
+    assert view.node("name").get("selection_fill") == (*primary[:3], round(255 * 0.30))
+    assert view.node("name").get("selection_foreground") is None

@@ -818,7 +818,7 @@ def _text_field_props(ctx, node, style):
     # What is typed is the theme's `on_surface` (or the style's `foreground`), and the caret its `primary`, so a
     # dark scheme's field is light on dark: the engine's own default is the light scheme's dark ink.
     ink = _fill(ctx, node["id"], "foreground", style["foreground"]) if "foreground" in style else _role(ctx, "on_surface")
-    inner = {**text, "fill": ink, "caret_color": _role(ctx, "primary"), "flex_grow": 1.0, "align_self": "stretch", "role": "textbox", "focusable": True}
+    inner = {**text, "fill": ink, "caret_color": _role(ctx, "primary"), "selection_fill": _with_alpha(_role(ctx, "primary"), SELECTION_ALPHA), "flex_grow": 1.0, "align_self": "stretch", "role": "textbox", "focusable": True}
     given = node["text"]
     for key in ("multiline", "obscured"):
         if key in given:
@@ -1202,6 +1202,14 @@ def _eased(window: Any, planned: dict[str, Any], targets: tuple[tuple[Any, Optio
             if changing and ms > 0:
                 eased.append((target, prop, props.pop(prop), ms, planned[prop][1]))
     return eased
+
+
+#: The selection behind typed text: the scheme's `primary` at 30 percent, the text colour unchanged (the spec's Text Field; the engine's `selection_fill`).
+SELECTION_ALPHA = 0.30
+
+
+def _with_alpha(colour, alpha):
+    return (colour[0], colour[1], colour[2], round(255 * alpha))
 
 
 def _role(ctx, name):

@@ -3719,3 +3719,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-21 A press is a click until it has moved 4 dp (the window's `drag_start_px`, tre 0.6.12)
 - Every window the app makes sets `drag_start_px` to `tokens.DRAG_START_PX` (4, the Drag and Drop start distance): the engine holds back `pointer_move` listeners until a held press has moved that far, so sliders, colour areas, scroll thumbs and dock tabs all share one threshold. The dock keeps its own check (`DRAG_THRESHOLD`, the same 4) because a `Dock` can sit in a window that did not set it. Tests that drag by a pixel now move past 4.
+
+## 2026-11-21 The text selection is `primary` at 30 percent (tre `selection_fill`)
+- A text field's `selection_fill` is the scheme's `primary` at 30 percent (alpha 76), the text colour unchanged (`selection_foreground` stays unset), as the Text Field spec says; the engine's own selection colour is gone from fields. `selection_radius` and read-only/static `Text` selection are not set.
