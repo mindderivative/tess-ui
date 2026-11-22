@@ -25,6 +25,7 @@ from tess_ui.fonts import check_font_families
 from tess_ui.follow import app_of
 from tess_ui.listeners import handled, listen_window
 from tess_ui.reactive import Computed, Effect, Signal, untrack
+from tess_ui.typeahead import TypeAhead
 from tess_ui.tel import compile_statements, is_action_name
 from tess_ui.spec.compose import Composer, Instance
 from tess_ui.timers import Timers
@@ -44,12 +45,10 @@ _KEY_EVENTS = {"on_input": "input_value", "on_key": "key_down", "on_submit": "ke
 #: The keys that move focus in a `focus_group`, by its mode, as (previous, next).
 _GROUP_KEYS = {"horizontal": (("arrow_left",), ("arrow_right",)), "vertical": (("arrow_up",), ("arrow_down",)),
                "both": (("arrow_left", "arrow_up"), ("arrow_right", "arrow_down"))}
-#: A pause this long (seconds) in typing starts a new type-ahead search.
 #: The ScrollView properties the renderer writes (the caller binds a Signal or a state name to read them), and how near an edge counts as at it.
 _MEASURED = ("measured_width", "measured_height")
 _SCROLL_OUTPUTS = frozenset({"scroll_offset", "at_top", "at_end", "scroll_direction"})
 SCROLL_EDGE = 0.5
-TYPEAHEAD_RESET = 1.0
 from tess_ui.viewmodel import Bindings, ViewHandle, open_view
 
 __all__ = ["ComposedView", "builtin_actions", "open_composed"]
@@ -207,7 +206,7 @@ class ComposedView(View):
         self._state_undos: list[Callable[[], None]] = []
         self._group_undos: list[Callable[[], None]] = []
         self._active: dict[str, str] = {}  # a focus group's id -> the id of the item that holds its tab stop
-        self._typed: tuple[str, float] = ("", 0.0)
+        self._ahead = TypeAhead()
         self._observed: set[int] = set()
         self._extracted: dict[int, tuple[Any, Any, list[Any], set[Path]]] = {}  # the lowered nodes that were looked through for images, by identity (see `extract_images`)
         self._synced = False
@@ -1326,21 +1325,8 @@ class ComposedView(View):
             self._group_undos.append(self._listen(box, "key_down", on_key))
 
     def _typeahead(self, key: str, current: int, items: list[tuple[Instance, Any]]) -> Optional[int]:
-        """The item whose name starts with what has been typed (a pause starts over), searching on from the current one. The same letter
-        typed again and again goes on to the next item that starts with it."""
-        typed, when = self._typed
-        now = time.monotonic()
-        text = (typed if now - when < TYPEAHEAD_RESET else "") + key.lower()
-        self._typed = (text, now)
-        labels = [self._item_label(inst, node).lower() for inst, node in items]
-        repeated = len(text) > 1 and len(set(text)) == 1
-        wanted = text[0] if repeated else text
-        start = current + 1 if repeated else current
-        for step in range(len(items)):
-            index = (start + step) % len(items)
-            if labels[index].startswith(wanted):
-                return index
-        return None
+        """The item whose name starts with what has been typed (`tess_ui.typeahead`), searching on from the current one."""
+        return self._ahead.find(key, current, [self._item_label(inst, node) for inst, node in items])
 
     def _enforce_input(self, inst: Instance, node: Any) -> None:
         """A `TextInput`'s `max_length` and `read_only`, which the engine's input does not have: an edit that breaks either is put right as it

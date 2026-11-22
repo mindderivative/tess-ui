@@ -275,7 +275,7 @@ def test_a_disabled_item_is_skipped():
 
 
 def test_typing_the_start_of_a_name_jumps_to_it_and_a_pause_starts_over(monkeypatch):
-    import tess_ui.composed as composed
+    from tess_ui import typeahead
 
     view, _ = render(group("vertical", labels=("Apple", "Banana", "Blueberry", "Cherry")))
     seen = watch(view, *ids(4))
@@ -284,10 +284,10 @@ def test_typing_the_start_of_a_name_jumps_to_it_and_a_pause_starts_over(monkeypa
     assert seen[-1] == "root.g.i1"
     key(view, "l")  # "bl" -> Blueberry
     assert seen[-1] == "root.g.i2"
-    monkeypatch.setattr(composed, "TYPEAHEAD_RESET", 0.0)  # a pause: the next letter starts a new search
+    monkeypatch.setattr(typeahead, "RESET", 0.0)  # a pause: the next letter starts a new search
     key(view, "c")
     assert seen[-1] == "root.g.i3"
-    monkeypatch.setattr(composed, "TYPEAHEAD_RESET", 60.0)
+    monkeypatch.setattr(typeahead, "RESET", 60.0)
     key(view, "z")
     assert seen[-1] == "root.g.i3"  # nothing starts with it: the focus stays
 

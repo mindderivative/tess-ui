@@ -3783,3 +3783,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-21 Search bar: the third Escape (AC-SRB-5)
 - With no view open and no query left, Escape in the bar's field deactivates the bar (`.active`, a new `Signal` of the view's two-way `Active`, goes false) and hands the focus back to the control that had it before the field took it (taken from the focus event's `related_target`; nothing to go back to is fine). With the earlier two presses (close the view, clear the query) this completes the spec's sequence.
+
+## 2026-11-21 Type-ahead in selectable lists, one search for every list (`tess_ui.typeahead`)
+- Typing the start of a row's name in a selectable `list_` moves the focus to the next row whose name starts with it (a pause of a second starts over; the same letter again steps on). It is the focus groups' search, moved out of `ComposedView` into `tess_ui.typeahead.TypeAhead` so the views and the list share it (`composed.TYPEAHEAD_RESET` is now `typeahead.RESET`). `file_browser` still has its own copy of the same rule.

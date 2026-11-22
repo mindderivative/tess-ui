@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, Callable
 from tess_ui import a11y
 from tess_ui.behavior import Gate, GatedSignal, caused_by
 from tess_ui.reactive import Effect, Signal
+from tess_ui.typeahead import TypeAhead
 from tess_ui.widgets._composed import Widget
 from tess_ui.widgets._views import Call
 from tess_ui.widgets.buttons import _border, _hex, _variant
@@ -127,6 +128,9 @@ def _selectable(widget: Widget, items: list[Any], nodes: list[Any], start: int |
                 node.set(tab_index=0 if j == i else -1)
         return moved
 
+    ahead = TypeAhead()
+    labels = [str(node.get("label") or "") for node in nodes]  # the rows' names (a `list_item`'s headline)
+
     def key(i: int) -> Callable[[Any], None]:
         def pressed(event: Any) -> None:
             target = {"arrow_down": min(i + 1, len(nodes) - 1), "arrow_up": max(i - 1, 0), "home": 0, "end": len(nodes) - 1}.get(event.key)
@@ -134,6 +138,10 @@ def _selectable(widget: Widget, items: list[Any], nodes: list[Any], start: int |
                 nodes[target].focus()
             elif event.key in ("enter", "space"):
                 pick(i, "keyboard")
+            elif target is None and len(event.key) == 1 and event.key.isprintable() and event.key != " ":
+                found = ahead.find(event.key, i, labels)  # type-ahead: the next row whose name starts with what was typed (the focus groups' search)
+                if found is not None and found != i:
+                    nodes[found].focus()
         return pressed
 
     def clicked(i: int) -> Callable[[Any], None]:
