@@ -254,3 +254,18 @@ def test_the_window_holds_back_moves_until_a_press_has_moved_4_dp_AC_DND(tmp_pat
 
     app = App(root=tmp_path, width=200, height=100)
     assert app.window.get("drag_start_px") == tokens.DRAG_START_PX == DRAG_THRESHOLD
+
+
+def test_escape_during_a_tab_drag_cancels_it_AC_DCK_6():
+    window, dock, panels = _dock()
+    tab = dock._zones["left"].tabs[0]
+    right = dock._zones["right"]
+    _drag(window, tab.node, right.body, release=False)
+    assert dock.highlight.parent() == right.body and tab.interaction.dragged
+    window.simulate("key_down", key="escape")
+    window.advance(16)
+    assert dock.highlight.parent() is None and not tab.interaction.dragged
+    assert dock.side_of(panels["Files"]) == "left"
+    window.simulate("pointer_up", x=_centre(right.body)[0], y=_centre(right.body)[1])
+    window.advance(16)
+    assert dock.side_of(panels["Files"]) == "left"  # the release after the Escape moves nothing
