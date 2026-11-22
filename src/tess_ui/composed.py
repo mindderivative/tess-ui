@@ -1307,9 +1307,9 @@ class ComposedView(View):
                     target = (current - 1) % len(items)
                 elif key in after:
                     target = (current + 1) % len(items)
-                elif key == "Home":
+                elif key == "home":
                     target = 0
-                elif key == "End":
+                elif key == "end":
                     target = len(items) - 1
                 elif len(key) == 1 and key.isprintable() and not _is_text_input(event.target):
                     found = self._typeahead(key, current, items)

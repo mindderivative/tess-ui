@@ -129,7 +129,7 @@ def test_one_tab_stop_and_the_arrows_move_the_choice_in_single_mode(tmp_path):
     for _ in range(10):
         view.window.advance(16)
     assert vm.one.get() == "month"
-    view.window.simulate("key_down", key="Home")
+    view.window.simulate("key_down", key="home")
     for _ in range(10):
         view.window.advance(16)
     assert vm.one.get() == "day"

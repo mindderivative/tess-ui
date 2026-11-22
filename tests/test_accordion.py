@@ -208,7 +208,7 @@ def test_sections_are_divided_and_the_arrows_move_between_headers(tmp_path):
     view.window.simulate("key_down", key="arrow_down")
     settle(view, 4)
     assert head(view, "b").get("focused") is True
-    view.window.simulate("key_down", key="End")
+    view.window.simulate("key_down", key="end")
     settle(view, 4)
     assert head(view, "c").get("focused") is True
 

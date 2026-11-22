@@ -218,9 +218,9 @@ def test_the_arrows_wrap_and_home_and_end_go_to_the_ends():
     assert seen[-1] == "root.g.i0"
     key(view, "arrow_up")
     assert seen[-1] == "root.g.i3"
-    key(view, "Home")
+    key(view, "home")
     assert seen[-1] == "root.g.i0"
-    key(view, "End")
+    key(view, "end")
     assert seen[-1] == "root.g.i3" and tab_stops(view) == [-1, -1, -1, 0]
 
 
