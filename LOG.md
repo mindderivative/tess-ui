@@ -3762,3 +3762,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 - The tip layer now has `role: tooltip` (it stays hidden from assistive technology; the trigger carries the description).
 - Found by the corpus: coming back onto the trigger while the tooltip was closing after its grace did not cancel the close, so it closed at 150 ms and reopened after the 500 ms delay (a flicker; the state looked right a second later). It now stays open.
 - The tooltip adapter (repinned to tesserae-behavior f7b3ed5) reads these events: 15 of 17 `tooltip` cases pass; left are `consumed` (not observable, an adapter limit) and a pointer focus without a press (not run).
+
+## 2026-11-21 A menu is one Tab stop and Tab leaves it (SPEC 2.3a `menuitem` is roving; Menu: Tab and Shift+Tab)
+- `tess_ui.overlays.Menu` (the Python menu, `W.menu(...)`): the item that holds the focus is the menu's one Tab stop (`tab_index` 0, the others -1, following the focus and the arrows), where every item was a Tab stop. Tab and Shift+Tab close the menu and focus goes back to the opener, so Tab no longer cycles through the items (it was a keyboard trap by another name). The TDL `Menu` already did the first part. The control after the opener (Menu AC-MEN-11) is not reached: focus returns to the opener.

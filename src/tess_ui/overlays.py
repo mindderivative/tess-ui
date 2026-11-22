@@ -242,8 +242,17 @@ class Menu(Overlay):
                 fn = labels[i][1]
             self.items.append(slot)
             widget._undo.append(listen(slot, "click", handled(lambda e, fn=fn: self._choose(fn))))
-            slot.set(focusable=True, role="menuitem", cursor="pointer")
+            slot.set(focusable=True, role="menuitem", cursor="pointer", tab_index=0 if i == 0 else -1)
             widget._undo.append(listen(slot, "key_down", lambda e, i=i: self._key(e, i)))
+            widget._undo.append(listen(slot, "focus", self._roving(i)))
+
+    def _roving(self, current: int) -> Callable[[Any], None]:
+        return lambda event: self._rove(current)
+
+    def _rove(self, current: int) -> None:
+        """Roving focus: the item that has the focus is the menu's one Tab stop (the table's `menuitem` is `roving`)."""
+        for i, item in enumerate(self.items):
+            item.set(tab_index=0 if i == current else -1)
 
     def _choose(self, fn: Optional[Callable[[], Any]]) -> None:
         if fn is not None:
@@ -254,6 +263,8 @@ class Menu(Overlay):
         step = {"arrow_down": 1, "arrow_up": -1}.get(event.key)
         if step is not None:
             self.items[(i + step) % len(self.items)].focus()
+        elif event.key == "tab":
+            self.close()  # Tab leaves the menu, it does not cycle inside it (WCAG 2.1.2, Menu: Tab and Shift+Tab)
 
     def _after_open(self) -> None:
         self.items[0].focus()  # MD3: focus moves to the first item
