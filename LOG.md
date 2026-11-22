@@ -3722,3 +3722,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-21 The text selection is `primary` at 30 percent (tre `selection_fill`)
 - A text field's `selection_fill` is the scheme's `primary` at 30 percent (alpha 76), the text colour unchanged (`selection_foreground` stays unset), as the Text Field spec says; the engine's own selection colour is gone from fields. `selection_radius` and read-only/static `Text` selection are not set.
+
+## 2026-11-21 Placed layers keep 8 dp from the window edge (tre 0.6.12 `layer_viewport_margin`, `layer_flip_threshold`)
+- Every window the app makes sets `layer_viewport_margin` to `tokens.LAYER_VIEWPORT_MARGIN` (8) and `layer_flip_threshold` to `tokens.LAYER_FLIP_THRESHOLD` (0): a menu, tooltip or popover that flips or shifts to fit no longer touches the edge. The per-window setup (`_set_up_window`) now also holds the drag start distance. The per-layer `align` and `shift` are not set (the defaults are the spec's).

@@ -96,7 +96,7 @@ def test_it_opens_below_its_button_as_a_surface_container_with_4_pixel_corners_a
     vm.open.set(True)
     settle(view, 8)
     s, btn = surface(view), view.node("root.btn")
-    assert view._shown_layers and s.get("layout_y") == btn.get("layout_y") + btn.get("layout_height") and s.get("layout_x") == btn.get("layout_x")
+    assert view._shown_layers and s.get("layout_y") == btn.get("layout_y") + btn.get("layout_height") and s.get("layout_x") == max(btn.get("layout_x"), tokens.LAYER_VIEWPORT_MARGIN)  # shifted in from the window edge
     assert s.get("fill") == role(view, "surface_container") and s.get("corner_radius") == 4.0 and s.get("shadows") == tokens.elevation_shadows(2) and s.get("layout_width") == 200.0
     assert s.get("role") == "menu"
 

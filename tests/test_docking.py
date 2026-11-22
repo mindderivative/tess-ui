@@ -254,3 +254,16 @@ def test_the_window_holds_back_moves_until_a_press_has_moved_4_dp_AC_DND(tmp_pat
 
     app = App(root=tmp_path, width=200, height=100)
     assert app.window.get("drag_start_px") == tokens.DRAG_START_PX == DRAG_THRESHOLD
+
+
+def test_a_layer_keeps_8_dp_from_the_window_edge_when_it_is_shifted_to_fit_AC_ANC(tmp_path):
+    from tess_ui import App
+
+    app = App(root=tmp_path, width=300, height=200)
+    window = app.window
+    anchor = window.create("box", x=270.0, y=20.0, width=30.0, height=20.0)
+    window.root.add_child(anchor)
+    layer = window.create("box", width=120.0, height=40.0)
+    window.show_layer(layer, anchor=anchor, placement="below")
+    window.advance(16)
+    assert layer.get("layout_x") + layer.get("layout_width") == 300.0 - 8.0
