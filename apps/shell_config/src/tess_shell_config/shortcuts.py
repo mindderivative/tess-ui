@@ -168,7 +168,7 @@ class Shortcuts:
 
     def _focus_row(self, value: str) -> bool:
         for inst in self.view.handle.composition.walk():
-            if inst.name == "row" and f"structure_tree.top." in inst.id and inst.id.endswith(f"entry[{value}].row"):
+            if inst.name == "row" and "structure_tree." in inst.id and inst.id.endswith(f".row[{value}]"):
                 self.view.node(inst.id).focus()
                 return True
         return False

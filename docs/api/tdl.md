@@ -175,8 +175,7 @@ A node's widget is a built-in one, one the app registered, or a view found by na
 | [`TokenList`](../components/token-buttons.md) | The token button's mind: it draws nothing. |
 | [`Toolbar`](../components/toolbars.md) | The Material 3 toolbar: a row (or, floating, a column) of icon buttons with an optional action button at the end and an overflow menu. |
 | [`TopAppBar`](../components/top-app-bar.md) | The Material 3 top app bar: a navigation icon, a title and up to three action icons across the top of a screen. |
-| [`Tree`](../components/trees.md) | A tree (the WAI-ARIA tree pattern in Material 3's list terms): rows that open to show their children, one level inside the next. |
-| [`TreeLevel`](../components/trees.md) | The rows of one level of a tree, each followed by its children's level while it is open (this view calls itself). |
+| [`Tree`](../components/trees.md) | A tree (the WAI-ARIA tree pattern in Material 3's list terms): rows that open to show their children, one level inside the next (the rows are one fla… |
 | [`TreeNode`](../components/trees.md) | One row of a tree: a leaf or a branch with a chevron that turns a quarter when it opens. |
 | [`VideoPlayer`](../components/video.md) | A video player: a picture surface with the usual transport controls under it. |
 | `VirtualList` | A scrolling list of equal rows that builds only the rows in view: its one child is a `For:`. |

@@ -62,7 +62,7 @@ class Window:
     def row(self, value):
         """Move down the focused tree until the row with the tree value `value` has the focus (a row's node id holds its value)."""
         for _ in range(80):
-            if any(f"entry[{value}].row" in i for i in self.focused()):
+            if any(f".row[{value}]" in i for i in self.focused()):
                 return
             self.key("arrow_down")
         raise AssertionError(f"no row {value!r} down the tree")

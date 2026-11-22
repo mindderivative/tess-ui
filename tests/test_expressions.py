@@ -125,7 +125,7 @@ def test_the_built_in_list_is_the_documented_one():
     assert set(BUILTIN_NAMES) == {
         "len", "min", "max", "abs", "round", "sum", "str", "int", "float", "bool", "sorted", "reversed", "range", "enumerate", "zip", "any",
         "all", "list", "dict", "tuple", "set", "isinstance", "format_number", "pluralize", "clamp",
-        "date_add_days", "date_weekday", "days_in_month", "format_date", "current_date", "density_token", "app_density"}
+        "date_add_days", "date_weekday", "days_in_month", "format_date", "current_date", "density_token", "app_density", "tree_rows"}
 
 
 # -- Signals read as values (8.4) --------------------------------------------------------------------------------------------

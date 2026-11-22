@@ -33,7 +33,7 @@ Material Design 3's components, as Tesserae builds them. Each page says what the
 | [Lists](lists.md) | `ListItem` |
 | [Side sheets](side-sheets.md) | `SideSheet`, `SideSheetModal`, `SideSheetPanel` |
 | [Accordions](accordions.md) | `Accordion`, `AccordionGroup` |
-| [Trees](trees.md) | `Tree`, `TreeNode`, `TreeLevel` |
+| [Trees](trees.md) | `Tree`, `TreeNode` |
 
 ## Navigation
 
