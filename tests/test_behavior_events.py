@@ -170,3 +170,61 @@ def test_typing_the_start_of_a_rows_name_moves_to_it_in_a_selectable_list_and_a_
     window.simulate("key_down", key="z")  # nothing starts with it: the focus stays
     window.advance(16)
     assert focused() == 3
+
+
+def _multiple(start=None, announce="{count} selected"):
+    from tess_ui.widgets import list_, list_item
+
+    window = tess_re.Window(width=600, height=400)
+    window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, align_items="flex_start", flex_direction="vertical")
+    rows = [list_item(window, text) for text in ("Apple", "Banana", "Blueberry", "Cherry")]
+    box = list_(window, rows, selectable="multiple", selected=start, announce=announce)
+    window.advance(32)
+    heard = []
+    box.on_change(lambda e: heard.append((e.reason, e.detail, e.previous, e.value)))
+    return window, box, rows, heard
+
+
+def test_a_multiple_selection_list_is_the_engines_click_ctrl_shift_space_and_select_all_AC_SLT():
+    window, box, rows, heard = _multiple()
+    window.simulate("click", node=rows[0].node)
+    window.advance(16)
+    assert box.selection.get() == (0,)
+    window.simulate("click", node=rows[2].node, ctrl=True)  # toggles, the anchor moves
+    window.advance(16)
+    assert box.selection.get() == (0, 2)
+    window.simulate("click", node=rows[3].node, shift=True)  # a range from the anchor (row 2), replacing the set
+    window.advance(16)
+    assert box.selection.get() == (2, 3)
+    rows[1].node.focus()
+    window.advance(16)
+    window.simulate("key_down", key="space")
+    window.advance(16)
+    assert box.selection.get() == (1, 2, 3)
+    window.simulate("key_down", key="a", ctrl=True)
+    window.advance(16)
+    assert box.selection.get() == (0, 1, 2, 3)
+    assert [r.selected.get() for r in rows] == [True] * 4 and [r.node.get("selected") for r in rows] == [True] * 4
+    assert [h[0] for h in heard] == ["pointer", "pointer", "pointer", "keyboard", "keyboard"] and {h[1] for h in heard} == {"select"}
+
+
+def test_the_rows_show_the_selection_and_a_write_from_code_chooses_rows_and_is_reported_as_api():
+    window, box, rows, heard = _multiple(start=[1, 3])
+    assert box.selection.get() == (1, 3) and [r.selected.get() for r in rows] == [False, True, False, True]
+    box.selection.set((0, 2))
+    window.advance(16)
+    assert [r.selected.get() for r in rows] == [True, False, True, False] and heard[-1] == ("api", "select", (1, 3), (0, 2))
+    assert [row.node.get("role") for row in rows] == ["option"] * 4
+
+
+def test_a_multiple_selection_list_keeps_the_roving_tab_stop_and_the_type_ahead_and_has_the_announce_text():
+    window, box, rows, _ = _multiple()
+    assert box.node.get("selection_announce") == "{count} selected" and box.node.get("selection_mode") == "multiple"
+    assert sorted(r.node.get("tab_index") for r in rows) == [-1, -1, -1, 0]
+    rows[0].node.focus()
+    window.advance(16)
+    window.simulate("key_down", key="b")
+    window.advance(16)
+    assert rows[1].node.get("focused") and sorted(r.node.get("tab_index") for r in rows) == [-1, -1, -1, 0] and rows[1].node.get("tab_index") == 0
+    window2, box2, *_ = _multiple(announce=None)
+    assert box2.node.get("selection_announce") is None

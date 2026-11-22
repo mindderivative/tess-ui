@@ -22,6 +22,7 @@ Container {
     Lines { Type: int, Default: 0, Doc: "1, 2 or 3 lines; 0 works it out from the text it has." }
     Selectable { Type: bool, Default: false, Doc: "A press flips `selected`." }
     Selected { Type: bool, Default: false, Model: true, Doc: "Whether it is selected." }
+    Pickable { Type: bool, Default: false, Doc: "The row is a choice in a list that does the selecting (a selectable `list_` sets it): it tells assistive technology whether it is selected, and a press does not flip `selected` itself." }
     Disabled { Type: bool, Default: false, Doc: "Dimmed, not focusable, and it does not respond." }
     Divider { Type: bool, Default: false, Doc: "A line along the bottom edge." }
     Actionable { Type: bool, Default: true, Doc: "Whether the row is a Tab stop that a press and Enter act on. False for a row that only shows something (a plain list's row): it takes no focus (Focus none)." }
@@ -40,7 +41,7 @@ Container {
   A11y {
     Role: listitem
     Label: <| headline |>
-    Selected: <| selected if selectable else None |>
+    Selected: <| selected if (selectable or pickable) else None |>
     Focusable: <| actionable |>
     Description: <| supporting |>
   }
