@@ -3698,3 +3698,7 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-21 The engine pin moves from 0.6.11 to 0.6.12
 - `tesserae-engine==0.6.12` (PyPI; tag `v0.6.12` exists) in `pyproject.toml`, the CI and release font checkouts, README, DEVELOPING, PLAN. The 0.6.11 mentions left in source and tests say what 0.6.11 introduced and stay. 0.6.12 adds hooks the next PRs adopt (focus outline, scheme baseline, `set_defaults`, scrollbar looks, per-state layer timings, selection, drag cancel).
+
+## 2026-11-21 The focus ring is the engine's outline (tre 0.6.12 `focus_outline_*`)
+- A plain focus ring is `focus_outline_width` 3, `focus_outline_offset` 2 and `focus_outline_color` (the scheme's ring role) on the node the ring goes around: the engine draws it on keyboard focus only, following the corners, so the ring node, its geometry code and its show/hide are gone. The turning gradient ring (`App(focus_ring=...)`) is a stroke gradient an outline cannot be, so only that option keeps a ring node. A disabled control has width 0.
+- Tests read the outline through `tests/layers.py` (`ring_of`), and a pixel test pins the 2 px gap, the 3 px ring, its absence before focus.

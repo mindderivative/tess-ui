@@ -14,6 +14,7 @@ import tess_re
 from tess_ui import Effect, Signal, Theme, interaction, tokens
 from tess_ui.controls import DISABLED_CONTENT, STATE_LAYER_SIZE, TARGET_SIZE, Checkbox, SpinBox
 from tess_ui.listeners import Listeners
+from layers import ring_of
 
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
@@ -123,7 +124,7 @@ def test_tab_focuses_it_with_a_ring_and_space_and_enter_toggle_it():
     window.advance(16)
     assert cb.node.get("focused") is True and cb.interaction.ring_visible
     out = interaction.RING_OFFSET + interaction.RING_WIDTH
-    assert cb.interaction.ring.get("layout_width") == STATE_LAYER_SIZE + 2 * out  # around the circle
+    assert ring_of(cb.interaction).get("layout_width") == STATE_LAYER_SIZE + 2 * out  # around the circle
     window.simulate("key_down", key="space")
     window.simulate("key_up", key="space")
     assert cb.checked.get() is True
@@ -201,7 +202,7 @@ def test_colours_come_from_the_theme_and_follow_it():
     light = Theme.resolve(theme_seed=SEED)
     cb, window, _ = _checkbox(checked=True, theme=light)
     assert cb.box.get("fill") == light.role("primary")
-    assert cb.interaction.ring.get("stroke_color") == light.role("secondary")
+    assert ring_of(cb.interaction).get("stroke_color") == light.role("secondary")
     dark = Theme.resolve(theme_seed=SEED, dark=True)
     cb.set_theme(dark)
     assert cb.box.get("fill") == dark.role("primary") != light.role("primary")
@@ -388,8 +389,8 @@ def test_the_switchs_state_layer_follows_the_handle_and_its_ring_the_track():
     window.simulate("key_down", key="tab")
     window.advance(16)
     out = interaction.RING_OFFSET + interaction.RING_WIDTH
-    assert sw.interaction.ring.parent() == sw.track
-    assert sw.interaction.ring.get("layout_width") == 52 + 2 * out
+    assert ring_of(sw.interaction).parent() == sw.track
+    assert ring_of(sw.interaction).get("layout_width") == 52 + 2 * out
     window.simulate("key_down", key="space")
     window.simulate("key_up", key="space")
     assert sw.selected.get() is False
@@ -764,7 +765,7 @@ def test_the_keys_and_assistive_technology_step_the_active_hand():
     window.simulate("key_down", key="tab")
     window.advance(16)
     assert dial.node.get("focused") and dial.interaction.ring_visible
-    assert dial.interaction.ring.parent() == dial.face
+    assert ring_of(dial.interaction).parent() == dial.face
     window.simulate("key_down", key="arrow_up")
     assert dial.hour.get() == 0  # 11 → 12 in the AM half
     window.simulate("a11y_action", node=dial.node, action="decrement")

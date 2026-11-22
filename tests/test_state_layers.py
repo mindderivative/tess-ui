@@ -131,3 +131,26 @@ def test_the_engine_paints_hover_and_focus_over_the_fill_in_the_scheme_colour_AC
     run(view, 200)
     focused = pixel()
     assert focused != rest and focused != hovered
+
+
+def test_the_engine_draws_the_focus_outline_on_keyboard_focus_only_AC_FOC(tmp_path):
+    """The ring is `focus_outline_*`: 3 px wide, 2 px off the node, in the scheme's ring colour, on keyboard focus and not on a click."""
+    view = opened(tmp_path, COMPONENTS["button"])
+    node = view._built.outer["root.c"]
+    rgba_of = lambda: view.window.snapshot()  # noqa: E731
+    run(view, 100)
+    right = int(node.get("layout_x") + node.get("layout_width"))
+    y = int(node.get("layout_y") + node.get("layout_height") / 2)
+
+    def row():
+        rgba, width, _ = rgba_of()
+        return [tuple(rgba[(y * width + x) * 4:][:3]) for x in range(right, right + 7)]
+
+    before = row()
+    assert before[2] == before[3] == before[4]  # nothing drawn beside the node
+    view.window.simulate("key_down", key="tab")
+    run(view, 100)
+    after = row()
+    assert after[0] == before[0]  # the 2 px gap (a fractional node edge antialiases pixel 1)
+    assert after[2] == after[3] == after[4] != before[2]  # the 3 px ring, one colour
+    assert after[5] == before[5]

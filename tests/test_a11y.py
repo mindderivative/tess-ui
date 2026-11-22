@@ -10,6 +10,7 @@ import tess_re
 import tess_ui
 from tess_ui import View, a11y, interaction
 from tess_ui.spec.build import SpecBuildError
+from layers import ring_of
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 
@@ -48,14 +49,14 @@ def test_keyboard_focus_shows_md3s_focus_ring_outside_the_node():
     it = view.interaction("btn")
     assert it.ring_visible is False
     _tab(window)
-    ring = it.ring
+    ring = ring_of(it)
     assert it.ring_visible is True
-    out = interaction.RING_OFFSET + interaction.RING_WIDTH  # a box's stroke is drawn inside it
-    assert (ring.get("layout_x"), ring.get("layout_y")) == (-out, -out)
+    out = interaction.RING_OFFSET + interaction.RING_WIDTH
     assert (ring.get("layout_width"), ring.get("layout_height")) == (200 + 2 * out, 80 + 2 * out)
     assert ring.get("stroke_width") == 3.0 and ring.get("corner_radius") == 20 + out
     assert ring.get("stroke_color") == view.theme.role("secondary")
-    assert ring.get("hit_testable") is False and ring.get("a11y_hidden") is True
+    assert it.ring is None  # the engine's focus_outline_*, no node of ours
+    assert (it.ring_around.get("focus_outline_offset"), it.ring_around.get("focus_outline_width")) == (interaction.RING_OFFSET, interaction.RING_WIDTH)
 
 
 def test_the_ring_hides_when_focus_moves_on_and_never_shows_for_a_click():
@@ -75,7 +76,7 @@ def test_a_square_node_gets_a_square_ring_and_a_resized_node_a_resized_ring():
     view.reconcile(_spec(_rect("btn", width=120, radius=0, handlers={"on_click": "go"})))
     window.advance(16)
     _tab(window)
-    ring = view.interaction("btn").ring
+    ring = ring_of(view.interaction("btn"))
     assert ring.get("corner_radius") == 0.0
     assert ring.get("layout_width") == 120 + 2 * (interaction.RING_OFFSET + interaction.RING_WIDTH)
 
@@ -88,7 +89,7 @@ def test_per_corner_radii_each_grow_by_the_ring():
     it = interaction.Interaction(window, node, (0, 0, 0, 255), lambda n, e, f: (n.on(e, f), lambda: n.off(e))[1],
                                  (255, 0, 0, 255))
     out = interaction.RING_OFFSET + interaction.RING_WIDTH
-    assert tuple(it.ring.get("corner_radius")) == (8 + out, 0.0, 8 + out, 0.0)
+    assert tuple(ring_of(it).get("corner_radius")) == (8 + out, 0.0, 8 + out, 0.0)
     assert tuple(it.clip.get("corner_radius")) == (8.0, 0.0, 8.0, 0.0)
 
 
@@ -98,12 +99,12 @@ def test_the_clip_follows_the_nodes_corners_and_the_ring_the_theme():
     assert view.interaction("btn").clip.get("corner_radius") == 8.0
     light = view.theme.role("secondary")
     view.set_theme(theme_seed=SEED, dark=True)
-    assert view.interaction("btn").ring.get("stroke_color") == view.theme.role("secondary") != light
+    assert ring_of(view.interaction("btn")).get("stroke_color") == view.theme.role("secondary") != light
 
 
 def test_without_a_theme_the_ring_is_md3s_baseline_secondary():
     view, _ = _built(_rect("btn", handlers={"on_click": "go"}))
-    assert view.interaction("btn").ring.get("stroke_color") == (0x62, 0x5B, 0x71, 0xFF)
+    assert ring_of(view.interaction("btn")).get("stroke_color") == (0x62, 0x5B, 0x71, 0xFF)
 
 
 def test_a_clickable_nodes_children_are_no_longer_clipped():
@@ -236,7 +237,7 @@ def test_the_ring_fits_a_node_resized_outside_a_reconcile():
     view.node("btn").set(width=150)  # as a width binding does
     window.advance(16)
     _tab(window)
-    assert view.interaction("btn").ring.get("layout_width") == 150 + 2 * (
+    assert ring_of(view.interaction("btn")).get("layout_width") == 150 + 2 * (
         interaction.RING_OFFSET + interaction.RING_WIDTH)
 
 

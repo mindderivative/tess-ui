@@ -4,6 +4,7 @@ import pytest
 import tess_re
 
 from tess_ui import App, tokens
+from layers import ring_of as ring_view
 
 
 def opened(tmp_path, ring="gradient", **kw):
@@ -55,29 +56,29 @@ def test_the_option_is_checked():
 
 def test_the_default_ring_is_a_plain_colour(tmp_path):
     app, view = opened(tmp_path, ring="solid")
-    inter = ring_of(view, "a")
-    assert inter._glow is None and isinstance(inter.ring.get("stroke_color"), tuple)
+    inter = view.interaction("root.a")
+    assert inter._glow is None and isinstance(ring_view(inter).get("stroke_color"), tuple)
 
 
 def test_a_focused_node_gets_a_sweep_gradient_ring_that_turns(tmp_path):
     app, view = opened(tmp_path)
-    inter = ring_of(view, "a")
+    inter = view.interaction("root.a")
     event = type("E", (), {"target": inter.node, "focus_visible": True})()
     inter._on_focus(event)
-    first = inter.ring.get("stroke_color")
+    first = ring_view(inter).get("stroke_color")
     assert isinstance(first, tess_re.Gradient) and inter._glow.turning and inter.ring_visible
     scheme = view._scheme or tokens.BASELINE
     assert inter.glow[0] == scheme["primary"]
     assert [c[:3] for _, c in first.stops] == [tuple(c[:3]) for c in (inter.ring_color, *inter.glow, inter.ring_color)]
     for _ in range(20):
         view.window.advance(16)
-    later = inter.ring.get("stroke_color")
+    later = ring_view(inter).get("stroke_color")
     assert later.start != first.start and 0 <= later.start < 360
 
 
 def test_losing_the_focus_stops_the_turning_and_hides_the_ring(tmp_path):
     app, view = opened(tmp_path)
-    inter = ring_of(view, "a")
+    inter = view.interaction("root.a")
     inter._on_focus(type("E", (), {"target": inter.node, "focus_visible": True})())
     inter._on_unfocus(type("E", (), {"target": inter.node})())
     assert not inter._glow.turning and not inter.ring_visible
@@ -85,14 +86,14 @@ def test_losing_the_focus_stops_the_turning_and_hides_the_ring(tmp_path):
 
 def test_a_pointer_focus_shows_no_ring_and_so_no_turning(tmp_path):
     app, view = opened(tmp_path)
-    inter = ring_of(view, "a")
+    inter = view.interaction("root.a")
     inter._on_focus(type("E", (), {"target": inter.node, "focus_visible": False})())
     assert not inter._glow.turning and not inter.ring_visible
 
 
 def test_a_full_turn_takes_three_seconds(tmp_path):
     app, view = opened(tmp_path)
-    inter = ring_of(view, "a")
+    inter = view.interaction("root.a")
     inter._on_focus(type("E", (), {"target": inter.node, "focus_visible": True})())
     for _ in range(int(3000 / 33)):
         view.window.advance(33)
@@ -101,16 +102,16 @@ def test_a_full_turn_takes_three_seconds(tmp_path):
 
 def test_reduced_motion_holds_the_gradient_still(tmp_path):
     app, view = opened(tmp_path, reduced_motion=True)
-    inter = ring_of(view, "a")
+    inter = view.interaction("root.a")
     inter._on_focus(type("E", (), {"target": inter.node, "focus_visible": True})())
-    assert isinstance(inter.ring.get("stroke_color"), tess_re.Gradient) and not inter._glow.turning
+    assert isinstance(ring_view(inter).get("stroke_color"), tess_re.Gradient) and not inter._glow.turning
 
 
 def test_a_theme_change_recolours_the_gradient(tmp_path):
     app, view = opened(tmp_path)
-    inter = ring_of(view, "a")
+    inter = view.interaction("root.a")
     inter._on_focus(type("E", (), {"target": inter.node, "focus_visible": True})())
-    before = [c for _, c in inter.ring.get("stroke_color").stops]
+    before = [c for _, c in ring_view(inter).get("stroke_color").stops]
     view.set_theme(theme_seed=(0x00, 0x66, 0x44, 0xFF), dark=False)
-    after = [c for _, c in inter.ring.get("stroke_color").stops]
+    after = [c for _, c in ring_view(inter).get("stroke_color").stops]
     assert after != before

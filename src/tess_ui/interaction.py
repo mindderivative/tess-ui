@@ -85,8 +85,11 @@ class Interaction:
         decoration = dict(position="absolute", hit_testable=False, a11y_hidden=True)
         self.clip = window.create("box", x=0, y=0, width="100%", height="100%", clip_children=True,
                                   **decoration)
-        self.ring = window.create("box", stroke_color=ring_color, stroke_width=RING_WIDTH, visible=False,
-                                  **decoration)
+        #: The focus ring. A plain ring is the engine's (tre 0.6.12): `focus_outline_*` on `ring_around`, drawn on keyboard focus only, following the node's corners; no node of ours. The turning gradient ring
+        #: (`tess_ui.focusring`, an app option) is a stroke gradient an outline cannot be, so it keeps its own node.
+        self.ring: Any = None
+        if focusring.uses_gradient(window):
+            self.ring = window.create("box", stroke_color=ring_color, stroke_width=RING_WIDTH, visible=False, **decoration)
         self._glow: Any = None
         self.sparks: Any = None  # the ripple shader's node, when the window draws ripples that way (`tess_ui.ripple`)
         self._shader: Any = None
@@ -95,7 +98,10 @@ class Interaction:
             self.clip.add_child(self.sparks)
             self._shader = ripple.RippleShader(window, self.sparks, tint)
         self.surface.add_child(self.clip)
-        self.ring_around.add_child(self.ring)
+        if self.ring is not None:
+            self.ring_around.add_child(self.ring)
+        else:
+            self._set_outline()
         if focusring.uses_gradient(window):
             self._glow = focusring.GradientRing(window, self.ring, self._glow_colors())
         self.refresh()
@@ -134,9 +140,12 @@ class Interaction:
         it's turned on again."""
         self._enabled = enabled
         self._paint_layers()
+        if self.ring is None:
+            self._set_outline()
         if not enabled:
             self.hovered = self.focused = self.dragged = False
-            self.ring.set(visible=False)
+            if self.ring is not None:
+                self.ring.set(visible=False)
             if self._glow is not None:
                 self._glow.hide()
             for each in self._ripples:
@@ -162,10 +171,14 @@ class Interaction:
         self.dragged = dragged
         self._update()
 
+    def _set_outline(self) -> None:
+        """The engine's focus outline on `ring_around`: 3 px, 2 px off, in the ring colour; none while the control is disabled."""
+        self.ring_around.set(focus_outline_width=RING_WIDTH if self._enabled else 0.0, focus_outline_offset=RING_OFFSET, focus_outline_color=self.ring_color)
+
     @property
     def ring_visible(self) -> bool:
         """Whether the focus ring is showing."""
-        return bool(self.ring.get("visible"))
+        return self.focused
 
     def _glow_colors(self) -> tuple[RGBA, RGBA, RGBA]:
         """The turning ring's three colours: the ring's own, then the two `glow` gives (the theme's primary and tertiary), else the ring's own again."""
@@ -178,7 +191,10 @@ class Interaction:
         if glow is not None:
             self.glow = glow
         self._paint_layers()
-        self.ring.set(stroke_color=ring_color)
+        if self.ring is not None:
+            self.ring.set(stroke_color=ring_color)
+        else:
+            self._set_outline()
         if self._glow is not None:
             self._glow.recolor(self._glow_colors(), paint=self.ring_visible)
         for each in self._ripples:
@@ -193,6 +209,8 @@ class Interaction:
         self._place_ring()
 
     def _place_ring(self) -> None:
+        if self.ring is None:  # the engine's outline follows the node by itself
+            return
         # A box's stroke is drawn inside it, so the ring's box starts the
         # gap and the stroke's width outside the node.
         out = RING_OFFSET + RING_WIDTH
@@ -209,7 +227,10 @@ class Interaction:
             _quietly(undo)
         self._undo = []
         for node in (self.clip, self.ring):
-            _quietly(node.destroy)
+            if node is not None:
+                _quietly(node.destroy)
+        if self.ring is None:
+            _quietly(lambda: self.ring_around.set(focus_outline_width=0.0))
         self._ripples = []
         if self._glow is not None:
             self._glow.hide()
@@ -273,7 +294,8 @@ class Interaction:
             self.focused = bool(event.focus_visible)
             if self.focused:
                 self._place_ring()  # the node may have been resized since
-            self.ring.set(visible=self.focused)
+            if self.ring is not None:
+                self.ring.set(visible=self.focused)
             if self._glow is not None:
                 self._glow.show() if self.focused else self._glow.hide()
             self._update()
@@ -281,7 +303,8 @@ class Interaction:
     def _on_unfocus(self, event: Any) -> None:
         if event.target == self.node:
             self.focused = False
-            self.ring.set(visible=False)
+            if self.ring is not None:
+                self.ring.set(visible=False)
             if self._glow is not None:
                 self._glow.hide()
             self._update()
