@@ -77,8 +77,8 @@ def tab_padding() -> float:
     level = _density()
     return TAB_PADDING if not level else tokens.density_token(level, "dock_tab_padding")
 INDICATOR = 2.0
-#: A closable tab's close button: 18 px, with 8 px before it.
-CLOSE_SIZE = 18.0
+#: A closable tab's close button: a 24 px hit area (the spec's minimum target, AC-DKP-2) holding a 14 px glyph, with 8 px before it.
+CLOSE_SIZE = 24.0
 CLOSE_ROOM = CLOSE_SIZE + 8.0
 #: How far a press must move before it drags the panel, so a click selects.
 DRAG_THRESHOLD = tokens.DRAG_START_PX
