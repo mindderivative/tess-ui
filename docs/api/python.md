@@ -1147,6 +1147,8 @@ search_bar(
     border_color: tuple[int, int, int, int] | None = None,
     border_width: float | None = None,
     *,
+    disabled: bool = False,
+    clear_label: str = 'Clear',
     theme: 'Theme | None' = None
 ) -> Widget
 ```

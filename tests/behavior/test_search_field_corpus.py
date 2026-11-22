@@ -13,9 +13,7 @@ from tess_behavior.corpus import FAIL, NOT_RUN, PASS, behaviour_cases, corpus_ro
 #: case -> (status, why). `not run` is a case the widget cannot run; `fail` is one it runs and does not conform to.
 KNOWN_GAPS: dict[str, tuple[str, str]] = {
     # the widget cannot run it
-    "search_field/a11y-tree": (NOT_RUN, "the case sets clear_label; the clear button's label is fixed (\"Clear\")"),
     "search_field/controlled-reject": (NOT_RUN, "no controlled query and no way to veto a change"),
-    "search_field/disabled": (NOT_RUN, "the `search_bar` helper has no `disabled` argument (the view has the parameter)"),
     "search_field/focus-none-part-via-pointer": (NOT_RUN, "a pointer on the clear button presses it, so it cannot take focus by pointer alone"),
     # it runs and does not conform
     "search_field/clear-press-returns-focus": (FAIL, "Clear returns the focus now; only the missing before_change differs (the events expectation)"),

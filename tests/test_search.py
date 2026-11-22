@@ -192,3 +192,19 @@ def test_pressing_clear_empties_the_query_and_the_field_takes_the_focus_AC_SRB_4
         assert bar.query.get() == "" and bar.part("field").get("focused"), how
         with pytest.raises(ValueError):
             bar.part("clear")  # gone, and the focus did not go with it
+
+
+def test_a_disabled_bar_takes_no_typing_and_shows_no_clear_button_and_clear_label_names_the_button():
+    window = _window()
+    bar = search_bar(window, "Search mail", 360, disabled=True)
+    bar.query.set("abc")
+    window.advance(32)
+    field = bar.part("field")
+    assert field.get("disabled") and bar.query.get() == "abc"
+    with pytest.raises(ValueError):
+        bar.part("clear")
+    other = _window()
+    named = search_bar(other, "Search mail", 360, clear_label="Erase")
+    named.query.set("abc")
+    other.advance(32)
+    assert (named.part("clear").get("label"), named.part("clear").get("role")) == ("Erase", "button")

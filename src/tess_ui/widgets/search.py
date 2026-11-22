@@ -27,6 +27,8 @@ def search_bar(
     border_color: tuple[int, int, int, int] | None = None,
     border_width: float | None = None,
     *,
+    disabled: bool = False,
+    clear_label: str = "Clear",
     theme: "Theme | None" = None,
 ) -> Widget:
     """MD3's search bar: a 56 px
@@ -35,10 +37,13 @@ def search_bar(
     in `on_surface_variant`, and trailing icon buttons
     (`on_surface_variant`). `.query` is a `Signal` of what's typed;
     `.on_query(fn)` hears each change. Parts: `field` (the `text_input`),
-    `leading`, `trailing0`, ..."""
+    `leading`, `trailing0`, ... `disabled` dims it, makes the field read-only
+    and hides the clear button; `clear_label` names that button for assistive
+    technology."""
     query = Signal("")
     call = Call("SearchBar", props={"placeholder": placeholder, "query": query, "leading_icon": leading_icon or "",
-                                    "trailing_icons": list(trailing_icons or [])},
+                                    "trailing_icons": list(trailing_icons or []), "disabled": disabled,
+                                    "clear_label": clear_label},
                 style={"width": width, **_border(border_color, border_width)})
     parts = {"field": "input", "leading.icon": "leading.leading_glyph"}
     for i in range(len(trailing_icons or [])):
