@@ -20,7 +20,7 @@ KNOWN_GAPS: dict[str, tuple[str, str]] = {
     # it runs and does not conform
     "search_field/clear-press-returns-focus": (FAIL, "after Clear the focus is lost: no focus recovery to the input (Focus_Recovery, Press Focus: input)"),
     "search_field/clear-press-keyboard-returns-focus": (FAIL, "the same, by keyboard"),
-    "search_field/escape-clears": (FAIL, "Escape does not clear the query (Clear_On_Escape)"),
+    "search_field/escape-clears": (FAIL, "Escape clears the query; only the missing before_change differs (the events expectation)"),
     "search_field/type-updates-value": (FAIL, "the value follows; the widget emits no before_change (only the events expectation differs)"),
     # a limit of the adapter, not of the widget
     "search_field/type-same-value": (FAIL, "`consumed` is not observable (simulate returns nothing): inferred from a change, which is false when typing the same value"),
