@@ -135,3 +135,20 @@ def test_a_none_role_is_not_a_tab_stop_the_tooltip_layer_and_the_search_clear_bu
     menu.open_at(10, 10)
     window.advance(32)
     assert menu.node.get("role") == "menu" and not menu.node.get("focusable")
+
+
+def test_tab_closes_a_menu_and_focus_goes_to_the_control_after_the_opener_shift_tab_before_AC_MEN_11():
+    for shift, want in ((False, "after"), (True, "before")):
+        window = _window()
+        before = W.button(window, "Before", 100, 40)
+        opener = W.button(window, "Open", 100, 40)
+        after = W.button(window, "After", 100, 40)
+        window.advance(16)
+        menu = W.menu(window, [("A", None), ("B", None)])
+        opener.node.focus()
+        menu.open(opener.node)
+        window.advance(32)
+        window.simulate("key_down", key="tab", shift=shift)
+        window.advance(32)
+        held = [before.node.get("focused"), opener.node.get("focused"), after.node.get("focused")]
+        assert not menu.is_open and held == ([False, False, True] if want == "after" else [True, False, False]), want
