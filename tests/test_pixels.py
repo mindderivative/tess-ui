@@ -167,7 +167,8 @@ def test_the_solid_ring_is_one_colour(tmp_path):
     app, view = opened(tmp_path, RING)
     node = view.node("root.b")
     inter = view.interaction("root.b")
-    inter._on_focus(type("E", (), {"target": inter.node, "focus_visible": True})())
+    view.window.simulate("key_down", key="tab")  # keyboard focus: the engine draws its outline
+    node.focus()
     for _ in range(4):
         view.window.advance(16)
     background = pixel(view, 5, 5)

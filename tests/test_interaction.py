@@ -11,6 +11,7 @@ import pytest
 import tess_ui
 from tess_ui import View, interaction
 from tess_ui.spec.build import SpecBuildError
+from layers import ring_of
 
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
@@ -50,7 +51,7 @@ def test_a_clickable_node_gets_a_state_layer_covering_it():
     it = view.interaction("btn")
     node = view.node("btn")
     assert it is not None and view.interaction("plain") is None
-    assert node.children() == [it.clip, it.ring]  # after any content, so they paint over it
+    assert node.children() == [it.clip]  # after any content, so they paint over it
     assert it.clip.children() == []  # the state layers are the engine's, on the node: no node of ours
     for box in (it.clip,):
         assert (box.get("layout_x"), box.get("layout_y")) == (0.0, 0.0)
@@ -92,7 +93,7 @@ def test_hover_raises_the_layer_to_8_percent_including_over_children():
     view, window = _built(_rect("btn", handlers={"on_click": "go"}, children=[child]))
     layer = layer_of(view.interaction("btn"))
     it = view.interaction("btn")
-    assert view.node("btn").children() == [view.node("inner"), it.clip, it.ring]  # over the content
+    assert view.node("btn").children() == [view.node("inner"), it.clip]  # over the content
     window.simulate("pointer_move", x=150, y=60)
     _frames(window, 32)
     assert layer.get("opacity") == pytest.approx(interaction.HOVERED, abs=0.005)
@@ -214,11 +215,11 @@ def test_reconcile_adds_and_removes_the_interaction():
     assert view.interaction("btn") is None
     view.reconcile(_spec(_rect("btn", handlers={"on_click": "go"})))
     it = view.interaction("btn")
-    assert it is not None and view.node("btn").children() == [it.clip, it.ring]
+    assert it is not None and view.node("btn").children() == [it.clip]
     view.reconcile(_spec(_rect("btn", handlers={"on_click": "go"},
                                children=[_rect("a", width=10, height=10)])))
     assert view.interaction("btn") is it  # kept, and still after the content
-    assert view.node("btn").children() == [view.node("a"), it.clip, it.ring]
+    assert view.node("btn").children() == [view.node("a"), it.clip]
     view.reconcile(_spec(_rect("btn")))
     assert view.interaction("btn") is None
     assert view.node("btn").children() == []
