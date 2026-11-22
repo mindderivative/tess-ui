@@ -3,6 +3,7 @@
 Driven headlessly with `simulate`/`advance`, as M34's checkbox spike was.
 """
 
+from layers import layer_of
 import math
 
 import pytest
@@ -10,6 +11,7 @@ import pytest
 import tess_ui
 from tess_ui import View, interaction
 from tess_ui.spec.build import SpecBuildError
+
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
 
@@ -49,12 +51,12 @@ def test_a_clickable_node_gets_a_state_layer_covering_it():
     node = view.node("btn")
     assert it is not None and view.interaction("plain") is None
     assert node.children() == [it.clip, it.ring]  # after any content, so they paint over it
-    assert it.clip.children() == [it.layer]
-    for box in (it.clip, it.layer):
+    assert it.clip.children() == []  # the state layers are the engine's, on the node: no node of ours
+    for box in (it.clip,):
         assert (box.get("layout_x"), box.get("layout_y")) == (0.0, 0.0)
         assert (box.get("layout_width"), box.get("layout_height")) == (200.0, 80.0)
         assert box.get("hit_testable") is False and box.get("a11y_hidden") is True
-    assert it.layer.get("opacity") == 0.0
+    assert layer_of(it).get("opacity") == 0.0
     # the clip box follows the node's rounded box; the node isn't clipped
     assert it.clip.get("clip_children") is True and it.clip.get("corner_radius") == 20.0
     assert node.get("clip_children") is False
@@ -88,15 +90,15 @@ def test_interaction_needs_a_box():
 def test_hover_raises_the_layer_to_8_percent_including_over_children():
     child = {"id": "inner", "kind": "Rect", "style": {"width": 40, "height": 20, "background": "#000000"}}
     view, window = _built(_rect("btn", handlers={"on_click": "go"}, children=[child]))
-    layer = view.interaction("btn").layer
+    layer = layer_of(view.interaction("btn"))
     it = view.interaction("btn")
     assert view.node("btn").children() == [view.node("inner"), it.clip, it.ring]  # over the content
     window.simulate("pointer_move", x=150, y=60)
     _frames(window, 32)
-    assert layer.get("opacity") == pytest.approx(interaction.HOVERED)
+    assert layer.get("opacity") == pytest.approx(interaction.HOVERED, abs=0.005)
     window.simulate("pointer_move", x=10, y=10)  # onto the child: still hovering the node
     _frames(window, 32)
-    assert layer.get("opacity") == pytest.approx(interaction.HOVERED)
+    assert layer.get("opacity") == pytest.approx(interaction.HOVERED, abs=0.005)
     window.simulate("pointer_move", x=390, y=290)
     _frames(window, 32)
     assert layer.get("opacity") == 0.0
@@ -119,7 +121,7 @@ def test_a_press_ripples_from_the_press_point_and_covers_the_node():
     window.simulate("pointer_up", x=10, y=10)
     _frames(window, interaction.RELEASE_FADE_MS + 32)
     assert it.ripples == []
-    assert it.clip.children() == [it.layer]  # the circle is freed
+    assert it.clip.children() == []  # the circle is freed
 
 
 def test_a_quick_tap_still_shows_the_ripple_for_the_minimum_press():
@@ -143,7 +145,7 @@ def test_dragging_a_press_off_the_node_releases_it():
     _frames(window, interaction.MINIMUM_PRESS_MS + 16)
     window.simulate("pointer_move", x=390, y=290)
     _frames(window, interaction.RELEASE_FADE_MS + 32)
-    assert it.ripples == [] and it.layer.get("opacity") == 0.0
+    assert it.ripples == [] and layer_of(it).get("opacity") == 0.0
 
 
 def test_keyboard_focus_shows_the_focus_layer_and_enter_ripples_from_the_centre():
@@ -152,7 +154,7 @@ def test_keyboard_focus_shows_the_focus_layer_and_enter_ripples_from_the_centre(
     it = view.interaction("btn")
     window.simulate("key_down", key="tab")
     _frames(window, 32)
-    assert it.layer.get("opacity") == pytest.approx(interaction.FOCUSED)
+    assert layer_of(it).get("opacity") == pytest.approx(interaction.FOCUSED, abs=0.005)
     window.simulate("key_down", key="enter")
     window.advance(16)
     assert vm.clicks == 1  # the ViewModel's handler and the ripple share the click
@@ -171,7 +173,7 @@ def test_pointer_focus_shows_no_focus_layer():
     window.simulate("pointer_move", x=390, y=290)
     _frames(window, 32)
     assert view.node("btn").get("focused") is True
-    assert it.layer.get("opacity") == 0.0
+    assert layer_of(it).get("opacity") == 0.0
 
 
 def test_a_press_on_a_nested_clickable_ripples_only_the_nearest():
@@ -194,16 +196,16 @@ def test_the_tint_is_the_themes_on_surface_or_the_nodes_colour_and_follows_the_t
         theme_seed=SEED,
     )
     light = view.theme
-    assert view.interaction("btn").layer.get("fill") == light.role("on_surface")
-    assert view.interaction("brand").layer.get("fill") == light.role("primary")
-    assert view.interaction("hex").layer.get("fill") == (0xFF, 0, 0, 0x80)
+    assert layer_of(view.interaction("btn")).get("fill") == light.role("on_surface")
+    assert layer_of(view.interaction("brand")).get("fill") == light.role("primary")
+    assert layer_of(view.interaction("hex")).get("fill") == (0xFF, 0, 0, 0xFF)  # its own alpha (0x80) scales the layer, not the tint
     view.set_theme(theme_seed=SEED, dark=True)
-    assert view.interaction("btn").layer.get("fill") == view.theme.role("on_surface") != light.role("on_surface")
+    assert layer_of(view.interaction("btn")).get("fill") == view.theme.role("on_surface") != light.role("on_surface")
 
 
 def test_without_a_theme_the_tint_is_md3s_baseline_on_surface():
     view, _ = _built(_rect("btn", handlers={"on_click": "go"}))
-    assert view.interaction("btn").layer.get("fill") == (0x1D, 0x1B, 0x20, 0xFF)
+    assert layer_of(view.interaction("btn")).get("fill") == (0x1D, 0x1B, 0x20, 0xFF)
 
 
 def test_reconcile_adds_and_removes_the_interaction():

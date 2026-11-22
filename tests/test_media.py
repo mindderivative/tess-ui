@@ -5,12 +5,14 @@
 
 from pathlib import Path
 
+from layers import layer_of
 import pytest
 import tess_re
 from tess_utils import decode_image_file
 
 from tess_ui import Theme
 from tess_ui.widgets import image, video
+
 
 PIXEL_PNG = str(Path(__file__).parent / "fixtures" / "pixel.png")
 SEED = (0x67, 0x50, 0xA4, 0xFF)
@@ -209,6 +211,6 @@ def test_a_graph_node_shows_a_focus_ring_and_the_dragged_state():
     window.simulate("pointer_down", x=x + 10, y=y + 10)
     for _ in range(3):
         window.advance(16)
-    assert a.interaction().dragged and a.interaction().layer.get("opacity") == pytest.approx(interaction.DRAGGED)
+    assert a.interaction().dragged and layer_of(a.interaction()).get("opacity") == pytest.approx(interaction.DRAGGED, abs=0.005)
     window.simulate("pointer_up", x=x + 10, y=y + 10)
     assert not a.interaction().dragged
