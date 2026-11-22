@@ -527,7 +527,7 @@ def test_enter_and_space_on_the_focused_trigger_dismiss_the_tooltip_AC_TIP_7(tmp
 def _tip_pixels(tmp_path, dark):
     (tmp_path / "Views").mkdir(parents=True, exist_ok=True)
     (tmp_path / "Views" / "Main_View.tdl").write_text(view_text())
-    app = App(root=tmp_path, dark=dark, theme_seed=tokens.BASELINE_SEED)
+    app = App(root=tmp_path, dark=dark, theme_seed=(0x67, 0x50, 0xA4, 0xFF))
     app.bind(VM)
     view = app.open_view("Main")
     app.show("main")
