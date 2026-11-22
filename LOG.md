@@ -3792,3 +3792,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-22 The hover layer fades in 15 ms (tre 0.6.13)
 - `interaction.HOVER_MS` is `tokens.RIPPLE_MS["hover_fade"]` (15) again: the state layers fade at the spec's 15 ms hover, 105 ms pressed and 150 ms focus. It was held at 100 ms while the engine lost the last frame of an animation and a 15 ms hover left one layer pixel behind; 0.6.13 fixed that. A headless pixel test visits a button for 1, 2, 3, 8 and 20 frames and checks the pixel comes back each time; the real compositor has not been looked at by me.
+
+## 2026-11-22 The multi-line text field shows the spec's scrollbar (tre 0.6.13 `scrollbar_*` on a multiline `text_input`)
+- A `TextField` with `Multiline: true` sets `scrollbar_show: overflow` and the scroll panes' look (`spec.build.SCROLLBAR`: an 8 dp pill thumb, 12 dp hit area, 70/80/100 percent opaque, `on_surface_variant`), so vertical overflow shows a thumb along the right edge as the Text Field note says; a single-line field draws none (the engine's default `never`). A pixel test checks the thumb with long content and its absence when the text fits. Not set: the horizontal bar for `wrap none` (tess-ui has no such option on the field yet).
