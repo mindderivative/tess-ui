@@ -263,3 +263,75 @@ def test_a_multiple_selection_list_keeps_the_roving_tab_stop_and_the_type_ahead_
     assert rows[1].node.get("focused") and sorted(r.node.get("tab_index") for r in rows) == [-1, -1, -1, 0] and rows[1].node.get("tab_index") == 0
     window2, box2, *_ = _multiple(announce=None)
     assert box2.node.get("selection_announce") is None
+
+
+def _rows(selectable, disabled=(), unselectable=()):
+    from tess_ui.widgets import list_, list_item
+
+    window = tess_re.Window(width=600, height=400)
+    window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, align_items="flex_start", flex_direction="vertical")
+    rows = [list_item(window, text, disabled=i in disabled) for i, text in enumerate(("Apple", "Banana", "Cherry", "Date", "Elder"))]
+    box = list_(window, rows, selectable=selectable, unselectable=list(unselectable))
+    window.advance(32)
+    return window, box, rows
+
+
+def _press(window, key, **modifiers):
+    window.simulate("key_down", key=key, **modifiers)
+    window.advance(32)
+
+
+def test_a_disabled_row_is_skipped_by_the_arrows_and_never_chosen_in_a_multiple_list():
+    window, box, rows = _rows("multiple", disabled=(2,))
+    focused = lambda: [i for i, r in enumerate(rows) if r.node.get("focused")]  # noqa: E731
+    window.simulate("click", node=rows[1].node)
+    window.advance(16)
+    _press(window, "arrow_down")
+    assert focused() == [3]  # Cherry is disabled
+    _press(window, "arrow_up")
+    assert focused() == [1]
+    window.simulate("click", node=rows[4].node, shift=True)  # a range from Banana over the disabled row
+    window.advance(16)
+    assert box.selection.get() == (1, 3, 4)
+    _press(window, "a", ctrl=True)
+    assert box.selection.get() == (0, 1, 3, 4)
+    window.simulate("click", node=rows[2].node)  # a press on it does nothing
+    window.advance(16)
+    assert box.selection.get() == (0, 1, 3, 4)
+
+
+def test_an_unselectable_row_takes_focus_but_is_never_chosen_in_a_multiple_list():
+    window, box, rows = _rows("multiple", unselectable=(2,))
+    focused = lambda: [i for i, r in enumerate(rows) if r.node.get("focused")]  # noqa: E731
+    window.simulate("click", node=rows[1].node)
+    window.advance(16)
+    _press(window, "arrow_down")
+    assert focused() == [2] and box.selection.get() == (1,)  # the arrow lands on it
+    _press(window, "space")
+    assert box.selection.get() == (1,)  # and Space chooses nothing
+    window.simulate("click", node=rows[4].node, shift=True)
+    window.advance(16)
+    assert box.selection.get() == (1, 3, 4)  # the range passes over it
+    window.simulate("click", node=rows[2].node)  # a press focuses it and changes nothing
+    window.advance(16)
+    assert focused() == [2] and box.selection.get() == (1, 3, 4)
+    _press(window, "a", ctrl=True)
+    assert box.selection.get() == (0, 1, 3, 4)
+    box.selection.set((0, 2, 3))  # a write from code leaves it out
+    window.advance(32)
+    assert box.selection.get() == (0, 3)
+
+
+def test_a_single_selection_list_skips_a_disabled_row_and_cannot_choose_an_unselectable_one():
+    window, box, rows = _rows("single", disabled=(1,), unselectable=(3,))
+    rows[0].node.focus()
+    window.advance(16)
+    _press(window, "arrow_down")
+    assert rows[2].node.get("focused")  # Banana is disabled
+    _press(window, "arrow_down")
+    assert rows[3].node.get("focused")  # Date takes focus
+    _press(window, "enter")
+    assert box.selected.get() is None  # and cannot be chosen
+    window.simulate("click", node=rows[2].node)
+    window.advance(16)
+    assert box.selected.get() == 2

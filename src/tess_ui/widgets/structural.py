@@ -62,6 +62,7 @@ def list_(
     selectable: str | None = None,
     selected: int | list[int] | None = None,
     announce: str | None = "{count} selected",
+    unselectable: list[int] | None = None,
 ) -> Widget:
     """Lays out `list_item(...)`s (or any nodes) as MD3's list: a column
     `width` wide. The items move into it. An empty list is an error, as
@@ -83,7 +84,9 @@ def list_(
     is a `Signal` of the chosen rows' indices, ascending (a tuple; write it to
     choose rows from code), `selected=` starts it with a list, and `announce`
     is what assistive technology reads as it changes (`{count}` is how many;
-    `None` is silent). Only `.on_change(fn)` hears it (`reason` `pointer`,
+    `None` is silent). A row made with `list_item(disabled=True)` is skipped by the keys, never chosen and
+    does not respond; `unselectable=[indices]` names rows that take focus but are never chosen (a range
+    passes over them, Ctrl+A leaves them out, a write from code ignores them). Only `.on_change(fn)` hears it (`reason` `pointer`,
     `keyboard` or `api`; `detail` `select`, `toggle` (Ctrl+click, Space), `range` (Shift), `all` (Ctrl+A) or `clear` (a click on the empty part), as the Selection pattern names them): the engine makes the change, so
     there is nothing to refuse beforehand."""
     if not items:
@@ -103,11 +106,32 @@ def list_(
         if selectable or not action:  # a plain list's row that has an action stays the button it is
             a11y.describe(node, role="option" if selectable else "listitem")
         nodes.append(node)
+    off = [bool(getattr(getattr(item, "disabled", None), "get", lambda: False)()) for item in items]
+    no_pick = [off[i] or i in (unselectable or ()) for i in range(len(nodes))]
     if selectable == "multiple":
-        _multiple(widget, items, nodes, selected if isinstance(selected, list) else [] if selected is None else [selected], announce)
+        _multiple(widget, items, nodes, selected if isinstance(selected, list) else [] if selected is None else [selected], announce, off, no_pick)
     elif selectable:
-        _selectable(widget, items, nodes, selected if not isinstance(selected, list) else (selected[0] if selected else None))
+        _selectable(widget, items, nodes, selected if not isinstance(selected, list) else (selected[0] if selected else None), off, no_pick)
     return widget
+
+
+def _focus_it(node: Any) -> Callable[[Any], None]:
+    return lambda event: node.focus()
+
+
+def _next_enabled(off: list[bool], i: int, step: int) -> int | None:
+    """The enabled row after `i` in the direction of `step` (1 or -1), or `None` at the end."""
+    j = i + step
+    while 0 <= j < len(off):
+        if not off[j]:
+            return j
+        j += step
+    return None
+
+
+def _edge(off: list[bool], last: bool) -> int | None:
+    enabled = [i for i, gone in enumerate(off) if not gone]
+    return (enabled[-1] if last else enabled[0]) if enabled else None
 
 
 def _hear(listeners: list[Callable[[Any], None]], fn: Callable[[Any], None]) -> Callable[[], None]:
@@ -116,7 +140,7 @@ def _hear(listeners: list[Callable[[Any], None]], fn: Callable[[Any], None]) -> 
     return lambda: listeners.remove(fn) if fn in listeners else None
 
 
-def _multiple(widget: Widget, items: list[Any], nodes: list[Any], start: list[int], announce: str | None) -> None:
+def _multiple(widget: Widget, items: list[Any], nodes: list[Any], start: list[int], announce: str | None, off: list[bool], no_pick: list[bool]) -> None:
     """The multiple-selection list: the engine's container selection chooses (clicks, Shift, Ctrl, Space, Ctrl+A); this styles the rows, keeps
     `.selection` in step both ways, keeps the roving Tab stop and the type-ahead."""
     box = widget.node
@@ -124,8 +148,8 @@ def _multiple(widget: Widget, items: list[Any], nodes: list[Any], start: list[in
     if announce is not None:
         box.set(selection_announce=announce)
     gate = Gate(detail_of=lambda source: "select")
-    chosen = Signal(tuple(sorted({i for i in start if 0 <= i < len(nodes)})))
-    active = [chosen.get()[0] if chosen.get() else 0]
+    chosen = Signal(tuple(sorted({i for i in start if 0 <= i < len(nodes) and not no_pick[i]})))
+    active = [chosen.get()[0] if chosen.get() else (_edge(off, False) or 0)]
     heard = [chosen.get()]  # the last set `on_change` was told of
     index_of = {node: i for i, node in enumerate(nodes)}
 
@@ -146,8 +170,13 @@ def _multiple(widget: Widget, items: list[Any], nodes: list[Any], start: list[in
 
     def push(indices: tuple[int, ...]) -> None:
         """Signal -> engine, when they differ (a write from code)."""
-        if tuple(index_of[node] for node in box.get("selection")) != indices:
-            box.set(selection=[nodes[i] for i in indices])
+        pickable = tuple(i for i in indices if not no_pick[i])  # a write from code that names a row nobody may choose leaves it out
+        if tuple(index_of[node] for node in box.get("selection")) != pickable:
+            pushing[0] = True
+            try:
+                box.set(selection=[nodes[i] for i in pickable])
+            finally:
+                pushing[0] = False
 
     last: list[Any] = [None]  # the input the engine is about to act on: (what, event), set by the box's listeners, which run before the engine's own handling
 
@@ -174,8 +203,13 @@ def _multiple(widget: Widget, items: list[Any], nodes: list[Any], start: list[in
             return "all"
         return "range" if shift and key in ("arrow_down", "arrow_up", "home", "end") else "select"
 
+    pushing = [False]
+
     def changed(event: Any) -> None:
         """Engine -> Signal: the chosen rows, and who made the change."""
+        if pushing[0]:  # told while the Signal's own write is being pushed: say it on the next tick (a Signal may not be written from its own notification)
+            widget.window.after(0, lambda: changed(event))
+            return
         previous = heard[0]
         now = tuple(sorted(index_of[node] for node in box.get("selection")))
         if now == previous:
@@ -201,9 +235,11 @@ def _multiple(widget: Widget, items: list[Any], nodes: list[Any], start: list[in
         """Type-ahead, heard on the list itself: a listener on a row would keep the row's keys from the engine's selection."""
         last[0] = ("key", event)
         i = index_of.get(event.target)
-        target = {"arrow_down": min((i or 0) + 1, len(nodes) - 1), "arrow_up": max((i or 0) - 1, 0), "home": 0, "end": len(nodes) - 1}.get(event.key)
-        if i is not None and target is not None:  # the container has no arrow-key focus of its own: move it (Shift: after the engine's range, which starts from the row that had it)
-            if target != i:
+        moves = {"arrow_down": lambda: _next_enabled(off, i or 0, 1), "arrow_up": lambda: _next_enabled(off, i or 0, -1),
+                 "home": lambda: _edge(off, False), "end": lambda: _edge(off, True)}
+        if i is not None and event.key in moves:  # the container has no arrow-key focus of its own: move it (Shift: after the engine's range, which starts from the row that had it)
+            target = moves[event.key]()
+            if target is not None and target != i:
                 widget.window.after(0, nodes[target].focus) if getattr(event, "shift", False) else nodes[target].focus()
             return
         if i is not None and len(event.key) == 1 and event.key.isprintable() and event.key != " " and not (getattr(event, "ctrl", False) or getattr(event, "meta", False)):
@@ -216,7 +252,9 @@ def _multiple(widget: Widget, items: list[Any], nodes: list[Any], start: list[in
             items[i].actionable.set(True)
         if hasattr(items[i], "pickable"):
             items[i].pickable.set(True)  # the row tells assistive technology whether it is selected
-        node.set(focusable=True, item_selectable=True)
+        node.set(focusable=not off[i], item_selectable=not no_pick[i])
+        if no_pick[i] and not off[i]:  # the engine neither chooses nor focuses a row it may not choose; the standard focuses it
+            widget._undo.append(widget.view._listen(node, "click", _focus_it(node)))
         widget._undo.append(widget.view._listen(node, "focus", rove(i)))
     widget._undo.append(widget.view._listen(box, "key_down", typed))
     widget._undo.append(widget.view._listen(box, "pointer_down", pointed))
@@ -229,11 +267,11 @@ def _multiple(widget: Widget, items: list[Any], nodes: list[Any], start: list[in
     widget._undo.append(Effect(show).dispose)
 
 
-def _selectable(widget: Widget, items: list[Any], nodes: list[Any], start: int | None) -> None:
+def _selectable(widget: Widget, items: list[Any], nodes: list[Any], start: int | None, off: list[bool], no_pick: list[bool]) -> None:
     """The single-selection list: selection in a `GatedSignal`, the roving Tab stop, the keys."""
     gate = Gate(detail_of=lambda source: "select")
-    chosen = GatedSignal(start if start is not None and 0 <= start < len(nodes) else None, gate)
-    active = [chosen.get() or 0]  # the row that holds the Tab stop
+    chosen = GatedSignal(start if start is not None and 0 <= start < len(nodes) and not no_pick[start] else None, gate)
+    active = [chosen.get() if chosen.get() is not None else (_edge(off, False) or 0)]  # the row that holds the Tab stop
 
     def show() -> None:
         index = chosen.get()
@@ -244,6 +282,8 @@ def _selectable(widget: Widget, items: list[Any], nodes: list[Any], start: int |
             node.set(tab_index=0 if i == active[0] else -1)
 
     def pick(i: int, reason: str) -> None:
+        if no_pick[i]:
+            return  # a row nobody may choose
         with caused_by(reason, "select"):
             chosen.set(i)
         active[0] = i
@@ -261,12 +301,15 @@ def _selectable(widget: Widget, items: list[Any], nodes: list[Any], start: int |
 
     def key(i: int) -> Callable[[Any], None]:
         def pressed(event: Any) -> None:
-            target = {"arrow_down": min(i + 1, len(nodes) - 1), "arrow_up": max(i - 1, 0), "home": 0, "end": len(nodes) - 1}.get(event.key)
-            if target is not None and target != i:
-                nodes[target].focus()
+            moves = {"arrow_down": lambda: _next_enabled(off, i, 1), "arrow_up": lambda: _next_enabled(off, i, -1),
+                     "home": lambda: _edge(off, False), "end": lambda: _edge(off, True)}
+            if event.key in moves:
+                target = moves[event.key]()
+                if target is not None and target != i:
+                    nodes[target].focus()
             elif event.key in ("enter", "space"):
                 pick(i, "keyboard")
-            elif target is None and len(event.key) == 1 and event.key.isprintable() and event.key != " ":
+            elif len(event.key) == 1 and event.key.isprintable() and event.key != " ":
                 found = ahead.find(event.key, i, labels)  # type-ahead: the next row whose name starts with what was typed (the focus groups' search)
                 if found is not None and found != i:
                     nodes[found].focus()
@@ -278,7 +321,7 @@ def _selectable(widget: Widget, items: list[Any], nodes: list[Any], start: int |
     for i, node in enumerate(nodes):
         if hasattr(items[i], "actionable"):
             items[i].actionable.set(True)  # a selectable list's rows are what the user picks
-        node.set(focusable=True)
+        node.set(focusable=not off[i])
         widget._undo.append(widget.view._listen(node, "focus", rove(i)))
         widget._undo.append(widget.view._listen(node, "key_down", key(i)))
         widget._undo.append(widget.view._listen(node, "click", clicked(i)))
@@ -304,18 +347,22 @@ def list_item(
     theme: "Theme | None" = None,
     on_click: Callable[[], Any] | None = None,
     selected: bool = False,
+    disabled: bool = False,
 ) -> Widget:
     """One MD3 list row: a `body_large`
     headline, 56 px tall, or 72 with `supporting_text` (`body_medium`,
     `on_surface_variant`) under it; 24 px `on_surface_variant` icons either
     side. Parts: `headline`, `supporting`, `leading`, `trailing`. `.selected`
     is a `Signal`: while true the row is a secondary container (`list_`
-    drives it in a selectable list)."""
+    drives it in a selectable list). `disabled` dims it: it takes no focus and does not respond, and a
+    selectable list skips it (`.disabled` is a `Signal`)."""
     selected_signal = Signal(bool(selected))
     pickable_signal = Signal(False)
+    disabled_signal = Signal(bool(disabled))
     actionable_signal = Signal(on_click is not None)  # a row that does something is a Tab stop; one that only shows something is not
     call = Call("ListItem", props={"headline": headline, "supporting": supporting_text, "leading_icon": leading_icon, "trailing_icon": trailing_icon,
-                                   "selected": selected_signal, "actionable": actionable_signal, "pickable": pickable_signal},
+                                   "selected": selected_signal, "actionable": actionable_signal, "pickable": pickable_signal,
+                                   "disabled": disabled_signal},
                 style={"width": width, **_border(border_color, border_width)})
     widget = Widget(window, call=call, components={None: "list_item"},
                     parts={"headline": "text.headline", "supporting": "text.supporting", "leading": "leading_icon", "trailing": "trailing_icon"},
@@ -323,6 +370,7 @@ def list_item(
     widget.selected = selected_signal  # type: ignore[attr-defined]
     widget.actionable = actionable_signal  # type: ignore[attr-defined]
     widget.pickable = pickable_signal  # type: ignore[attr-defined]
+    widget.disabled = disabled_signal  # type: ignore[attr-defined]
     if on_click is not None:
         widget.on_click(on_click)
     return widget
