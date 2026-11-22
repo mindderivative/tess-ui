@@ -3,7 +3,7 @@ TDL: 0.2
 Name: Tree
 Tesserae: "0.6"
 ---
-# A tree (the WAI-ARIA tree pattern in Material 3's list terms): rows that open to show their children, one level inside the next. `nodes` is a list of {value, label} and
+# A tree (the WAI-ARIA tree pattern in Material 3's list terms): rows that open to show their children, one level inside the next (the rows are one flat list: each open branch's children follow it, so a screen reader hears each row's level, `pos_in_set` and `set_size`, not nested groups). `nodes` is a list of {value, label} and
 # optionally {icon, children, disabled}, the children being the same shape. `expanded` is the list of values of the open branches and `selected` the value of the chosen row;
 # both are two-way. A press on a row chooses it, and on a branch opens or closes it too. One Tab stop; the up and down arrows move through the rows that show, Right opens a branch
 # and Left closes one, and typing the start of a label jumps to a row.
@@ -20,14 +20,37 @@ Container {
   A11y { Role: tree, Label: <| label |> }
   Style { Flex_Direction: vertical, Width: 100% }
   Children {
-    TreeLevel {
-      Name: top
-      Nodes: <| nodes |>
-      Level: 0
-      Expanded: <| expanded |>
-      Selected: <| selected |>
-      Compact: <| compact |>
-      Density: <| density |>
+    For r In <| tree_rows(nodes, expanded) |> Key <| r['value'] |> {
+      TreeNode {
+        Name: row
+        Label: <| r['label'] |>
+        Icon: <| r['icon'] |>
+        Level: <| r['level'] |>
+        Set_Size: <| r['set_size'] |>
+        Pos_In_Set: <| r['pos_in_set'] |>
+        Branch: <| r['branch'] |>
+        Expanded: <| r['open'] |>
+        Selected: <| r['value'] == selected |>
+        Compact: <| compact |>
+        Density: <| density |>
+        Disabled: <| r['disabled'] |>
+        Handlers {
+          On_Click {
+            Set { Target: selected, Value: <| r['value'] |> }
+            Set {
+              Target: expanded
+              Value: <| ([v for v in expanded if v != r['value']] if r['open'] else expanded + [r['value']]) if r['branch'] else expanded |>
+            }
+          }
+          On_Key {
+            Call { Action: "tree_focus", Args: [<| event.key |>, <| r['open'] |>, <| r['branch'] |>, <| r['level'] |>] }
+            Set {
+              Target: expanded
+              Value: <| (expanded + [r['value']]) if (event.key == 'arrow_right' and r['branch'] and not r['open']) else (([v for v in expanded if v != r['value']]) if (event.key == 'arrow_left' and r['open']) else (expanded + [v for v in r['siblings_branches'] if v not in expanded] if event.key == '*' else expanded)) |>
+            }
+          }
+        }
+      }
     }
   }
 }

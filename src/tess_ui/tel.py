@@ -224,11 +224,36 @@ class _Held:
 
 _app_density = _Held("")
 
+
+def _tree_rows(nodes: Any, expanded: Any) -> list[dict[str, Any]]:
+    """The rows a tree shows, flat and in order: each open branch's children follow it. A row is `{value, label, icon, disabled, level, branch,
+    open, set_size, pos_in_set, siblings_branches}` where `level` counts from 0 and `set_size` and `pos_in_set` count the row's SIBLINGS (not every row that
+    shows: what a screen reader says as "2 of 3"); `siblings_branches` is the values of the branches on the row's own level (what `*` opens)."""
+    opened = set(expanded or ())
+    rows: list[dict[str, Any]] = []
+
+    def walk(level_nodes: Any, level: int) -> None:
+        listed = list(level_nodes or ())
+        branches = [n["value"] for n in listed if n.get("children")]
+        for position, node in enumerate(listed, 1):
+            children = node.get("children") or []
+            is_open = bool(children) and node["value"] in opened
+            rows.append({"value": node["value"], "label": node.get("label", ""), "icon": node.get("icon", ""), "disabled": bool(node.get("disabled", False)),
+                         "level": level, "branch": bool(children), "open": is_open, "set_size": len(listed), "pos_in_set": position,
+                         "siblings_branches": branches})
+            if is_open:
+                walk(children, level + 1)
+
+    walk(nodes, 0)
+    return rows
+
+
 HOST_FUNCTIONS: dict[str, Callable[..., Any]] = {
     "format_number": _format_number, "pluralize": _pluralize, "date_add_days": _date_add_days, "date_weekday": _date_weekday,
     "days_in_month": _days_in_month, "format_date": _format_date, "current_date": _today,
     "density_token": tokens.density_token,
     "app_density": lambda: _app_density.get(),
+    "tree_rows": _tree_rows,
 }
 
 

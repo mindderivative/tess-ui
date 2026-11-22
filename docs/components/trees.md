@@ -9,16 +9,16 @@ that open.
 
 ## In Tesserae
 
-Views Tesserae ships: `Tree` (the whole tree from data), `TreeNode` (one row, a branch with a chevron or a leaf) and `TreeLevel` (the rows of one level, which calls itself for
-the children of an open branch).
+Views Tesserae ships: `Tree` (the whole tree from data), and `TreeNode` (one row, a branch with a chevron or a leaf). The rows are one flat list (`tree_rows(nodes, expanded)`):
+the children of an open branch follow it.
 
 The `Nodes` are rows, `{Value, Label}` and optionally `{Icon, children, Disabled}`, where `children` is a list of the same shape. `Expanded` (the values of the open branches)
 and `Selected` (the value of the chosen row) are two-way. Rows are 56 pixels tall, or 40 with `Compact`.
 
 A row is indented 16 pixels plus 24 for each level, has a 24 pixel chevron that turns a quarter when its branch opens (a leaf keeps the room), an optional icon and a `body_large`
 label; the chosen row is `secondary_container`. A press chooses a row and opens or closes a branch. One Tab stop; the up and down arrows move through the rows that show, Right
-opens a branch and Left closes it, and typing the start of a label jumps to a row. A screen reader hears a tree whose items have their level, and a branch says whether it is
-expanded. `TreeNode` can be used alone for a custom tree. Not built: loading children when a branch first opens, selecting several, dragging to reorder, a context menu, and
+opens a branch and Left closes it, and typing the start of a label jumps to a row. A screen reader hears a tree whose items are flat rows with their level, their place among their siblings (`pos_in_set` of `set_size`)
+and, for a branch, whether it is expanded: there is no group around the children of an open branch. `TreeNode` can be used alone for a custom tree. Not built: loading children when a branch first opens, selecting several, dragging to reorder, a context menu, and
 building only the rows in view for a very large tree.
 
 ## How it is built
@@ -27,7 +27,7 @@ A view Tesserae ships is a `<Name>_View.tdl` (what it takes and what it is made 
 
 ### `Tree`
 
-A tree (the WAI-ARIA tree pattern in Material 3's list terms): rows that open to show their children, one level inside the next. `Nodes` is a list of {value, label} and optionally {icon, children, disabled}, the children being the same shape. `Expanded` is the list of values of the open branches and `Selected` the value of the chosen row; both are two-way. A press on a row chooses it, and on a branch opens or closes it too. One Tab stop; the up and down arrows move through the rows that show, Right opens a branch and Left closes one, and typing the start of a label jumps to a row.
+A tree (the WAI-ARIA tree pattern in Material 3's list terms): rows that open to show their children, one level inside the next (the rows are one flat list: each open branch's children follow it, so a screen reader hears each row's level, `Pos_In_Set` and `Set_Size`, not nested groups). `Nodes` is a list of {value, label} and optionally {icon, children, disabled}, the children being the same shape. `Expanded` is the list of values of the open branches and `Selected` the value of the chosen row; both are two-way. A press on a row chooses it, and on a branch opens or closes it too. One Tab stop; the up and down arrows move through the rows that show, Right opens a branch and Left closes one, and typing the start of a label jumps to a row.
 
 | Parameter | Type | Default | Meaning |
 | --- | --- | --- | --- |
@@ -38,7 +38,7 @@ A tree (the WAI-ARIA tree pattern in Material 3's list terms): rows that open to
 | `Density` | `str` |  | `default`, `Compact` or `dense`: the spec's density table for the rows; empty follows the app's `App(density=)`. |
 | `Label` | `str` | `Tree` | The tree's accessible name: what the pane is (Files, Structure), not the word Tree (AC-TRE-01). |
 
-Its parts, by name (a stylesheet rule's `Part` or `Name` addresses one): `top` (TreeLevel).
+Its parts, by name (a stylesheet rule's `Part` or `Name` addresses one): `row` (TreeNode).
 
 ### `TreeNode`
 
@@ -61,21 +61,6 @@ One row of a tree: a leaf or a branch with a chevron that turns a quarter when i
 Its parts, by name (a stylesheet rule's `Part` or `Name` addresses one): `chevron` (Icon), `chevron_space` (Container), `icon` (Icon), `label` (Text).
 
 Its look is in [`TreeNode_Stylesheet.tdl`](../stylesheets/trees/tree-node.md).
-
-### `TreeLevel`
-
-The rows of one level of a tree, each followed by its children's level while it is open (this view calls itself). `Tree` is the one to use; this is its part.
-
-| Parameter | Type | Default | Meaning |
-| --- | --- | --- | --- |
-| `Nodes` | `list` | `[]` | The rows: {value, label} and optionally {icon, children, disabled}. |
-| `Level` | `int` | `0` | How deep this level is. |
-| `Expanded` | `list` | `[]` | The values of the branches that are open. Two-way: give it a bare reference and the view writes it back. |
-| `Selected` | `any` |  | The value of the chosen row. Two-way: give it a bare reference and the view writes it back. |
-| `Compact` | `bool` | `false` | 40 pixel rows. |
-| `Density` | `str` |  | The density of the rows (see Tree). |
-
-Its parts, by name (a stylesheet rule's `Part` or `Name` addresses one): `entry` (Container), `row` (TreeNode), `children` (TreeLevel).
 
 ## Using it
 

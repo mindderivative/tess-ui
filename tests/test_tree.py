@@ -69,14 +69,11 @@ def settle(view, n=20):
 
 def row(view, *path):
     """The row at `path` of values: ('docs', 'b') is Reports inside Documents."""
-    base = "root.t.top"
-    for value in path[:-1]:
-        base += f".entry[{value}].children"
-    return view.node(f"{base}.entry[{path[-1]}].row")
+    return view.node(f"root.t.row[{path[-1]}]")
 
 
 def test_they_are_shipped():
-    assert {"Tree", "TreeNode", "TreeLevel"} <= set(shipped_views())
+    assert {"Tree", "TreeNode"} <= set(shipped_views())
 
 
 def test_the_tree_is_a_tree_and_its_rows_are_tree_items_at_their_levels(tmp_path):
@@ -89,8 +86,8 @@ def test_the_tree_is_a_tree_and_its_rows_are_tree_items_at_their_levels(tmp_path
 def test_open_branches_show_their_children_one_level_in_and_closed_ones_do_not(tmp_path):
     view, _ = opened(tmp_path)
     assert row(view, "docs").get("expanded") is True and row(view, "pics").get("expanded") is False
-    assert "root.t.top.entry[docs].children" in view._built.specs and "root.t.top.entry[pics].children" not in view._built.specs
-    assert "root.t.top.entry[docs].children.entry[b].children" not in view._built.specs  # Reports is closed
+    assert "root.t.row[a]" in view._built.specs and "root.t.row[p]" not in view._built.specs
+    assert "root.t.row[q]" not in view._built.specs  # Reports is closed
     assert row(view, "docs", "a").get("layout_x") == row(view, "docs").get("layout_x") and row(view, "docs", "a").get("layout_y") == row(view, "docs").get("layout_y") + 56
 
 
@@ -98,23 +95,23 @@ def test_a_row_is_56_tall_indented_16_plus_24_a_level_with_the_chevron_and_the_l
     view, _ = opened(tmp_path)
     top, inner = row(view, "docs"), row(view, "docs", "a")
     assert top.get("layout_height") == 56.0
-    assert view.node("root.t.top.entry[pics].row.chevron").get("layout_x") == 16.0  # (a turned one reports its box from the turn)
-    assert view.node("root.t.top.entry[docs].children.entry[a].row.label").get("layout_x") == 16 + 24 + 24 + 8
-    assert view.node("root.t.top.entry[docs].row.label").get("layout_x") == 16 + 24 + 8 + 24 + 8  # a folder icon after the chevron
-    assert view.node("root.t.top.entry[docs].row.label").get("font_size") == 16.0
+    assert view.node("root.t.row[pics].chevron").get("layout_x") == 16.0  # (a turned one reports its box from the turn)
+    assert view.node("root.t.row[a].label").get("layout_x") == 16 + 24 + 24 + 8
+    assert view.node("root.t.row[docs].label").get("layout_x") == 16 + 24 + 8 + 24 + 8  # a folder icon after the chevron
+    assert view.node("root.t.row[docs].label").get("font_size") == 16.0
 
 
 def test_a_leaf_has_no_chevron_and_a_branch_has_one(tmp_path):
     view, _ = opened(tmp_path)
-    assert "root.t.top.entry[docs].row.chevron" in view._built.specs and "root.t.top.entry[readme].row.chevron" not in view._built.specs
-    assert "root.t.top.entry[readme].row.chevron_space" in view._built.specs
+    assert "root.t.row[docs].chevron" in view._built.specs and "root.t.row[readme].chevron" not in view._built.specs
+    assert "root.t.row[readme].chevron_space" in view._built.specs
 
 
 def test_the_chevron_turns_a_quarter_when_a_branch_is_open(tmp_path):
     view, _ = opened(tmp_path)
     settle(view)
-    assert view.node("root.t.top.entry[docs].row.chevron").get("rotation_deg") == 90.0
-    assert view.node("root.t.top.entry[pics].row.chevron").get("rotation_deg") == 0.0
+    assert view.node("root.t.row[docs].chevron").get("rotation_deg") == 90.0
+    assert view.node("root.t.row[pics].chevron").get("rotation_deg") == 0.0
 
 
 def test_the_chosen_row_is_secondary_container(tmp_path):
@@ -134,10 +131,10 @@ def test_pressing_a_branch_chooses_it_and_opens_or_closes_it(tmp_path):
     view, vm = opened(tmp_path)
     view.window.simulate("click", node=row(view, "pics"))
     settle(view, 6)
-    assert vm.sel.get() == "pics" and vm.open.get() == ["docs", "pics"] and "root.t.top.entry[pics].children" in view._built.specs
+    assert vm.sel.get() == "pics" and vm.open.get() == ["docs", "pics"] and "root.t.row[p]" in view._built.specs
     view.window.simulate("click", node=row(view, "docs"))
     settle(view, 6)
-    assert vm.open.get() == ["pics"] and "root.t.top.entry[docs].children" not in view._built.specs
+    assert vm.open.get() == ["pics"] and "root.t.row[a]" not in view._built.specs
 
 
 def test_a_nested_branch_opens_inside_its_parent_and_deeper_rows_are_deeper(tmp_path):
@@ -202,7 +199,7 @@ Container {
     view = app.open_view("Main")
     app.show("main")
     settle(view, 6)
-    view.window.simulate("click", node=view.node("root.t.top.entry[x].row"))
+    view.window.simulate("click", node=view.node("root.t.row[x]"))
     settle(view, 6)
     assert app.bindings.viewmodel_for("main").sel.get() == "a"
 
@@ -231,7 +228,7 @@ Container {{
     settle(view, 6)
     view.window.simulate("click", node=row(view, "pics"))
     settle(view, 6)
-    assert "root.t.top.entry[pics].children" in view._built.specs and row(view, "pics").get("selected") is True
+    assert "root.t.row[p]" in view._built.specs and row(view, "pics").get("selected") is True
 
 
 def focused_label(view):
@@ -276,13 +273,15 @@ def test_star_opens_every_closed_sibling_branch_and_no_others_AC_TRE_08(tmp_path
     assert sorted(vm.open.get()) == ["docs", "pics"]  # the two root branches; readme is a leaf and b (a deeper branch) is not a sibling
 
 
-def test_the_tree_is_named_by_what_it_is_and_the_children_of_an_open_branch_are_a_group_AC_TRE_01_AC_TRE_10(tmp_path):
+def test_the_tree_is_named_by_what_it_is_and_its_rows_are_one_flat_list_AC_TRE_01_AC_TRE_10(tmp_path):
     view, _ = opened(tmp_path, "Label: Files")
     assert view.node("root.t").get("role") == "tree" and view.node("root.t").get("label") == "Files"
-    children = view._built.outer["root.t.top.entry[docs].children"]
-    assert children.get("role") == "group"
-    assert view._built.outer["root.t.top"].get("role") != "group"
+    tree = view.node("root.t")
+    assert all(n.get("role") != "group" for n in tree.children())  # the flat AT form: no group around an open branch's children
+    assert [n.get("role") for n in tree.children()] == ["treeitem"] * 5 and [n.get("level") for n in tree.children()] == [1, 2, 2, 1, 1]
     assert view.node("root.t").get("label") != "Tree"
+
+
 def opened_at(tmp_path, density, props=""):
     (tmp_path / "Views").mkdir(parents=True, exist_ok=True)
     (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
@@ -317,18 +316,18 @@ def test_the_tree_follows_the_density_table_AC_TRN_01_to_06(tmp_path, level, hei
     view, _ = opened_at(tmp_path, level)
     docs, a, b_ = row(view, "docs"), row(view, "docs", "a"), row(view, "docs", "b")
     assert docs.get("layout_height") == height == a.get("layout_height")  # all rows alike (AC-TRN-02)
-    d0 = view._built.outer["root.t.top.entry[docs].row"].get("padding_left")
-    d1 = view._built.outer["root.t.top.entry[docs].children.entry[a].row"].get("padding_left")
+    d0 = view._built.outer["root.t.row[docs]"].get("padding_left")
+    d1 = view._built.outer["root.t.row[a]"].get("padding_left")
     assert d0 == pad and d1 - d0 == indent  # AC-TRN-03, AC-TRN-04
-    chevron = view._built.outer["root.t.top.entry[docs].row.chevron"]
-    spacer = view._built.outer["root.t.top.entry[docs].children.entry[a].row.chevron_space"]
+    chevron = view._built.outer["root.t.row[docs].chevron"]
+    spacer = view._built.outer["root.t.row[a].chevron_space"]
     assert (chevron.get("width"), chevron.get("height"), spacer.get("width")) == (box, box, box)  # AC-TRN-06
 
 
 def test_an_app_with_no_density_keeps_the_material_tree(tmp_path):
     view, app = opened_at(tmp_path, None)
     assert app.density.get() == "" and row(view, "docs").get("layout_height") == 56
-    assert view._built.outer["root.t.top.entry[docs].row"].get("padding_left") == 16
+    assert view._built.outer["root.t.row[docs]"].get("padding_left") == 16
 
 
 def test_a_density_change_reaches_a_tree_that_is_showing(tmp_path):
