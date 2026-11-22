@@ -221,3 +221,34 @@ def test_the_clear_button_is_not_a_tab_stop_and_a_press_on_it_does_not_take_the_
     window.simulate("click", node=clear)
     window.advance(48)
     assert bar.query.get() == "" and bar.part("field").get("focused")  # the press cleared it and handed the focus to the field
+
+
+def test_a_third_escape_deactivates_the_bar_and_focus_goes_back_to_the_previous_control_AC_SRB_5():
+    from tess_ui.widgets import button
+
+    window = _window()
+    before = button(window, "Before", 100, 40)
+    bar = search_bar(window, "Search mail", 360)
+    view = search_view(window, 360, 300, bar=bar, results=[("Alice", None)])
+    window.advance(16)
+    before.node.focus()
+    window.advance(16)
+    bar.part("field").focus()
+    window.advance(16)
+    window.simulate("click", node=bar.node)  # pressing the bar activates it
+    window.simulate("input", text="ab")
+    window.advance(32)
+    assert bar.active.get() is True and view.is_open and bar.query.get() == "ab"
+    states = []
+    for _ in range(3):
+        _escape(window)
+        states.append((view.is_open, bar.query.get(), bar.active.get(), before.node.get("focused")))
+    assert states == [(False, "ab", True, False), (False, "", True, False), (False, "", False, True)]
+
+
+def test_a_third_escape_with_nothing_before_the_bar_only_deactivates_it():
+    window, bar, _ = _typed(False)
+    bar.active.set(True)
+    _escape(window)  # clears
+    _escape(window)  # deactivates, there is no control to go back to
+    assert bar.active.get() is False and bar.query.get() == ""
