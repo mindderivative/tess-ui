@@ -24,7 +24,8 @@ Container {
     Trailing_Icons { Type: list, Default: [], Doc: "More icons at the end, each an icon name (a Python widget wires each one itself). They show while nothing is typed, after `trailing_icon`." }
     Avatar_Text { Type: str, Default: "", Doc: "Letters in a circle at the end." }
     On_Search { Type: handler, Doc: "Called when Enter is pressed." }
-    Disabled { Type: bool, Default: false, Doc: "Dimmed and not editable." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed and not editable; the clear button is not shown." }
+    Clear_Label { Type: str, Default: Clear, Doc: "The name of the clear button for assistive technology." }
   }
   Disabled: <| disabled |>
   Interaction: false
@@ -87,14 +88,14 @@ Container {
       Style { Flex: fill }
       A11y { Label: <| placeholder |> }
     }
-    If <| query != '' |> {
+    If <| query != '' and not disabled |> {
       Container {
         Name: clear
         Interaction: true
         Handlers {
           On_Click { Set { Target: query, Value: <| '' |> } }
         }
-        A11y { Role: button, Label: Clear }
+        A11y { Role: button, Label: <| clear_label |> }
         Children {
           Icon {
             Name: clear_icon

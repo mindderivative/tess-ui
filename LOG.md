@@ -3737,3 +3737,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-21 Search bar: Clear hands the focus to the field (AC-SRB-4, behavior standard: `clear-press-*`)
 - When the query empties and the clear button held the focus (a press on it by pointer or keyboard, or any other way the query empties), the field takes the focus instead of it being lost with the button (an effect on the query in `search_bar`). Other widgets are unchanged: the general Focus_Recovery rule is not built as a toolkit-wide mechanism, only for this bar, because no other widget has a part that disappears while focused. In the behavior adapter the two `clear-press-*` cases now differ only by the missing `before_change`.
+
+## 2026-11-21 Search bar: `disabled` and `clear_label` (behavior standard: `disabled`, `a11y-tree`)
+- `search_bar(..., disabled=False, clear_label="Clear")`: the view's `Disabled` parameter is reachable from Python, and a disabled bar shows no clear button; the new `Clear_Label` parameter names the clear button for assistive technology (it was fixed to "Clear"). In the behavior adapter `disabled` and `a11y-tree` pass and are off `KNOWN_GAPS`.

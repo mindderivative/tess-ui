@@ -40,13 +40,10 @@ class SearchBarHost:
         if controlled:
             raise NotRun("search_bar has no controlled value: its query is the widget's own Signal and nothing can veto a change")
         given = {**DEFAULTS, **(options or {})}
-        for name in ("disabled", "clear_label"):
-            if given[name] != DEFAULTS[name]:
-                raise NotRun(f"search_bar has no {name} option (the helper takes no such argument)")
         self.spec = spec
         self.window = tess_re.Window(width=600, height=200)
         self.window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, align_items="flex_start")
-        self.bar = search_bar(self.window, given["label"], 360)
+        self.bar = search_bar(self.window, given["label"], 360, disabled=bool(given["disabled"]), clear_label=given["clear_label"])
         self.bar.query.set(given["value"])
         self._settle()
 

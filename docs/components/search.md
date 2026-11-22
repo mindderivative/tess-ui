@@ -43,7 +43,8 @@ The Material 3 search bar: a 56 pixel `surface_container_high` pill with a leadi
 | `Trailing_Icons` | `list` | `[]` | More icons at the end, each an icon name (a Python widget wires each one itself). They show while nothing is typed, after `Trailing_Icon`. |
 | `Avatar_Text` | `str` |  | Letters in a circle at the end. |
 | `On_Search` | `handler` |  | Called when Enter is pressed. |
-| `Disabled` | `bool` | `false` | Dimmed and not editable. |
+| `Disabled` | `bool` | `false` | Dimmed and not editable; the clear button is not shown. |
+| `Clear_Label` | `str` | `Clear` | The name of the clear button for assistive technology. |
 
 Its parts, by name (a stylesheet rule's `Part` or `Name` addresses one): `back` (Container), `back_icon` (Icon), `leading` (Container), `leading_glyph` (Icon), `input` (TextInput), `clear` (Container), `clear_icon` (Icon), `trailing` (Container), `trailing_glyph` (Icon), `trailing_item` (Container), `trailing_item_glyph` (Icon), `avatar` (Container), `avatar_text` (Text).
 

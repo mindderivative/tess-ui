@@ -15684,7 +15684,19 @@
                 "pattern": "<\\|"
               }
             ],
-            "description": "Dimmed and not editable."
+            "description": "Dimmed and not editable; the clear button is not shown."
+          },
+          "clear_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "The name of the clear button for assistive technology."
           }
         },
         "required": [
@@ -15724,7 +15736,8 @@
             "trailing_icons",
             "avatar_text",
             "on_search",
-            "disabled"
+            "disabled",
+            "clear_label"
           ]
         }
       }
