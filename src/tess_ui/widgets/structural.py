@@ -166,7 +166,7 @@ def _multiple(widget: Widget, items: list[Any], nodes: list[Any], start: list[in
                 return "range"
             if ctrl:
                 return "toggle"
-            return "clear" if not now and trigger.target == box else "select"
+            return "clear" if not now and getattr(trigger, "target", None) == box else "select"
         key = getattr(trigger, "key", "")
         if key == "space":
             return "toggle"
