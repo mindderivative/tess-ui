@@ -3734,3 +3734,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-21 Search bar: Escape (AC-SRB-5, behavior standard: `escape-clears`)
 - In the bar's field Escape closes the open `SearchView` and keeps the query; with no view open it clears a typed query (the second press after the view closed, the first when there is no view). `SearchView(bar=...)` registers itself as `bar.search_view`. The third press of the spec (deactivate the bar and return focus to where it was) is not built. In the behavior adapter `escape-clears` now differs only by the missing `before_change`.
+
+## 2026-11-21 Search bar: Clear hands the focus to the field (AC-SRB-4, behavior standard: `clear-press-*`)
+- When the query empties and the clear button held the focus (a press on it by pointer or keyboard, or any other way the query empties), the field takes the focus instead of it being lost with the button (an effect on the query in `search_bar`). Other widgets are unchanged: the general Focus_Recovery rule is not built as a toolkit-wide mechanism, only for this bar, because no other widget has a part that disappears while focused. In the behavior adapter the two `clear-press-*` cases now differ only by the missing `before_change`.
