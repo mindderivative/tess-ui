@@ -16,7 +16,7 @@ Container {
   A11y { Role: <| 'group' if level > 0 else 'none' |> }  # the children of an open branch are a group (AC-TRE-10)
   Style { Flex_Direction: vertical, Width: 100% }
   Children {
-    For n In <| nodes |> Key <| n['value'] |> {
+    For i, n In <| enumerate(nodes) |> Key <| n['value'] |> {
       Container {
         Name: entry
         Style { Flex_Direction: vertical, Width: 100% }
@@ -26,6 +26,8 @@ Container {
             Label: <| n['label'] |>
             Icon: <| n.get('icon', '') |>
             Level: <| level |>
+            Set_Size: <| len(nodes) |>
+            Pos_In_Set: <| i + 1 |>
             Branch: <| len(n.get('children', [])) > 0 |>
             Expanded: <| n['value'] in expanded |>
             Selected: <| n['value'] == selected |>

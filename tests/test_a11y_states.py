@@ -39,7 +39,7 @@ def test_the_states_and_numbers_are_checked_and_may_be_cleared():
 
 
 def test_every_state_is_bindable_and_the_fixed_ones_are_not():
-    assert {"checked", "selected", "expanded", "value", "value_min", "value_max", "value_step", "label", "hidden", "level",
+    assert {"checked", "selected", "expanded", "value", "value_min", "value_max", "value_step", "label", "hidden", "level", "set_size", "pos_in_set",
             "pressed", "invalid", "description", "current", "value_now", "value_text", "busy", "focusable"} == set(a11y.BINDABLE)  # the relations name nodes: fixed
     assert "role" not in a11y.BINDABLE and "live" not in a11y.BINDABLE
 
@@ -124,3 +124,11 @@ def test_a_composed_view_keeps_the_states_up_to_date():
     vm.open.set(True)
     vm.pos.set(7)
     assert node.get("expanded") is True and node.get("value") == 7.0
+
+
+def test_set_size_and_pos_in_set_are_positive_whole_numbers_a_row_can_bind():
+    assert a11y.check({"set_size": 7, "pos_in_set": 3}) == {"set_size": 7, "pos_in_set": 3}
+    assert a11y.check({"set_size": None}) == {"set_size": None}
+    for bad in (0, -1, 2.5, True):
+        with pytest.raises(ValueError, match="positive whole number"):
+            a11y.check({"pos_in_set": bad})

@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-__all__ = ["ACTIONS", "BINDABLE", "CURRENT", "EXTRAS", "LIVE", "RELATIONS", "ROLES", "apply_extras", "bind", "check", "describe", "on_action"]
+__all__ = ["ACTIONS", "BINDABLE", "CURRENT", "EXTRAS", "LIVE", "POSITIONS", "RELATIONS", "ROLES", "apply_extras", "bind", "check", "describe", "on_action"]
 
 #: The roles `tess_re` accepts (`none` for a node that's only structure).
 ROLES = frozenset({
@@ -37,6 +37,8 @@ LIVE = frozenset({"off", "polite", "assertive"})
 ACTIONS = frozenset({"increment", "decrement", "expand", "collapse", "scroll_into_view", "set_value"})
 
 #: The states tess_re added in 0.5.6 (mindderivative/tess-re#160), beyond `checked`, `selected`, `expanded` and `value`. The language and Tesserae's widgets set them.
+#: The whole numbers of a row's place: `level` (depth, from 1), `set_size` (how many siblings) and `pos_in_set` (which of them, from 1).
+POSITIONS = ("level", "set_size", "pos_in_set")
 EXTRAS = ("pressed", "invalid", "description", "current", "value_now", "value_text", "busy")
 #: `describedby` and `controls` name other nodes of the view (by their `name:`), or a list of them; the view resolves them to nodes.
 RELATIONS = ("describedby", "controls")
@@ -65,9 +67,9 @@ def check(fields: dict[str, Any], where: str = "") -> dict[str, Any]:
         elif name == "live":
             if value not in LIVE:
                 raise ValueError(f"{prefix}a11y live {value!r} isn't one of {', '.join(sorted(LIVE))}")
-        elif name == "level":
+        elif name in POSITIONS:
             if value is not None and (isinstance(value, bool) or not isinstance(value, int) or value < 1):
-                raise ValueError(f"{prefix}a11y level must be a positive whole number, got {value!r}")
+                raise ValueError(f"{prefix}a11y {name} must be a positive whole number, got {value!r}")
         elif name in _OPTIONAL and value is None:
             pass
         elif name == "pressed":
@@ -91,7 +93,7 @@ def check(fields: dict[str, Any], where: str = "") -> dict[str, Any]:
                 raise ValueError(f"{prefix}a11y {name} must be a number, got {value!r}")
             value = float(value)
         else:
-            known = sorted({"role", "label", "live", "level", *_BOOLS, *_NUMBERS, *EXTRAS, *RELATIONS})
+            known = sorted({"role", "label", "live", *POSITIONS, *_BOOLS, *_NUMBERS, *EXTRAS, *RELATIONS})
             raise ValueError(f"{prefix}unknown a11y field {name!r} (known: {', '.join(known)})")
         props["a11y_hidden" if name == "hidden" else name] = value
     return props
@@ -142,7 +144,7 @@ def on_action(node: Any, handlers: dict[str, Callable[[Any], Any]],
 #: The fields `bind` can keep up to date (M47 Q2): values that change as
 #: the app runs. `role` and `live` say what a node is and how it's
 #: announced, so they're set once, with `describe`.
-BINDABLE = ("label", "hidden", "level", "checked", "selected", "expanded", "value", "value_min", "value_max", "value_step", "focusable", *EXTRAS)
+BINDABLE = ("label", "hidden", *POSITIONS, "checked", "selected", "expanded", "value", "value_min", "value_max", "value_step", "focusable", *EXTRAS)
 
 
 def bind(node: Any, **fields: Any) -> Callable[[], None]:

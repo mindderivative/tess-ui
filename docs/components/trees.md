@@ -42,13 +42,15 @@ Its parts, by name (a stylesheet rule's `Part` or `Name` addresses one): `top` (
 
 ### `TreeNode`
 
-One row of a tree: a leaf or a branch with a chevron that turns a quarter when it opens. 56 pixels tall (40 when `Compact`), indented 16 pixels plus 24 for each `Level`, with an optional 24 pixel icon and a `body_large` label; a selected row is `secondary_container`. A screen reader hears a tree item at level `level + 1`, a branch saying whether it is expanded. It is pressable; `Handlers: {On_Click: ...}` on the call is what a press does. `Tree` puts the rows together.
+One row of a tree: a leaf or a branch with a chevron that turns a quarter when it opens. 56 pixels tall (40 when `Compact`), indented 16 pixels plus 24 for each `Level`, with an optional 24 pixel icon and a `body_large` label; a selected row is `secondary_container`. A screen reader hears a tree item at level `level + 1`, "`Pos_In_Set` of `Set_Size`" among its siblings, a branch saying whether it is expanded. It is pressable; `Handlers: {On_Click: ...}` on the call is what a press does. `Tree` puts the rows together.
 
 | Parameter | Type | Default | Meaning |
 | --- | --- | --- | --- |
 | `Label` | `str` |  | The row's text. |
 | `Icon` | `str` |  | A leading icon. |
 | `Level` | `int` | `0` | How deep it is: 0 for the top. |
+| `Set_Size` | `int` | `0` | How many siblings the row has (itself included): a screen reader says "3 of 7". 0 leaves it unsaid. |
+| `Pos_In_Set` | `int` | `0` | Which of its siblings the row is, from 1. 0 leaves it unsaid. |
 | `Branch` | `bool` | `false` | It has children: a chevron shows. |
 | `Expanded` | `bool` | `false` | For a branch: whether its children show. |
 | `Selected` | `bool` | `false` | Whether this is the chosen row. |

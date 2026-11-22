@@ -153,3 +153,10 @@ def test_a_disabled_row_is_not_chosen_and_the_arrows_skip_nothing_that_is_enable
     press(view, "Readme")
     assert app.bindings.viewmodel_for("main").sel.get() == before
     assert not row(view, "Readme").get("focusable")
+
+
+def test_a_row_says_its_place_among_its_siblings_not_among_all_the_rows_that_show(tree):
+    """AC-TRE-12: `set_size` and `pos_in_set` count the row's siblings, one level at a time (5 rows show, no set has 5)."""
+    view, _ = tree
+    assert [(n.get("label"), n.get("pos_in_set"), n.get("set_size")) for n in rows(view)] == [
+        ("Documents", 1, 3), ("Letter", 1, 2), ("Reports", 2, 2), ("Pictures", 2, 3), ("Readme", 3, 3)]

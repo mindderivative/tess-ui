@@ -2510,10 +2510,11 @@ Routes `node`'s `a11y_action` events to `handlers[action]`, each given the event
 **Constants**
 
 - `ACTIONS` = `{'collapse', 'decrement', 'expand', 'increment', 'scroll_into_view', 'set_value'}`
-- `BINDABLE` = `tuple of 18`
+- `BINDABLE` = `tuple of 20`
 - `CURRENT` = `{'date', 'location', 'page', 'step', 'time'}`
 - `EXTRAS` = `('pressed', 'invalid', 'description', 'current', 'value_now', 'value_text', 'busy')`
 - `LIVE` = `{'assertive', 'off', 'polite'}`
+- `POSITIONS` = `('level', 'set_size', 'pos_in_set')`
 - `RELATIONS` = `('describedby', 'controls')`
 - `ROLES` = `frozenset of 42`
 
