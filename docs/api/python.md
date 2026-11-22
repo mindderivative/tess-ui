@@ -930,7 +930,8 @@ list_(
     *,
     theme: 'Theme | None' = None,
     selectable: str | None = None,
-    selected: int | None = None
+    selected: int | list[int] | None = None,
+    announce: str | None = '{count} selected'
 ) -> Widget
 ```
 

@@ -40,6 +40,7 @@ The Material 3 list item: one, two or three lines of text with something before 
 | `Lines` | `int` | `0` | 1, 2 or 3 lines; 0 works it out from the text it has. |
 | `Selectable` | `bool` | `false` | A press flips `Selected`. |
 | `Selected` | `bool` | `false` | Whether it is selected. Two-way: give it a bare reference and the view writes it back. |
+| `Pickable` | `bool` | `false` | The row is a choice in a list that does the selecting (a selectable `list_` sets it): it tells assistive technology whether it is selected, and a press does not flip `Selected` itself. |
 | `Disabled` | `bool` | `false` | Dimmed, not focusable, and it does not respond. |
 | `Divider` | `bool` | `false` | A line along the bottom edge. |
 | `Actionable` | `bool` | `true` | Whether the row is a Tab stop that a press and Enter act on. False for a row that only shows something (a plain list's row): it takes no focus (Focus none). |

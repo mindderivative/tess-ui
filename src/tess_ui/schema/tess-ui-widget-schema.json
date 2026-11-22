@@ -10944,6 +10944,18 @@
             ],
             "description": "Whether it is selected."
           },
+          "pickable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "The row is a choice in a list that does the selecting (a selectable `list_` sets it): it tells assistive technology whether it is selected, and a press does not flip `selected` itself."
+          },
           "disabled": {
             "anyOf": [
               {
@@ -11018,6 +11030,7 @@
             "lines",
             "selectable",
             "selected",
+            "pickable",
             "disabled",
             "divider",
             "actionable"
