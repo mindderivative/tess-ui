@@ -42,6 +42,7 @@ The Material 3 list item: one, two or three lines of text with something before 
 | `Selected` | `bool` | `false` | Whether it is selected. Two-way: give it a bare reference and the view writes it back. |
 | `Disabled` | `bool` | `false` | Dimmed, not focusable, and it does not respond. |
 | `Divider` | `bool` | `false` | A line along the bottom edge. |
+| `Actionable` | `bool` | `true` | Whether the row is a Tab stop that a press and Enter act on. False for a row that only shows something (a plain list's row): it takes no focus (Focus none). |
 
 Children go in the `leading` slot, the `trailing` slot.
 

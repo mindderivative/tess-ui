@@ -10967,6 +10967,18 @@
               }
             ],
             "description": "A line along the bottom edge."
+          },
+          "actionable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "Whether the row is a Tab stop that a press and Enter act on. False for a row that only shows something (a plain list's row): it takes no focus (Focus none)."
           }
         },
         "required": [
@@ -11007,7 +11019,8 @@
             "selectable",
             "selected",
             "disabled",
-            "divider"
+            "divider",
+            "actionable"
           ]
         }
       }

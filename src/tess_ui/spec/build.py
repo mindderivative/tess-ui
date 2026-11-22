@@ -954,7 +954,8 @@ _A11Y_RESET = {"label": None, "a11y_hidden": False, "live": None, "level": None,
 #: The `a11y:` fields a `{{ }}` binding may set (M47 Q2), and the
 #: property each is; `role` and `live` stay fixed.
 A11Y_BINDABLE = {"label": "label", "hidden": "a11y_hidden", "level": "level", "expanded": "expanded", "selected": "selected", "checked": "checked",
-                 "value": "value", "value_min": "value_min", "value_max": "value_max", "value_step": "value_step", **{k: k for k in a11y.EXTRAS}}
+                 "value": "value", "value_min": "value_min", "value_max": "value_max", "value_step": "value_step", "focusable": "focusable",
+                 **{k: k for k in a11y.EXTRAS}}
 
 
 def is_binding(value: Any) -> bool:
@@ -1019,7 +1020,9 @@ def _a11y_props(node: dict[str, Any], *, patching: bool) -> dict[str, Any]:
         k: v for k, v in fields.items() if k != "role"}
     if node["kind"] not in _OWN_ROLE:
         if _clickable(node):
-            props.update(focusable=fields.get("focusable", True), role=fields.get("role", "button"))  # `focusable: false`: a press does not take the focus
+            props["role"] = fields.get("role", "button")
+            if "focusable" not in bound:  # a bound `focusable` is the view's to set
+                props["focusable"] = fields.get("focusable", True)  # `focusable: false`: a press does not take the focus
         elif "role" in fields or patching:
             props["role"] = fields.get("role", "none")
             if patching:

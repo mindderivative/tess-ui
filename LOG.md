@@ -3771,3 +3771,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-21 Menu AC-MEN-11 is met: Tab goes to the control after the opener
 - Checked, not changed: when Tab (or Shift+Tab) closes a menu (#371), focus returns to the opener and the engine's own Tab traversal then moves on from it, so focus lands on the control after the opener (before it with Shift). The earlier note that it only returned to the opener was wrong: it was seen in a test with no second control. A test with three buttons pins it (`tests/test_focus_table.py`).
+
+## 2026-11-21 Plain list rows are not Tab stops; a row with an action is a button (SPEC 2.3a `list`/`listitem` are none)
+- `list_item(...)` is a Tab stop only when it does something: with `on_click` it is a button (as before); without, it only shows something and takes no focus (`ListItem`'s new `Actionable` parameter, default true for TDL callers, bound to `A11y { Focusable: }`, which is now bindable; `a11y.BINDABLE` gains `focusable`). `list_(selectable="single")` makes its rows actionable. Tab order change: a plain list used to be a Tab stop per row; it is none now, and an action row is one each. The last disagreement of `tests/test_focus_table.py` is gone.
