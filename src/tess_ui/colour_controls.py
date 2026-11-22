@@ -428,10 +428,10 @@ class ColourField:
         self._listen: Listen = listen if listen is not None else Listeners().listen
         shown = label if label is not None else self.SHORT[channel]
         self.node = window.create("box", flex_direction="vertical", gap=4.0, width=self.width)
-        self.caption = window.create("text", text=shown, font_family="Roboto", font_size=12.0, hit_testable=False, a11y_hidden=True)
+        self.caption = window.create("text", text=shown, font_size=12.0, hit_testable=False, a11y_hidden=True)
         self.field = window.create("box", width=self.width, height=self.HEIGHT, corner_radius=8.0, padding_left=12.0, padding_right=12.0,
                                    align_items="center", stroke_width=1.0)
-        self.input = window.create("text_input", text=self._text(self.value.get()), font_family="Roboto", font_size=14.0, flex_grow=1.0,
+        self.input = window.create("text_input", text=self._text(self.value.get()), font_size=14.0, flex_grow=1.0,
                                    height=16.0, focusable=True, role="textbox")
         self.field.add_child(self.input)
         self.node.add_child(self.caption)
