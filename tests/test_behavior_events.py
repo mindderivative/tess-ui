@@ -146,3 +146,27 @@ def test_a_listener_can_refuse_a_selection_and_the_host_can_set_it_without_being
     box.selected.set(2)  # the host's own write: api, made at once
     window.advance(16)
     assert box.selected.get() == 2 and rows[2].selected.get() and not rows[0].selected.get()
+
+
+def test_typing_the_start_of_a_rows_name_moves_to_it_in_a_selectable_list_and_a_pause_starts_over(monkeypatch):
+    from tess_ui import typeahead
+    from tess_ui.widgets import list_, list_item
+
+    window = tess_re.Window(width=600, height=400)
+    window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, align_items="flex_start", flex_direction="vertical")
+    rows = [list_item(window, name) for name in ("Apple", "Banana", "Blueberry", "Cherry")]
+    list_(window, rows, selectable="single")
+    window.advance(32)
+    focused = lambda: [r.node.get("focused") for r in rows].index(True)  # noqa: E731
+    rows[0].node.focus()
+    for key, want in (("b", 1), ("l", 2)):  # "b" -> Banana, "bl" -> Blueberry
+        window.simulate("key_down", key=key)
+        window.advance(16)
+        assert focused() == want
+    monkeypatch.setattr(typeahead, "RESET", 0.0)
+    window.simulate("key_down", key="c")
+    window.advance(16)
+    assert focused() == 3
+    window.simulate("key_down", key="z")  # nothing starts with it: the focus stays
+    window.advance(16)
+    assert focused() == 3
