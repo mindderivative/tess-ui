@@ -19,7 +19,7 @@ KNOWN_GAPS: dict[str, tuple[str, str]] = {
     "search_field/type-same-value": (FAIL, "`consumed` is not observable (simulate returns nothing): inferred from a change, which is false when typing the same value"),
 }
 
-CASES = {f"{c.parent.name}/{c.name.removesuffix('.case.json')}": c for c in behaviour_cases(corpus_root())}
+CASES = {f"{c.parent.name}/{c.name.removesuffix('.case.json')}": c for c in behaviour_cases(corpus_root()) if c.parent.name == "search_field"}
 
 
 def test_the_corpus_has_the_cases_this_adapter_was_written_for():
