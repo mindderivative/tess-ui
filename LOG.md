@@ -3786,3 +3786,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-21 Type-ahead in selectable lists, one search for every list (`tess_ui.typeahead`)
 - Typing the start of a row's name in a selectable `list_` moves the focus to the next row whose name starts with it (a pause of a second starts over; the same letter again steps on). It is the focus groups' search, moved out of `ComposedView` into `tess_ui.typeahead.TypeAhead` so the views and the list share it (`composed.TYPEAHEAD_RESET` is now `typeahead.RESET`). `file_browser` still has its own copy of the same rule.
+
+## 2026-11-22 The engine pin moves to 0.6.13
+- `tesserae-engine==0.6.13` (pyproject, the font checkout `v0.6.13` in ci.yml and release.yml, README, DEVELOPING, PLAN). 0.6.13 brings the lost-last-frame fix (a 15 ms hover fade no longer leaves a layer pixel behind), `scrollbar_*` on a multiline `text_input`, and multi-selection for containers; each is adopted in its own PR.
