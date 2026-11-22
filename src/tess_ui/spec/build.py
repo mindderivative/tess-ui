@@ -946,16 +946,16 @@ def focus_ring_color(scheme: Optional[dict[str, RGBA]]) -> RGBA:
 
 #: The `a11y:` fields a YAML node may set; widget states (`checked`, ...)
 #: belong to Tesserae's widgets (M40).
-_A11Y_YAML = ("label", "role", "hidden", "live", "level", "expanded", "selected", "checked", "value", "value_min", "value_max", "value_step", "focusable",
+_A11Y_YAML = ("label", "role", "hidden", "live", "level", "set_size", "pos_in_set", "expanded", "selected", "checked", "value", "value_min", "value_max", "value_step", "focusable",
               *a11y.EXTRAS, *a11y.RELATIONS)
 #: The states `a11y:` may set on a node that is not a control; a control kind sets its own (a Checkbox is checked or not by its state).
 _A11Y_STATES = frozenset({"expanded", "selected", "checked", "value", "value_min", "value_max", "value_step"})
 #: What each `a11y:` field resets to when a patch drops it.
-_A11Y_RESET = {"label": None, "a11y_hidden": False, "live": None, "level": None, "expanded": None, "selected": None, "checked": None,
+_A11Y_RESET = {"label": None, "a11y_hidden": False, "live": None, "level": None, "set_size": None, "pos_in_set": None, "expanded": None, "selected": None, "checked": None,
                "value": None, "value_min": None, "value_max": None, "value_step": None}
 #: The `a11y:` fields a `{{ }}` binding may set (M47 Q2), and the
 #: property each is; `role` and `live` stay fixed.
-A11Y_BINDABLE = {"label": "label", "hidden": "a11y_hidden", "level": "level", "expanded": "expanded", "selected": "selected", "checked": "checked",
+A11Y_BINDABLE = {"label": "label", "hidden": "a11y_hidden", "level": "level", "set_size": "set_size", "pos_in_set": "pos_in_set", "expanded": "expanded", "selected": "selected", "checked": "checked",
                  "value": "value", "value_min": "value_min", "value_max": "value_max", "value_step": "value_step", "focusable": "focusable",
                  **{k: k for k in a11y.EXTRAS}}
 

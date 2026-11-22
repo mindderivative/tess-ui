@@ -23271,6 +23271,30 @@
             ],
             "description": "How deep it is: 0 for the top."
           },
+          "set_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "How many siblings the row has (itself included): a screen reader says \"3 of 7\". 0 leaves it unsaid."
+          },
+          "pos_in_set": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "Which of its siblings the row is, from 1. 0 leaves it unsaid."
+          },
           "branch": {
             "anyOf": [
               {
@@ -23373,6 +23397,8 @@
             "label",
             "icon",
             "level",
+            "set_size",
+            "pos_in_set",
             "branch",
             "expanded",
             "selected",

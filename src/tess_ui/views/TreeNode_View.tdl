@@ -4,13 +4,15 @@ Name: TreeNode
 Tesserae: "0.6"
 ---
 # One row of a tree: a leaf or a branch with a chevron that turns a quarter when it opens. 56 pixels tall (40 when `compact`), indented 16 pixels plus 24 for each
-# `level`, with an optional 24 pixel icon and a `body_large` label; a selected row is `secondary_container`. A screen reader hears a tree item at level `level + 1`, a branch
+# `level`, with an optional 24 pixel icon and a `body_large` label; a selected row is `secondary_container`. A screen reader hears a tree item at level `level + 1`, "`pos_in_set` of `set_size`" among its siblings, a branch
 # saying whether it is expanded. It is pressable; `handlers: {on_click: ...}` on the call is what a press does. `Tree` puts the rows together.
 Container {
   Params {
     Label { Type: str, Default: "", Doc: "The row's text." }
     Icon { Type: str, Default: "", Doc: "A leading icon." }
     Level { Type: int, Default: 0, Doc: "How deep it is: 0 for the top." }
+    Set_Size { Type: int, Default: 0, Doc: "How many siblings the row has (itself included): a screen reader says \"3 of 7\". 0 leaves it unsaid." }
+    Pos_In_Set { Type: int, Default: 0, Doc: "Which of its siblings the row is, from 1. 0 leaves it unsaid." }
     Branch { Type: bool, Default: false, Doc: "It has children: a chevron shows." }
     Expanded { Type: bool, Default: false, Doc: "For a branch: whether its children show." }
     Selected { Type: bool, Default: false, Doc: "Whether this is the chosen row." }
@@ -24,6 +26,8 @@ Container {
     Role: treeitem
     Label: <| label |>
     Level: <| level + 1 |>
+    Set_Size: <| set_size if set_size > 0 else None |>
+    Pos_In_Set: <| pos_in_set if pos_in_set > 0 else None |>
     Expanded: <| expanded if branch else None |>
     Selected: <| selected |>
   }

@@ -42,7 +42,7 @@ HEADER_KEYS = ("params", "expects")
 EVENTS = ("on_click", "on_hover_enter", "on_hover_exit", "on_change", "on_focus_enter", "on_focus_exit", "on_tap", "on_long_press",
           "on_pan", "on_pinch", "on_touch_start", "on_touch_move", "on_touch_end", "on_touch_cancel", "on_file_hover",
           "on_file_hover_cancel", "on_file_drop", "on_link", "on_key", "on_submit", "on_press", "on_move", "on_release", "on_input", "on_dismiss")
-A11Y_FIELDS = ("label", "role", "hidden", "live", "level", "expanded", "selected", "checked", "value", "value_min", "value_max", "value_step", "focusable",
+A11Y_FIELDS = ("label", "role", "hidden", "live", "level", "set_size", "pos_in_set", "expanded", "selected", "checked", "value", "value_min", "value_max", "value_step", "focusable",
                "pressed", "invalid", "description", "describedby", "controls", "current", "value_now", "value_text", "busy")
 WINDOW_REGIONS = ("drag", "none")
 #: How arrow keys move focus among a `focus_group`'s items: along one axis, or both.
