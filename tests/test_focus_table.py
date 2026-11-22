@@ -106,6 +106,15 @@ def test_tab_leaves_a_menu_and_focus_goes_back_to_the_opener():
     assert not menu.is_open and button.node.get("focused")
 
 
+def test_the_rows_of_a_selectable_list_are_options_and_one_tab_stop_for_the_list():
+    window = _window()
+    rows = [W.list_item(window, text) for text in ("A", "B", "C")]
+    W.list_(window, rows, selectable="single")
+    window.advance(32)
+    assert TABLE["option"] == "roving" and TABLE["listbox"] == "none"
+    assert [row.node.get("role") for row in rows] == ["option"] * 3 and sorted(row.node.get("tab_index") for row in rows) == [-1, -1, 0]
+
+
 def test_a_lists_items_are_each_a_tab_stop_and_their_role_is_not_the_standards():
     window = _window()
     W.list_(window, [W.list_item(window, "A"), W.list_item(window, "B")])
