@@ -32,7 +32,7 @@ from materialyoucolor.scheme.scheme_tonal_spot import SchemeTonalSpot
 from tess_utils import parse_color
 
 __all__ = [
-    "BASELINE", "BASELINE_SEED", "DENSITY", "DENSITY_LEVELS", "density_token", "ELEVATION_LEVELS", "baseline_scheme", "ROLES", "SHAPES", "TYPE_SCALE", "TypeStyle", "color_scheme",
+    "BASELINE", "DENSITY", "DENSITY_LEVELS", "density_token", "ELEVATION_LEVELS", "baseline_scheme", "ROLES", "SHAPES", "TYPE_SCALE", "TypeStyle", "color_scheme",
     "RIPPLE_INITIAL_SCALE", "RIPPLE_MS", "STATE_LAYER",
     "elevation", "elevation_shadows", "FULL_RADIUS", "HEIGHT_CLASSES", "MD3_TRACKING", "MD3_TRACKING_TYPOGRAPHY", "WIDTH_CLASSES", "height_class", "width_class", "resolve_color", "resolve_scheme", "shape", "type_style",
 ]
@@ -87,8 +87,6 @@ def density_token(level: str, token: str) -> float:
         raise ValueError(f"no density token {token!r} (known: {', '.join(DENSITY)})") from None
 
 
-#: The seed of Material 3's baseline colours (#6750A4): the scheme an app with no seed and no theme seed is drawn in, light or dark.
-BASELINE_SEED: RGBA = (0x67, 0x50, 0xA4, 0xFF)
 #: The state-layer opacities (the spec's State Layers, ADR-0009, ADR-0013): one definition, which `interaction` and `ripple` read. Precedence when several hold: dragged, pressed, focused, hovered.
 STATE_LAYER: dict[str, float] = {"hover": 0.08, "focus": 0.10, "pressed": 0.10, "dragged": 0.16}
 #: Material Web's `md-ripple` timing, in ms, and the ripple's start size as a fraction of the larger side.
@@ -193,12 +191,12 @@ def resolve_scheme(
     """The scheme a view resolves roles against, by `tess_re`'s `View` rules:
     the seed is `theme_seed`, else the custom theme's `seed:`, else the
     default theme's; `colors:` overrides apply default theme first, then
-    custom. `None` when there's no seed at all: roles then don't resolve,
-    as in `tess_re`."""
+    custom. With no seed at all, light is `None` (roles then don't resolve, and the engine's own baseline shows) and dark is the engine's
+    dark baseline (`tess_re.scheme_colors("dark")`), since the engine's roles stay light whatever `dark` says."""
     seed = theme_seed or _seed_of(custom_theme) or _seed_of(default_theme)
-    if seed is None:
+    if seed is None and not dark:
         return None
-    roles = color_scheme(seed, dark, contrast)
+    roles = color_scheme(seed, dark, contrast) if seed is not None else {k: (v[0], v[1], v[2], v[3]) for k, v in tess_re.scheme_colors("dark").items()}
     for theme in (default_theme, custom_theme):
         for role, raw in ((theme or {}).get("colors") or {}).items():
             if role not in roles:

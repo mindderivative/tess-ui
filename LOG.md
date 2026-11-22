@@ -3705,3 +3705,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-21 The baseline scheme is the engine's (`tess_re.scheme_colors`, tre 0.6.12)
 - `tokens.BASELINE` is now the engine's light baseline table, all 49 roles, and `baseline_scheme()` returns it: the toolkit's hand-copied 24 published values plus a scheme generated from the seed (19 roles differed slightly, for example `on_primary_fixed`) are gone. An unthemed widget and the engine agree.
+
+## 2026-11-21 The dark baseline is the engine's (`scheme_colors("dark")`, tre 0.6.12)
+- An app with no seed anywhere and `dark` now resolves its roles to `tess_re.scheme_colors("dark")` in `tokens.resolve_scheme`; the seeding with `BASELINE_SEED` (a scheme generated from #6750A4, which differed from MD3's published dark baseline) and the constant itself are gone, as is `App._has_scheme`. Light with no seed still resolves nothing, so the engine's own baseline shows (it equals `BASELINE` since #353).

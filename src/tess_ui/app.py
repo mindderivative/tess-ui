@@ -743,10 +743,6 @@ class App:
         if self._high_contrast_mode == "system":
             self._apply_contrast(self._wanted("high_contrast", "system"))
 
-    def _has_scheme(self) -> bool:
-        """Whether roles resolve to a colour scheme from the app's own seed or a theme's (`tokens.resolve_scheme`)."""
-        return tokens.resolve_scheme(self._theme_seed, False, self._default_theme_spec, self._custom_theme_spec, 0.0) is not None
-
     def _apply_dark(self, dark: bool) -> None:
         if dark == self._dark:
             return
@@ -781,8 +777,6 @@ class App:
         theme: dict[str, Any] = {"dark": self._dark, "contrast": 1.0 if self._high_contrast else 0.0}
         if self._theme_seed is not None:
             theme["theme_seed"] = self._theme_seed
-        elif self._dark and not self._has_scheme():  # no seed anywhere and dark: the baseline's, or the roles stay the engine's light ones whatever `dark` says (AC-TH-9, AC-TH-11). Light keeps the engine's own baseline roles (TUI-062: they are the 2021 table)
-            theme["theme_seed"] = tokens.BASELINE_SEED
         if self._default_theme_spec is not None:
             theme["default_theme_spec"] = self._default_theme_spec
         if self._custom_theme_spec is not None:

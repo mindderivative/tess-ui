@@ -413,7 +413,7 @@ resolve_scheme(
 ) -> Optional[dict[str, RGBA]]
 ```
 
-The scheme a view resolves roles against, by `tess_re`'s `View` rules: the seed is `theme_seed`, else the custom theme's `seed:`, else the default theme's; `colors:` overrides apply default theme first, then custom. `None` when there's no seed at all: roles then don't resolve, as in `tess_re`.
+The scheme a view resolves roles against, by `tess_re`'s `View` rules: the seed is `theme_seed`, else the custom theme's `seed:`, else the default theme's; `colors:` overrides apply default theme first, then custom. With no seed at all, light is `None` (roles then don't resolve, and the engine's own baseline shows) and dark is the engine's dark baseline (`tess_re.scheme_colors("dark")`), since the engine's roles stay light whatever `dark` says.
 
 ### `shape`
 
@@ -434,7 +434,6 @@ The font size, weight, line height and tracking of the MD3 type role `role`, or 
 **Constants**
 
 - `BASELINE` = `dict of 49`
-- `BASELINE_SEED` = `(103, 80, 164, 255)`
 - `DENSITY` = `dict of 12`
 - `DENSITY_LEVELS` = `('default', 'compact', 'dense')`
 - `ELEVATION_LEVELS` = `dict of 6`
