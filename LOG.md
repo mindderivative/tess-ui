@@ -3716,3 +3716,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-21 State layers fade at the spec's per-state timings (tre `*_layer_ms`)
 - The surface sets `pressed_layer_ms` 105 and `focus_layer_ms` 150 (it set one `state_layer_ms` of 15 for all three); hover stays at the engine's 100 ms until tre fixes the 15 ms hover (it leaves one layer pixel behind on the real compositor). Reduced motion sets all three to 0.
+
+## 2026-11-21 A press is a click until it has moved 4 dp (the window's `drag_start_px`, tre 0.6.12)
+- Every window the app makes sets `drag_start_px` to `tokens.DRAG_START_PX` (4, the Drag and Drop start distance): the engine holds back `pointer_move` listeners until a held press has moved that far, so sliders, colour areas, scroll thumbs and dock tabs all share one threshold. The dock keeps its own check (`DRAG_THRESHOLD`, the same 4) because a `Dock` can sit in a window that did not set it. Tests that drag by a pixel now move past 4.

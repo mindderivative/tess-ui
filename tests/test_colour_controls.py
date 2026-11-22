@@ -111,11 +111,11 @@ def test_a_drag_that_goes_to_a_corner_with_no_hue_and_comes_back_keeps_the_hue(r
     drag(rig, area, [(100, 60), (0, 176), (100, 60)])  # through black, back again
     assert area.hue.get() == 200.0
     assert colour.hsva(area.value.get(), area.hue.get())[0] == 200.0
-    drag(rig, area, [(255, 1), (256, 0)])
+    drag(rig, area, [(255, 1), (300, -40)])
     assert area.value.get() == "#00aaff"
-    drag(rig, area, [(1, 1), (0, 0)])  # white has no hue either
+    drag(rig, area, [(1, 1), (-40, -40)])  # white has no hue either
     assert area.value.get() == "#ffffff" and area.hue.get() == 200.0
-    drag(rig, area, [(255, 1), (256, 0)])
+    drag(rig, area, [(255, 1), (300, -40)])
     assert area.value.get() == "#00aaff"
 
 

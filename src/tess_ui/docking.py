@@ -81,7 +81,7 @@ INDICATOR = 2.0
 CLOSE_SIZE = 18.0
 CLOSE_ROOM = CLOSE_SIZE + 8.0
 #: How far a press must move before it drags the panel, so a click selects.
-DRAG_THRESHOLD = 4.0
+DRAG_THRESHOLD = tokens.DRAG_START_PX
 #: The drop highlight: `primary` at 12% (MD3's pressed/dragged overlay) with a 2 px outline.
 HIGHLIGHT_ALPHA = 0x1F
 HIGHLIGHT_OUTLINE = 2.0
