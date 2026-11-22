@@ -177,3 +177,18 @@ def test_escape_clears_a_typed_query_when_there_is_no_view_and_does_nothing_when
     assert bar.query.get() == ""
     _escape(window)
     assert bar.query.get() == "" and bar.part("field").get("focused")
+
+
+def test_pressing_clear_empties_the_query_and_the_field_takes_the_focus_AC_SRB_4():
+    for how in ("pointer", "keyboard"):
+        window, bar, _ = _typed(False)
+        clear = bar.part("clear")
+        if how == "pointer":
+            window.simulate("click", node=clear)
+        else:
+            clear.focus()
+            window.simulate("key_down", key="enter")
+        window.advance(48)
+        assert bar.query.get() == "" and bar.part("field").get("focused"), how
+        with pytest.raises(ValueError):
+            bar.part("clear")  # gone, and the focus did not go with it

@@ -18,7 +18,7 @@ KNOWN_GAPS: dict[str, tuple[str, str]] = {
     "search_field/disabled": (NOT_RUN, "the `search_bar` helper has no `disabled` argument (the view has the parameter)"),
     "search_field/focus-none-part-via-pointer": (NOT_RUN, "a pointer on the clear button presses it, so it cannot take focus by pointer alone"),
     # it runs and does not conform
-    "search_field/clear-press-returns-focus": (FAIL, "after Clear the focus is lost: no focus recovery to the input (Focus_Recovery, Press Focus: input)"),
+    "search_field/clear-press-returns-focus": (FAIL, "Clear returns the focus now; only the missing before_change differs (the events expectation)"),
     "search_field/clear-press-keyboard-returns-focus": (FAIL, "the same, by keyboard"),
     "search_field/escape-clears": (FAIL, "Escape clears the query; only the missing before_change differs (the events expectation)"),
     "search_field/type-updates-value": (FAIL, "the value follows; the widget emits no before_change (only the events expectation differs)"),
