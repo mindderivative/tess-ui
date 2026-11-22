@@ -16,6 +16,10 @@ import { gitSubcommands, ruffBin, run } from "../lib.ts";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
+export const KILL_BLOCKED = "Blocked: never signal a process by name or pattern (pkill, killall, pgrep -f, kill $(pgrep ...), ps | grep | xargs kill): `pkill -f sm.sh` once killed the owner's plasmashell. Signal only a PID you started yourself.";
+/** `pkill`, `killall`, `pgrep -f` (any flag cluster with f), or a `kill` / `xargs kill` fed by pgrep, pidof or a grep, as a command word. */
+const KILL_BY_PATTERN = /(?:^|[\s;&|(`$])(?:pkill|killall)\b|(?:^|[\s;&|(`$])pgrep\s+(?:-\S*f\S*|--full)\b|\bkill\b[^;&|\n]*\$\(\s*(?:pgrep|pidof)\b|\b(?:pgrep|pidof)\b[^\n]*\|\s*xargs\b[^\n]*\bkill\b|\bps\b[^\n]*\|\s*grep\b[^\n]*\|\s*(?:awk\b[^|\n]*\|\s*)?xargs\b[^\n]*\bkill\b/;
+
 export const PUSH_BLOCKED = "Blocked: a force push or a push of tags needs the maintainer (no releases, no rewritten history).";
 /** `git [options] push <arguments up to the end of the command>`. */
 const PUSH = /\bgit\s+(?:(?:-C|-c)\s+\S+\s+|-\S+\s+)*push\b([^;&|\n]*)/g;
@@ -75,6 +79,7 @@ export async function commitProblems(command: string, cwd: string): Promise<stri
 }
 
 export async function guardBash(command: string, ctx: { cwd: string; hasUI?: boolean; ui?: { confirm: (title: string, message: string) => Promise<boolean> } }): Promise<{ block: true; reason: string } | undefined> {
+	if (KILL_BY_PATTERN.test(command)) return { block: true, reason: KILL_BLOCKED };
 	const subcommands = gitSubcommands(command);
 	if (subcommands.includes("push") && [...command.matchAll(PUSH)].some((push) => RISKY_PUSH.test(push[1]))) {
 		return { block: true, reason: PUSH_BLOCKED };
