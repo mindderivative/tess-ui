@@ -663,7 +663,7 @@ class Slider(Control):
             self.node.add_child(self.icon)
         self.bubble = self.window.create("box", corner_radius=14.0, align_items="center", justify_content="center", visible=False,
                                          position="absolute", hit_testable=False, a11y_hidden=True)
-        self.bubble_text = self.window.create("text", text="", font_family="Roboto", font_size=12.0, font_weight=500.0, hit_testable=False,
+        self.bubble_text = self.window.create("text", text="", font_size=12.0, font_weight=500.0, hit_testable=False,
                                               a11y_hidden=True)
         self.bubble.add_child(self.bubble_text)
         self.node.add_child(self.bubble)
@@ -903,7 +903,7 @@ class RangeSlider(Slider):
             handle = self.window.create("box", position="absolute", corner_radius=_min(self._hl, self._across) / 2, hit_testable=False, a11y_hidden=True)
             bubble = self.window.create("box", corner_radius=14.0, align_items="center", justify_content="center", visible=False, position="absolute",
                                         hit_testable=False, a11y_hidden=True)
-            bubble_text = self.window.create("text", text="", font_family="Roboto", font_size=12.0, font_weight=500.0, hit_testable=False, a11y_hidden=True)
+            bubble_text = self.window.create("text", text="", font_size=12.0, font_weight=500.0, hit_testable=False, a11y_hidden=True)
             bubble.add_child(bubble_text)
             node = self.window.create("box", position="absolute", focusable=True, role="slider", cursor="pointer")
             a11y.describe(node, label=self._handle_label(i))
@@ -1122,8 +1122,7 @@ class SpinBox:
         self.decrement, self._dec_icon, self._dec_it = self._button("remove", "Decrease", -1)
         self.field = window.create("box", width=self.FIELD[0], height=self.FIELD[1], corner_radius=8.0,
                                    padding_left=8.0, padding_right=8.0, align_items="center")
-        self.input = window.create("text_input", text=self._format(self.value.get()), font_family="Roboto",
-                                   font_size=14.0, flex_grow=1.0, focusable=True, role="spinbutton")
+        self.input = window.create("text_input", text=self._format(self.value.get()), font_size=14.0, flex_grow=1.0, focusable=True, role="spinbutton")
         self.field.add_child(self.input)
         if label is not None:
             a11y.describe(self.input, label=label)

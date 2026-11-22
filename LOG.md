@@ -3708,3 +3708,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-21 The dark baseline is the engine's (`scheme_colors("dark")`, tre 0.6.12)
 - An app with no seed anywhere and `dark` now resolves its roles to `tess_re.scheme_colors("dark")` in `tokens.resolve_scheme`; the seeding with `BASELINE_SEED` (a scheme generated from #6750A4, which differed from MD3's published dark baseline) and the constant itself are gone, as is `App._has_scheme`. Light with no seed still resolves nothing, so the engine's own baseline shows (it equals `BASELINE` since #353).
+
+## 2026-11-21 The baseline text look is declared once (`Window.set_defaults`, tre 0.6.12)
+- `App` (and every window it opens) declares MD3's body medium (Roboto 400, 14 px) as the default of `text` and `text_input` nodes, so one the toolkit builds without a type role is in the type scale and not in the engine's own 16 px; the `font_family="Roboto"` the Python-built nodes repeated is gone. Sizes that differ are still passed at the node.
