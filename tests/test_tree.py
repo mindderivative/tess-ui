@@ -23,11 +23,15 @@ NODES = """Nodes {
 class VM(ViewModel):
     views = "main"
 
+    def heard(self, *told):
+        self.log.append(told)
+
     def __init__(self):
         super().__init__()
         self.open = Signal(["docs"])
         self.sel = Signal("a")
         self.picked = Signal([])
+        self.log = []
 
 
 def opened(tmp_path, props=""):

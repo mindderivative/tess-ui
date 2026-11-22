@@ -2,9 +2,8 @@
 
 Three runs, each pinned case by case; a case not listed passes. A gap that gets fixed must be removed from its table, or the test fails.
  * LIST_STRICT: `list_` against every expectation of the corpus.
- * LIST_DIAG and TREE_DIAG: only state and focus (`ignore=("events", "consumed")`, a diagnostic and not a conformance run), for the `list_` and the
-   `Tree`. The Tree reports no events, so a strict run of it would fail every case on its first event; this one says whether the SET and the
-   FOCUS follow the standard. Skipped without the `tesserae-behavior` package (`tests/behavior/requirements.txt`)."""
+ * TREE_STRICT: the same for the `Tree` (its `On_Change` reports `selection_change`; in the single mode it reports nothing).
+ * LIST_DIAG and TREE_DIAG: only state and focus (`ignore=("events", "consumed")`, a diagnostic and not a conformance run). Skipped without the `tesserae-behavior` package (`tests/behavior/requirements.txt`)."""
 
 import pytest
 
@@ -35,12 +34,13 @@ _COMMON = {
 }
 LIST_DIAG = dict(_COMMON)
 TREE_DIAG = {**_COMMON, **dict.fromkeys(_UNSEL, (NOT_RUN, "unselectable"))}
+TREE_STRICT = {**TREE_DIAG, "shift-arrow-range": (FAIL, "order")}
 LIST_STRICT = {**LIST_DIAG, "shift-arrow-range": (FAIL, "order"), "unselectable-space-selects-nothing": (FAIL, "consumed")}
 
 
 def test_the_corpus_has_the_list_cases_and_every_recorded_gap_names_its_reason():
     assert len(CASES) == 26
-    for table in (LIST_STRICT, LIST_DIAG, TREE_DIAG):
+    for table in (LIST_STRICT, LIST_DIAG, TREE_DIAG, TREE_STRICT):
         assert set(table) <= set(CASES) and all(why in WHY for _, why in table.values())
 
 
@@ -61,3 +61,8 @@ def test_list_state_and_focus(name):
 @pytest.mark.parametrize("name", sorted(CASES))
 def test_tree_state_and_focus(name, tmp_path):
     assert run_case(CASES[name], _tree_host(tmp_path), ignore=("events", "consumed")).status == TREE_DIAG.get(name, (PASS, ""))[0], name
+
+
+@pytest.mark.parametrize("name", sorted(CASES))
+def test_tree_strict(name, tmp_path):
+    assert run_case(CASES[name], _tree_host(tmp_path)).status == TREE_STRICT.get(name, (PASS, ""))[0], name

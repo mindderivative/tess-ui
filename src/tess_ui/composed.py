@@ -18,6 +18,7 @@ import difflib
 import time
 import weakref
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Callable, Optional
 
 from tess_ui import a11y as a11y_module, behavior, tokens, urls
@@ -25,6 +26,7 @@ from tess_ui.fonts import check_font_families
 from tess_ui.follow import app_of
 from tess_ui.listeners import handled, listen_window
 from tess_ui.reactive import Computed, Effect, Signal, untrack
+from tess_ui.selection import InputNote
 from tess_ui.typeahead import TypeAhead
 from tess_ui.tel import compile_statements, is_action_name
 from tess_ui.spec.compose import Composer, Instance
@@ -1367,23 +1369,25 @@ class ComposedView(View):
                 if list(box.get("selection")) != chosen:
                     box.set(selection=chosen)
 
-            plain = [True]
+            note = InputNote()
 
-            def pressed(event: Any, plain: list = plain) -> None:
-                plain[0] = not (getattr(event, "ctrl", False) or getattr(event, "shift", False) or getattr(event, "meta", False))
-
-            def changed(event: Any, rows: dict = rows, keys: Callable = keys, held: Any = held, plain: list = plain) -> None:
-                if held is None:
-                    return
+            def changed(event: Any, rows: dict = rows, keys: Callable = keys, held: Any = held, note: InputNote = note, group: Instance = group, box: Any = box) -> None:
                 chosen = list(event.selection or [])
                 shown = [key for key, node in rows.items() if node in chosen]
-                kept = [] if getattr(event, "selection_source", None) == "pointer" and plain[0] else [key for key in keys() if key not in rows]
+                source = getattr(event, "selection_source", None) or "api"
+                kept = [] if source == "pointer" and note.plain_press else [key for key in keys() if key not in rows]
                 new = [*kept, *shown]
-                if new != keys():
+                if held is not None and new != keys():
                     name, scope = held
                     scope.assign(name, new)
+                if "on_selection_change" in group.handlers and group.id not in self._disabled_on:
+                    anchor = event.anchor
+                    told = SimpleNamespace(reason=source, detail=note.detail(source, not new, box), count=len(new), selection=new,
+                                           anchor=next((key for key, node in rows.items() if node == anchor), None))
+                    group.fire("on_selection_change", told)
 
-            self._selection_undos.append(self._listen(box, "pointer_down", pressed))
+            self._selection_undos.append(self._listen(box, "pointer_down", note.pointer))
+            self._selection_undos.append(self._listen(box, "key_down", note.key))
             self._selection_undos.append(self._listen(box, "selection_change", changed))
             if "selection" in group.props:
                 effect = Effect(push)

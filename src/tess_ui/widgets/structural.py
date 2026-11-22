@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any, Callable
 from tess_ui import a11y
 from tess_ui.behavior import ChangeEvent, Gate, GatedSignal, caused_by
 from tess_ui.reactive import Effect, Signal
+from tess_ui.selection import InputNote
 from tess_ui.typeahead import TypeAhead
 from tess_ui.widgets._composed import Widget
 from tess_ui.widgets._views import Call
@@ -178,30 +179,7 @@ def _multiple(widget: Widget, items: list[Any], nodes: list[Any], start: list[in
             finally:
                 pushing[0] = False
 
-    last: list[Any] = [None]  # the input the engine is about to act on: (what, event), set by the box's listeners, which run before the engine's own handling
-
-    def pointed(event: Any) -> None:
-        last[0] = ("pointer", event)
-
-    def detail_of(event: Any, now: tuple[int, ...]) -> str:
-        """What the standard calls the change (Selection, SPEC 2.5b): select, toggle, range, all or clear."""
-        source = getattr(event, "selection_source", None)
-        kind, trigger = last[0] or (None, None)
-        if source == "api" or kind is None:
-            return "select"
-        ctrl, shift = bool(getattr(trigger, "ctrl", False)), bool(getattr(trigger, "shift", False))
-        if kind == "pointer":
-            if shift:
-                return "range"
-            if ctrl:
-                return "toggle"
-            return "clear" if not now and getattr(trigger, "target", None) == box else "select"
-        key = getattr(trigger, "key", "")
-        if key == "space":
-            return "toggle"
-        if ctrl and key == "a":
-            return "all"
-        return "range" if shift and key in ("arrow_down", "arrow_up", "home", "end") else "select"
+    note = InputNote()  # the input the engine is about to act on: the box's listeners run before the engine's own handling
 
     pushing = [False]
 
@@ -217,7 +195,8 @@ def _multiple(widget: Widget, items: list[Any], nodes: list[Any], start: list[in
         heard[0] = now
         chosen.set(now)
         if gate.after:
-            done = ChangeEvent("change", previous, now, getattr(event, "selection_source", None) or "api", detail_of(event, now))
+            source = getattr(event, "selection_source", None)
+            done = ChangeEvent("change", previous, now, source or "api", note.detail(source, not now, box))
             for listener in list(gate.after):
                 listener(done)
 
@@ -233,7 +212,7 @@ def _multiple(widget: Widget, items: list[Any], nodes: list[Any], start: list[in
 
     def typed(event: Any) -> None:
         """Type-ahead, heard on the list itself: a listener on a row would keep the row's keys from the engine's selection."""
-        last[0] = ("key", event)
+        note.key(event)
         i = index_of.get(event.target)
         moves = {"arrow_down": lambda: _next_enabled(off, i or 0, 1), "arrow_up": lambda: _next_enabled(off, i or 0, -1),
                  "home": lambda: _edge(off, False), "end": lambda: _edge(off, True)}
@@ -257,7 +236,7 @@ def _multiple(widget: Widget, items: list[Any], nodes: list[Any], start: list[in
             widget._undo.append(widget.view._listen(node, "click", _focus_it(node)))
         widget._undo.append(widget.view._listen(node, "focus", rove(i)))
     widget._undo.append(widget.view._listen(box, "key_down", typed))
-    widget._undo.append(widget.view._listen(box, "pointer_down", pointed))
+    widget._undo.append(widget.view._listen(box, "pointer_down", note.pointer))
     widget._undo.append(widget.view._listen(box, "selection_change", changed))
     box.set(selection=[nodes[i] for i in chosen.get()])
     widget_any: Any = widget
