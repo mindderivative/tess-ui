@@ -156,7 +156,28 @@ def test_the_engine_draws_the_focus_outline_on_keyboard_focus_only_AC_FOC(tmp_pa
     assert after[5] == before[5]
 
 
-def test_the_layers_fade_at_105_pressed_150_focus_and_the_engines_100_hover(tmp_path):
+def test_the_layers_fade_at_the_specs_15_hover_105_pressed_and_150_focus(tmp_path):
     view = opened(tmp_path, COMPONENTS["button"])
     node = view._built.outer["root.c"]
-    assert [node.get(k) for k in ("hover_layer_ms", "pressed_layer_ms", "focus_layer_ms")] == [100.0, 105.0, 150.0]
+    assert [node.get(k) for k in ("hover_layer_ms", "pressed_layer_ms", "focus_layer_ms")] == [15.0, 105.0, 150.0]
+
+
+def test_a_15_ms_hover_leaves_no_layer_pixel_behind_however_short_the_visit_AC_STL(tmp_path):
+    """The reason hover was held at 100 ms: a 15 ms fade lost its last frame in the engine and left the layer's pixel on screen (fixed in tre 0.6.13)."""
+    view = opened(tmp_path, COMPONENTS["button"])
+    node = view._built.outer["root.c"]
+    assert node.get("hover_layer_ms") == 15.0
+
+    def pixel():
+        rgba, width, _ = view.window.snapshot()
+        x, y = int(node.get("layout_x") + 6), int(node.get("layout_y") + node.get("layout_height") / 2)
+        return tuple(rgba[(y * width + x) * 4:][:3])
+
+    rest = pixel()
+    x, y = centre(view)
+    for visit in (1, 2, 3, 8, 20):  # frames the pointer stays: shorter than, equal to and longer than the fade
+        view.window.simulate("pointer_move", x=x, y=y)
+        run(view, 16 * visit)
+        view.window.simulate("pointer_move", x=395, y=295)
+        run(view, 64)
+        assert pixel() == rest, visit
