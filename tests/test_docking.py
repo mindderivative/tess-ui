@@ -247,3 +247,10 @@ def test_removing_the_panel_being_dragged_ends_the_drag():
     dock.remove_panel(panels["Files"])
     assert dock._dragging is None and dock._press is None and dock.highlight.parent() is None
     assert dock.titles("left") == ["Search"]
+
+
+def test_the_window_holds_back_moves_until_a_press_has_moved_4_dp_AC_DND(tmp_path):
+    from tess_ui import App, tokens
+
+    app = App(root=tmp_path, width=200, height=100)
+    assert app.window.get("drag_start_px") == tokens.DRAG_START_PX == DRAG_THRESHOLD

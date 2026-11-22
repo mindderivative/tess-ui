@@ -127,7 +127,7 @@ def test_a_drag_does_not_drift_and_keeps_the_hue_through_black_and_white(tmp_pat
     drag(view, square, [(128, 40)])
     drag(view, square, [(100, 100), (0, 176), (100, 100), (255, 1), (1, 1), (128, 40)])  # through black and white, and home
     assert strip.hue.get() == pytest.approx(hue, abs=1e-9)
-    drag(view, square, [(255, 1), (256, 0)])
+    drag(view, square, [(255, 1), (300, -40)])
     assert vm.c.get() == colour.from_hsva(hue, 1, 1)
     drag(view, square, [(128, 40)] * 40)  # forty events at one place: the same text each time
     first = vm.c.get()
