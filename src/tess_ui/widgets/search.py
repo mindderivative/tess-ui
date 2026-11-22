@@ -5,7 +5,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
-from tess_ui.reactive import Effect, Signal
+from tess_ui.behavior import Gate, GatedSignal, caused_by
+from tess_ui.reactive import Effect
 from tess_ui.widgets._composed import Widget
 from tess_ui.widgets._views import Call
 from tess_ui.widgets.buttons import _border
@@ -14,6 +15,16 @@ if TYPE_CHECKING:
     from tess_ui.overlays import SearchView
     from tess_ui.theme import Theme
     from tess_re import Window
+
+
+#: What a change of the query is called, by the part that made it (the behavior standard's `detail`).
+_DETAILS = {"input": "typing", "clear": "clear", "escape": "escape"}
+
+
+def _hear(listeners: list[Callable[[Any], None]], fn: Callable[[Any], None]) -> Callable[[], None]:
+    """Adds `fn` to `listeners`; returns the function that removes it."""
+    listeners.append(fn)
+    return lambda: listeners.remove(fn) if fn in listeners else None
 
 
 def search_bar(
@@ -29,6 +40,7 @@ def search_bar(
     *,
     disabled: bool = False,
     clear_label: str = "Clear",
+    controlled: bool = False,
     theme: "Theme | None" = None,
 ) -> Widget:
     """MD3's search bar: a 56 px
@@ -39,8 +51,12 @@ def search_bar(
     `.on_query(fn)` hears each change. Parts: `field` (the `text_input`),
     `leading`, `trailing0`, ... `disabled` dims it, makes the field read-only
     and hides the clear button; `clear_label` names that button for assistive
-    technology."""
-    query = Signal("")
+    technology. `.on_before_change(fn)` and `.on_change(fn)` hear each change of the query a user makes (`event.previous`, `.value`, `.reason`
+    `pointer` or `keyboard`, `.detail` `typing`, `clear` or `escape`); `event.cancel()` in the first refuses it. With `controlled` the widget
+    never writes the query itself: a change is a request, and it is made only when a `before_change` listener calls `event.accept()`; the host
+    writes `.query` itself for anything else (an `api` change, never asked about)."""
+    gate = Gate(controlled=controlled, detail_of=lambda source: _DETAILS.get(source.rsplit(".", 1)[-1], source))
+    query = GatedSignal("", gate)
     call = Call("SearchBar", props={"placeholder": placeholder, "query": query, "leading_icon": leading_icon or "",
                                     "trailing_icons": list(trailing_icons or []), "disabled": disabled,
                                     "clear_label": clear_label},
@@ -52,6 +68,9 @@ def search_bar(
     widget = Widget(window, call=call, components={None: "search_bar"}, parts=parts, theme=theme, x=x, y=y, name="search_bar")
     for i in range(len(trailing_icons or [])):
         widget.part(f"trailing{i}").set(focusable=True, cursor="pointer")
+    widget_any: Any = widget
+    widget_any.on_before_change = lambda fn: _hear(gate.before, fn)
+    widget_any.on_change = lambda fn: _hear(gate.after, fn)
     widget.query = query  # the view's own `query`: what is typed in the field
     field = widget.part("field")
     queries: list[Callable[[str], Any]] = []
@@ -73,7 +92,8 @@ def search_bar(
         if shown is not None and shown.is_open:
             shown.close()
         elif query.get():
-            query.set("")
+            with caused_by("keyboard", "escape"):
+                query.set("")
 
     widget._undo.append(widget.view._listen(field, "key_down", escape))
     typed_before = [""]
