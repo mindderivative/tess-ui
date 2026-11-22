@@ -80,7 +80,7 @@ declare("Svg", {"src": P("str", doc="A .svg or .svgz file, relative to the view.
                 "alt": P("str", doc="What the picture shows, for a screen reader. Without it the picture is decorative and hidden from one.")},
         extras=("foreground",), one_of=[("src", "content")], doc="A vector picture.")
 declare("ScrollView", {
-    "orientation": P("enum", choices=("vertical", "horizontal"), default="vertical", doc="Which way it scrolls. Horizontal lays its children out in a row and `scroll_direction` is 'right' or 'left'."),
+    "orientation": P("enum", choices=("vertical", "horizontal", "both"), default="vertical", doc="Which way it scrolls. Horizontal lays its children out in a row and `scroll_direction` is 'right' or 'left'. `both` scrolls on both axes (tre 0.6.11): each axis shows its own bar when the content overflows it; the children are laid out in a column at their own width."),
     "snap": P("enum", choices=("none", "start", "center", "end"), default="none", doc="When scrolling stops it settles on the nearest child that has a `snap_align` style, with that edge of the child at the same edge of the view."),
     "scroll_offset": P("float", default=0.0, model=True, doc="The scrolled distance; scrolling writes it back to a Signal it is bound to."),
     "at_top": P("bool", model=True, doc="Output: whether it is scrolled to the start. Bind a Signal or a state name to read it."),
