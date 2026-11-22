@@ -129,7 +129,7 @@ The whole suite runs in parallel: `pytest -n 4` (pytest-xdist, in the dev extra)
 Moved from `AGENTS.md`.
 
 * **Hooks (omp):** TypeScript modules, `.omp/hooks/pre/*.ts` before a tool call and `post/*.ts` after it; omp does not run the shell hooks of `.claude/settings.json`, so `.claude/hooks/*.sh` act only under Claude Code. A hook is read when a session starts. Tests: `node --experimental-strip-types .omp/hooks/test_hooks.ts`.
-  * `pre/git-guard.ts`: blocks a force push and a push of tags; checks a `git commit` first with pyflakes-level ruff over the Python files it will hold (staged, a same-command `git add`, or `-a`).
+  * `pre/git-guard.ts`: blocks any signal by name or pattern (`pkill`, `killall`, `pgrep -f`, `kill $(pgrep ...)`; signal only a PID you started), a force push and a push of tags; checks a `git commit` first with pyflakes-level ruff over the Python files it will hold (staged, a same-command `git add`, or `-a`).
   * `post/ruff-edit.ts`: the same check on a file just edited under `src/` or `tools/`.
   * `post/tests-for-edit.ts`: runs the tests `tools/tests_for.py` picks (capped at 25 seconds).
   * `post/after-commit.ts`: the memory and board reminder. `post/stop-docs.ts`: asks once for docs when `src/` changed and no documentation did.

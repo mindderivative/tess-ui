@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { editedFiles, gitSubcommands, insideProject, ruffBin, withReport } from "./lib.ts";
-import gitGuard, { commitFiles, commitProblems, guardBash, PUSH_BLOCKED } from "./pre/git-guard.ts";
+import gitGuard, { commitFiles, commitProblems, guardBash, KILL_BLOCKED, PUSH_BLOCKED } from "./pre/git-guard.ts";
 import afterCommit, { REMINDER } from "./post/after-commit.ts";
 import ruffEdit, { problemsIn } from "./post/ruff-edit.ts";
 import testsForEdit, { failuresIn } from "./post/tests-for-edit.ts";
@@ -78,6 +78,16 @@ assert.equal(insideProject("/p/src/a.py", "/p"), "src/a.py");
 assert.equal(insideProject("/q/src/a.py", "/p"), null);
 assert.equal(insideProject("/p2/src/a.py", "/p"), null, "a sibling with the same prefix is outside");
 assert.deepEqual(withReport({ content: [{ type: "text", text: "ok" }] }, "problem").content, [{ type: "text", text: "ok" }, { type: "text", text: "\nproblem" }]);
+
+// -- a signal by name or pattern is blocked (pkill -f sm.sh once killed the owner's plasmashell); a PID is fine
+{
+	for (const command of ["pkill -f sm.sh", "killall foo", "pgrep -f x", "pgrep -fl x", "kill $(pgrep -f y)", "ps aux | grep foo | xargs kill", "pgrep foo | xargs kill -9", "cd x && pkill foo"]) {
+		const refused = await guardBash(command, { cwd: "/p" });
+		assert.equal(refused?.block, true, `${command} is blocked`);
+		assert.equal(refused!.reason, KILL_BLOCKED);
+	}
+	for (const command of ["kill 1234", "kill -TERM $pid", "pgrep -x foo", "echo done"]) assert.equal(await guardBash(command, { cwd: "/p" }), undefined, `${command} runs`);
+}
 
 // -- git push runs without asking; a force push and a push of tags are blocked
 {

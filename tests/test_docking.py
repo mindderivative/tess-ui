@@ -5,6 +5,7 @@ keyboard (M45 Q2). Driven headlessly with `simulate`, as `tess_re`'s docking
 guide does.
 """
 
+from layers import layer_of
 import pytest
 import tess_re
 
@@ -194,7 +195,7 @@ def test_a_dock_takes_a_theme_and_re_colours():
     assert left.node.get("fill") == theme.role("surface_container_low")
     assert left.tabs[1].indicator.get("fill") == theme.role("primary")
     assert left.tabs[0].label.get("fill") == theme.role("on_surface_variant")
-    assert left.tabs[0].interaction.layer.get("fill") == theme.role("on_surface")
+    assert layer_of(left.tabs[0].interaction).get("fill") == theme.role("on_surface")
     assert dock.highlight.get("stroke_color") == theme.role("primary")
 
 

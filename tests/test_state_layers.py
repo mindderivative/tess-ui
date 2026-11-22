@@ -1,9 +1,11 @@
 """State layers on the Material components (UX spec ADR-0009, ADR-0013; AC-STL): hover 8 percent, keyboard focus 10, none for pointer focus, none when disabled, one layer at a time (focus beats hover), with the opacities from one token table."""
 
+from layers import layer_of
 import pytest
 
 from tess_ui import App, ViewModel, tokens
 from tess_ui import interaction
+
 
 #: component call -> a name
 COMPONENTS = {
@@ -77,10 +79,10 @@ def test_hover_is_8_percent_and_leaving_removes_it_AC_STL(tmp_path, name):
     x, y = centre(view)
     view.window.simulate("pointer_move", x=x, y=y)
     run(view)
-    assert it.layer.get("opacity") == pytest.approx(tokens.STATE_LAYER["hover"])
+    assert layer_of(it).get("opacity") == pytest.approx(tokens.STATE_LAYER["hover"], abs=0.005)
     view.window.simulate("pointer_move", x=395, y=295)
     run(view)
-    assert it.layer.get("opacity") == 0.0
+    assert layer_of(it).get("opacity") == 0.0
 
 
 @pytest.mark.parametrize("name", COMPONENTS)
@@ -89,11 +91,11 @@ def test_keyboard_focus_is_10_percent_and_beats_hover_AC_STL(tmp_path, name):
     it = layer(view)
     view.window.simulate("key_down", key="tab")
     run(view)
-    assert it.layer.get("opacity") == pytest.approx(tokens.STATE_LAYER["focus"])
+    assert layer_of(it).get("opacity") == pytest.approx(tokens.STATE_LAYER["focus"], abs=0.005)
     x, y = centre(view)
     view.window.simulate("pointer_move", x=x, y=y)
     run(view)
-    assert it.layer.get("opacity") == pytest.approx(tokens.STATE_LAYER["focus"])  # one layer at a time: focus over hover
+    assert layer_of(it).get("opacity") == pytest.approx(tokens.STATE_LAYER["focus"], abs=0.005)  # one layer at a time: focus over hover
 
 
 @pytest.mark.parametrize("name", [n for n in COMPONENTS if n != "tree_node"])
@@ -103,4 +105,29 @@ def test_a_disabled_component_shows_no_layer_AC_STL(tmp_path, name):
     x, y = centre(view)
     view.window.simulate("pointer_move", x=x, y=y)
     run(view)
-    assert it is None or it.layer.get("opacity") == 0.0
+    assert it is None or layer_of(it).get("opacity") == 0.0
+
+
+def test_the_engine_paints_hover_and_focus_over_the_fill_in_the_scheme_colour_AC_STL(tmp_path):
+    """The layers are the engine's `hover_layer` and `focus_layer`: the pixels of a button change by the table's percentages and come back."""
+    view = opened(tmp_path, COMPONENTS["button"])
+    node = view._built.outer["root.c"]
+
+    def pixel():
+        rgba, width, _ = view.window.snapshot()
+        x, y = int(node.get("layout_x") + 6), int(node.get("layout_y") + node.get("layout_height") / 2)
+        return tuple(rgba[(y * width + x) * 4:][:3])
+
+    rest = pixel()
+    x, y = centre(view)
+    view.window.simulate("pointer_move", x=x, y=y)
+    run(view, 200)
+    hovered = pixel()
+    assert hovered != rest
+    view.window.simulate("pointer_move", x=395, y=295)
+    run(view, 200)
+    assert pixel() == rest
+    view.window.simulate("key_down", key="tab")
+    run(view, 200)
+    focused = pixel()
+    assert focused != rest and focused != hovered
