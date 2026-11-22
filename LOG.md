@@ -3691,3 +3691,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-21 The guards block signals by name or pattern
 - `pkill -f "sm.sh"` (another project's test) matched the owner's `plasmashell` and killed his panel. Both guards of this repo now refuse `pkill`, `killall`, `pgrep -f`, `kill $(pgrep ...)` and `ps | grep | xargs kill` (`.claude/hooks/bash_guard.sh`, `.omp/hooks/pre/git-guard.ts`, tested in `test_hooks.ts`). A mention of `pkill` inside an `echo` is blocked too: the guard reads the command text and prefers to over-block. A bare `kill <pid>` is allowed: signal only a PID you started.
+
+## 2026-11-21 The engine pin moves from 0.6.11 to 0.6.12
+- `tesserae-engine==0.6.12` (PyPI; tag `v0.6.12` exists) in `pyproject.toml`, the CI and release font checkouts, README, DEVELOPING, PLAN. The 0.6.11 mentions left in source and tests say what 0.6.11 introduced and stay. 0.6.12 adds hooks the next PRs adopt (focus outline, scheme baseline, `set_defaults`, scrollbar looks, per-state layer timings, selection, drag cancel).
