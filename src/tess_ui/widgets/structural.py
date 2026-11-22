@@ -65,6 +65,8 @@ def list_(
     announce: str | None = "{count} selected",
     unselectable: list[int] | None = None,
     label: str | None = None,
+    select_all_key: bool = True,
+    select_on_focus: bool = False,
 ) -> Widget:
     """Lays out `list_item(...)`s (or any nodes) as MD3's list: a column
     `width` wide. The items move into it. An empty list is an error, as
@@ -87,13 +89,17 @@ def list_(
     choose rows from code), `selected=` starts it with a list, and `announce`
     is what assistive technology reads as it changes (`{count}` is how many;
     `None` is silent). A row made with `list_item(disabled=True)` is skipped by the keys, never chosen and
-    does not respond; `label` is the list's accessible name (what the list is: Files, Fruit; a screen reader
+    does not respond; `select_all_key=False` takes Ctrl+A from a multiple list (it goes on to the app);
+    `select_on_focus=True` makes the single list choose the row an arrow key (not Ctrl+Arrow) moves to, as a click does;
+    `label` is the list's accessible name (what the list is: Files, Fruit; a screen reader
     says it on entering the list); `unselectable=[indices]` names rows that take focus but are never chosen (a range
     passes over them, Ctrl+A leaves them out, a write from code ignores them). Only `.on_change(fn)` hears it (`reason` `pointer`,
     `keyboard` or `api`; `detail` `select`, `toggle` (Ctrl+click, Space), `range` (Shift), `all` (Ctrl+A) or `clear` (a click on the empty part), as the Selection pattern names them): the engine makes the change, so
     there is nothing to refuse beforehand."""
     if not items:
         raise ValueError("a list needs at least one item")
+    if select_on_focus and selectable != "single":
+        raise ValueError("list_: select_on_focus is for the single selection list (selectable=\"single\")")
     if selectable not in (None, "single", "multiple"):
         raise ValueError(f"list_: selectable is None, 'single' or 'multiple', got {selectable!r}")
     widget = Widget(window, spec={"id": "list", "kind": "Container",
@@ -112,9 +118,10 @@ def list_(
     off = [bool(getattr(getattr(item, "disabled", None), "get", lambda: False)()) for item in items]
     no_pick = [off[i] or i in (unselectable or ()) for i in range(len(nodes))]
     if selectable == "multiple":
-        _multiple(widget, items, nodes, selected if isinstance(selected, list) else [] if selected is None else [selected], announce, off, no_pick)
+        _multiple(widget, items, nodes, selected if isinstance(selected, list) else [] if selected is None else [selected], announce, off, no_pick, select_all_key)
     elif selectable:
-        _selectable(widget, items, nodes, selected if not isinstance(selected, list) else (selected[0] if selected else None), off, no_pick)
+        _selectable(widget, items, nodes, selected if not isinstance(selected, list) else (selected[0] if selected else None), off, no_pick,
+                    select_on_focus)
     return widget
 
 
@@ -143,11 +150,12 @@ def _hear(listeners: list[Callable[[Any], None]], fn: Callable[[Any], None]) -> 
     return lambda: listeners.remove(fn) if fn in listeners else None
 
 
-def _multiple(widget: Widget, items: list[Any], nodes: list[Any], start: list[int], announce: str | None, off: list[bool], no_pick: list[bool]) -> None:
+def _multiple(widget: Widget, items: list[Any], nodes: list[Any], start: list[int], announce: str | None, off: list[bool], no_pick: list[bool],
+              select_all_key: bool) -> None:
     """The multiple-selection list: the engine's container selection chooses (clicks, Shift, Ctrl, Space, Ctrl+A); this styles the rows, keeps
     `.selection` in step both ways, keeps the roving Tab stop and the type-ahead."""
     box = widget.node
-    box.set(selection_mode="multiple", select_all_key=True)
+    box.set(selection_mode="multiple", select_all_key=select_all_key)
     if announce is not None:
         box.set(selection_announce=announce)
     gate = Gate(detail_of=lambda source: "select")
@@ -248,7 +256,8 @@ def _multiple(widget: Widget, items: list[Any], nodes: list[Any], start: list[in
     widget._undo.append(Effect(show).dispose)
 
 
-def _selectable(widget: Widget, items: list[Any], nodes: list[Any], start: int | None, off: list[bool], no_pick: list[bool]) -> None:
+def _selectable(widget: Widget, items: list[Any], nodes: list[Any], start: int | None, off: list[bool], no_pick: list[bool],
+                select_on_focus: bool = False) -> None:
     """The single-selection list: selection in a `GatedSignal`, the roving Tab stop, the keys."""
     gate = Gate(detail_of=lambda source: "select")
     chosen = GatedSignal(start if start is not None and 0 <= start < len(nodes) and not no_pick[start] else None, gate)
@@ -288,6 +297,8 @@ def _selectable(widget: Widget, items: list[Any], nodes: list[Any], start: int |
                 target = moves[event.key]()
                 if target is not None and target != i:
                     nodes[target].focus()
+                    if select_on_focus and not getattr(event, "ctrl", False):
+                        pick(target, "keyboard")  # selection follows the focus (Ctrl+Arrow moves it alone)
             elif event.key in ("enter", "space"):
                 pick(i, "keyboard")
             elif len(event.key) == 1 and event.key.isprintable() and event.key != " ":

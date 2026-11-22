@@ -4459,6 +4459,18 @@
             ],
             "description": "With a `selection_mode`: the keys (`selection_key`) of the chosen children. Two-way. A key that no child has now (a row not built, a closed branch's child) stays in it until its child is chosen or cleared again."
           },
+          "select_all_key": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "With a `selection_mode` of `multiple`: Ctrl+A chooses every child that can be chosen; false leaves the key to the app."
+          },
           "selection_announce": {
             "anyOf": [
               {
@@ -4518,6 +4530,7 @@
             "measured_height",
             "selection_mode",
             "selection",
+            "select_all_key",
             "selection_announce",
             "selection_key",
             "item_selectable"
@@ -22927,6 +22940,18 @@
             ],
             "description": "Choose several rows: click chooses one, Ctrl+click toggles, Shift+click and Shift+Arrow choose a range, Space toggles, Ctrl+A chooses every row that shows (AC-SLT-7). `Selected` then follows the last row pressed."
           },
+          "select_all_key": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "With `Multiple`: whether Ctrl+A chooses every row that shows."
+          },
           "on_change": {
             "anyOf": [
               {
@@ -23007,6 +23032,7 @@
             "selected",
             "selection",
             "multiple",
+            "select_all_key",
             "on_change",
             "compact",
             "density",

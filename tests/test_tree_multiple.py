@@ -145,3 +145,12 @@ def test_on_change_says_the_reason_and_the_detail_of_each_change_to_the_chosen_r
     assert [(r, d, c) for r, d, c, *_ in heard] == [
         ("pointer", "select", 1), ("pointer", "toggle", 2), ("pointer", "range", 2), ("keyboard", "all", 5), ("api", "select", 1)]
     assert heard[0][3:] == (["a"], "a") and heard[1][3:] == (["a", "pics"], "pics")
+
+
+def test_ctrl_a_can_be_taken_from_a_multiple_tree(tmp_path):
+    view, vm = opened(tmp_path, "Multiple: true\n      Selection: <| picked |>\n      Select_All_Key: false")
+    focus(view, "Letter")
+    press(view, "a", ctrl=True)
+    assert chosen(vm) == []
+    click(view, "Letter")
+    assert chosen(vm) == ["a"]

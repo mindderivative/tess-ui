@@ -14,6 +14,7 @@ Container {
     Selected { Type: any, Default: "", Model: true, Doc: "The value of the chosen row." }
     Selection { Type: list, Default: [], Model: true, Doc: "With `Multiple`: the values of the chosen rows. Two-way. A chosen row inside a closed branch stays in it." }
     Multiple { Type: bool, Default: false, Doc: "Choose several rows: click chooses one, Ctrl+click toggles, Shift+click and Shift+Arrow choose a range, Space toggles, Ctrl+A chooses every row that shows (AC-SLT-7). `Selected` then follows the last row pressed." }
+    Select_All_Key { Type: bool, Default: true, Doc: "With `Multiple`: whether Ctrl+A chooses every row that shows." }
     On_Change { Type: handler, Doc: "With `Multiple`: called after the chosen rows change, with `event.reason` (`pointer`, `keyboard` or `api`), `event.detail` (`select`, `toggle`, `range`, `all` or `clear`), `event.count`, `event.selection` (the chosen values) and `event.anchor`." }
     Compact { Type: bool, Default: false, Doc: "40 pixel rows instead of 56 (at no density)." }
     Density { Type: str, Default: "", Doc: "`default`, `compact` or `dense`: the spec's density table for the rows; empty follows the app's `App(density=)`." }
@@ -22,6 +23,7 @@ Container {
   Focus_Group: vertical
   Selection_Mode: <| 'multiple' if multiple else 'none' |>
   Selection: <| selection |>
+  Select_All_Key: <| select_all_key |>
   Selection_Announce: <| '{count} selected' if multiple else '' |>
   State { Current { } }
   Handlers {

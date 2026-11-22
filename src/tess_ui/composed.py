@@ -1358,7 +1358,8 @@ class ComposedView(View):
                     rows[sub.value("selection_key")] = self._built.nodes[sub.id]
                     self._built.nodes[sub.id].set(item_selectable=bool(sub.value("item_selectable")) if "item_selectable" in sub.props else True)
             announce = group.value("selection_announce") if "selection_announce" in group.props else ""
-            box.set(selection_mode=mode, select_all_key=True, selection_announce=announce or None)
+            every = group.value("select_all_key") if "select_all_key" in group.props else True
+            box.set(selection_mode=mode, select_all_key=bool(every), selection_announce=announce or None)
             held = group.models.get("selection")
 
             def keys(group: Instance = group) -> list[Any]:
