@@ -6,7 +6,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from tess_ui.behavior import Gate, GatedSignal, caused_by, current
-from tess_ui.reactive import Effect
+from tess_ui.reactive import Effect, Signal
 from tess_ui.widgets._composed import Widget
 from tess_ui.widgets._views import Call
 from tess_ui.widgets.buttons import _border
@@ -19,6 +19,15 @@ if TYPE_CHECKING:
 
 #: What a change of the query is called, by the part that made it (the behavior standard's `detail`).
 _DETAILS = {"input": "typing", "clear": "clear", "escape": "escape"}
+
+
+def _inside(root: Any, node: Any) -> bool:
+    """Whether `node` is `root` or below it."""
+    while node is not None:
+        if node == root:
+            return True
+        node = node.parent()
+    return False
 
 
 def _hear(listeners: list[Callable[[Any], None]], fn: Callable[[Any], None]) -> Callable[[], None]:
@@ -51,15 +60,17 @@ def search_bar(
     `.on_query(fn)` hears each change. Parts: `field` (the `text_input`),
     `leading`, `trailing0`, ... `disabled` dims it, makes the field read-only
     and hides the clear button; `clear_label` names that button for assistive
-    technology. `.on_before_change(fn)` and `.on_change(fn)` hear each change of the query a user makes (`event.previous`, `.value`, `.reason`
+    technology. `.active` is a `Signal`: the bar was pressed or typed in, until its back arrow or a third Escape (the first closes the open view, the
+    second clears the query, the third deactivates the bar and gives the focus back to the control that had it). `.on_before_change(fn)` and `.on_change(fn)` hear each change of the query a user makes (`event.previous`, `.value`, `.reason`
     `pointer` or `keyboard`, `.detail` `typing`, `clear` or `escape`); `event.cancel()` in the first refuses it. With `controlled` the widget
     never writes the query itself: a change is a request, and it is made only when a `before_change` listener calls `event.accept()`; the host
     writes `.query` itself for anything else (an `api` change, never asked about)."""
     gate = Gate(controlled=controlled, detail_of=lambda source: _DETAILS.get(source.rsplit(".", 1)[-1], source))
     query = GatedSignal("", gate)
+    active = Signal(False)  # the view's own `active`: pressed or typed in, until the back arrow or the third Escape
     call = Call("SearchBar", props={"placeholder": placeholder, "query": query, "leading_icon": leading_icon or "",
                                     "trailing_icons": list(trailing_icons or []), "disabled": disabled,
-                                    "clear_label": clear_label},
+                                    "clear_label": clear_label, "active": active},
                 style={"width": width, **_border(border_color, border_width)})
     parts = {"field": "input", "leading.icon": "leading.leading_glyph"}
     for i in range(len(trailing_icons or [])):
@@ -71,6 +82,7 @@ def search_bar(
     widget_any: Any = widget
     widget_any.on_before_change = lambda fn: _hear(gate.before, fn)
     widget_any.on_change = lambda fn: _hear(gate.after, fn)
+    widget.active = active  # type: ignore[attr-defined]
     widget.query = query  # the view's own `query`: what is typed in the field
     field = widget.part("field")
     queries: list[Callable[[str], Any]] = []
@@ -94,6 +106,20 @@ def search_bar(
         elif query.get():
             with caused_by("keyboard", "escape"):
                 query.set("")
+        else:  # nothing left to close or clear: the bar is deactivated and focus goes back to where it was (AC-SRB-5)
+            active.set(False)
+            back = came_from[0]
+            if back is not None:
+                back.focus()
+
+    came_from: list[Any] = [None]  # the control that had the focus before the field took it
+
+    def took_focus(event: Any) -> None:
+        before = getattr(event, "related_target", None)
+        if before is not None and before != field and not _inside(widget.node, before):
+            came_from[0] = before
+
+    widget._undo.append(widget.view._listen(field, "focus", took_focus))
 
     widget._undo.append(widget.view._listen(field, "key_down", escape))
     typed_before = [""]
