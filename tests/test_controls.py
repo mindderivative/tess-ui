@@ -11,7 +11,7 @@ import pytest
 import tess_re
 
 from tess_ui import Effect, Signal, Theme, interaction, tokens
-from tess_ui.controls import DISABLED_CONTENT, STATE_LAYER_SIZE, TARGET_SIZE, Checkbox
+from tess_ui.controls import DISABLED_CONTENT, STATE_LAYER_SIZE, TARGET_SIZE, Checkbox, SpinBox
 from tess_ui.listeners import Listeners
 
 SEED = (0x67, 0x50, 0xA4, 0xFF)
@@ -530,7 +530,7 @@ def _spin(**kwargs):
 def test_a_spin_box_is_two_buttons_and_a_field():
     sb, window, _ = _spin(value=5, label="Copies")
     assert [c == n for c, n in zip(sb.node.children(), (sb.decrement, sb.field, sb.increment))] == [True] * 3
-    assert (sb.input.get("text"), sb.input.get("role"), sb.input.get("label")) == ("5", "textbox", "Copies")
+    assert (sb.input.get("text"), sb.input.get("role"), sb.input.get("label")) == ("5", "spinbutton", "Copies")
     assert (sb.decrement.get("role"), sb.decrement.get("label"), sb.increment.get("label")) == (
         "button", "Decrease", "Increase")
     assert sb.field.get("fill") == tokens.BASELINE["surface_container_highest"]
@@ -793,3 +793,11 @@ def test_a_bad_dial_mode_is_an_error():
     window = tess_re.Window(width=100, height=100)
     with pytest.raises(ValueError, match="'hour' or 'minute'"):
         TimePickerDial(window, mode="second")
+
+
+def test_a_spin_box_is_a_spinbutton_with_its_value_range_and_step_AC_SPN_10():
+    window = tess_re.Window()
+    sb = SpinBox(window, value=5, min=0, max=10, step=1, label="Copies")
+    node = sb.input
+    assert node.get("role") == "spinbutton" and node.get("label") == "Copies"
+    assert (node.get("value"), node.get("value_min"), node.get("value_max"), node.get("value_step")) == (5.0, 0.0, 10.0, 1.0)

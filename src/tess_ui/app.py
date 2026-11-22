@@ -122,6 +122,14 @@ def _os_dark(window: Any) -> bool | None:
     return None if value is None else bool(value)
 
 
+def announce_screen(window: Any, title: str) -> None:
+    """A screen change is told to assistive technology, once and politely, without moving the focus (WCAG 4.1.3; the Routed View note, AC-RTV-10). `Window.announce` is the engine's since 0.6.9; an older
+    engine has none and the change is silent."""
+    announce = getattr(window, "announce", None)
+    if announce is not None:
+        announce(str(title), "polite")
+
+
 _SAME: Any = object()  # `spec` not given: the app's current one
 
 
@@ -1356,9 +1364,12 @@ class App:
                 self._window, previous, root, transition, forward=forward, origin=origin,
                 reveal=lambda: root.parent() is None and self._window.root.add_child(root),
                 hide_outgoing=lambda: previous.remove())  # detached, kept alive with its state
+        changed = self._current is not None and self._current != name
         self._current = name
         self._screen_name.set(name)
         logger.debug("showing {!r}", name)
+        if changed:
+            announce_screen(self._window, name)
         return self._window
 
     @property

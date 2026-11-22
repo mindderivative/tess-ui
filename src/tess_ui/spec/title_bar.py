@@ -41,6 +41,8 @@ from __future__ import annotations
 import copy
 from typing import Any
 
+from tess_ui import tokens
+
 __all__ = ["BUTTONS", "STYLES", "SURFACE_BUTTONS", "TitleBarError", "expand_title_bars", "window_parts"]
 
 #: The window buttons a title bar can have, in the order they're laid out.
@@ -56,6 +58,25 @@ _TIPS = {"minimize": "Minimize", "maximize": "Maximize", "close": "Close", "dism
 #: height is a default: `style: {height: ...}` on the TitleBar sets it,
 #: and every part takes the bar's height.
 HEIGHT, BUTTON_WIDTH, GLYPH = 40, 46, 16
+
+
+def _level() -> str:
+    from tess_ui import tel
+
+    return str(tel._app_density.get())
+
+
+def _bar_height() -> float:
+    """The bar's height at the app's density (AC-TTB-1): 40, 32, 28; no density is the 40 it always was."""
+    return HEIGHT if not _level() else tokens.density_token(_level(), "control_height")
+
+
+def _start_padding() -> float:
+    return 12 if not _level() else tokens.density_token(_level(), "row_padding_x")
+
+
+def _gap() -> float:
+    return 8 if not _level() else tokens.density_token(_level(), "icon_label_gap")
 #: How far the title, icon and buttons fade while the window isn't the
 #: focused one, as desktops dim an inactive title bar.
 INACTIVE = 0.6
@@ -139,8 +160,8 @@ def _title_bar(node: dict[str, Any]) -> dict[str, Any]:
         "id": bar_id, "kind": "Container", "window_region": "none" if surface else "drag",
         "classes": ["title_bar", *(node.get("classes") or [])],
         **({"a11y": node["a11y"]} if "a11y" in node else {}),
-        "style": {"height": HEIGHT, "align_content": "left", "gap": 8,
-                  "padding": {"left": 12, "right": 0, "top": 0, "bottom": 0}, **(node.get("style") or {})},
+        "style": {"height": _bar_height(), "align_content": "left", "gap": _gap(),
+                  "padding": {"left": _start_padding(), "right": 0, "top": 0, "bottom": 0}, **(node.get("style") or {})},
         "children": parts,
     }
 

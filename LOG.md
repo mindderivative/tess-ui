@@ -3657,9 +3657,19 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 - Rows follow the app's density (`App(density=)`; no density asked keeps the Material sizes): List item 40/32/24 (a second line adds 20, a third 40; padding row_padding_x, gap icon_label_gap, vertical padding centres a 20 line), Accordion header 40/32/24, Menu item 40/32/28 (AC-LSI-02, AC-ACC-01, AC-MEN-1). The multi-line growth of a list item is my reading: the spec's table gives single-line rows only; ux-vault to confirm.
 - These three read the app's density only (`app_density()`); a per-component `Density` property is not added yet.
 
+## 2026-11-21 Draft: adopting what tre main (0.6.11, unreleased) gives (merge only after the release and the pin move)
+- Tried in a scratch venv with `tess_re` built from tre main (`~/tre-scratch-venv`): the whole suite passes except the pin test, which says the installed engine is not 0.6.8 (the draft does not touch the pin: moving it is a release step).
+- Roles: the 18 new roles are in `a11y.ROLES`; the snackbar is `status` (polite, not the assertive `alert`; AC-SNK-3), the spin box field is a `spinbutton` with value, min, max and step (AC-SPN-10, TUI-043).
+- Announcements: `App.show` tells the engine's `Window.announce` the new screen's name, politely, when the screen changes (AC-RTV-10, TUI-051). An engine without `announce` stays silent.
+- Text: a `Text` node is hovered now, so the config form's doc tooltip is the label Text's (AC-TIP-1, AC-TRN-08); a single-line text input is centred by the engine, so the window's 7/7 padding workaround is gone (TUI-024).
+- `hit_testable` is `None` when unset (the old test expected True).
+- Not in this draft: the two-axis scroll view for the config panes (orientation='both') and the scheme baseline (`scheme=`/`scheme_colors`), which touch more; next drafts.
 ## 2026-11-21 The engine pin moves from 0.6.8 to 0.6.10 (the owner approved it)
 - `tesserae-engine==0.6.10` in `pyproject.toml`, the font checkout of CI and the release workflow at `v0.6.10`, and the README, DEVELOPING and PLAN lines. The pin stays one exact release (`tests/test_dependencies.py`), so the owner's `>=0.6.10` is the exact `0.6.10` until the next engine release. Not run here (the machine is on hold for measurements): the suite on 0.6.10; CI runs it. 0.6.10 adds `Window.announce` (0.6.9), hit-testing and role groundwork; tre 0.6.11 (unreleased) is what the draft adoption PR uses. The changelog line belongs with the next release's section, which is the maintainer's to open.
 
+## 2026-11-21 Density, step 4: dock tabs and the title bar (AC-DKP-1, AC-TTB-1)
+- Dock tab height 48/40/32 and horizontal padding 16/12/8 (`dock_tab_height`, `dock_tab_padding` in `tokens.DENSITY`), title bar height 40/32/28, start padding 12/8/4, gap 8/8/4, at the app's density. No density is what they were (tab 48, padding 16, bar 40, padding 12, gap 8), and `default` equals that. These two are built in Python, so they read the density when they are built (`tel._app_density`); a density change reaches new tabs and bars, not ones already showing.
+- Not done: the 24 dp close-button hit area of a dock tab (AC-DKP-2: CLOSE_SIZE is 18) and the window buttons following the bar height; separate small changes.
 ## 2026-11-21 Density, step 3: Button and Icon button (AC-BTN-1, AC-ICB-1)
 - At a density, the default-size (`s`) Button is 40/32/28 high and the default Icon button container 40/32/28 (icon 24/20/20); other sizes (xs, m, l, xl: the Expressive sizes) and no density are as before. Fields are not changed: the shipped `TextField` is the 56 dp floating-label (touch) variant, which the spec keeps; a compact single-line field is a different component and not built yet (the config window's inputs are plain `TextInput`s).
 
@@ -3668,3 +3678,11 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 ## 2026-11-21 Density, step 5: the text field at compact and dense (ADR-0023, AC-TXF-3, AC-TXF-17, AC-TXF-19)
 - At the app's `compact` or `dense` density the `TextField`'s label is above the container, outside it (`external_label`, body_small, 4 or 2 px above); the container is 32 or 28 px high with 8 px horizontal padding and the input is `body_medium`. At `default` density, and with no density, the label floats in the 56 px container as before. The accessible name is the Label either way (the input's A11y label is unchanged).
 - Not done: a 40 px default-density field with an external label (the spec's non-floating default variant); the leading/trailing icon sizes at compact (20), and the multiline minimum.
+
+## 2026-11-21 Draft: two-axis scroll panes (needs tre 0.6.11)
+- `ScrollView` takes `Orientation: both` (the engine's `scroll_view` with `orientation='both'`, tre main 0.6.11): each axis shows its own bar when the content overflows it, Shift+wheel scrolls sideways, the content keeps its own width. The config window's Files, Structure, Form and Problems panes use it (AC-SCB-03, AC-SCB-18, AC-FRM-15, AC-TRE-13). Seen in a render at 900 px wide: the Files pane gets a horizontal bar under a wide file name, the Structure pane its vertical one.
+- DRAFT: with the released 0.6.10 `orientation='both'` is refused, so the config window would not start; merge only after the 0.6.11 release and the pin move. The test of the new property skips on an older engine.
+- Not here: the Text pane (a text editor with its own scrolling) and the scrollbar look properties (`scrollbar_*`: radius, show policy, per-state colours), which tre main has and the stylesheet does not yet set.
+## 2026-11-21 The engine pin moves from 0.6.10 to 0.6.11
+- `tesserae-engine==0.6.11` (on PyPI; tag `v0.6.11` exists) in `pyproject.toml`, the CI and release font checkouts, README, DEVELOPING and PLAN. 0.6.11 brings what the drafts need: `scroll_view` with `orientation='both'` and the scrollbar properties, `hit_testable`, `vertical_align`, the new roles, state layers, focus outline, scheme baseline colours, `set_defaults`, `first_present`. The suite on the real wheel is CI's job; locally the venv is moved to 0.6.11 first.
+- On the real 0.6.11 wheel the suite passes but for one test: `hit_testable` reads `None` when unset (it was `True`), so `tests/test_pointer_events.py` now asserts "not False".

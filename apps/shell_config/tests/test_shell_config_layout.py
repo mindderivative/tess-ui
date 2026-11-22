@@ -38,8 +38,9 @@ def test_the_folder_path_stays_inside_the_files_pane_and_says_the_whole_path_in_
 
 
 def test_text_in_a_single_line_field_is_centred_vertically(w):
+    """tre 0.6.11 centres a single-line text input by itself (`vertical_align` 'center' is its default); the window no longer pads 7 above and below to fake it."""
     view = w.built.view
-    fields = [view._built.outer[inst.id] for inst, _ in named(w, "field") if inst.widget == "TextInput"]
-    assert fields
-    for node in fields:
-        assert node.get("padding_top") == node.get("padding_bottom") == 7
+    inputs = [view.node(inst.id) for inst, _ in named(w, "field") if inst.widget == "TextInput"]
+    assert inputs
+    for node in inputs:
+        assert node.get("vertical_align") in (None, "center")  # unset: the engine default is centred, and nothing here opts out with "start"

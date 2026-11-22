@@ -118,7 +118,7 @@ certificates, and the rest, is in [Releasing Your App](https://mindderivative.gi
 
 ## Install (development)
 
-Tesserae needs **`tess_re` 0.6.10**, one exact release, which is on PyPI as
+Tesserae needs **`tess_re` 0.6.11**, one exact release, which is on PyPI as
 [`tesserae-engine`](https://pypi.org/project/tesserae-engine/) (imported as
 `tess_re`). Installing Tesserae installs it:
 

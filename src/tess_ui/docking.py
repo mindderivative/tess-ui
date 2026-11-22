@@ -59,6 +59,23 @@ HALF = "half:"
 #: label, a 2 px indicator the tab's width, a 1 px divider under the strip.
 TAB_HEIGHT = 48.0
 TAB_PADDING = 16.0
+
+
+def _density() -> str:
+    from tess_ui import tel
+
+    return str(tel._app_density.get())
+
+
+def tab_height() -> float:
+    """The dock tab height at the app's density (AC-DKP-1): 48, 40, 32; no density is the 48 it always was."""
+    level = _density()
+    return TAB_HEIGHT if not level else tokens.density_token(level, "dock_tab_height")
+
+
+def tab_padding() -> float:
+    level = _density()
+    return TAB_PADDING if not level else tokens.density_token(level, "dock_tab_padding")
 INDICATOR = 2.0
 #: A closable tab's close button: 18 px, with 8 px before it.
 CLOSE_SIZE = 18.0
@@ -151,7 +168,7 @@ class Dock:
         else:
             outer.update({across: float(size), "flex_shrink": 0.0})
         node = self.window.create("box", **outer)
-        strip = self.window.create("box", height=TAB_HEIGHT, flex_direction="horizontal", flex_shrink=0.0,
+        strip = self.window.create("box", height=tab_height(), flex_direction="horizontal", flex_shrink=0.0,
                                    role="tablist", label=f"{side.capitalize()} panels")
         divider = self.window.create("box", height=1.0, flex_shrink=0.0, a11y_hidden=True)
         body = self.window.create("box", flex_grow=1.0, clip_children=True)
@@ -309,7 +326,7 @@ class Dock:
         index = [child == body for child in parent.children()].index(True)
         sizing = {k: body.get(k) for k in ("width", "height", "flex_grow", "flex_shrink", "flex_basis")}
         node = self.window.create("box", flex_direction="vertical", clip_children=True, **sizing)
-        strip = self.window.create("box", height=TAB_HEIGHT, flex_direction="horizontal", flex_shrink=0.0,
+        strip = self.window.create("box", height=tab_height(), flex_direction="horizontal", flex_shrink=0.0,
                                    role="tablist", label=f"{title or name} panels")
         divider = self.window.create("box", height=1.0, flex_shrink=0.0, a11y_hidden=True)
         body.remove()
@@ -391,14 +408,14 @@ class Dock:
             font_weight=style.font_weight, line_height=style.line_height)
         text_width, text_height = math.ceil(text_width), math.ceil(text_height)  # the engine rounds a width down
         room = CLOSE_ROOM if entry.closable else 0.0
-        node = self.window.create("box", height=TAB_HEIGHT, width=text_width + 2 * TAB_PADDING + room, flex_shrink=0.0,
+        node = self.window.create("box", height=tab_height(), width=text_width + 2 * tab_padding() + room, flex_shrink=0.0,
                                   flex_direction="horizontal", align_items="center", justify_content="center", focusable=True, role="tab",
                                   label=entry.title, cursor="pointer")
         label = self.window.create("text", text=entry.title, font_family=style.font_family,
                                    font_size=style.font_size, font_weight=style.font_weight,
                                    line_height=style.line_height, width=text_width, height=text_height,
                                    hit_testable=False, a11y_hidden=True)
-        indicator = self.window.create("box", position="absolute", x=0.0, y=TAB_HEIGHT - INDICATOR, width="100%",
+        indicator = self.window.create("box", position="absolute", x=0.0, y=tab_height() - INDICATOR, width="100%",
                                        height=INDICATOR, hit_testable=False, a11y_hidden=True)
         node.add_child(label)
         close = None
