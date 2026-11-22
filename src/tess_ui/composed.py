@@ -220,6 +220,8 @@ class ComposedView(View):
         self._firing: list[Instance] = []
         self._split_dragging: set[str] = set()
         self._tips: dict[str, tuple[Any, Callable[[], None]]] = {}  # tooltips showing: the node id -> its layer and the Escape listener's undo
+        #: Who listens to the tooltips opening and closing (`on_tooltip_before_change`, `on_tooltip_change`; the behavior standard's events)
+        self.tooltips = behavior.Gate()
         self._tip_undos: list[Callable[[], None]] = []
         self._link_hot: dict[str, set[str]] = {}  # a Link's reasons to be underlined now: 'pointer', 'focus'
         self._link_undos: list[Callable[[], None]] = []
@@ -780,28 +782,38 @@ class ComposedView(View):
                 a11y_module.apply_extras(node, {"description": str(self._tip_value(inst, "text"))})
 
             def start(event: Any = None, inst: Instance = inst) -> None:
-                self.timers.after(float(self._tip_value(inst, "delay", self.TIP_DELAY)), lambda: self._show_tip(inst), name=f"tip:{inst.id}")
+                if inst.id in self._tips:  # back on the trigger while it is open (or closing after the grace): it stays
+                    self.timers.cancel(f"tipclose:{inst.id}")
+                    return
+                self.timers.after(float(self._tip_value(inst, "delay", self.TIP_DELAY)), lambda: self._show_tip(inst, "pointer", "hover"),
+                                  name=f"tip:{inst.id}")
 
             def now(event: Any = None, inst: Instance = inst) -> None:
                 if getattr(event, "focus_visible", True):  # a mouse click that focuses it is not a reason to show it
-                    self._show_tip(inst)
+                    self._show_tip(inst, "keyboard", "focus")
 
             def held(event: Any = None, inst: Instance = inst) -> None:
-                self._show_tip(inst)
+                self._show_tip(inst, "pointer", "long_press")
 
-            def away(event: Any = None, inst: Instance = inst) -> None:
+            def away(event: Any = None, inst: Instance = inst, reason: str = "api", detail: str = "") -> None:
                 self.timers.cancel(f"tip:{inst.id}")
-                self._hide_tip(inst.id)
+                self._hide_tip(inst.id, reason, detail)
+
+            def pressed(event: Any = None, away: Callable[..., None] = away) -> None:
+                away(event, reason="pointer", detail="press")
+
+            def blurred(event: Any = None, away: Callable[..., None] = away) -> None:
+                away(event, reason="keyboard", detail="blur")
 
             def leave(event: Any = None, inst: Instance = inst, away: Callable[..., None] = away) -> None:  # `away` bound now: the loop rebinds the name
                 """A rich tooltip stays while the pointer moves onto it: it goes a moment after the pointer leaves the node, unless it has arrived."""
                 if inst.id in self._tips:
                     self.timers.cancel(f"tip:{inst.id}")
-                    self.timers.after(self.TIP_GRACE, lambda: self._hide_tip(inst.id), name=f"tipclose:{inst.id}")
+                    self.timers.after(self.TIP_GRACE, lambda: self._hide_tip(inst.id, "pointer", "grace"), name=f"tipclose:{inst.id}")
                 else:
                     away(event)
 
-            for event_name, fn in (("pointer_enter", start), ("pointer_leave", leave), ("pointer_down", away), ("focus", now), ("unfocus", away),
+            for event_name, fn in (("pointer_enter", start), ("pointer_leave", leave), ("pointer_down", pressed), ("focus", now), ("unfocus", blurred),
                                    ("long_press", held)):
                 self._tip_undos.append(self._listen(node, event_name, fn))
         for gone in set(self._tips) - live:
@@ -816,10 +828,42 @@ class ComposedView(View):
             style = tokens.TypeStyle(**{f: override.get(f, getattr(style, f)) for f in ("font_family", "font_weight", "font_size", "line_height", "tracking")})
         return {"font_family": style.font_family, "font_size": style.font_size, "font_weight": style.font_weight, **extra}
 
-    def _show_tip(self, inst: Instance) -> None:
+    def on_tooltip_before_change(self, fn: Callable[[Any], None]) -> Callable[[], None]:
+        """Hears each request to open or close a tooltip a user caused (`event.value` is whether it opens; `reason` `pointer` or `keyboard`, `detail`
+        `hover`, `focus`, `long_press`, `grace`, `press`, `escape`, `blur`); `event.cancel()` refuses it. `event.target` is the trigger's id."""
+        self.tooltips.before.append(fn)
+        return lambda: self.tooltips.before.remove(fn) if fn in self.tooltips.before else None
+
+    def on_tooltip_change(self, fn: Callable[[Any], None]) -> Callable[[], None]:
+        """Hears each tooltip that opened or closed, with the reason (`api` for a scroll or the window losing focus, which nobody is asked about)."""
+        self.tooltips.after.append(fn)
+        return lambda: self.tooltips.after.remove(fn) if fn in self.tooltips.after else None
+
+    def _tip_gate(self, opening: bool, inst_id: str, reason: str, detail: str, then: Callable[[], None]) -> None:
+        """Runs `then` (the show or hide) as a change of the tooltip of `inst_id`: asked about first when a user caused it and someone listens."""
+        gate = self.tooltips
+        if reason == "api" or not gate.active:
+            then()
+        else:
+            request = behavior.ChangeEvent("before_change", not opening, opening, reason, detail, target=inst_id)
+            for listener in list(gate.before):
+                listener(request)
+            if request.cancelled:
+                return
+            then()
+        if gate.after:
+            done = behavior.ChangeEvent("change", not opening, opening, reason, detail, target=inst_id)
+            for listener in list(gate.after):
+                listener(done)
+
+    def _show_tip(self, inst: Instance, reason: str = "api", detail: str = "") -> None:
         text = self._tip_value(inst, "text")
         if inst.id in self._tips or not text or not str(text).strip() or inst.id not in self._built.outer:
             return
+        self._tip_gate(True, inst.id, reason, detail, lambda: self._open_tip(inst))
+
+    def _open_tip(self, inst: Instance) -> None:
+        text = self._tip_value(inst, "text")
         for other in list(self._tips):  # one tooltip at a time: the node the pointer is on now (or the focus) is the one that explains itself
             self._hide_tip(other)
         scheme = self._scheme or tokens.BASELINE
@@ -831,7 +875,7 @@ class ComposedView(View):
         layer = self.window.create(
             "box", flex_direction="vertical", gap=4.0, fill=scheme["surface_container" if rich else "inverse_surface"],
             corner_radius=12.0 if rich else 4.0, max_width=self.TIP_WIDTH, padding_left=pad_x, padding_right=pad_x, padding_top=pad_y,
-            padding_bottom=pad_y, hit_testable=True, a11y_hidden=True,
+            padding_bottom=pad_y, hit_testable=True, a11y_hidden=True, role="tooltip",
             shadows=tokens.elevation_shadows(2) if rich else [])
         if title:
             layer.add_child(self.window.create("text", text=str(title), fill=ink, **self._tip_text("title_small")))
@@ -850,21 +894,21 @@ class ComposedView(View):
         if True:  # the pointer on the tooltip keeps it (plain too, ADR-0011); leaving it closes it after the grace
             undos.append(self._listen(layer, "pointer_enter", lambda event, inst_id=inst.id: self.timers.cancel(f"tipclose:{inst_id}")))
             undos.append(self._listen(layer, "pointer_leave", lambda event, inst_id=inst.id: self.timers.after(
-                self.TIP_GRACE, lambda: self._hide_tip(inst_id), name=f"tipclose:{inst_id}")))
+                self.TIP_GRACE, lambda: self._hide_tip(inst_id, "pointer", "grace"), name=f"tipclose:{inst_id}")))
         self.window.show_layer(layer, anchor=self._built.outer[inst.id], placement=self._tip_value(inst, "placement", "below"), modal=False,
                                dismissible=False)
 
         def dismiss(event: Any, inst_id: str = inst.id) -> None:
             if event.key in ("escape", "enter", "space"):  # Escape, and activating the trigger from the keyboard (WCAG 1.4.13 dismissible; ADR-0004)
-                self._hide_tip(inst_id)
+                self._hide_tip(inst_id, "keyboard", "escape" if event.key == "escape" else "press")
 
         def scrolled(event: Any = None, inst_id: str = inst.id) -> None:
-            self._hide_tip(inst_id)  # a scroll of any ancestor moves the trigger from under the tip (AC-TIP-6)
+            self._hide_tip(inst_id, "api", "scroll")  # a scroll of any ancestor moves the trigger from under the tip (AC-TIP-6)
 
         undos.append(self._listen(self.window.root, "key_down", dismiss))
         def deactivated(event: Any, inst_id: str = inst.id) -> None:
             if not getattr(event, "active", True):
-                self._hide_tip(inst_id)  # the window lost the focus (AC-TIP-8c)
+                self._hide_tip(inst_id, "api", "window")  # the window lost the focus (AC-TIP-8c)
 
         undos.append(listen_window(self.window, "active", deactivated))
         ancestor = inst.parent
@@ -874,9 +918,13 @@ class ComposedView(View):
             ancestor = ancestor.parent
         self._tips[inst.id] = (layer, lambda: [undo() for undo in undos])
 
-    def _hide_tip(self, inst_id: str) -> None:
-        shown = self._tips.pop(inst_id, None)
+    def _hide_tip(self, inst_id: str, reason: str = "api", detail: str = "") -> None:
         self.timers.cancel(f"tipclose:{inst_id}")
+        if inst_id in self._tips:
+            self._tip_gate(False, inst_id, reason, detail, lambda: self._close_tip(inst_id))
+
+    def _close_tip(self, inst_id: str) -> None:
+        shown = self._tips.pop(inst_id, None)
         if shown is not None:
             shown[1]()
             self.window.hide_layer(shown[0])

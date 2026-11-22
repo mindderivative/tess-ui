@@ -1,8 +1,8 @@
 """tess-ui as a host of the behavior standard's `tooltip`: a real `Tooltip:` on a button in a scrolling pane, driven through `window.simulate`
 and read back (its open state is whether the view shows a tip layer). See `search_bar_host.py` for the principles.
 
-The tooltip emits no behavior events (`tess_ui.behavior` is not wired into it), so the adapter reports only what it can observe itself,
-`focus_move`; a case that expects `before_change` and `change` fails on its events until the tooltip emits them."""
+The tooltip's own events are read from the view (`on_tooltip_before_change`, `on_tooltip_change`: reason and detail as the standard names
+them); only `focus_move` is derived, from the focused part changing, with the reason of the input that caused it."""
 
 from __future__ import annotations
 
@@ -91,6 +91,9 @@ class TooltipHost:
         self.window.advance(16)
         self._away()
         self._settle()
+        self._heard: list[Event] = []
+        self.view.on_tooltip_before_change(lambda change: self._heard.append(Event("before_change", _fields(change), cancelable=True)))
+        self.view.on_tooltip_change(lambda change: self._heard.append(Event("change", _fields(change))))
 
     # -- geometry --------------------------------------------------------------------------------------------------
 
@@ -141,6 +144,7 @@ class TooltipHost:
 
     def dispatch(self, event: Input) -> Outcome:
         before = self.focus
+        self._heard.clear()
         w = self.window
         match event:
             case PointerInput(part, kind):
@@ -178,7 +182,20 @@ class TooltipHost:
             case TextInput() | PressInput() | SetOptionInput():
                 raise NotRun("not an input of a tooltip")
         self._settle()
-        events: list[Event] = []
+        events = list(self._heard)  # what the tooltip reported itself
         if self.focus != before:
-            events.append(Event("focus_move", {"from": before, "to": self.focus, "reason": "keyboard"}))
+            moved = Event("focus_move", {"from": before, "to": self.focus, "reason": self._focus_reason(event)})
+            # the standard's order: a focus input moves focus and then its handlers answer; a pointer down runs its handlers first (SPEC 3.0)
+            events = [moved, *events] if isinstance(event, FocusInput) else [*events, moved]
         return Outcome(events, consumed=False)
+
+    @staticmethod
+    def _focus_reason(event: Input) -> str:
+        """The reason of the input that moved focus: a pointer press is the pointer's, a focus input says its own, anything else the keyboard's."""
+        if isinstance(event, PointerInput):
+            return "pointer"
+        return event.via if isinstance(event, FocusInput) else "keyboard"
+
+
+def _fields(change: Any) -> dict[str, Any]:
+    return {"reason": change.reason, "detail": change.detail, "previous": change.previous, "value": change.value}
