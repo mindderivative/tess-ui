@@ -43,9 +43,9 @@ Listen = Callable[[Any, str, Callable[[Any], None]], Callable[[], None]]
 HOVERED, FOCUSED, PRESSED, DRAGGED = (tokens.STATE_LAYER[k] for k in ("hover", "focus", "pressed", "dragged"))
 
 #: Material Web's `md-ripple` timing, in ms.
-#: The state layers' fades, per state (the engine's `hover_layer_ms`, `pressed_layer_ms`, `focus_layer_ms`): the spec's 105 ms for pressed and 150 ms for focus. Hover is
-#: the engine's own 100 ms, not the spec's 15 ms, until tre fixes its 15 ms hover leaving a layer pixel behind on the real compositor.
-HOVER_MS = 100
+#: The state layers' fades, per state (the engine's `hover_layer_ms`, `pressed_layer_ms`, `focus_layer_ms`): the spec's 15 ms for hover, 105 ms for pressed and
+#: 150 ms for focus. Hover was held at the engine's 100 ms while a 15 ms fade left a layer pixel behind (the engine lost the last frame of an animation); tre 0.6.13 fixed that.
+HOVER_MS = tokens.RIPPLE_MS["hover_fade"]
 PRESSED_LAYER_MS = tokens.RIPPLE_MS["press_fade_in"]
 FOCUS_LAYER_MS = 150
 PRESS_GROW_MS = tokens.RIPPLE_MS["press_grow"]

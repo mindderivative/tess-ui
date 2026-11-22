@@ -3789,3 +3789,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-22 The engine pin moves to 0.6.13
 - `tesserae-engine==0.6.13` (pyproject, the font checkout `v0.6.13` in ci.yml and release.yml, README, DEVELOPING, PLAN). 0.6.13 brings the lost-last-frame fix (a 15 ms hover fade no longer leaves a layer pixel behind), `scrollbar_*` on a multiline `text_input`, and multi-selection for containers; each is adopted in its own PR.
+
+## 2026-11-22 The hover layer fades in 15 ms (tre 0.6.13)
+- `interaction.HOVER_MS` is `tokens.RIPPLE_MS["hover_fade"]` (15) again: the state layers fade at the spec's 15 ms hover, 105 ms pressed and 150 ms focus. It was held at 100 ms while the engine lost the last frame of an animation and a 15 ms hover left one layer pixel behind; 0.6.13 fixed that. A headless pixel test visits a button for 1, 2, 3, 8 and 20 frames and checks the pixel comes back each time; the real compositor has not been looked at by me.
