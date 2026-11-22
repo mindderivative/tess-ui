@@ -96,6 +96,10 @@ def scroll_edges(offset: float, viewport: float, length: float) -> tuple[bool, b
     return offset <= SCROLL_EDGE, laid_out and offset >= length - viewport - SCROLL_EDGE
 
 
+def event_shift(event: Any) -> bool:
+    return bool(getattr(event, "shift", False))
+
+
 def builtin_actions(view_ref: Callable[[], Any], window: Any = None) -> Callable[..., Optional[Callable[..., Any]]]:
     """The actions a handler may call without a ViewModel: `window.<action>`, `navigate.<screen>`, `navigate_to(screen[, params])`, `navigate_route(path)`, `open_window(view[, modal])`, `surface.dismiss` and
     `focus(name)`, `capture()`, `release()`, `cursor(name)`, `copy(text)`, `paste()`, `open_url(url)`, `after(ms, action[, name])`, `every(ms, action[, name])` and `cancel(name)`. `view_ref()` is the `ComposedView` they act for (it does not exist yet when composing starts); `window` is the one it will be on, which is how `app` is found then."""
@@ -205,6 +209,7 @@ class ComposedView(View):
         self._typing_wired: set[str] = set()
         self._state_undos: list[Callable[[], None]] = []
         self._group_undos: list[Callable[[], None]] = []
+        self._selection_undos: list[Callable[[], None]] = []
         self._active: dict[str, str] = {}  # a focus group's id -> the id of the item that holds its tab stop
         self._ahead = TypeAhead()
         self._observed: set[int] = set()
@@ -368,6 +373,7 @@ class ComposedView(View):
             untrack(self._wire_measures)
             untrack(self._wire_states)
             untrack(self._wire_focus_groups)
+            untrack(self._wire_selection)
             untrack(lambda: self.root.get("visible") != visible and self.root.set(visible=visible))
         finally:
             self._syncing = False
@@ -1211,27 +1217,27 @@ class ComposedView(View):
         raise ValueError(f"focus({name!r}): no node by that name in this view")
 
     def tree_focus(self, key: str, is_open: bool, is_branch: bool, level: int) -> None:
-        """A tree row's arrow keys that move the focus (the Tree note): Right on an open branch goes to its first child, Left on a leaf or a closed branch that is not a root goes
-        to its parent. What the row's handler knows is passed in (`is_open`, `is_branch`, `level` as of the key press, before the handler opens or closes anything)."""
+        """The tree's arrow keys that move the focus (the Tree note): Right on an open branch goes to its first child, Left on a leaf or a closed branch that is not a root goes
+        to its parent. It acts on the row that has the focus; what the tree's key handler knows of it is passed in (`is_open`, `is_branch`, `level` as of the key press, before the handler opens or closes anything)."""
         if not self._firing:
-            raise ValueError("tree_focus() acts on the row whose handler is running")
-        row = self._firing[-1]
-        group = row.parent
+            raise ValueError("tree_focus() acts for the tree whose key handler is running")
+        group: Optional[Instance] = self._firing[-1]
         while group is not None and group.focus_group is None:
             group = group.parent
         if group is None:
             return
         items = self._focus_items(group)
-        index = next((i for i, (inst, _) in enumerate(items) if inst is row), None)
+        index = next((i for i, (_, node) in enumerate(items) if node.get("focused")), None)  # the row that has the focus (what the key was typed on)
         if index is None:
             return
+        # the focus moves on the next tick: the handler's own `Set` reads the row that had the focus when the key was pressed
         if key == "arrow_right" and is_branch and is_open and index + 1 < len(items):
-            items[index + 1][1].focus()
+            self.window.after(0, items[index + 1][1].focus)
         elif key == "arrow_left" and not (is_branch and is_open) and level > 0:
             for i in range(index - 1, -1, -1):
                 held: Any = items[i][0].a11y.get("level")
                 if int((held.get() if hasattr(held, "get") else held) or 1) - 1 == level - 1:
-                    items[i][1].focus()
+                    self.window.after(0, items[i][1].focus)
                     return
 
     def _focus_items(self, group: Instance) -> list[tuple[Instance, Any]]:
@@ -1319,10 +1325,69 @@ class ComposedView(View):
                 else:
                     return
                 hold(target)
-                items[target][1].focus()
+                if event_shift(event) and self._selects_many(group) and (key in before or key in after or key in ("home", "end")):
+                    self.window.after(0, items[target][1].focus)  # the engine's range runs after this handler, from the row that still has the focus
+                else:
+                    items[target][1].focus()
 
             self._group_undos.append(self._listen(box, "focus", on_focus))
             self._group_undos.append(self._listen(box, "key_down", on_key))
+
+    def _selects_many(self, group: Instance) -> bool:
+        return "selection_mode" in group.props and group.value("selection_mode") == "multiple"
+
+    def _wire_selection(self) -> None:
+        """A Container with a `selection_mode` has the engine choose among its children that have a `selection_key`, and keeps `selection` (the keys) in step both ways.
+        The engine holds the chosen children by index, so a row that appears or goes (a branch opening) is not in the engine's set the way the keys say: after every build
+        the set is rewritten from the keys. A key no child has now is kept: what is chosen and hidden stays chosen (AC-SLT-7), until a plain click chooses only one row."""
+        for undo in self._selection_undos:
+            undo()
+        self._selection_undos = []
+        for group in self.handle.composition.walk():
+            if group.widget != "Container" or group.id not in self._built.nodes or "selection_mode" not in group.props:
+                continue
+            mode = group.value("selection_mode")
+            if mode not in ("single", "multiple"):
+                continue
+            box = self._built.nodes[group.id]
+            rows: dict[Any, Any] = {}
+            for sub in group.walk():
+                if sub is not group and "selection_key" in sub.props and sub.id in self._built.nodes:
+                    rows[sub.value("selection_key")] = self._built.nodes[sub.id]
+                    self._built.nodes[sub.id].set(item_selectable=bool(sub.value("item_selectable")) if "item_selectable" in sub.props else True)
+            announce = group.value("selection_announce") if "selection_announce" in group.props else ""
+            box.set(selection_mode=mode, select_all_key=True, selection_announce=announce or None)
+            held = group.models.get("selection")
+
+            def keys(group: Instance = group) -> list[Any]:
+                return list(group.value("selection") or []) if "selection" in group.props else []
+
+            def push(box: Any = box, rows: dict = rows, keys: Callable = keys) -> None:
+                chosen = [rows[key] for key in keys() if key in rows]
+                if list(box.get("selection")) != chosen:
+                    box.set(selection=chosen)
+
+            plain = [True]
+
+            def pressed(event: Any, plain: list = plain) -> None:
+                plain[0] = not (getattr(event, "ctrl", False) or getattr(event, "shift", False) or getattr(event, "meta", False))
+
+            def changed(event: Any, rows: dict = rows, keys: Callable = keys, held: Any = held, plain: list = plain) -> None:
+                if held is None:
+                    return
+                chosen = list(event.selection or [])
+                shown = [key for key, node in rows.items() if node in chosen]
+                kept = [] if getattr(event, "selection_source", None) == "pointer" and plain[0] else [key for key in keys() if key not in rows]
+                new = [*kept, *shown]
+                if new != keys():
+                    name, scope = held
+                    scope.assign(name, new)
+
+            self._selection_undos.append(self._listen(box, "pointer_down", pressed))
+            self._selection_undos.append(self._listen(box, "selection_change", changed))
+            if "selection" in group.props:
+                effect = Effect(push)
+                self._selection_undos.append(effect.dispose)
 
     def _typeahead(self, key: str, current: int, items: list[tuple[Instance, Any]]) -> Optional[int]:
         """The item whose name starts with what has been typed (`tess_ui.typeahead`), searching on from the current one."""

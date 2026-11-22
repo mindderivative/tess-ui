@@ -12,11 +12,26 @@ Container {
     Nodes { Type: list, Default: [], Doc: "The rows: {value, label} and optionally {icon, children, disabled}; children are the same shape." }
     Expanded { Type: list, Default: [], Model: true, Doc: "The values of the branches that are open." }
     Selected { Type: any, Default: "", Model: true, Doc: "The value of the chosen row." }
+    Selection { Type: list, Default: [], Model: true, Doc: "With `Multiple`: the values of the chosen rows. Two-way. A chosen row inside a closed branch stays in it." }
+    Multiple { Type: bool, Default: false, Doc: "Choose several rows: click chooses one, Ctrl+click toggles, Shift+click and Shift+Arrow choose a range, Space toggles, Ctrl+A chooses every row that shows (AC-SLT-7). `Selected` then follows the last row pressed." }
     Compact { Type: bool, Default: false, Doc: "40 pixel rows instead of 56 (at no density)." }
     Density { Type: str, Default: "", Doc: "`default`, `compact` or `dense`: the spec's density table for the rows; empty follows the app's `App(density=)`." }
     Label { Type: str, Default: "Tree", Doc: "The tree's accessible name: what the pane is (Files, Structure), not the word Tree (AC-TRE-01)." }
   }
   Focus_Group: vertical
+  Selection_Mode: <| 'multiple' if multiple else 'none' |>
+  Selection: <| selection |>
+  Selection_Announce: <| '{count} selected' if multiple else '' |>
+  State { Current { } }
+  Handlers {
+    On_Key {
+      Call { Action: "tree_focus", Args: [<| event.key |>, <| tree_row(nodes, expanded, current)['open'] |>, <| tree_row(nodes, expanded, current)['branch'] |>, <| tree_row(nodes, expanded, current)['level'] |>] }
+      Set {
+        Target: expanded
+        Value: <| (expanded + [current]) if (event.key == 'arrow_right' and tree_row(nodes, expanded, current)['branch'] and not tree_row(nodes, expanded, current)['open']) else (([v for v in expanded if v != current]) if (event.key == 'arrow_left' and tree_row(nodes, expanded, current)['open']) else (expanded + [v for v in tree_row(nodes, expanded, current)['siblings_branches'] if v not in expanded] if event.key == '*' else expanded)) |>
+      }
+    }
+  }
   A11y { Role: tree, Label: <| label |> }
   Style { Flex_Direction: vertical, Width: 100% }
   Children {
@@ -30,23 +45,18 @@ Container {
         Pos_In_Set: <| r['pos_in_set'] |>
         Branch: <| r['branch'] |>
         Expanded: <| r['open'] |>
-        Selected: <| r['value'] == selected |>
+        Selection_Key: <| r['value'] |>
+        Selected: <| (r['value'] in selection) if multiple else (r['value'] == selected) |>
         Compact: <| compact |>
         Density: <| density |>
         Disabled: <| r['disabled'] |>
         Handlers {
+          On_Focus_Enter { Set { Target: current, Value: <| r['value'] |> } }
           On_Click {
             Set { Target: selected, Value: <| r['value'] |> }
             Set {
               Target: expanded
-              Value: <| ([v for v in expanded if v != r['value']] if r['open'] else expanded + [r['value']]) if r['branch'] else expanded |>
-            }
-          }
-          On_Key {
-            Call { Action: "tree_focus", Args: [<| event.key |>, <| r['open'] |>, <| r['branch'] |>, <| r['level'] |>] }
-            Set {
-              Target: expanded
-              Value: <| (expanded + [r['value']]) if (event.key == 'arrow_right' and r['branch'] and not r['open']) else (([v for v in expanded if v != r['value']]) if (event.key == 'arrow_left' and r['open']) else (expanded + [v for v in r['siblings_branches'] if v not in expanded] if event.key == '*' else expanded)) |>
+              Value: <| ([v for v in expanded if v != r['value']] if r['open'] else expanded + [r['value']]) if (r['branch'] and not (event.ctrl or event.shift)) else expanded |>
             }
           }
         }

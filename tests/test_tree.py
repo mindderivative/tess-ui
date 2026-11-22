@@ -27,6 +27,7 @@ class VM(ViewModel):
         super().__init__()
         self.open = Signal(["docs"])
         self.sel = Signal("a")
+        self.picked = Signal([])
 
 
 def opened(tmp_path, props=""):

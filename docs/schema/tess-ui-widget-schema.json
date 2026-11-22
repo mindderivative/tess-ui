@@ -4430,6 +4430,61 @@
               }
             ],
             "description": "Output: how tall it is laid out."
+          },
+          "selection_mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "none",
+                  "single",
+                  "multiple"
+                ]
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "Whether the engine chooses among the children that have a `selection_key`: `multiple` is click, Ctrl and Shift click and Shift+Arrow ranges, Space, Ctrl+A (the Selection pattern's rules); `none` chooses nothing. The container then has no key handler on its rows: the engine's keys are blocked by one."
+          },
+          "selection": {
+            "anyOf": [
+              {
+                "type": "array"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "With a `selection_mode`: the keys (`selection_key`) of the chosen children. Two-way. A key that no child has now (a row not built, a closed branch's child) stays in it until its child is chosen or cleared again."
+          },
+          "selection_announce": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "What assistive technology reads when the selection changes, `{count}` being how many; empty is silent."
+          },
+          "selection_key": {
+            "description": "On a child of a container with a `selection_mode`: what names it in `selection`."
+          },
+          "item_selectable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "On a child of a container with a `selection_mode`: false keeps it from being chosen or reached by Tab and click."
           }
         },
         "required": [
@@ -4460,7 +4515,12 @@
             "children",
             "disabled",
             "measured_width",
-            "measured_height"
+            "measured_height",
+            "selection_mode",
+            "selection",
+            "selection_announce",
+            "selection_key",
+            "item_selectable"
           ]
         }
       }
@@ -22843,6 +22903,30 @@
           "selected": {
             "description": "The value of the chosen row."
           },
+          "selection": {
+            "anyOf": [
+              {
+                "type": "array"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "With `Multiple`: the values of the chosen rows. Two-way. A chosen row inside a closed branch stays in it."
+          },
+          "multiple": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "Choose several rows: click chooses one, Ctrl+click toggles, Shift+click and Shift+Arrow choose a range, Space toggles, Ctrl+A chooses every row that shows (AC-SLT-7). `Selected` then follows the last row pressed."
+          },
           "compact": {
             "anyOf": [
               {
@@ -22909,6 +22993,8 @@
             "nodes",
             "expanded",
             "selected",
+            "selection",
+            "multiple",
             "compact",
             "density",
             "label"
@@ -23145,6 +23231,9 @@
             ],
             "description": "`default`, `compact` or `dense`: the spec's density table (row height, padding, indent, chevron box). Empty follows the app's (`App(density=)`). At `default` a row keeps its Material size, 56 pixels (40 with `Compact`)."
           },
+          "selection_key": {
+            "description": "What names the row in a `Tree`'s `Selection`; the tree sets it."
+          },
           "disabled": {
             "anyOf": [
               {
@@ -23194,6 +23283,7 @@
             "selected",
             "compact",
             "density",
+            "selection_key",
             "disabled"
           ]
         }
