@@ -1,6 +1,6 @@
 """The default Focus mode by role (the behavior standard, SPEC 2.3a) on tess-ui's real widgets: `tab` roles are one Tab stop each, `roving` roles are
-one Tab stop for the whole group (arrows move inside), `none` roles take none. The table is pinned here for the widgets that follow it; the ones
-that do not are pinned as they are in `DISAGREEMENTS`, so fixing one fails its test until the entry is removed."""
+one Tab stop for the whole group (arrows move inside), `none` roles take none. The table is pinned here for the widgets that follow it; the one
+that does not is pinned as it is in `DISAGREEMENTS`, so fixing it fails its test until the entry is removed."""
 
 import pytest
 import tess_re
@@ -74,17 +74,36 @@ def _radios(window):
 
 #: What the widgets do that the table says otherwise: name -> (how many Tab stops there are, how many the table wants, why).
 DISAGREEMENTS = {
-    "menu items": (3, 1, "a menu's items are a Tab stop each; the table says menuitem is roving (one stop, arrows inside)"),
     "list items": (2, 0, "a list's items have the role listitem, which is not a role of the standard, and each is a Tab stop"),
 }
 
 
-def test_a_menus_items_are_each_a_tab_stop_not_one_for_the_group():
+def test_a_menus_items_are_one_tab_stop_for_the_menu_and_the_stop_follows_the_focus():
     window = _window()
+    button = W.button(window, "Open", 100, 40)
+    window.advance(16)
     menu = W.menu(window, [("A", None), ("B", None), ("C", None)])
-    menu.open_at(10, 10)
+    button.node.focus()
+    menu.open(button.node)
     window.advance(32)
-    assert TABLE["menuitem"] == "roving" and _stops(menu.node, "menuitem") == DISAGREEMENTS["menu items"][0]
+    stop = lambda: [item.get("tab_index") for item in menu.items]  # noqa: E731
+    assert TABLE["menuitem"] == "roving" and stop() == [0, -1, -1]
+    window.simulate("key_down", key="arrow_down")
+    window.advance(16)
+    assert stop() == [-1, 0, -1] and menu.items[1].get("focused")
+
+
+def test_tab_leaves_a_menu_and_focus_goes_back_to_the_opener():
+    window = _window()
+    button = W.button(window, "Open", 100, 40)
+    window.advance(16)
+    menu = W.menu(window, [("A", None), ("B", None)])
+    button.node.focus()
+    menu.open(button.node)
+    window.advance(32)
+    window.simulate("key_down", key="tab")
+    window.advance(32)
+    assert not menu.is_open and button.node.get("focused")
 
 
 def test_a_lists_items_are_each_a_tab_stop_and_their_role_is_not_the_standards():
