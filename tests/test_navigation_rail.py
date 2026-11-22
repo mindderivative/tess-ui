@@ -160,7 +160,7 @@ def test_one_tab_stop_and_the_arrows_move_and_choose(tmp_path):
     view.window.simulate("key_down", key="arrow_down")
     settle(view, 10)
     assert vm.page.get() == "menu"
-    view.window.simulate("key_down", key="Home")
+    view.window.simulate("key_down", key="home")
     settle(view, 10)
     assert vm.page.get() == "home"
 

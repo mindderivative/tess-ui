@@ -146,10 +146,10 @@ def test_the_arrows_move_the_focus_along_the_bar_and_choose_the_tab(tmp_path):
     view.window.simulate("key_down", key="arrow_right")
     settle(view)
     assert vm.plain.get() == "b"
-    view.window.simulate("key_down", key="End")
+    view.window.simulate("key_down", key="end")
     settle(view)
     assert vm.plain.get() == "c"
-    view.window.simulate("key_down", key="Home")
+    view.window.simulate("key_down", key="home")
     settle(view)
     assert vm.plain.get() == "a"
 
