@@ -24,6 +24,7 @@ Container {
     Selected { Type: bool, Default: false, Model: true, Doc: "Whether it is selected." }
     Disabled { Type: bool, Default: false, Doc: "Dimmed, not focusable, and it does not respond." }
     Divider { Type: bool, Default: false, Doc: "A line along the bottom edge." }
+    Actionable { Type: bool, Default: true, Doc: "Whether the row is a Tab stop that a press and Enter act on. False for a row that only shows something (a plain list's row): it takes no focus (Focus none)." }
   }
   Interaction: true
   Disabled: <| disabled |>
@@ -40,6 +41,7 @@ Container {
     Role: listitem
     Label: <| headline |>
     Selected: <| selected if selectable else None |>
+    Focusable: <| actionable |>
     Description: <| supporting |>
   }
   Children {

@@ -41,7 +41,7 @@ def card(
     """MD3's card: elevated, filled or
     outlined. Content-free: add to `.node`. `on_click` makes it an
     actionable card, with MD3's feedback."""
-    call = Call("Card", props={"variant": _variant("card", variant, _CARDS), "bare": True, "actionable": on_click is not None or None},
+    call = Call("Card", props={"variant": _variant("card", variant, _CARDS), "bare": True, "actionable": on_click is not None},
                 style={"width": width, "height": height, **_border(border_color, border_width)})
     widget = Widget(window, call=call, components={None: f"card.{variant}"}, theme=theme, x=x, y=y, name="card")
     if on_click is not None:
@@ -85,7 +85,9 @@ def list_(
         node = getattr(item, "node", item)
         node.set(width=float(width))
         widget.node.add_child(node)
-        a11y.describe(node, role="option" if selectable else "listitem")
+        action = getattr(getattr(item, "actionable", None), "get", lambda: False)()
+        if selectable or not action:  # a plain list's row that has an action stays the button it is
+            a11y.describe(node, role="option" if selectable else "listitem")
         nodes.append(node)
     if selectable:
         _selectable(widget, items, nodes, selected)
@@ -138,6 +140,8 @@ def _selectable(widget: Widget, items: list[Any], nodes: list[Any], start: int |
         return lambda event: pick(i, "pointer" if getattr(event, "button", None) else "keyboard")  # no button: Enter or Space activated it
 
     for i, node in enumerate(nodes):
+        if hasattr(items[i], "actionable"):
+            items[i].actionable.set(True)  # a selectable list's rows are what the user picks
         node.set(focusable=True)
         widget._undo.append(widget.view._listen(node, "focus", rove(i)))
         widget._undo.append(widget.view._listen(node, "key_down", key(i)))
@@ -172,13 +176,15 @@ def list_item(
     is a `Signal`: while true the row is a secondary container (`list_`
     drives it in a selectable list)."""
     selected_signal = Signal(bool(selected))
+    actionable_signal = Signal(on_click is not None)  # a row that does something is a Tab stop; one that only shows something is not
     call = Call("ListItem", props={"headline": headline, "supporting": supporting_text, "leading_icon": leading_icon, "trailing_icon": trailing_icon,
-                                   "selected": selected_signal},
+                                   "selected": selected_signal, "actionable": actionable_signal},
                 style={"width": width, **_border(border_color, border_width)})
     widget = Widget(window, call=call, components={None: "list_item"},
                     parts={"headline": "text.headline", "supporting": "text.supporting", "leading": "leading_icon", "trailing": "trailing_icon"},
                     theme=theme, x=x, y=y, name="list_item")
     widget.selected = selected_signal  # type: ignore[attr-defined]
+    widget.actionable = actionable_signal  # type: ignore[attr-defined]
     if on_click is not None:
         widget.on_click(on_click)
     return widget

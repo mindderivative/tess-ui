@@ -142,7 +142,7 @@ def on_action(node: Any, handlers: dict[str, Callable[[Any], Any]],
 #: The fields `bind` can keep up to date (M47 Q2): values that change as
 #: the app runs. `role` and `live` say what a node is and how it's
 #: announced, so they're set once, with `describe`.
-BINDABLE = ("label", "hidden", "level", "checked", "selected", "expanded", "value", "value_min", "value_max", "value_step", *EXTRAS)
+BINDABLE = ("label", "hidden", "level", "checked", "selected", "expanded", "value", "value_min", "value_max", "value_step", "focusable", *EXTRAS)
 
 
 def bind(node: Any, **fields: Any) -> Callable[[], None]:
