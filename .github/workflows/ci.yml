@@ -83,7 +83,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: mindderivative/tess-re
-          ref: v0.6.12
+          ref: v0.6.13
           path: tess-re
           sparse-checkout: crates/engine-render/assets/fonts  # only the font file: the engine's source is not built here
 
@@ -139,7 +139,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: mindderivative/tess-re
-          ref: v0.6.12
+          ref: v0.6.13
           path: tess-re
           sparse-checkout: crates/engine-render/assets/fonts
 
