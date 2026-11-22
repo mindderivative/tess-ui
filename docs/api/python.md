@@ -931,7 +931,8 @@ list_(
     theme: 'Theme | None' = None,
     selectable: str | None = None,
     selected: int | list[int] | None = None,
-    announce: str | None = '{count} selected'
+    announce: str | None = '{count} selected',
+    unselectable: list[int] | None = None
 ) -> Widget
 ```
 
@@ -954,7 +955,8 @@ list_item(
     *,
     theme: 'Theme | None' = None,
     on_click: Callable[[], Any] | None = None,
-    selected: bool = False
+    selected: bool = False,
+    disabled: bool = False
 ) -> Widget
 ```
 

@@ -121,8 +121,6 @@ class _Host:
 def _require(given: dict[str, Any], what: str, controlled: bool) -> None:
     if controlled:
         raise NotRun(f"{what}'s selection is not controlled by the host")
-    if any(entry.get("unselectable") for entry in given["items"]):
-        raise NotRun(f"{what} has no unselectable rows")
     if given["select_on_focus"]:
         raise NotRun(f"{what} never selects on focus")
     if given["select_all_key"] is not True and given["selection_mode"] == "multiple":
@@ -138,16 +136,15 @@ class ListHost(_Host):
     def __init__(self, spec: Spec, options: dict[str, Any] | None, controlled: bool, responses: list[str]) -> None:
         given = {**DEFAULTS, **(options or {})}
         _require(given, "list_", controlled)
-        if any(entry.get("disabled") for entry in given["items"]):
-            raise NotRun("a list_item has no disabled state")
         self.single = given["selection_mode"] == "single"
         self.ids = [entry["id"] for entry in given["items"]]
         self.window = tess_re.Window(width=600, height=600)
         self.window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, align_items="flex_start", flex_direction="vertical")
-        self.rows = [list_item(self.window, entry["label"]) for entry in given["items"]]
+        self.rows = [list_item(self.window, entry["label"], disabled=bool(entry.get("disabled"))) for entry in given["items"]]
         start = [self.ids.index(i) for i in given["selection"]]
         self.box = list_(self.window, self.rows, selectable="single" if self.single else "multiple",
-                         selected=(start[0] if start else None) if self.single else start, announce="{count} selected")
+                         selected=(start[0] if start else None) if self.single else start, announce="{count} selected",
+                         unselectable=[i for i, entry in enumerate(given["items"]) if entry.get("unselectable")])
         self.box.node.set(min_height=56.0 * len(self.rows) + 120.0)  # room below the rows, where a press chooses none
         self._begin()
         if self.single:
@@ -224,6 +221,8 @@ class TreeHost(_Host):
     def __init__(self, tmp_path: Any, spec: Spec, options: dict[str, Any] | None, controlled: bool, responses: list[str]) -> None:
         given = {**DEFAULTS, **(options or {})}
         _require(given, "the Tree", controlled)
+        if any(entry.get("unselectable") for entry in given["items"]):
+            raise NotRun("the Tree has no unselectable rows")
         self.single = given["selection_mode"] == "single"
         self.ids = [entry["id"] for entry in given["items"]]
         (tmp_path / "Views").mkdir(exist_ok=True)

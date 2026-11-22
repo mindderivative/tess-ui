@@ -19,8 +19,8 @@ WHY = {
     "anchor": "a single-mode list or tree has no anchor to read: the engine keeps one only for a multiple selection",
     "order": "the focus moves after the engine has made the range (Shift+Arrow), the standard has focus_move first",
     "announce": "the engine's announcement (`selection_announce`) cannot be read back from a headless window",
-    "disabled": "a `list_item` has no disabled state",
-    "unselectable": "the widget has no unselectable rows (a row that takes focus but is never chosen)",
+    "consumed": "`consumed` is not observable: the adapter reports whether any event came, and a Space on an unselectable row is consumed without one",
+    "unselectable": "the Tree has no unselectable rows (a row that takes focus but is never chosen)",
     "ctrl_a": "Ctrl+A cannot be switched off",
     "on_focus": "selection never follows focus",
 }
@@ -31,11 +31,11 @@ _COMMON = {
     "announce-clear": (NOT_RUN, "announce"), "announce-once-after-300ms": (NOT_RUN, "announce"), "announce-range": (NOT_RUN, "announce"),
     "announce-select-all": (NOT_RUN, "announce"), "announce-single-none": (FAIL, "anchor"), "api-set-is-not-announced": (NOT_RUN, "announce"),
     "select-all-key-off": (NOT_RUN, "ctrl_a"), "single-mode-keeps-before-change": (FAIL, "anchor"), "single-select-on-focus": (NOT_RUN, "on_focus"),
-    "single-space-chooses": (FAIL, "anchor"), **dict.fromkeys(_UNSEL, (NOT_RUN, "unselectable")),
+    "single-space-chooses": (FAIL, "anchor"),
 }
-LIST_DIAG = {**_COMMON, "disabled-row-skipped": (NOT_RUN, "disabled")}
-TREE_DIAG = dict(_COMMON)
-LIST_STRICT = {**LIST_DIAG, "shift-arrow-range": (FAIL, "order")}
+LIST_DIAG = dict(_COMMON)
+TREE_DIAG = {**_COMMON, **dict.fromkeys(_UNSEL, (NOT_RUN, "unselectable"))}
+LIST_STRICT = {**LIST_DIAG, "shift-arrow-range": (FAIL, "order"), "unselectable-space-selects-nothing": (FAIL, "consumed")}
 
 
 def test_the_corpus_has_the_list_cases_and_every_recorded_gap_names_its_reason():
