@@ -20,7 +20,7 @@ import weakref
 from pathlib import Path
 from typing import Any, Callable, Optional
 
-from tess_ui import a11y as a11y_module, tokens, urls
+from tess_ui import a11y as a11y_module, behavior, tokens, urls
 from tess_ui.fonts import check_font_families
 from tess_ui.follow import app_of
 from tess_ui.listeners import handled, listen_window
@@ -422,7 +422,7 @@ class ComposedView(View):
                         lambda value, scope=scope, name=name, state=state: scope.assign(name, state.get())))
                 else:
                     self._handler_undos.append(self._listen(
-                        node, "change", lambda ev, scope=scope, name=name, node=node, prop=prop: scope.assign(name, node.get(prop))))
+                        node, "change", lambda ev, scope=scope, name=name, node=node, prop=prop, id=inst.id: self._write_typed(scope, name, node, prop, id)))
             for event in inst.handlers:
                 tre_event = _EVENTS.get(event) or _KEY_EVENTS.get(event)
                 if tre_event is None:
@@ -435,7 +435,8 @@ class ComposedView(View):
                         return
                     self._firing.append(inst)  # what `capture()`, `release()` and `cursor()` act on
                     try:
-                        inst.fire(event, event_obj)
+                        with behavior.caused_by(behavior.reason_of(event, event_obj), inst.id):  # a write the handler makes to a gated state is this cause's
+                            inst.fire(event, event_obj)
                     finally:
                         self._firing.pop()
 
@@ -737,6 +738,17 @@ class ComposedView(View):
     def _tip_rich(self, inst: Instance) -> bool:
         """A rich tooltip has a subhead or actions (Material 3): it is a card the pointer can enter."""
         return bool(self._tip_value(inst, "title") or inst.tooltip.get("actions"))
+
+    @staticmethod
+    def _write_typed(scope: Any, name: str, node: Any, prop: str, source: str) -> None:
+        """A node's own change (typing in a field) written to the state it is bound to: a keyboard's change made by that node. If the state did not
+        take it (a gate refused it), the node shows the state's value again."""
+        value = node.get(prop)
+        with behavior.caused_by("keyboard", source):
+            scope.assign(name, value)
+        held = scope.lookup(name)
+        if isinstance(held, Signal) and held.get() != value:
+            node.set(**{prop: held.get()})
 
     def _run_handler(self, held: tuple[Any, Any]) -> None:
         handler, scope = held

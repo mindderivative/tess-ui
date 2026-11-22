@@ -13,13 +13,9 @@ from tess_behavior.corpus import FAIL, NOT_RUN, PASS, behaviour_cases, corpus_ro
 #: case -> (status, why). `not run` is a case the widget cannot run; `fail` is one it runs and does not conform to.
 KNOWN_GAPS: dict[str, tuple[str, str]] = {
     # the widget cannot run it
-    "search_field/controlled-reject": (NOT_RUN, "no controlled query and no way to veto a change"),
+    "search_field/controlled-reject": (FAIL, "a pointer press on the clear button focuses it (the spec: Focus none, the press does not take focus)"),
     "search_field/focus-none-part-via-pointer": (NOT_RUN, "a pointer on the clear button presses it, so it cannot take focus by pointer alone"),
     # it runs and does not conform
-    "search_field/clear-press-returns-focus": (FAIL, "Clear returns the focus now; only the missing before_change differs (the events expectation)"),
-    "search_field/clear-press-keyboard-returns-focus": (FAIL, "the same, by keyboard"),
-    "search_field/escape-clears": (FAIL, "Escape clears the query; only the missing before_change differs (the events expectation)"),
-    "search_field/type-updates-value": (FAIL, "the value follows; the widget emits no before_change (only the events expectation differs)"),
     # a limit of the adapter, not of the widget
     "search_field/type-same-value": (FAIL, "`consumed` is not observable (simulate returns nothing): inferred from a change, which is false when typing the same value"),
 }

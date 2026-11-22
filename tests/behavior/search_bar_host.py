@@ -2,9 +2,9 @@
 `search_field` runs against the widget a user gets, not against a model of it.
 
 What the widget cannot do or does not report is not hidden: a case it cannot run raises `NotRun` (with the reason), and a difference is a
-failed case, which is a conformance gap of the widget. The adapter derives only what it can observe: `change` (the query changed) and
-`focus_move` (the focused part changed), with the reason of the input it sent and the detail the spec names for that input. The widget emits no
-`before_change`, so no case that expects one can pass until it does."""
+failed case, which is a conformance gap of the widget. The widget reports its own `before_change` and `change` (`tess_ui.behavior`: reason,
+detail, veto), answered here from the case's `host_responses`; only `focus_move` is derived, from the focused part changing, with the reason of
+the input that was sent."""
 
 from __future__ import annotations
 
@@ -37,15 +37,28 @@ class SearchBarHost:
     """A `search_bar` in a headless window, as a host of `search_field`."""
 
     def __init__(self, spec: Spec, options: dict[str, Any] | None, controlled: bool, responses: list[str]) -> None:
-        if controlled:
-            raise NotRun("search_bar has no controlled value: its query is the widget's own Signal and nothing can veto a change")
         given = {**DEFAULTS, **(options or {})}
         self.spec = spec
         self.window = tess_re.Window(width=600, height=200)
         self.window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, align_items="flex_start")
-        self.bar = search_bar(self.window, given["label"], 360, disabled=bool(given["disabled"]), clear_label=given["clear_label"])
+        self.bar = search_bar(self.window, given["label"], 360, disabled=bool(given["disabled"]), clear_label=given["clear_label"],
+                              controlled=controlled)
+        self._heard: list[Event] = []
+        self._responses = list(responses)
+        self.bar.on_before_change(self._before)
+        self.bar.on_change(lambda change: self._heard.append(Event("change", _fields(change))))
         self.bar.query.set(given["value"])
         self._settle()
+
+    def _before(self, change: Any) -> None:
+        """The widget asks (`before_change`): answered from the case's `host_responses`, as a host would."""
+        request = Event("before_change", _fields(change), cancelable=True)
+        self._heard.append(request)
+        answer = self._responses.pop(0) if self._responses else None
+        if answer == "accept":
+            change.accept()
+        elif answer == "reject":
+            change.cancel()
 
     # -- observing -------------------------------------------------------------------------------------------------
 
@@ -80,6 +93,7 @@ class SearchBarHost:
 
     def dispatch(self, event: Input) -> Outcome:
         before = (self.state["value"], self.focus)
+        self._heard.clear()
         reason = "keyboard"
         match event:
             case TextInput(part, text):
@@ -124,25 +138,13 @@ class SearchBarHost:
         return self._node(name)
 
     def _outcome(self, before: tuple[str, str | None], reason: str, event: Input) -> Outcome:
-        events: list[Event] = []
-        value, focus = self.state["value"], self.focus
-        if value != before[0]:
-            events.append(Event("change", {"reason": reason, "detail": self._detail(event), "previous": before[0], "value": value}))
+        events = list(self._heard)  # what the widget reported itself: before_change and change
+        focus = self.focus
         if focus != before[1]:
             events.append(Event("focus_move", {"from": before[1], "to": focus, "reason": reason}))
         # the widget does not say whether it used an input: an input that changed something was used
         return Outcome(events, consumed=bool(events))
 
-    def _detail(self, event: Input) -> str:
-        """The name the spec gives the action that input runs (what the cause is called, not something the widget reports)."""
-        match event:
-            case TextInput(part, _):
-                handler = next((h for h in self.spec.part(part).on if h.event == "input"), None)
-                return self.spec.action(handler.do).detail if handler else ""
-            case KeyInput(part, key):
-                handler = next((h for h in self.spec.part(part).on if h.event == "key_down" and (h.key or "").lower() == key.lower()), None)
-                return self.spec.action(handler.do).detail if handler else ""
-            case PressInput(part, _):
-                press = self.spec.part(part).press
-                return self.spec.action(press.do).detail if press else ""
-        return ""
+
+def _fields(change: Any) -> dict[str, Any]:
+    return {"reason": change.reason, "detail": change.detail, "previous": change.previous, "value": change.value}

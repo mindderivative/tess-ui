@@ -1149,6 +1149,7 @@ search_bar(
     *,
     disabled: bool = False,
     clear_label: str = 'Clear',
+    controlled: bool = False,
     theme: 'Theme | None' = None
 ) -> Widget
 ```
