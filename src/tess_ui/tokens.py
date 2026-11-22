@@ -32,7 +32,7 @@ from materialyoucolor.scheme.scheme_tonal_spot import SchemeTonalSpot
 from tess_utils import parse_color
 
 __all__ = [
-    "BASELINE", "DRAG_START_PX", "DENSITY", "DENSITY_LEVELS", "density_token", "ELEVATION_LEVELS", "baseline_scheme", "ROLES", "SHAPES", "TYPE_SCALE", "TypeStyle", "color_scheme",
+    "BASELINE", "DRAG_START_PX", "LAYER_FLIP_THRESHOLD", "LAYER_VIEWPORT_MARGIN", "DENSITY", "DENSITY_LEVELS", "density_token", "ELEVATION_LEVELS", "baseline_scheme", "ROLES", "SHAPES", "TYPE_SCALE", "TypeStyle", "color_scheme",
     "RIPPLE_INITIAL_SCALE", "RIPPLE_MS", "STATE_LAYER",
     "elevation", "elevation_shadows", "FULL_RADIUS", "HEIGHT_CLASSES", "MD3_TRACKING", "MD3_TRACKING_TYPOGRAPHY", "WIDTH_CLASSES", "height_class", "width_class", "resolve_color", "resolve_scheme", "shape", "type_style",
 ]
@@ -89,6 +89,9 @@ def density_token(level: str, token: str) -> float:
 
 #: How far a held press moves before it is a drag, in dp (the spec's Drag and Drop start distance; the window's `drag_start_px`).
 DRAG_START_PX = 4.0
+#: How far, in dp, a layer that flips or shifts to fit keeps from the window's edges, and the extra free space its preferred side needs before it stays there (Anchored Placement).
+LAYER_VIEWPORT_MARGIN = 8.0
+LAYER_FLIP_THRESHOLD = 0.0
 #: The state-layer opacities (the spec's State Layers, ADR-0009, ADR-0013): one definition, which `interaction` and `ripple` read. Precedence when several hold: dragged, pressed, focused, hovered.
 STATE_LAYER: dict[str, float] = {"hover": 0.08, "focus": 0.10, "pressed": 0.10, "dragged": 0.16}
 #: Material Web's `md-ripple` timing, in ms, and the ripple's start size as a fraction of the larger side.

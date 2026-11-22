@@ -435,6 +435,8 @@ The font size, weight, line height and tracking of the MD3 type role `role`, or 
 
 - `BASELINE` = `dict of 49`
 - `DRAG_START_PX` = `4.0`
+- `LAYER_FLIP_THRESHOLD` = `0.0`
+- `LAYER_VIEWPORT_MARGIN` = `8.0`
 - `DENSITY` = `dict of 12`
 - `DENSITY_LEVELS` = `('default', 'compact', 'dense')`
 - `ELEVATION_LEVELS` = `dict of 6`

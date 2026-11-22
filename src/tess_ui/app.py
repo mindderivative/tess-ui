@@ -190,12 +190,14 @@ def _script_folder() -> Path:
     return Path(script).resolve().parent if script else Path.cwd()
 
 
-def _declare_baseline(window: Any) -> None:
-    """The baseline look of the text a window's nodes show, once for the window (the engine's `set_defaults`): MD3's body medium, so a `text` or
+def _set_up_window(window: Any) -> None:
+    """What every window of the app is set to, once: the baseline look of its text (the engine's `set_defaults`): MD3's body medium, so a `text` or
     `text_input` the toolkit builds without a type role is in the type scale and not in the engine's own 16 px."""
     body = tokens.TYPE_SCALE["body_medium"]
     window.set_defaults({kind: {"font_family": body.font_family, "font_weight": body.font_weight, "font_size": body.font_size}
                          for kind in ("text", "text_input")})
+    # a press is a click until it has moved this far (the engine holds back the moves); a layer that flips or shifts keeps this far from the window's edges
+    window.set(drag_start_px=tokens.DRAG_START_PX, layer_viewport_margin=tokens.LAYER_VIEWPORT_MARGIN, layer_flip_threshold=tokens.LAYER_FLIP_THRESHOLD)
 
 
 class App:
@@ -425,8 +427,7 @@ class App:
         self._watchers: list[Any] = []
         self._window.on("color_scheme", self._on_color_scheme)
         # the window's display options: the engine's (`tess_re` 0.5.4)
-        _declare_baseline(self._window)
-        self._window.set(drag_start_px=tokens.DRAG_START_PX)  # a press is a click until it has moved this far: the engine holds back the moves (tre 0.6.12)
+        _set_up_window(self._window)
         self._set_window(dpi_scaling=bool(dpi_scaling), present_mode=present_mode, glyph_cache=bool(glyph_cache))
         if ripple not in ("nodes", "shader"):
             raise ValueError(f"App: ripple is 'nodes' (a circle per press) or 'shader' (one shader for them), got {ripple!r}")
@@ -939,8 +940,7 @@ class App:
         from tess_ui import appwindows
 
         win = Window(width=480, height=320, title=self._title or "")
-        _declare_baseline(win)
-        win.set(drag_start_px=tokens.DRAG_START_PX)
+        _set_up_window(win)
         register_window(self, win)
         win.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, align_items="flex_start")
         opened = self._open_view(view, name, win)
