@@ -163,7 +163,10 @@ jobs:
           REASON: ${{ needs.plan.outputs.reason }}
         run: |
           echo "mode $MODE: $REASON"
-          if [ "$MODE" = full ]; then pytest tests/ -n auto; else pytest $TESTS; fi
+          if [ "$MODE" = full ]; then pytest tests/ -n auto; else
+            # A partial selection may be a file whose tests this platform skips whole (the shell-config app's, on Windows): pytest then exits 5, "no tests ran", which is not a failure. Full mode keeps its strictness.
+            pytest $TESTS || { code=$?; [ "$code" -eq 5 ] || exit "$code"; echo "no test ran on this platform (all skipped): ok"; }
+          fi
 
   # The Configuration Application (`apps/shell_config`). Its tests use a fake `tesserae-shell` script and recorded fixtures; the real shell is never started.
   # This job proves they ran: `tess_dl` imports, enough are collected, none is skipped but the ones that need the shell's own checkout.

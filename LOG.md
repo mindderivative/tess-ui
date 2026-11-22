@@ -3686,3 +3686,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 ## 2026-11-21 The engine pin moves from 0.6.10 to 0.6.11
 - `tesserae-engine==0.6.11` (on PyPI; tag `v0.6.11` exists) in `pyproject.toml`, the CI and release font checkouts, README, DEVELOPING and PLAN. 0.6.11 brings what the drafts need: `scroll_view` with `orientation='both'` and the scrollbar properties, `hit_testable`, `vertical_align`, the new roles, state layers, focus outline, scheme baseline colours, `set_defaults`, `first_present`. The suite on the real wheel is CI's job; locally the venv is moved to 0.6.11 first.
 - On the real 0.6.11 wheel the suite passes but for one test: `hit_testable` reads `None` when unset (it was `True`), so `tests/test_pointer_events.py` now asserts "not False".
+
+## 2026-11-21 CI: a partial run whose tests are all skipped is not a failure
+- On Windows the shell-config app's test modules cannot be imported and are skipped whole; a partial plan that picked only such a file made `pytest` exit 5 ("no tests ran") and the job red. The partial step now accepts exit code 5 and fails on any other code; the full run is unchanged.
