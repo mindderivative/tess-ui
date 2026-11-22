@@ -84,7 +84,7 @@ def list_(
     choose rows from code), `selected=` starts it with a list, and `announce`
     is what assistive technology reads as it changes (`{count}` is how many;
     `None` is silent). Only `.on_change(fn)` hears it (`reason` `pointer`,
-    `keyboard` or `api`, `detail` `select`): the engine makes the change, so
+    `keyboard` or `api`; `detail` `select`, `toggle` (Ctrl+click, Space), `range` (Shift), `all` (Ctrl+A) or `clear` (a click on the empty part), as the Selection pattern names them): the engine makes the change, so
     there is nothing to refuse beforehand."""
     if not items:
         raise ValueError("a list needs at least one item")
@@ -149,6 +149,31 @@ def _multiple(widget: Widget, items: list[Any], nodes: list[Any], start: list[in
         if tuple(index_of[node] for node in box.get("selection")) != indices:
             box.set(selection=[nodes[i] for i in indices])
 
+    last: list[Any] = [None]  # the input the engine is about to act on: (what, event), set by the box's listeners, which run before the engine's own handling
+
+    def pointed(event: Any) -> None:
+        last[0] = ("pointer", event)
+
+    def detail_of(event: Any, now: tuple[int, ...]) -> str:
+        """What the standard calls the change (Selection, SPEC 2.5b): select, toggle, range, all or clear."""
+        source = getattr(event, "selection_source", None)
+        kind, trigger = last[0] or (None, None)
+        if source == "api" or kind is None:
+            return "select"
+        ctrl, shift = bool(getattr(trigger, "ctrl", False)), bool(getattr(trigger, "shift", False))
+        if kind == "pointer":
+            if shift:
+                return "range"
+            if ctrl:
+                return "toggle"
+            return "clear" if not now and getattr(trigger, "target", None) == box else "select"
+        key = getattr(trigger, "key", "")
+        if key == "space":
+            return "toggle"
+        if ctrl and key == "a":
+            return "all"
+        return "range" if shift and key in ("arrow_down", "arrow_up", "home", "end") else "select"
+
     def changed(event: Any) -> None:
         """Engine -> Signal: the chosen rows, and who made the change."""
         previous = heard[0]
@@ -158,7 +183,7 @@ def _multiple(widget: Widget, items: list[Any], nodes: list[Any], start: list[in
         heard[0] = now
         chosen.set(now)
         if gate.after:
-            done = ChangeEvent("change", previous, now, getattr(event, "selection_source", None) or "api", "select")
+            done = ChangeEvent("change", previous, now, getattr(event, "selection_source", None) or "api", detail_of(event, now))
             for listener in list(gate.after):
                 listener(done)
 
@@ -174,6 +199,7 @@ def _multiple(widget: Widget, items: list[Any], nodes: list[Any], start: list[in
 
     def typed(event: Any) -> None:
         """Type-ahead, heard on the list itself: a listener on a row would keep the row's keys from the engine's selection."""
+        last[0] = ("key", event)
         i = index_of.get(event.target)
         target = {"arrow_down": min((i or 0) + 1, len(nodes) - 1), "arrow_up": max((i or 0) - 1, 0), "home": 0, "end": len(nodes) - 1}.get(event.key)
         if i is not None and target is not None:  # the container has no arrow-key focus of its own: move it (Shift: after the engine's range, which starts from the row that had it)
@@ -193,6 +219,7 @@ def _multiple(widget: Widget, items: list[Any], nodes: list[Any], start: list[in
         node.set(focusable=True, item_selectable=True)
         widget._undo.append(widget.view._listen(node, "focus", rove(i)))
     widget._undo.append(widget.view._listen(box, "key_down", typed))
+    widget._undo.append(widget.view._listen(box, "pointer_down", pointed))
     widget._undo.append(widget.view._listen(box, "selection_change", changed))
     box.set(selection=[nodes[i] for i in chosen.get()])
     widget_any: Any = widget

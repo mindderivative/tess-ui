@@ -205,7 +205,8 @@ def test_a_multiple_selection_list_is_the_engines_click_ctrl_shift_space_and_sel
     window.advance(16)
     assert box.selection.get() == (0, 1, 2, 3)
     assert [r.selected.get() for r in rows] == [True] * 4 and [r.node.get("selected") for r in rows] == [True] * 4
-    assert [h[0] for h in heard] == ["pointer", "pointer", "pointer", "keyboard", "keyboard"] and {h[1] for h in heard} == {"select"}
+    assert [h[0] for h in heard] == ["pointer", "pointer", "pointer", "keyboard", "keyboard"]
+    assert [h[1] for h in heard] == ["select", "toggle", "range", "toggle", "all"]  # the Selection pattern's names for what the input did
 
 
 def test_the_arrows_home_and_end_move_the_focus_between_the_rows_of_a_multiple_selection_list_and_shift_extends_the_range():
@@ -228,6 +229,18 @@ def test_the_arrows_home_and_end_move_the_focus_between_the_rows_of_a_multiple_s
     assert focused() == [3]
     press("arrow_down")  # at the end nothing moves
     assert focused() == [3]
+
+
+def test_a_click_on_the_empty_part_clears_and_a_write_from_code_is_a_select():
+    window, box, rows, heard = _multiple(start=[1, 2])
+    box.node.set(min_height=400.0)  # room below the four rows
+    window.advance(16)
+    window.simulate("click", node=box.node, x=10.0, y=380.0)
+    window.advance(16)
+    assert box.selection.get() == () and heard[-1][1] == "clear"
+    box.selection.set((0,))
+    window.advance(16)
+    assert heard[-1][:2] == ("api", "select")
 
 
 def test_the_rows_show_the_selection_and_a_write_from_code_chooses_rows_and_is_reported_as_api():
