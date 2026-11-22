@@ -49,3 +49,11 @@ def test_the_light_dark_choice_is_kept_and_a_corrupt_store_is_ignored_AC_TH_4_AC
     assert store.read_text().strip() == "system" and App(root=tmp_path, theme_store=store, dark=False).dark_mode == "system"
     store.write_text("purple")
     assert App(root=tmp_path, theme_store=store, dark=False).dark_mode is False  # ignored, no error
+
+
+def test_text_the_toolkit_builds_without_a_type_role_is_body_medium(tmp_path):
+    """The app declares MD3's body medium as its windows' baseline text (`set_defaults`): 14 px Roboto, not the engine's 16."""
+    app = App(root=tmp_path, width=200, height=100)
+    for kind in ("text", "text_input"):
+        node = app.window.create(kind, **({"text": "x"} if kind == "text" else {}))
+        assert (node.get("font_family"), node.get("font_weight"), node.get("font_size")) == ("Roboto", 400.0, 14.0)
