@@ -78,7 +78,8 @@ def list_(
 
     With `selectable="multiple"` the engine's container selection does it:
     click chooses one, Ctrl+click toggles, Shift+click and Shift+Arrow
-    choose a range from the anchor, Space toggles, Ctrl+A chooses all. `.selection`
+    choose a range from the anchor, Space toggles, Ctrl+A chooses all; the arrows, Home and End move
+    the focus between the rows. `.selection`
     is a `Signal` of the chosen rows' indices, ascending (a tuple; write it to
     choose rows from code), `selected=` starts it with a list, and `announce`
     is what assistive technology reads as it changes (`{count}` is how many;
@@ -174,6 +175,11 @@ def _multiple(widget: Widget, items: list[Any], nodes: list[Any], start: list[in
     def typed(event: Any) -> None:
         """Type-ahead, heard on the list itself: a listener on a row would keep the row's keys from the engine's selection."""
         i = index_of.get(event.target)
+        target = {"arrow_down": min((i or 0) + 1, len(nodes) - 1), "arrow_up": max((i or 0) - 1, 0), "home": 0, "end": len(nodes) - 1}.get(event.key)
+        if i is not None and target is not None:  # the container has no arrow-key focus of its own: move it (Shift: after the engine's range, which starts from the row that had it)
+            if target != i:
+                widget.window.after(0, nodes[target].focus) if getattr(event, "shift", False) else nodes[target].focus()
+            return
         if i is not None and len(event.key) == 1 and event.key.isprintable() and event.key != " " and not (getattr(event, "ctrl", False) or getattr(event, "meta", False)):
             found = ahead.find(event.key, i, labels)
             if found is not None and found != i:

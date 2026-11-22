@@ -1,3 +1,3 @@
 # The behavior standard's runtime and corpus (private repository until its first release, so CI does not install it: the tests here skip without it).
 # Install into the dev venv with:  uv pip install -r tests/behavior/requirements.txt
-tesserae-behavior @ git+https://github.com/mindderivative/tess-behavior@f7b3ed50af67c45a7531cc31f8d025d6636c9f9b
+tesserae-behavior @ git+https://github.com/mindderivative/tess-behavior@2050653abdcf8ea2a9f1c3ed071fbc6cc2e2f93c

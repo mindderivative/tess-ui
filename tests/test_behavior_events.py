@@ -208,6 +208,28 @@ def test_a_multiple_selection_list_is_the_engines_click_ctrl_shift_space_and_sel
     assert [h[0] for h in heard] == ["pointer", "pointer", "pointer", "keyboard", "keyboard"] and {h[1] for h in heard} == {"select"}
 
 
+def test_the_arrows_home_and_end_move_the_focus_between_the_rows_of_a_multiple_selection_list_and_shift_extends_the_range():
+    window, box, rows, _ = _multiple()
+    focused = lambda: [i for i, r in enumerate(rows) if r.node.get("focused")]  # noqa: E731
+
+    def press(key, **modifiers):
+        window.simulate("key_down", key=key, **modifiers)
+        window.advance(32)
+
+    rows[1].node.focus()
+    window.advance(16)
+    press("arrow_down")
+    assert focused() == [2] and box.selection.get() == ()
+    press("arrow_down", shift=True)  # the focus goes on one, and the range from the anchor reaches the row it lands on
+    assert focused() == [3] and box.selection.get() == (2, 3)
+    press("home")
+    assert focused() == [0] and box.selection.get() == (2, 3)
+    press("end")
+    assert focused() == [3]
+    press("arrow_down")  # at the end nothing moves
+    assert focused() == [3]
+
+
 def test_the_rows_show_the_selection_and_a_write_from_code_chooses_rows_and_is_reported_as_api():
     window, box, rows, heard = _multiple(start=[1, 3])
     assert box.selection.get() == (1, 3) and [r.selected.get() for r in rows] == [False, True, False, True]
