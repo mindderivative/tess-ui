@@ -55,5 +55,5 @@ def test_text_the_toolkit_builds_without_a_type_role_is_body_medium(tmp_path):
     """The app declares MD3's body medium as its windows' baseline text (`set_defaults`): 14 px Roboto, not the engine's 16."""
     app = App(root=tmp_path, width=200, height=100)
     for kind in ("text", "text_input"):
-        node = app.window.create(kind)
+        node = app.window.create(kind, **({"text": "x"} if kind == "text" else {}))
         assert (node.get("font_family"), node.get("font_weight"), node.get("font_size")) == ("Roboto", 400.0, 14.0)
