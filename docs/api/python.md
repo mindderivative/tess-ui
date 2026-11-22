@@ -351,7 +351,7 @@ The value of density token `token` at `level` (`default`, `compact` or `dense`).
 baseline_scheme() -> dict[str, RGBA]
 ```
 
-Every role, for widgets with no theme: the scheme MD3's baseline seed (#6750A4) generates, with MD3's published `BASELINE` values over it where they differ.
+Every role, for widgets with no theme: the engine's baseline table (`BASELINE`).
 
 ### `color_scheme`
 
@@ -433,7 +433,7 @@ The font size, weight, line height and tracking of the MD3 type role `role`, or 
 
 **Constants**
 
-- `BASELINE` = `dict of 24`
+- `BASELINE` = `dict of 49`
 - `BASELINE_SEED` = `(103, 80, 164, 255)`
 - `DENSITY` = `dict of 12`
 - `DENSITY_LEVELS` = `('default', 'compact', 'dense')`

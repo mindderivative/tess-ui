@@ -25,6 +25,7 @@ import re
 from dataclasses import dataclass
 from typing import Any, Optional, Tuple
 
+import tess_re
 from materialyoucolor.dynamiccolor.material_dynamic_colors import MaterialDynamicColors
 from materialyoucolor.hct import Hct
 from materialyoucolor.scheme.scheme_tonal_spot import SchemeTonalSpot
@@ -57,14 +58,7 @@ ROLES = (
     "background", "on_background", "shadow", "scrim",
 )
 
-def _hex(text: str) -> RGBA:
-    return (int(text[1:3], 16), int(text[3:5], 16), int(text[5:7], 16), 0xFF)
 
-
-#: MD3's published baseline colours, for widgets with no theme: `tess_re`'s
-#: no-theme colours (its MD3 handover's `baseline`), plus `on_surface` and
-#: `secondary` from MD3's baseline scheme. They differ from the scheme the
-#: baseline seed generates, as `tess_re`'s did.
 #: Density levels (the spec's Spacing and Density, ADR-0002): each token is (default, compact, dense).
 DENSITY_LEVELS = ("default", "compact", "dense")
 DENSITY: dict[str, tuple[float, float, float]] = {
@@ -102,17 +96,8 @@ RIPPLE_MS: dict[str, int] = {"hover_fade": 15, "press_grow": 450, "press_fade_in
 RIPPLE_INITIAL_SCALE = 0.2
 
 
-BASELINE: dict[str, RGBA] = {role: _hex(value) for role, value in {
-    "error": "#B3261E", "inverse_on_surface": "#F4EFF4", "inverse_primary": "#D0BCFF",
-    "inverse_surface": "#313033", "on_error": "#FFFFFF", "on_primary": "#FFFFFF",
-    "on_primary_container": "#21005D", "on_secondary_container": "#1D192B", "on_surface_variant": "#49454F",
-    "on_tertiary_container": "#31111D", "outline": "#79747E", "outline_variant": "#CAC4D0",
-    "primary": "#6750A4", "primary_container": "#EADDFF", "scrim": "#000000",
-    "secondary_container": "#E8DEF8", "surface": "#FFFBFE", "surface_container": "#F3EDF7",
-    "surface_container_high": "#ECE6F0", "surface_container_highest": "#E6E0E9",
-    "surface_container_low": "#F7F2FA", "tertiary_container": "#FFD8E4",
-    "on_surface": "#1D1B20", "secondary": "#625B71",
-}.items()}
+#: MD3's baseline colours (light), for widgets with no theme: the engine's own table (`tess_re.scheme_colors`, tre 0.6.12), all 49 roles, so the toolkit and the engine agree on what an unthemed widget is drawn in.
+BASELINE: dict[str, RGBA] = {role: (value[0], value[1], value[2], value[3]) for role, value in tess_re.scheme_colors("light").items()}
 
 def unknown_role(role: str, roles: Any = None) -> ValueError:
     """The error for a colour role that is not one: it names the role and, when one is a slip away, the nearest (`roles` are the known names;
@@ -137,10 +122,8 @@ def theme_color(theme: Any, role: str) -> RGBA:
 
 
 def baseline_scheme() -> dict[str, RGBA]:
-    """Every role, for widgets with no theme: the scheme MD3's baseline
-    seed (#6750A4) generates, with MD3's published `BASELINE` values over
-    it where they differ."""
-    return {**color_scheme(BASELINE["primary"]), **BASELINE}
+    """Every role, for widgets with no theme: the engine's baseline table (`BASELINE`)."""
+    return dict(BASELINE)
 
 
 #: The four roles `tess_re` keeps at tone 10 in light mode.

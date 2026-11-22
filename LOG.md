@@ -3702,3 +3702,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 ## 2026-11-21 The focus ring is the engine's outline (tre 0.6.12 `focus_outline_*`)
 - A plain focus ring is `focus_outline_width` 3, `focus_outline_offset` 2 and `focus_outline_color` (the scheme's ring role) on the node the ring goes around: the engine draws it on keyboard focus only, following the corners, so the ring node, its geometry code and its show/hide are gone. The turning gradient ring (`App(focus_ring=...)`) is a stroke gradient an outline cannot be, so only that option keeps a ring node. A disabled control has width 0.
 - Tests read the outline through `tests/layers.py` (`ring_of`), and a pixel test pins the 2 px gap, the 3 px ring, its absence before focus.
+
+## 2026-11-21 The baseline scheme is the engine's (`tess_re.scheme_colors`, tre 0.6.12)
+- `tokens.BASELINE` is now the engine's light baseline table, all 49 roles, and `baseline_scheme()` returns it: the toolkit's hand-copied 24 published values plus a scheme generated from the seed (19 roles differed slightly, for example `on_primary_fixed`) are gone. An unthemed widget and the engine agree.
