@@ -335,3 +335,15 @@ def test_a_single_selection_list_skips_a_disabled_row_and_cannot_choose_an_unsel
     window.simulate("click", node=rows[2].node)
     window.advance(16)
     assert box.selected.get() == 2
+
+
+def test_a_list_has_the_accessible_name_it_is_given_and_none_otherwise():
+    for selectable, role in ((None, "list"), ("single", "listbox"), ("multiple", "listbox")):
+        window, box, rows = _rows(selectable)
+        assert box.node.get("label") is None and box.node.get("role") == role
+    from tess_ui.widgets import list_, list_item
+
+    window = tess_re.Window(width=600, height=400)
+    window.root.set(padding_top=0, padding_right=0, padding_bottom=0, padding_left=0, align_items="flex_start", flex_direction="vertical")
+    named = list_(window, [list_item(window, "Apple")], selectable="multiple", label="Fruit")
+    assert named.node.get("label") == "Fruit" and named.node.get("role") == "listbox"

@@ -144,7 +144,7 @@ class ListHost(_Host):
         start = [self.ids.index(i) for i in given["selection"]]
         self.box = list_(self.window, self.rows, selectable="single" if self.single else "multiple",
                          selected=(start[0] if start else None) if self.single else start, announce="{count} selected",
-                         unselectable=[i for i, entry in enumerate(given["items"]) if entry.get("unselectable")])
+                         unselectable=[i for i, entry in enumerate(given["items"]) if entry.get("unselectable")], label="Items")
         self.box.node.set(min_height=56.0 * len(self.rows) + 120.0)  # room below the rows, where a press chooses none
         self._begin()
         if self.single:
