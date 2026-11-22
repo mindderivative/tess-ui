@@ -367,7 +367,7 @@ A resolved theme. Build one with `Theme.resolve(...)`.
 - `elevation(name: str) -> Optional[float]`: The level (0 to 5) of the MD3 elevation token `name`, or `None` if it isn't one.
 - `type_style(role: str) -> Optional[TypeStyle]`: The font size, weight, line height and tracking of the MD3 type role `role`, or `None` if it isn't one.
 - `color_scheme(seed: RGBA, dark: bool = False, contrast: float = 0.0) -> dict[str, RGBA]`: Every MD3 role for `seed`, light or dark.
-- `baseline_scheme() -> dict[str, RGBA]`: Every role, for widgets with no theme: the scheme MD3's baseline seed (#6750A4) generates, with MD3's published `BASELINE` values over it where they differ.
+- `baseline_scheme() -> dict[str, RGBA]`: Every role, for widgets with no theme: the engine's baseline table (`BASELINE`).
 - `resolve_scheme(theme_seed: Optional[RGBA], dark: bool, default_theme: Optional[dict[str, Any]], custom_theme: Optional[dict[str, Any]], contrast: float = 0.0) -> Optional[dict[str, RGBA]]`: The scheme a view resolves roles against, by `tess_re`'s `View` rules: the seed is `theme_seed`, else the custom theme's `seed:`, else the default theme's; `colors:` overrides apply default theme first, then custom.
 - `elevation_shadows(level: float) -> list[Shadow]`: MD3 elevation `level` (0–5, fractional allowed) as a `shadows` list, `(color, offset_x, offset_y, blur, spread)`: `tess_re`'s key shadow (30% black) first, so it paints on top, then its ambient shadow (15%).
 
@@ -375,7 +375,7 @@ A resolved theme. Build one with `Theme.resolve(...)`.
 - `tokens.SHAPES` = `dict of 6`
 - `tokens.ELEVATION_LEVELS` = `dict of 6`
 - `tokens.TYPE_SCALE` = `dict of 15`
-- `tokens.BASELINE` = `dict of 24`
+- `tokens.BASELINE` = `dict of 49`
 ### Fonts
 
 - `register_font(path: str | Path) -> list[str]`: Reads the font file at `path` and registers it with `tess_re`, process-wide.

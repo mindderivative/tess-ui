@@ -50,12 +50,11 @@ def test_a_control_made_in_python_says_so_too():
 
 
 @pytest.mark.parametrize("widget", ["LinearProgress", "CircularProgress"])
-def test_a_role_of_the_full_scheme_that_the_few_published_baseline_values_lack_works_without_a_theme(tmp_path, widget):
-    """The first form of this issue: `track: surface_variant` is a real role, and it was a `KeyError` because an unthemed control looked it up in
-    `tokens.BASELINE`, which holds only some of the roles."""
+def test_any_role_of_the_baseline_scheme_works_without_a_theme(tmp_path, widget):
+    """`track: surface_variant` is a real role; an unthemed control finds it in the baseline table (the engine's, all of the roles)."""
     from tess_ui import tokens
 
-    assert "surface_variant" not in tokens.BASELINE
+    assert "surface_variant" in tokens.BASELINE
     assert open_with(tmp_path, widget, "surface_variant").node("root.bar") is not None
 
 
