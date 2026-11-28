@@ -79,3 +79,21 @@ def test_the_fields_of_the_properties_fill_the_dock_and_line_up_in_one_column(w)
     boxes = [(n.get("layout_x"), n.get("layout_width")) for inst, n in named(w, "field_box")]
     assert boxes and len({round(x) for x, _ in boxes}) == 1, f"one column: {boxes}"
     assert min(width for _, width in boxes) >= scroll.get("layout_width") - 120 - 32 - 8 * 4 - 8, "wide enough to use the dock"
+
+
+def test_a_long_file_name_ends_in_an_ellipsis_inside_the_files_dock_and_nothing_scrolls_sideways(tmp_path, schema):
+    """The Tree spec (Layout and overflow): labels truncate with an ellipsis and the tree makes no horizontal overflow from labels. The name was cut at the pane edge and a bar scrolled it."""
+    folder = tmp_path / "cfg"
+    shutil.copytree(CONFIG, folder)
+    (folder / "Modules" / "A_Very_Long_Module_Name_That_Cannot_Fit_The_Dock").mkdir()
+    (folder / "Modules" / "A_Very_Long_Module_Name_That_Cannot_Fit_The_Dock" / "A_Very_Long_Module_Name_That_Cannot_Fit_The_Dock_Module.tdl").write_text(
+        (folder / "Modules" / "Hello" / "Hello_Module.tdl").read_text())
+    w = FormWindow(folder, tmp_path, schema)
+    w.settle(6)
+    tree = w.built.view.node("root.dock.files_panel.files_pane.files_scroll.files_tree")
+    right = tree.get("layout_x") + tree.get("layout_width")
+    labels = [n for inst, n in named(w, "label") if "files_tree.row[f:Modules/A_Very_Long" in inst.id]
+    assert labels, "the long file is listed"
+    assert all(n.get("layout_x") + n.get("layout_width") <= right + 0.5 for n in labels), "the label ends inside the row"
+    assert all(n.get("wrap") == "none" and n.get("overflow") == "ellipsis" for n in labels)
+    assert w.built.view._built.outer["root.dock.files_panel.files_pane.files_scroll"].get("orientation") == "vertical"

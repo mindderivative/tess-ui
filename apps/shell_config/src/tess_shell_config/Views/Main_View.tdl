@@ -199,7 +199,7 @@ Container {
                 }
                 ScrollView {
                   Name: files_scroll
-                  Orientation: both
+                  Orientation: vertical
                   Style { Flex: expand_vertical, Width: 100%, Min_Height: 0 }
                   Children {
                     Tree {
@@ -337,7 +337,7 @@ Container {
                 If <| has_tree |> {
                   ScrollView {
                     Name: structure_scroll
-                    Orientation: both
+                    Orientation: vertical
                     Style { Flex: expand_vertical, Width: 100%, Min_Height: 0 }
                     Children {
                       Tree {
