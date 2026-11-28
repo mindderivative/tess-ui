@@ -9,13 +9,13 @@ Styles {
   Rule {
     Widget: Button
     Style {
-      Height: <| 40 if app_density() == '' else density_token(app_density(), 'control_height') |>
+      Height: <| 40 if density == '' else density_token(density, 'control_height') |>
       Transition { Corner_Radius: 200, Elevation: 200, Background: 150 }
     }
   }
   # sizes
   Rule { Widget: Button, Size: xs, Style { Height: 32, Gap: 4 } }
-  Rule { Widget: Button, Size: s, Style { Height: <| 40 if app_density() == '' else density_token(app_density(), 'control_height') |>, Gap: 8 } }
+  Rule { Widget: Button, Size: s, Style { Height: <| 40 if density == '' else density_token(density, 'control_height') |>, Gap: 8 } }
   Rule { Widget: Button, Size: m, Style { Height: 56, Gap: 8 } }
   Rule { Widget: Button, Size: l, Style { Height: 96, Gap: 12 } }
   Rule { Widget: Button, Size: xl, Style { Height: 136, Gap: 16 } }

@@ -9,8 +9,8 @@ Styles {
   Rule {
     Widget: ListItem
     Style {
-      Padding: <| {'left': 16 if app_density() == '' else density_token(app_density(), 'row_padding_x'), 'right': 16 if app_density() == '' else density_token(app_density(), 'row_padding_x'), 'top': 8 if app_density() == '' else (density_token(app_density(), 'row_height') - 20) / 2, 'bottom': 8 if app_density() == '' else (density_token(app_density(), 'row_height') - 20) / 2} |>
-      Gap: <| 16 if app_density() == '' else density_token(app_density(), 'icon_label_gap') |>
+      Padding: <| {'left': 16 if density == '' else density_token(density, 'row_padding_x'), 'right': 16 if density == '' else density_token(density, 'row_padding_x'), 'top': 8 if density == '' else (density_token(density, 'row_height') - 20) / 2, 'bottom': 8 if density == '' else (density_token(density, 'row_height') - 20) / 2} |>
+      Gap: <| 16 if density == '' else density_token(density, 'icon_label_gap') |>
       Background: <| 'secondary_container' if selected else 'transparent' |>
     }
   }

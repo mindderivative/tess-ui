@@ -16,8 +16,7 @@ Container {
     Multiple { Type: bool, Default: false, Doc: "Choose several rows: click chooses one, Ctrl+click toggles, Shift+click and Shift+Arrow choose a range, Space toggles, Ctrl+A chooses every row that shows (AC-SLT-7). `Selected` then follows the last row pressed." }
     Select_All_Key { Type: bool, Default: true, Doc: "With `Multiple`: whether Ctrl+A chooses every row that shows." }
     On_Change { Type: handler, Doc: "With `Multiple`: called after the chosen rows change, with `event.reason` (`pointer`, `keyboard` or `api`), `event.detail` (`select`, `toggle`, `range`, `all` or `clear`), `event.count`, `event.selection` (the chosen values) and `event.anchor`." }
-    Compact { Type: bool, Default: false, Doc: "40 pixel rows instead of 56 (at no density)." }
-    Density { Type: str, Default: "", Doc: "`default`, `compact` or `dense`: the spec's density table for the rows; empty follows the app's `App(density=)`." }
+    Compact { Type: bool, Default: false, Doc: "40 pixel rows instead of 56." }
     Label { Type: str, Default: "Tree", Doc: "The tree's accessible name: what the pane is (Files, Structure), not the word Tree (AC-TRE-01)." }
   }
   Focus_Group: vertical
@@ -52,7 +51,6 @@ Container {
         Selection_Key: <| r['value'] |>
         Selected: <| (r['value'] in selection) if multiple else (r['value'] == selected) |>
         Compact: <| compact |>
-        Density: <| density |>
         Disabled: <| r['disabled'] |>
         Handlers {
           On_Focus_Enter { Set { Target: current, Value: <| r['value'] |> } }

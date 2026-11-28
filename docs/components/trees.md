@@ -38,8 +38,7 @@ A tree (the WAI-ARIA tree pattern in Material 3's list terms): rows that open to
 | `Multiple` | `bool` | `false` | Choose several rows: click chooses one, Ctrl+click toggles, Shift+click and Shift+Arrow choose a range, Space toggles, Ctrl+A chooses every row that shows (AC-SLT-7). `Selected` then follows the last row pressed. |
 | `Select_All_Key` | `bool` | `true` | With `Multiple`: whether Ctrl+A chooses every row that shows. |
 | `On_Change` | `handler` |  | With `Multiple`: called after the chosen rows change, with `event.reason` (`pointer`, `keyboard` or `api`), `event.detail` (`select`, `Toggle`, `range`, `all` or `clear`), `event.count`, `event.selection` (the chosen values) and `event.anchor`. |
-| `Compact` | `bool` | `false` | 40 pixel rows instead of 56 (at no density). |
-| `Density` | `str` |  | `default`, `Compact` or `dense`: the spec's density table for the rows; empty follows the app's `App(density=)`. |
+| `Compact` | `bool` | `false` | 40 pixel rows instead of 56. |
 | `Label` | `str` | `Tree` | The tree's accessible name: what the pane is (Files, Structure), not the word Tree (AC-TRE-01). |
 
 Its parts, by name (a stylesheet rule's `Part` or `Name` addresses one): `row` (TreeNode).
@@ -59,7 +58,6 @@ One row of a tree: a leaf or a branch with a chevron that turns a quarter when i
 | `Expanded` | `bool` | `false` | For a branch: whether its children show. |
 | `Selected` | `bool` | `false` | Whether this is the chosen row. |
 | `Compact` | `bool` | `false` | A 40 pixel row instead of 56 at density `default`. |
-| `Density` | `str` |  | `default`, `Compact` or `dense`: the spec's density table (row height, padding, indent, chevron box). Empty follows the app's (`App(density=)`). At `default` a row keeps its Material size, 56 pixels (40 with `Compact`). |
 | `Selection_Key` | `any` |  | What names the row in a `Tree`'s `Selection`; the tree sets it. |
 | `Disabled` | `bool` | `false` | Dimmed and not pressable. |
 

@@ -21,6 +21,7 @@ from tess_ui import a11y as a11y_module
 from tess_ui.spec import placement, sizes
 from tess_ui.tel import (Expr, ExprError, NestedTemplate, Origin, Parts, Statements, compile_expr, compile_statements, compile_template, is_action_name,
                          timer_handlers)
+from tess_ui.spec import density as density_module
 from tess_ui.spec import widgets as registry
 from tess_ui.spec.widgets import Property, PropertyError, WidgetDecl, decl_from_params, is_expression, style_fields_of
 from tess_ui.project import looks_like, tdl_wrong_kind, yaml_refused
@@ -35,7 +36,7 @@ VISIBLE = Property("bool", name="visible", doc="Shown while true; while false it
 TOOLTIP_FIELDS = ("text", "title", "delay", "placement", "actions")
 TOOLTIP_PLACEMENTS = placement.PLACEMENTS
 UNIVERSAL_KEYS = ("widget", "name", "if", "for", "key", "slot", "state", "style", "classes", "handlers", "a11y", "interaction",
-                  "window_region", "route", "focus_group", "tooltip", "children")
+                  "window_region", "route", "focus_group", "density", "tooltip", "children")
 #: Keys only the root of a view file may have.
 HEADER_KEYS = ("params", "expects")
 #: The handler events (section 9.1): `view._EVENTS` plus `on_key`, `on_submit` and `on_press`. `tests/test_nodes.py` keeps the two in step.
@@ -167,6 +168,8 @@ class Node:
     #: a route written as a mapping: `guard` (an `Expr`: a falsy value refuses the screen), `redirect` (a route to go to instead) and `lazy` (the view is built when first reached)
     route_options: dict[str, Any] = field(default_factory=dict)
     focus_group: Optional[str] = None
+    #: `density:` (`default`, `compact` or `dense`): this node and what is inside it, unless something inside says another (ADR-0029); `None` takes the parent's
+    density: Optional[str] = None
     #: `tooltip:` as `{text, title, delay, placement, actions}`, each text possibly a `Template`; `actions` is a list of (label, `Handler`)
     tooltip: dict[str, Any] = field(default_factory=dict)
 
@@ -373,6 +376,11 @@ class _Parser:
             if value not in FOCUS_GROUPS:
                 raise self.fail(vat, f"'focus_group:' is one of {', '.join(FOCUS_GROUPS)}, got {value!r}", _near(value, FOCUS_GROUPS))
             node.focus_group = value
+        elif key == "density":
+            problem = density_module.check_level(value)
+            if problem is not None:
+                raise self.fail(vat, f"'density:' {problem}", _near(value, density_module.LEVELS))
+            node.density = value
         elif key == "tooltip":
             self.tooltip(node, value, vat)
         elif key == "route":

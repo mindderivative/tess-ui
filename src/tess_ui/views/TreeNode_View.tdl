@@ -17,7 +17,6 @@ Container {
     Expanded { Type: bool, Default: false, Doc: "For a branch: whether its children show." }
     Selected { Type: bool, Default: false, Doc: "Whether this is the chosen row." }
     Compact { Type: bool, Default: false, Doc: "A 40 pixel row instead of 56 at density `default`." }
-    Density { Type: str, Default: "", Doc: "`default`, `compact` or `dense`: the spec's density table (row height, padding, indent, chevron box). Empty follows the app's (`App(density=)`). At `default` a row keeps its Material size, 56 pixels (40 with `Compact`)." }
     Selection_Key { Type: any, Default: "", Doc: "What names the row in a `Tree`'s `Selection`; the tree sets it." }
     Disabled { Type: bool, Default: false, Doc: "Dimmed and not pressable." }
   }
@@ -37,7 +36,7 @@ Container {
   Style {
     Flex_Direction: horizontal
     Align_Content: left
-    Height: <| (40 if compact else 56) if (density or app_density()) == '' else density_token((density or app_density()), 'row_height') |>
+    Height: <| (40 if compact else 56) if density == '' else density_token(density, 'row_height') |>
     Width: 100%
   }
   Children {
@@ -51,7 +50,7 @@ Container {
     If <| not branch |> {
       Container {
         Name: chevron_space
-        Style { Width: <| 24 if (density or app_density()) == '' else density_token((density or app_density()), 'chevron_box') |>, Height: <| 24 if (density or app_density()) == '' else density_token((density or app_density()), 'chevron_box') |> }
+        Style { Width: <| 24 if density == '' else density_token(density, 'chevron_box') |>, Height: <| 24 if density == '' else density_token(density, 'chevron_box') |> }
       }
     }
     If <| icon != '' |> {

@@ -696,7 +696,7 @@ class App:
         from tess_ui.composed import ComposedView
 
         library = self._composed_docs_library()
-        for built in self._built:  # `app_density()` is read when a view is composed, not tracked: each view is composed again, keeping its state
+        for built in self._built:  # the app level of `density` is read when a view is composed, not tracked: each view is composed again, keeping its state
             if isinstance(built.view, ComposedView):
                 built.view.restyle(self._composed_rules(library, self._stylesheet_spec, built.view.handle.doc)[0])
 

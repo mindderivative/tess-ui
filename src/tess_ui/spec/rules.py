@@ -30,7 +30,7 @@ from pathlib import Path
 from typing import Any, Callable, Collection, Iterable, Optional
 
 from tess_ui.tel import ExprError, Parts, compile_template
-from tess_ui.spec import marker, placement, sizes, widgets as registry
+from tess_ui.spec import density as density_module, marker, placement, sizes, widgets as registry
 from tess_ui.spec.nodes import LoadError
 from tess_ui.spec.widgets import style_fields_of
 from tess_ui.project import looks_like
@@ -43,14 +43,14 @@ STATES = ("hovered", "focused", "focus_visible", "pressed", "disabled", "selecte
 INTERACTION_STATES = ("hovered", "focused", "focus_visible", "pressed")
 #: Properties a rule may select on, besides `classes` and `name`.
 SELECTOR_PROPERTIES = ("variant", "size", "shape")
-_RULE_KEYS = ("widget", "variant", "size", "shape", "classes", "name", "part", "state", "style")
+_RULE_KEYS = ("widget", "variant", "size", "shape", "classes", "name", "part", "state", "density", "style")
 
 
 def is_rule_sheet(spec: Any) -> bool:
-    """Whether a parsed stylesheet is in this shape: some rule names a `widget`, `part`, `state`, `variant`, `size`, `shape` or `name`
+    """Whether a parsed stylesheet is in this shape: some rule names a `widget`, `part`, `state`, `variant`, `size`, `shape`, `name` or `density`
     (the 0.4.x shape has `kind`, `classes` and `id`)."""
     rules = spec.get("styles") if isinstance(spec, dict) else None
-    return isinstance(rules, list) and any(isinstance(r, dict) and set(r) & {"widget", "part", "state", "variant", "size", "shape", "name"} for r in rules)
+    return isinstance(rules, list) and any(isinstance(r, dict) and set(r) & {"widget", "part", "state", "variant", "size", "shape", "name", "density"} for r in rules)
 
 
 @dataclass
@@ -75,6 +75,7 @@ class Rule:
     name: Optional[str] = None
     part: Optional[str] = None
     state: Optional[str] = None
+    density: Optional[str] = None  # `Density:` the rule gives the nodes it matches (their own `Density` is over it, their style numbers are untouched)
     order: int = 0
     at: tuple[int, int] = (1, 0)
 
@@ -197,9 +198,16 @@ def _build(spec: Any, file: str, text: str, parts_of: Optional[Callable[[str], O
         state = item.get("state")
         if state is not None and state not in STATES:
             raise fail(val_at.get("state", at), f"'state:' is one of {', '.join(STATES)}, not {state!r}", _near(state, STATES))
+        density = item.get("density")
+        if density is not None:
+            problem = density_module.check_level(density)
+            if problem is not None:
+                raise fail(val_at.get("density", at), f"'density:' {problem}", _near(density, density_module.LEVELS))
         raw_style = item.get("style")
-        if not isinstance(raw_style, dict) or not raw_style:
-            raise fail(val_at.get("style", at), "a rule needs a 'style:' mapping")
+        if raw_style is None and density is not None:
+            raw_style = {}  # a rule may only say a density
+        if not isinstance(raw_style, dict) or (not raw_style and density is None):
+            raise fail(val_at.get("style", at), "a rule needs a 'style:' mapping (or a 'density:')")
         allowed = style_fields_of(decl) if decl is not None else style_fields_of(None) | {"foreground"}  # a view (not in the registry) is decided by its root
         style: dict[str, Any] = {}
         style_key_at, style_val_at = getattr(raw_style, "key_at", {}), getattr(raw_style, "val_at", {})
@@ -223,7 +231,7 @@ def _build(spec: Any, file: str, text: str, parts_of: Optional[Callable[[str], O
             for other in others:
                 if style.get(edge) is not None and style.get(other) is not None:
                     raise fail(style_key_at.get(other, at), f"{widget or 'a rule'}: style.{edge} and style.{other} both place the node; say one of them ({edge} is the same as {'left' if edge == 'x' else 'top'})")
-        rules.append(Rule(widget, style, selectors, frozenset(classes), name, part, state, order=len(rules), at=at))
+        rules.append(Rule(widget, style, selectors, frozenset(classes), name, part, state, density, order=len(rules), at=at))
     return RuleSheet(rules, file)
 
 

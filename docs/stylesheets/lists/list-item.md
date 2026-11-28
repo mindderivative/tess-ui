@@ -18,8 +18,8 @@ Styles {
   Rule {
     Widget: ListItem
     Style {
-      Padding: <| {'left': 16 if app_density() == '' else density_token(app_density(), 'row_padding_x'), 'right': 16 if app_density() == '' else density_token(app_density(), 'row_padding_x'), 'top': 8 if app_density() == '' else (density_token(app_density(), 'row_height') - 20) / 2, 'bottom': 8 if app_density() == '' else (density_token(app_density(), 'row_height') - 20) / 2} |>
-      Gap: <| 16 if app_density() == '' else density_token(app_density(), 'icon_label_gap') |>
+      Padding: <| {'left': 16 if density == '' else density_token(density, 'row_padding_x'), 'right': 16 if density == '' else density_token(density, 'row_padding_x'), 'top': 8 if density == '' else (density_token(density, 'row_height') - 20) / 2, 'bottom': 8 if density == '' else (density_token(density, 'row_height') - 20) / 2} |>
+      Gap: <| 16 if density == '' else density_token(density, 'icon_label_gap') |>
       Background: <| 'secondary_container' if selected else 'transparent' |>
     }
   }
@@ -49,8 +49,8 @@ Each rule names `Widget: ListItem` and may add the properties the view declares 
 
 | When | Field | Value | What it does |
 | --- | --- | --- | --- |
-| always | `Padding` | `<\| {'left': 16 if app_density() == '' else density_token(app_density(), 'row_padding_x'), 'right': 16 if app_…` | Space inside it: one number, or `{Left, Right, Top, Bottom}`. |
-| always | `Gap` | `<\| 16 if app_density() == '' else density_token(app_density(), 'icon_label_gap') \|>` | Space between its children. |
+| always | `Padding` | `<\| {'left': 16 if density == '' else density_token(density, 'row_padding_x'), 'right': 16 if density == '' el…` | Space inside it: one number, or `{Left, Right, Top, Bottom}`. |
+| always | `Gap` | `<\| 16 if density == '' else density_token(density, 'icon_label_gap') \|>` | Space between its children. |
 | always | `Background` | `<\| 'secondary_container' if selected else 'transparent' \|>` | Its fill: a theme role such as `surface`, `#RRGGBB`, any CSS colour, or a gradient such as `linear-gradient(90deg, primary, tertiary)`. |
 
 ### `headline` (Text)

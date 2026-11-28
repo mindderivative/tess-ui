@@ -86,7 +86,7 @@ def test_making_an_app_does_not_run_the_effects_of_views_that_are_still_alive(tm
     from tess_ui import Effect, tel
 
     runs = []
-    keep = Effect(lambda: runs.append(tel.HOST_FUNCTIONS["app_density"]()))
+    keep = Effect(lambda: runs.append(tel._app_density.get()))
     before = len(runs)
     App(root=tmp_path, density="compact")
     App(root=tmp_path)
