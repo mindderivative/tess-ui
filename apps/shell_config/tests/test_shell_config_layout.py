@@ -97,3 +97,16 @@ def test_a_long_file_name_ends_in_an_ellipsis_inside_the_files_dock_and_nothing_
     assert all(n.get("layout_x") + n.get("layout_width") <= right + 0.5 for n in labels), "the label ends inside the row"
     assert all(n.get("wrap") == "none" and n.get("overflow") == "ellipsis" for n in labels)
     assert w.built.view._built.outer["root.dock.files_panel.files_pane.files_scroll"].get("orientation") == "vertical"
+
+
+def test_a_marker_under_a_label_wraps_inside_the_label_column_and_never_runs_under_the_field(w):
+    """The owner's fb06: the second line under a label ("written in a module's file, not here") was one long line, laid over the field and clipped by it. It wraps in the label column."""
+    w.select("Text")
+    w.open_all_groups()
+    markers = [(inst, node) for inst, node in named(w, "marker_text")]
+    assert markers, "a Text block has a row with a marker"
+    for inst, marker in markers:
+        label_box = w.built.view.node(inst.id.rsplit(".", 1)[0])
+        cells = w.built.view.node(label_box and inst.id.rsplit(".", 2)[0] + ".cells")
+        assert marker.get("layout_x") + marker.get("layout_width") <= cells.get("layout_x") + 0.5, "the marker ends before the cells begin"
+        assert marker.get("layout_width") <= label_box.get("layout_width") + 0.5

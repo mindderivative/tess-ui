@@ -471,7 +471,7 @@ Container {
                                             Name: marker_text
                                             Text: <| marker |>
                                             Typography_Role: label_small
-                                            Style { Foreground: on_surface_variant }
+                                            Style { Width: 100%, Foreground: on_surface_variant }
                                           }
                                         }
                                       }
