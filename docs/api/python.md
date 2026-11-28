@@ -21,6 +21,7 @@ Every public class, function and constant, with its signature and what it does. 
 - [Font browser](#font-browser): The font list's search and cursor, with no window.
 - [Key chords](#key-chords): Key chords as text, `Ctrl+Alt+Shift+Meta+Key`.
 - [List editor](#list-editor): The list editor's items and edits, with no window.
+- [Combo box](#combo-box): The combo box's options, text, list and keys, with no window.
 - [Token list](#token-list): The token button's tokens, search and cursor, with no window.
 - [Docking](#docking): Panels the user can drag between zones.
 - [Interaction](#interaction): State layer, ripple and focus ring.
@@ -2401,6 +2402,36 @@ The `(value, label)` pairs of `choices`: each a plain value (its label is its te
 **Constants**
 
 - `KINDS` = `('text', 'number', 'bool', 'enum', 'colour')`
+
+## Combo box
+
+`tess_ui.combobox_controls`: The combo box's options, text, list and keys, with no window.
+
+### `ComboboxModel`
+
+```python
+class ComboboxModel(
+    options: list[dict[str, Any]] | None = None,
+    *,
+    strict: bool = True,
+    value: Any = '',
+    page_rows: int = 8
+) -> None
+```
+
+See the module's note.
+
+- `escape() -> bool`: Escape: close the list and keep the text; closed already, Strict puts the value back.
+- `key(name: str, *, alt: bool = False) -> bool`: A key the field heard.
+- `label_of(value: Any) -> str`: The label of the option whose value is `value` (empty when there is none).
+- `leave() -> None`: The field loses the focus (Tab): see the module's note.
+- `pick(index: int) -> bool`: Pick row `index` (a press on it, or Enter): the value is its value, the field shows its label, the list closes.
+- `reveal(offset: float, row_height: float) -> float`: The scroll offset that keeps the active row among `page_rows` rows.
+- `revert() -> None`: Strict: the text goes back to the label of the value, the list closes.
+- `row_enabled(index: int) -> bool`: Whether row `index` of the results exists and can be picked.
+- `set_options(options: list[dict[str, Any]]) -> None`: The options are now these (a row without a `value` and a `label` is left out); the list is filtered again.
+- `set_value(value: Any) -> None`: The view's own change of the value: the field shows its label.
+- `type(text: str) -> None`: The person edited the text: the list narrows at once and opens, and no row is active.
 
 ## Token list
 

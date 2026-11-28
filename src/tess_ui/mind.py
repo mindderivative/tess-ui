@@ -31,6 +31,7 @@ KINDS: dict[str, str] = {
     "ChordRecorder": "tess_ui.chord_controls:ChordRecorder",
     "ListModel": "tess_ui.list_controls:ListModelControl",
     "TokenList": "tess_ui.token_controls:TokenListControl",
+    "Combobox": "tess_ui.combobox_controls:ComboboxControl",
 }
 
 

@@ -378,6 +378,7 @@ class ComposedView(View):
             untrack(self._wire_states)
             untrack(self._wire_focus_groups)
             untrack(self._wire_menubars)
+            untrack(self._wire_comboboxes)
             untrack(self._wire_selection)
             untrack(lambda: self.root.get("visible") != visible and self.root.set(visible=visible))
         finally:
@@ -1339,6 +1340,20 @@ class ComposedView(View):
 
             self._group_undos.append(self._listen(box, "focus", on_focus))
             self._group_undos.append(self._listen(box, "key_down", on_key))
+
+    def _wire_comboboxes(self) -> None:
+        """The field of an `Autocomplete` keeps the keyboard focus while a row of its list is the current one: the engine's `active_descendant` tells assistive technology which (the field is the combobox,
+        the row an `option`). None while the list is closed or no row is active, or the row is not built (the list builds the rows in view)."""
+        for inst in self.handle.composition.walk():
+            if inst.id not in self._built.outer or not any(i.widget == "Autocomplete" and i.part is None for i in inst.identities):
+                continue
+            field = self._built.nodes.get(f"{inst.id}.field_box.field.box.body.input")
+            if field is None:
+                continue
+            index = inst.state["active"].get() if inst.state["expanded"].get() else -1
+            row = self._built.nodes.get(f"{inst.id}.layer.surface.list_box.list.row[{index}]") if index >= 0 else None
+            if field.get("active_descendant") != row:
+                field.set(active_descendant=row)
 
     def _wire_menubars(self) -> None:
         """The keys of a `MenuBar` that no node of it can hear: F10 and a bare Alt (press and release with no other key between) make the bar active; Alt and a title's mnemonic opens its menu from anywhere in

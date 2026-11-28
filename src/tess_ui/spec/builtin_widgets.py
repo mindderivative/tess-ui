@@ -320,6 +320,22 @@ declare("TokenList", {
     "disabled": P("bool"),
 }, doc="The token button's mind: it draws nothing. It takes the tokens as data, searches them, keeps the cursor and tells the view through the names it is bound to.")
 
+declare("Combobox", {
+    "value": P("any", default="", model=True, doc="The value of the chosen option (Free: the text taken as the value). A pick writes it."),
+    "text": P("str", default="", model=True, doc="The text in the field: the view's field writes it as the person types, and a pick or a revert writes the label."),
+    "expanded": P("bool", default=False, model=True, doc="Whether the list is open: it opens on typing and on Down, and the popup writes false when Escape or a press outside closes it."),
+    "options": P("list", default=[], doc="The options, each {value, label} and optionally {hint, disabled}."),
+    "strict": P("bool", default=True, doc="True: the value is always one of the options and leaving the field puts the last value back; false: the typed text may be the value."),
+    "rows": P("int", default=8, doc="How many rows show at once (for Page Up and Page Down and for scrolling the active row into view)."),
+    "row_height": P("float", default=32.0, doc="How tall a row is, in pixels."),
+    "command": P("str", default="", doc=_MIND_COMMAND + "`key arrow_down`, `key arrow_down alt`, `key enter`, `leave` (the field lost the focus), `click 2`, `toggle`."),
+    "scroll": P("float", default=0.0, model=True, doc="The list's scroll offset: bind the list's `scroll_offset` to the same name; moving the active row writes the offset that shows it."),
+    "entries": P("list", model=True, doc=_MIND_OUT + " The options that match the text, each {value, label, hint, disabled, runs, selected}: `runs` is the label with the matched part in weight 500."),
+    "active": P("int", model=True, doc=_MIND_OUT + " The place of the active row among `entries`, or -1 when there is none."),
+    "count": P("int", model=True, doc=_MIND_OUT + " How many options match."),
+    "disabled": P("bool"),
+}, doc="The combo box's mind: it draws nothing. It holds the options, the text, the list and the active row, does what the keys and the leaving of the field mean (Strict and Free), and tells the view through the names it is bound to.")
+
 declare("NodeGraph", {"edges": P("list", doc="The links: each {from: id, to: id}, the ids of the GraphNodes."),
                       "snap": P("float", default=0.0, doc="A node the user moves lands on a multiple of this many pixels; 0 is no grid."),
                       "arrows": P("bool", doc="Each edge ends in an arrowhead."),

@@ -62,7 +62,7 @@ def test_every_shipped_view_reads_with_position_maps_and_goes_through_the_node_p
     from tess_ui.shipped import ViewLibrary
 
     library = ViewLibrary()  # the shipped views call each other
-    assert len(VIEWS) == 61
+    assert len(VIEWS) == 62
     for path in VIEWS:
         text = path.read_text(encoding="utf-8")
         check_shape(T.load_marked_tdl(text, path.name, resolver=library.decl))

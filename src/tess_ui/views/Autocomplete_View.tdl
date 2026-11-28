@@ -1,0 +1,175 @@
+---
+TDL: 0.2
+Name: Autocomplete
+Tesserae: "0.6"
+---
+# The combo box (ux spec Autocomplete; the WAI-ARIA combobox with a listbox popup): an outlined text field with a popup list of options that narrows as the person types, for a closed set too long to scan (the
+# Role of a block, a token). `options` is a list of {value, label} and optionally {hint, disabled}; matching is by containing text, case aside, in the order of the options, and the matched letters are in
+# weight 500. The field keeps the keyboard focus all the time: Down opens the list and moves the active row (Alt+Down opens without one), Up the other way, Enter picks the active row, Escape closes the list and then puts the
+# value back, Tab picks an option whose label the text is (or the row an arrow key chose) and otherwise puts the value back. `strict: false` is the free form: the typed text may be the value. The list shows eight rows
+# and scrolls; the popup is as wide as the field (at least 160, at most 360). Not built: inline completion, the chevron and clear buttons, row templates (swatch, icon, font sample), the count announcement.
+Container {
+  Params {
+    Options { Type: list, Default: [], Doc: "The options, each {value, label} and optionally {hint, disabled}." }
+    Value { Type: any, Default: "", Model: true, Doc: "The value of the chosen option; a pick writes it (Free: the text taken as the value)." }
+    Picked { Type: any, Default: "", Model: true, Doc: "The value of the option last picked, written before `on_pick` is called: bind it to a name the caller reads in its `On_Pick`." }
+    Label { Type: str, Default: "", Doc: "What is being chosen: the accessible name of the field and the list (the form row beside it shows the visible label)." }
+    Placeholder { Type: str, Default: "Type to search", Doc: "Shown in the empty field." }
+    Strict { Type: bool, Default: true, Doc: "true: the value is always one of the options; false: the typed text may be the value." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed and does not take the focus." }
+    On_Pick { Type: handler, Doc: "Called after an option has been picked or a free text taken (`value` holds it)." }
+  }
+  State { Text: "", Expanded: false, Cmd: "", N: 0, Scroll: 0, Entries: [], Active: -1, Count: 0, Avail: 0 }
+  Style { Flex_Direction: vertical, Width: 100% }
+  Children {
+    Combobox {
+      Name: mind
+      Value: <| value |>
+      Text: <| text |>
+      Expanded: <| expanded |>
+      Options: <| options |>
+      Strict: <| strict |>
+      Rows: 8
+      Row_Height: <| (56 if density in ('', 'default') else (48 if density == 'compact' else 40)) if any([o.get('hint', '') != '' for o in options]) else (40 if density in ('', 'default') else density_token(density, 'menu_item_height')) |>
+      Command: <| cmd |>
+      Scroll: <| scroll |>
+      Disabled: <| disabled |>
+      Entries: <| entries |>
+      Active: <| active |>
+      Count: <| count |>
+      Handlers {
+        On_Input {
+          Set { Target: picked, Value: <| value |> }
+          Call { Action: "on_pick" }
+        }
+      }
+    }
+    Container {
+      Name: field_box
+      Measured_Width: <| avail |>
+      Style { Flex_Direction: vertical, Width: 100% }
+      Children {
+        TextField {
+          Name: field
+          Variant: outlined
+          Label: <| label |>
+          Placeholder: <| placeholder |>
+          Text: <| text |>
+          Disabled: <| disabled |>
+          Style { Width: 100% }
+          A11y { Role: combobox, Label: <| label |>, Expanded: <| expanded |> }
+          Handlers {
+            On_Key {
+              Set { Target: n, Value: <| n + 1 |> }
+              Set {
+                Target: cmd
+                Value: <| (str(n) + ' key ' + event.key + (' alt' if event.alt else '')) if event.key in ['arrow_down', 'arrow_up', 'page_up', 'page_down', 'enter', 'escape'] else cmd |>
+              }
+            }
+            On_Focus_Exit {
+              Set { Target: n, Value: <| n + 1 |> }
+              Set { Target: cmd, Value: <| str(n) + ' leave' |> }
+            }
+          }
+        }
+      }
+    }
+    Overlay {
+      Name: layer
+      Open: <| expanded |>
+      Anchor: field
+      Placement: below
+      Children {
+        Container {
+          Name: surface
+          A11y { Role: listbox, Label: <| label |> }
+          Style { Flex_Direction: vertical, Width: <| max(160, min(360, avail)) |> }
+          Children {
+            If <| count > 0 |> {
+              Container {
+                Name: list_box
+                Style { Flex_Direction: vertical, Height: <| min(count, 8) * ((56 if density in ('', 'default') else (48 if density == 'compact' else 40)) if any([o.get('hint', '') != '' for o in options]) else (40 if density in ('', 'default') else density_token(density, 'menu_item_height'))) |> }
+                Children {
+                  VirtualList {
+                    Name: list
+                    Item_Height: <| (56 if density in ('', 'default') else (48 if density == 'compact' else 40)) if any([o.get('hint', '') != '' for o in options]) else (40 if density in ('', 'default') else density_token(density, 'menu_item_height')) |>
+                    Scroll_Offset: <| scroll |>
+                    Style {
+                      Flex_Direction: vertical
+                      Height: <| min(count, 8) * ((56 if density in ('', 'default') else (48 if density == 'compact' else 40)) if any([o.get('hint', '') != '' for o in options]) else (40 if density in ('', 'default') else density_token(density, 'menu_item_height'))) |>
+                    }
+                    Children {
+                      For i, row In <| enumerate(entries) |> Key <| i |> {
+                        Container {
+                          Name: row
+                          Interaction: false
+                          A11y { Role: option, Label: <| row['label'] |>, Description: <| row['hint'] |>, Selected: <| row['selected'] |> }
+                          Handlers {
+                            On_Press {
+                              Set { Target: n, Value: <| n + 1 |> }
+                              Set { Target: cmd, Value: <| str(n) + ' click ' + str(i) |> }
+                            }
+                          }
+                          Style {
+                            Flex_Direction: horizontal
+                            Align_Content: left
+                            Padding: <| {'left': 12 if density in ('', 'default') else (8 if density == 'compact' else 4), 'right': 12 if density in ('', 'default') else (8 if density == 'compact' else 4), 'top': 0, 'bottom': 0} |>
+                            Background: <| 'secondary_container' if row['selected'] else ('surface_container_highest' if i == active else 'transparent') |>
+                            Opacity: <| 0.38 if row['disabled'] else 1 |>
+                          }
+                          Children {
+                            Container {
+                              Name: texts
+                              Style { Flex: fill, Flex_Direction: vertical, Align_Content: left }
+                              Children {
+                                Text {
+                                  Name: row_label
+                                  Runs: <| row['runs'] |>
+                                  Typography_Role: <| body_role(density) |>
+                                  Font_Size: <| dense_text_size(density) |>
+                                  Max_Lines: 1
+                                  Overflow: ellipsis
+                                  Style { Foreground: <| 'on_secondary_container' if row['selected'] else 'on_surface' |> }
+                                }
+                                If <| row['hint'] != '' |> {
+                                  Text {
+                                    Name: row_hint
+                                    Text: <| row['hint'] |>
+                                    Typography_Role: body_small
+                                    Max_Lines: 2
+                                    Overflow: ellipsis
+                                    Style { Foreground: <| 'on_secondary_container' if row['selected'] else 'on_surface_variant' |> }
+                                  }
+                                }
+                              }
+                            }
+                            If <| row['selected'] |> {
+                              Icon {
+                                Name: check
+                                Icon: check
+                                Style { Width: 20, Height: 20, Foreground: on_secondary_container }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            If <| count == 0 |> {
+              Text {
+                Name: empty
+                Text: "No matches"
+                Typography_Role: <| body_role(density) |>
+                Style { Padding: 12, Foreground: on_surface_variant }
+                A11y { Role: alert, Live: polite }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

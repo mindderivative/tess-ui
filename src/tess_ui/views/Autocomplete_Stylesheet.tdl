@@ -1,0 +1,11 @@
+---
+TDL: 0.2
+Name: Autocomplete
+Tesserae: "0.6"
+---
+# The look of Autocomplete (ux spec Autocomplete): the popup is a `surface_container` surface at level 2 with 4 pixel corners and 4 pixels (8 at the default density) above and below the rows, as Menu; a row has
+# the padding of a menu row, a selected row is `secondary_container` with a check at its end, the active row `surface_container_highest`.
+Styles {
+  Rule { Widget: Autocomplete, Part: surface, Style { Background: surface_container, Corner_Radius: 4, Elevation: 2, Padding: <| {'left': 0, 'right': 0, 'top': 8 if density in ('', 'default') else 4, 'bottom': 8 if density in ('', 'default') else 4} |> } }
+  Rule { Widget: Autocomplete, Part: row, Style { Corner_Radius: 0 } }
+}
