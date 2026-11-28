@@ -1,0 +1,109 @@
+# GitHub-only release of the Configuration Application (`apps/shell_config`, package `tesserae-shell-config`). No PyPI, no trusted publishing.
+#
+# - Trigger: a tag `config-vX.Y.Z` (distinct from the `vX.Y.Z` tags of tesserae-ui, which `release.yml` makes from `pyproject.toml`), or a manual run
+#   with the tag to build. The maintainer pushes the tag; nothing here creates one.
+# - It checks that the tag's version is the one in `apps/shell_config/pyproject.toml` and that `apps/shell_config/CHANGELOG.md` has a `## X.Y.Z` section,
+#   builds the wheel and sdist, installs the wheel in a clean environment (its dependencies from PyPI, as a user's `pip install` would) and checks that it
+#   starts and carries its views, and creates a DRAFT release with the files and the notes. The maintainer publishes the draft by hand.
+# - Re-running is safe: a release that already exists for the tag is left as it is.
+name: Config release
+
+on:
+  push:
+    tags: ["config-v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The tag to build, for example config-v0.1.0 (it must exist)"
+        required: true
+
+concurrency:
+  group: config-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  release:
+    name: Build and draft the release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write   # the draft release
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+
+      - name: The tag, the version and the changelog agree
+        run: |
+          python - <<'EOF'
+          import os, re, sys, tomllib
+
+          tag = os.environ["TAG"]
+          match = re.fullmatch(r"config-v(\d+(?:\.\d+)*(?:[a-z]+\d+)?)", tag)
+          if not match:
+              sys.exit(f"{tag!r} is not a config tag (config-vX.Y.Z)")
+          version = tomllib.load(open("apps/shell_config/pyproject.toml", "rb"))["project"]["version"]
+          if match.group(1) != version:
+              sys.exit(f"the tag says {match.group(1)} but apps/shell_config/pyproject.toml says {version}")
+          if not re.search(rf"^## {re.escape(version)}( |$)", open("apps/shell_config/CHANGELOG.md", encoding="utf-8").read(), re.M):
+              sys.exit(f"apps/shell_config/CHANGELOG.md has no '## {version}' section: the release notes come from it")
+          open(os.environ["GITHUB_ENV"], "a").write(f"VERSION={version}\n")
+          EOF
+
+      - name: Build the sdist and wheel
+        working-directory: apps/shell_config
+        run: |
+          pip install build twine
+          python -m build
+          twine check --strict dist/*
+
+      - name: The wheel installs and starts
+        run: |
+          python -m venv /tmp/clean
+          /tmp/clean/bin/pip install --quiet apps/shell_config/dist/*.whl
+          cd /tmp
+          /tmp/clean/bin/python -I -c "
+          import importlib.metadata as m, importlib.resources as r, os, tess_shell_config
+          assert m.version('tesserae-shell-config') == os.environ['VERSION'], m.version('tesserae-shell-config')
+          assert 'site-packages' in tess_shell_config.__file__, tess_shell_config.__file__
+          views = [p.name for p in (r.files('tess_shell_config') / 'Views').iterdir() if p.name.endswith('.tdl')]
+          assert views, 'no views in the wheel'
+          print('tesserae-shell-config', m.version('tesserae-shell-config'), 'with', len(views), 'views; tesserae-ui', m.version('tesserae-ui'))
+          "
+          /tmp/clean/bin/tesserae-shell-config --version
+
+      - name: The notes of this version are its changelog section
+        run: |
+          awk -v v="$VERSION" '$1 == "##" && $2 == v {on=1; next} /^## / && on {exit} on' apps/shell_config/CHANGELOG.md > notes.md
+          {
+            echo
+            echo "Install (Python 3.14; the \`tesserae-shell\` command must be on the PATH):"
+            echo
+            echo '```'
+            echo "pip install https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/tesserae_shell_config-$VERSION-py3-none-any.whl"
+            echo '```'
+          } >> notes.md
+
+      - name: Create the draft release
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "$TAG already has a release: left as it is"
+          else
+            gh release create "$TAG" apps/shell_config/dist/* --draft --verify-tag --title "Tesserae Shell Config $VERSION" --notes-file notes.md
+          fi

@@ -15,6 +15,14 @@ tesserae-shell-config                       # the folder the shell names, else ~
 tesserae-shell-config --config-dir ~/shell  # a folder of your own
 ```
 
+From a release (GitHub Releases only; the application is not on PyPI). Releases are tagged `config-vX.Y.Z`; install the wheel attached to one with Python 3.14:
+
+```bash
+pip install https://github.com/mindderivative/tess-ui/releases/download/config-v0.1.0/tesserae_shell_config-0.1.0-py3-none-any.whl
+```
+
+(The `tesserae-ui` and `tesserae-dl` it needs come from PyPI.) Its release notes are in [CHANGELOG.md](CHANGELOG.md).
+
 Without the `tesserae-shell` command, or with a schema whose major version the application does not know, it says so on standard error and stops (exit status 3).
 
 ## The window
