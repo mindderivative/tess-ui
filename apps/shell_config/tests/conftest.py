@@ -28,6 +28,17 @@ if UNAVAILABLE:
     collect_ignore_glob = ["test_*.py"]  # a directory run; a file named on the command line (CI's partial run) is not ignored, so the hook below skips it
 
 
+def pytest_collection_modifyitems(config, items):
+    """The application is not run on Windows (the tests write their files with `write_text`, which turns every `\\n` into `\\r\\n`, and compare the text a form edit writes line by line). A directory run never
+    collects these files there (`collect_ignore_glob`), but CI's partial run names the files a change touches, and a named file is collected and imports fine on Windows: skip its tests with that reason."""
+    if sys.platform != "win32":
+        return
+    skip = pytest.mark.skip(reason="the Configuration Application's tests are not run on Windows (CRLF in the files the tests write)")
+    for item in items:
+        if HERE in Path(str(item.path)).parents:
+            item.add_marker(skip)
+
+
 @pytest.hookimpl(hookwrapper=True)
 def pytest_make_collect_report(collector):
     """A test module of the application that cannot be imported here (no `tess_dl`: it needs Python 3.14; Windows is not run) is skipped, not an error."""
