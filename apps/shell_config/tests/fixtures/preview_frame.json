@@ -1,0 +1,316 @@
+{
+ "preview_version": "1",
+ "findings": [],
+ "outputs": [
+  {
+   "name": "DP-1",
+   "width": 1920,
+   "height": 1080,
+   "scale": 1.0,
+   "description": ""
+  }
+ ],
+ "appearance": {
+  "scheme": "default",
+  "density": "compact",
+  "theme": "Dusk",
+  "stylesheets": [
+   "Default",
+   "Mine"
+  ]
+ },
+ "tokens": {
+  "color.accent": "#b392f0",
+  "color.error": "#F2958C",
+  "color.inverse_on_surface": "#12171D",
+  "color.inverse_surface": "#E4EAF1",
+  "color.on_primary": "#08121C",
+  "color.on_surface": "#E4EAF1",
+  "color.on_surface_muted": "#9FAEBF",
+  "color.outline": "#5F7188",
+  "color.primary": "#b392f0",
+  "color.scrim": "#000000",
+  "color.success": "#8CCB9A",
+  "color.surface": "#1a1626",
+  "color.surface_raised": "#262036",
+  "color.warning": "#E6BB6A",
+  "density.chevron_box": 20,
+  "density.control_height": 32,
+  "density.field_padding": [
+   8,
+   8,
+   8,
+   8
+  ],
+  "density.icon_label_gap": 8,
+  "density.icon_size": 20,
+  "density.item_icon_size": 18,
+  "density.item_size": 24,
+  "density.menu_item_height": 32,
+  "density.row_height": 32,
+  "density.row_padding_x": 8,
+  "density.tree_indent": 16,
+  "elevation.reach": 64,
+  "motion.duration.long": 400,
+  "motion.duration.medium": 200,
+  "motion.duration.short": 100,
+  "motion.easing.emphasized": "emphasized",
+  "motion.easing.standard": "standard",
+  "scrollbar.gutter": 12,
+  "scrollbar.hit_width": 12,
+  "scrollbar.key_line": 40,
+  "scrollbar.margin": 2,
+  "scrollbar.min_length": 32,
+  "scrollbar.opacity": 0.7,
+  "scrollbar.opacity_drag": 1,
+  "scrollbar.opacity_hover": 0.8,
+  "scrollbar.page_fraction": 0.9,
+  "scrollbar.radius": 4,
+  "scrollbar.wheel_notch": 40,
+  "scrollbar.width": 8,
+  "shape.extra_large": 28,
+  "shape.full": 999,
+  "shape.large": 16,
+  "shape.medium": 8,
+  "shape.medium_large": 12,
+  "shape.none": 0,
+  "shape.small": 4,
+  "space.focus_ring_offset": 2,
+  "space.focus_ring_width": 3,
+  "space.step_1": 2,
+  "space.step_2": 4,
+  "space.step_3": 8,
+  "space.step_4": 12,
+  "space.step_5": 16,
+  "space.step_6": 24,
+  "space.step_7": 32,
+  "space.step_8": 48,
+  "state.dragged": 0.16,
+  "state.focus": 0.1,
+  "state.focus_ms": 150,
+  "state.hover": 0.08,
+  "state.hover_ms": 15,
+  "state.pressed": 0.1,
+  "state.pressed_ms": 105,
+  "type.body.font_size": 14,
+  "type.body.font_weight": 400,
+  "type.body.line_height": 20,
+  "type.caption.font_size": 12,
+  "type.caption.font_weight": 400,
+  "type.caption.line_height": 16,
+  "type.display.font_size": 28,
+  "type.display.font_weight": 400,
+  "type.display.line_height": 36,
+  "type.label.font_size": 13,
+  "type.label.font_weight": 500,
+  "type.label.line_height": 18,
+  "type.system.font_family": "Roboto",
+  "type.title.font_size": 18,
+  "type.title.font_weight": 500,
+  "type.title.line_height": 24
+ },
+ "shell": {
+  "name": "Main_Shell",
+  "file": "Shells/Main_Shell.tdl"
+ },
+ "monitors": [
+  {
+   "name": "Main",
+   "index": "default",
+   "connector": null,
+   "description": null,
+   "outputs": [
+    "DP-1"
+   ],
+   "status": "ok"
+  }
+ ],
+ "surfaces": [
+  {
+   "kind": "frame",
+   "name": "Screen_Frame",
+   "monitor": "Main",
+   "output": "DP-1",
+   "status": "ok",
+   "visible": true,
+   "layer": "bottom",
+   "thickness": {
+    "left": 6,
+    "top": 34,
+    "right": 6,
+    "bottom": 6
+   },
+   "margin": {
+    "left": 4,
+    "top": 4,
+    "right": 4,
+    "bottom": 4
+   },
+   "outer_radius": {
+    "top_left": 0,
+    "top_right": 0,
+    "bottom_right": 0,
+    "bottom_left": 0
+   },
+   "inner_radius": {
+    "top_left": 14,
+    "top_right": 14,
+    "bottom_right": 14,
+    "bottom_left": 14
+   },
+   "inner_border": {
+    "width": 2,
+    "color": "#4682B4"
+   },
+   "outer_border": null,
+   "style": {
+    "Background": "#12171D"
+   },
+   "edges": {
+    "top": {
+     "thickness": 34,
+     "rect": {
+      "x": 10,
+      "y": 38,
+      "width": 1900,
+      "height": 34
+     },
+     "name": null,
+     "blocks": [
+      {
+       "type": "block",
+       "kind": "FlexBox",
+       "name": null,
+       "classes": [],
+       "part": null,
+       "props": {
+        "Align_Items": "center",
+        "Flex": "horizontal",
+        "Width": "expand"
+       },
+       "style": {},
+       "tooltip": null,
+       "children": [
+        {
+         "type": "block",
+         "kind": "Spacer",
+         "name": null,
+         "classes": [],
+         "part": null,
+         "props": {},
+         "style": {},
+         "tooltip": null,
+         "children": []
+        },
+        {
+         "type": "module",
+         "module": "Clock",
+         "name": null,
+         "label": "Clock",
+         "params": {
+          "format": "",
+          "hour_cycle": "desktop",
+          "locale": "",
+          "timezone": "",
+          "tooltip_format": "%A, %d %B %Y"
+         },
+         "common": {},
+         "tooltip": null,
+         "children": []
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "melds": [
+    "Dock"
+   ],
+   "meld_panels": [
+    {
+     "name": "Dock",
+     "status": "ok",
+     "visible": true,
+     "side": "bottom",
+     "alignment": "center",
+     "rect": {
+      "x": 800,
+      "y": 1014,
+      "width": 320,
+      "height": 56
+     },
+     "peek": {
+      "size": 12,
+      "trigger": "hover",
+      "handle": "auto"
+     },
+     "animation": "slide",
+     "style": {
+      "Corner_Radius": 12
+     },
+     "blocks": [
+      {
+       "type": "block",
+       "kind": "FlexBox",
+       "name": null,
+       "classes": [],
+       "part": null,
+       "props": {
+        "Align_Items": "center",
+        "Flex": "horizontal",
+        "Justify_Content": "center",
+        "Spacing": 16,
+        "Width": "expand"
+       },
+       "style": {},
+       "tooltip": null,
+       "children": [
+        {
+         "type": "module",
+         "module": "Icon",
+         "name": null,
+         "label": "Icon",
+         "params": {
+          "Icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" width=\"24\" height=\"24\"><path fill=\"currentColor\" d=\"M10 4H4c-1.11 0-2 .89-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8z\"/></svg>",
+          "Size": 28
+         },
+         "common": {
+          "Label": "Files"
+         },
+         "tooltip": null,
+         "children": []
+        },
+        {
+         "type": "module",
+         "module": "Icon",
+         "name": null,
+         "label": "Icon",
+         "params": {
+          "Icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" width=\"24\" height=\"24\"><path fill=\"currentColor\" d=\"M20 19V7H4v12zm0-16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm-7 14v-2h5v2zm-3.42-4L5.57 9H8.4l3.3 3.3c.39.39.39 1.03 0 1.42L8.42 17H5.59z\"/></svg>",
+          "Size": 28
+         },
+         "common": {
+          "Label": "Terminal"
+         },
+         "tooltip": null,
+         "children": []
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "blocks": []
+  }
+ ],
+ "popups": [],
+ "desktop": [
+  {
+   "output": "DP-1",
+   "x": 10,
+   "y": 38,
+   "width": 1900,
+   "height": 1032
+  }
+ ]
+}
