@@ -40,6 +40,11 @@ class Refused(Exception):
     """A value the key does not allow; `str(error)` says why and what is allowed. Nothing is written."""
 
 
+class Incomplete(Exception):
+    """A value the person has not finished (a list item just added or emptied, still blank): nothing is written and nothing is said; the editor keeps what they have, and the value is checked
+    when it is complete."""
+
+
 @dataclass(frozen=True)
 class Context:
     """What a widget may need beyond its key: the schema (enums, tokens) and the folder of the open file (a path widget's start and relative paths)."""
@@ -592,7 +597,7 @@ class ListWidget(Widget):
     def _props(self, items: list[Any]) -> dict[str, Any]:
         step = self.key.step or 1
         return {"items": items, "item_kind": self.editor, "choices": list(self.choices), "least": self.key.minimum, "most": self.key.maximum, "step": step,
-                "min_items": self.least_items, "max_items": self.most_items, "placeholder": self.default, "hint": self._hint()}
+                "min_items": self.length or 0, "max_items": self.most_items, "placeholder": self.default, "hint": self._hint()}
 
     def _hint(self) -> str:
         if self.length:
@@ -643,7 +648,9 @@ class ListWidget(Widget):
             return quote(str(item))
         if self.kind == "name":
             word = str(item).strip()
-            if not word or _NOT_NAME.search(word):
+            if not word:
+                raise Incomplete(name)  # a blank name is an item that is still being typed
+            if _NOT_NAME.search(word):
                 raise Refused(f"{name} takes a name (letters, digits and underscores, no spaces); {word!r} is not one.")
             pattern = self.key.extra.get("pattern")
             if pattern and not re.fullmatch(str(pattern), word):

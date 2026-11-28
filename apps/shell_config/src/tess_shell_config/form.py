@@ -25,7 +25,7 @@ from tess_shell_config.model import DocumentModel, EditError, block_names
 from tess_shell_config.schema import BlockInfo, KeyInfo, ModuleInfo, ParamInfo, Schema, TokenInfo
 from tess_shell_config.tdl import IndexPath, child_named, properties_of
 from tess_shell_config.values import EXPRESSION_STUB, format_number, is_reference, key_problem, normal_colour, value_text
-from tess_shell_config.widgets import ADD_BLOCK, BlockWidget, Context, PathWidget, Refused, TdlWidget, Widget, WidgetRegistry, default_registry
+from tess_shell_config.widgets import ADD_BLOCK, BlockWidget, Context, Incomplete, PathWidget, Refused, TdlWidget, Widget, WidgetRegistry, default_registry
 
 __all__ = ["Outcome", "Fallback", "Coverage", "Cell", "Row", "FormView", "Form", "coverage", "key_of_param", "key_of_token", "file_name"]
 
@@ -778,6 +778,11 @@ class Form:
         try:
             text = self._text_of(cell, edit)
         except _Skip:
+            return Outcome()
+        except Incomplete:  # not finished: keep it in the editor, write nothing, say nothing (it is checked when it is whole)
+            self.errors.pop(cell_id, None)
+            self.drafts[cell_id] = dict(edit)
+            self._rebuild()
             return Outcome()
         except Refused as error:
             self.errors[cell_id] = str(error)
