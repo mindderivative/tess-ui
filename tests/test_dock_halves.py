@@ -360,7 +360,7 @@ def test_the_new_split_has_a_handle_that_resizes_the_half_before_it():
     handle = host._made_splits[0]
     before = old.get("layout_width")
     x, y = _centre(handle.node)
-    app.window.simulate("pointer_down", handle.node, x=8, y=8)
+    app.window.simulate("pointer_down", handle.node, x=12, y=12)
     app.window.simulate("pointer_move", x=x + 30, y=y)
     app.window.simulate("pointer_up", x=x + 30, y=y)
     app.window.advance(16)
@@ -668,7 +668,7 @@ def test_the_spec_handle_between_halves_resizes_the_column_and_moves_the_next_ha
     handle = view.node("editor.split.0")
     x, y = _centre(handle)
     right_x = right.get("layout_x")
-    app.window.simulate("pointer_down", handle, x=8, y=8)
+    app.window.simulate("pointer_down", handle, x=12, y=12)
     app.window.simulate("pointer_move", x=x + 40, y=y)
     app.window.simulate("pointer_up", x=x + 40, y=y)
     app.window.advance(16)
@@ -883,7 +883,7 @@ def test_the_views_split_handle_still_resizes_a_half_after_the_user_splits_it():
     handle = host._splits["editor.split.0"]
     handle.set(250)
     app.window.advance(32)
-    assert _slot(host, "right_half").get("layout_x") == 216 + 250 + 16
+    assert _slot(host, "right_half").get("layout_x") == 200 + HANDLE_SPAN + 250 + HANDLE_SPAN
     assert _slot(host, "left_half").parent().get("layout_width") == 250.0  # the container the split made, not the half inside it
 
 

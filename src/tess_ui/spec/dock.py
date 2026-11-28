@@ -36,7 +36,7 @@ DOCK_SIDES = ("left", "right", "top", "bottom", "center")
 _DOCK_KEYS = frozenset({"id", "kind", "style", "classes", "a11y", "children", "closed"})
 _PANEL_KEYS = frozenset({"id", "kind", "title", "closable", "style", "classes", "a11y", "children"})
 #: How wide a split's handle is across the split.
-SPLIT_SPAN = 16
+SPLIT_SPAN = 24
 
 
 class DockError(ValueError):

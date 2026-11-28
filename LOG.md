@@ -3866,3 +3866,6 @@ Branch `feat/tel-adapter` (worktree `../tesserae-wt-tel-adapter`), pushed after 
 
 ## 2026-11-27 The Configuration Application: Form is Properties, Text is Editor (P2 of the docked layout)
 - The pane headings and accessible names say Properties (was Form) and Editor (was Text), as the dock's tabs do; the README, the user guide (`guide/shell-config.md`) and the F6 order text follow. Internal names (`form_items`, `form_pane`, `text_pane`, the tests) are unchanged. The vault's F6 order sentence (11 Interaction.md) is for ux-vault to update.
+
+## 2026-11-27 Dock handles are 24 px across (AC-DCK-2)
+- A zone handle and a split handle (`dockhost.HANDLE_SPAN`, `spec.dock.SPLIT_SPAN`) are 24 px across, as the vault's Dock spec says (they were 16); the grip is still 4 by 48. The role was already `separator` (the vault's note that it is `slider` was out of date). Zones lose 8 px of the centre per handle. Tests that pressed a handle at a fixed offset or summed 16 px follow.

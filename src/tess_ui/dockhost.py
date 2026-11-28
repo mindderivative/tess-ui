@@ -38,8 +38,8 @@ from tess_ui.theme import Theme
 
 __all__ = ["DockHost", "MIN_SPLIT", "MIN_ZONE"]
 
-#: A resize handle: a 16 px target holding a 4x48 grip (MD3's drag handle).
-HANDLE_SPAN = 16.0
+#: A resize handle: a 24 px target (AC-DCK-2) holding a 4x48 grip (MD3's drag handle).
+HANDLE_SPAN = 24.0
 GRIP = (4.0, 48.0)
 #: A zone's smallest size and the share of the room it may take; a split half's smallest size; an arrow key's step.
 MIN_ZONE = 120.0
@@ -196,7 +196,8 @@ class DockHost:
 
     def _zone_handle(self, side: str) -> _Handle:
         horizontal = side in ("left", "right")
-        node = self.window.create("box", flex_shrink=0.0, **({"width": HANDLE_SPAN} if horizontal else {"height": HANDLE_SPAN}))
+        node = self.window.create("box", flex_shrink=0.0, align_self="stretch",
+                                 **({"width": HANDLE_SPAN, "height": "100%"} if horizontal else {"height": HANDLE_SPAN, "width": "100%"}))
         return _Handle(self, node, "x" if horizontal else "y", f"Resize the {side} panels",
                        1.0 if side in ("left", "top") else -1.0, lambda: self.size(side), lambda v: self._put(side, v),
                        lambda: self._bounds(side))
