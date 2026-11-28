@@ -7,7 +7,7 @@ Tesserae: "0.6"
 # Role of a block, a token). `options` is a list of {value, label} and optionally {hint, disabled}; matching is by containing text, case aside, in the order of the options, and the matched letters are in
 # weight 500. The field keeps the keyboard focus all the time: Down opens the list and moves the active row (Alt+Down opens without one), Up the other way, Enter picks the active row, Escape closes the list and then puts the
 # value back, Tab picks an option whose label the text is (or the row an arrow key chose) and otherwise puts the value back. `strict: false` is the free form: the typed text may be the value. The list shows eight rows
-# and scrolls; the popup is as wide as the field (at least 160, at most 360). Not built: inline completion, the chevron and clear buttons, row templates (swatch, icon, font sample), the count announcement.
+# and scrolls; the popup is as wide as the field (at least 160, at most 360). Not built: inline completion, the chevron and clear buttons, the count announcement.
 Container {
   Params {
     Options { Type: list, Default: [], Doc: "The options, each {value, label} and optionally {hint, disabled}." }
@@ -17,9 +17,10 @@ Container {
     Placeholder { Type: str, Default: "Type to search", Doc: "Shown in the empty field." }
     Strict { Type: bool, Default: true, Doc: "true: the value is always one of the options; false: the typed text may be the value." }
     Disabled { Type: bool, Default: false, Doc: "Dimmed and does not take the focus." }
+    Start_Open { Type: bool, Default: false, Doc: "The list is open when the field is made (a chooser that has no button: the field takes the focus and the options are already there)." }
     On_Pick { Type: handler, Doc: "Called after an option has been picked or a free text taken (`value` holds it)." }
   }
-  State { Text: "", Expanded: false, Cmd: "", N: 0, Scroll: 0, Entries: [], Active: -1, Count: 0, Avail: 0 }
+  State { Text: "", Expanded: <| start_open |>, Cmd: "", N: 0, Scroll: 0, Entries: [], Active: -1, Count: 0, Avail: 0 }
   Style { Flex_Direction: vertical, Width: 100% }
   Children {
     Combobox {
@@ -118,6 +119,19 @@ Container {
                             Opacity: <| 0.38 if row['disabled'] else 1 |>
                           }
                           Children {
+                            If <| row['swatch'] != '' |> {
+                              Container {
+                                Name: swatch
+                                Style { Width: 20, Height: 20, Corner_Radius: 4, Border_Width: 1, Border_Color: outline, Background: <| row['swatch'] |> }
+                              }
+                            }
+                            If <| row['icon'] != '' |> {
+                              Icon {
+                                Name: lead_icon
+                                Icon: <| row['icon'] |>
+                                Style { Width: 20, Height: 20, Foreground: on_surface_variant }
+                              }
+                            }
                             Container {
                               Name: texts
                               Style { Flex: fill, Flex_Direction: vertical, Align_Content: left }
@@ -127,6 +141,7 @@ Container {
                                   Runs: <| row['runs'] |>
                                   Typography_Role: <| body_role(density) |>
                                   Font_Size: <| dense_text_size(density) |>
+                                  Font_Family: <| row['font'] or None |>
                                   Max_Lines: 1
                                   Overflow: ellipsis
                                   Style { Foreground: <| 'on_secondary_container' if row['selected'] else 'on_surface' |> }

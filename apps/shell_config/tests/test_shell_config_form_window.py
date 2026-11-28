@@ -434,3 +434,20 @@ def test_a_theme_group_in_the_window_shows_a_cell_for_the_base_and_each_mode(fol
     outcome = w.vm.form.form.commit("t:surface|base", {"value": "#000000"})
     w.vm.form._done(outcome)
     assert w.diff(before) == ['-Surface: "#101418"', '+Surface: "#000000"']
+
+
+def test_the_role_with_its_24_values_is_a_combo_box_that_filters_and_writes_the_value_AC_ACP_15(folder, tmp_path, schema):
+    w = _extra_shell(folder, tmp_path, schema)
+    w.select("Box  B")
+    w.open_all_groups()
+    before = w.session.model.text
+    combo = [i for i in w.built.view._built.nodes if i.endswith(".combo.field_box.field.box.body.input") and "k:Role" in i]
+    assert len(combo) == 1
+    w.built.view.node(combo[0]).focus()
+    w.settle(2)
+    w.type("sep")
+    rows = sorted(i for i in w.built.view._built.nodes if ".combo.layer.surface.list_box.list.row[" in i and i.endswith("]") and "k:Role" in i)
+    assert [w.built.view.node(r + ".texts.row_label").get("text") for r in rows] == ["SEPARATOR"]
+    w.key("arrow_down")
+    w.key("enter")
+    assert any(line.startswith("+") and "Role: SEPARATOR" in line for line in w.diff(before)), w.diff(before)

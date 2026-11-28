@@ -447,7 +447,22 @@ Container {
                                                   }
                                                 }
                                               }
-                                              If <| cell['ui'] == 'choice' |> {
+                                              If <| cell['ui'] == 'choice' and len(cell['choices']) > 12 |> {
+                                                Autocomplete {
+                                                  Name: combo
+                                                  Label: <| item['label'] |>
+                                                  Value: <| cell['current'] |>
+                                                  Picked: <| picked_value |>
+                                                  Placeholder: <| cell['shown'] |>
+                                                  Options: <| [{'value': c['value'], 'label': c['label'], 'hint': c['doc']} for c in cell['choices']] |>
+                                                  On_Pick: "form_pick_choice(cell['id'], picked_value)"
+                                                  Handlers {
+                                                    On_Focus_Enter { Set { Target: active, Value: <| True |> } }
+                                                    On_Focus_Exit { Set { Target: active, Value: <| False |> } }
+                                                  }
+                                                }
+                                              }
+                                              If <| cell['ui'] == 'choice' and len(cell['choices']) <= 12 |> {
                                                 ChoicePicker {
                                                   Name: choose
                                                   Label: <| item['label'] |>
@@ -1095,7 +1110,34 @@ Container {
         On_Pick: "structure_command(menu_chosen)"
       }
     }
-    If <| picker_open |> {
+    If <| picker_open and len(picker_items) > 12 |> {
+      Overlay {
+        Name: finder
+        Open: <| picker_open |>
+        Anchor: <| picker_anchor |>
+        Placement: below
+        Focus_First: true
+        Children {
+          Container {
+            Name: find_box
+            A11y { Role: group, Label: <| picker_title |> }
+            Style { Flex_Direction: vertical, Width: 360, Padding: 8, Background: surface_container, Corner_Radius: 4, Elevation: 2 }
+            Children {
+              Autocomplete {
+                Name: find
+                Label: <| picker_title |>
+                Placeholder: <| picker_title |>
+                Options: <| picker_items |>
+                Picked: <| picker_chosen |>
+                Start_Open: true
+                On_Pick: "pick_option(picker_chosen)"
+              }
+            }
+          }
+        }
+      }
+    }
+    If <| picker_open and len(picker_items) <= 12 |> {
       Menu {
         Name: picker
         Open: <| picker_open |>
