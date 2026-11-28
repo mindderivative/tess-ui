@@ -717,7 +717,7 @@ def _scroll_props(ctx, node, style):
             raise SpecBuildError(f'widget {_q(node["id"])}: scroll_offset is a distance in pixels, 0 or more, not {offset!r}')
         outer["scroll_offset"] = float(offset)
     # the content fills the cross axis and is as long as its children along the scrolling one
-    fill = {} if both else {"height": "100%"} if horizontal else {"width": "100%"}
+    fill = {"min_width": "100%", "min_height": "100%"} if both else {"height": "100%"} if horizontal else {"width": "100%"}  # (both ways: at least the viewport, wider when its rows are)
     content.update(flex_direction=style.get("flex_direction", "horizontal" if horizontal else "vertical"), **fill,
                    **{k: style.get(k, _ALIGNMENT_DEFAULTS[k]) for k in _ALIGNMENT_DEFAULTS})
     return outer, content

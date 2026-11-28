@@ -70,6 +70,17 @@ def test_a_wrapped_doc_text_is_as_tall_as_its_lines_and_no_row_is_laid_over_it(t
     assert below >= doc.get("layout_y") + doc.get("layout_height") - 0.5, "the next row starts below the doc text"
 
 
+def test_the_fields_of_the_properties_fill_the_dock_and_line_up_in_one_column(w):  # (a Monitor: its rows are short, so the widest row does not size the content)
+    """A value field is as wide as the dock leaves it, the same for every row; before, the content of a two-way scroller was only as wide as its widest row, so short rows had tiny fields."""
+    w.select("Monitor  Primary")
+    w.open_all_groups()
+    view = w.built.view
+    scroll = view._built.outer["root.dock.form_panel.form_pane.form_scroll"]
+    boxes = [(n.get("layout_x"), n.get("layout_width")) for inst, n in named(w, "field_box")]
+    assert boxes and len({round(x) for x, _ in boxes}) == 1, f"one column: {boxes}"
+    assert min(width for _, width in boxes) >= scroll.get("layout_width") - 120 - 32 - 8 * 4 - 8, "wide enough to use the dock"
+
+
 def test_a_long_file_name_ends_in_an_ellipsis_inside_the_files_dock_and_nothing_scrolls_sideways(tmp_path, schema):
     """The Tree spec (Layout and overflow): labels truncate with an ellipsis and the tree makes no horizontal overflow from labels. The name was cut at the pane edge and a bar scrolled it."""
     folder = tmp_path / "cfg"
