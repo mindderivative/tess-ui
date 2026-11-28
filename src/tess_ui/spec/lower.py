@@ -95,6 +95,9 @@ def _lower(inst: Instance) -> dict[str, Any]:
         folded = {"label"}
         if widget == "Checkbox" and "checked" in values:
             node["checked"] = values["checked"]
+        level = inst.density_node.resolved.get()
+        if level and widget in ("Checkbox", "RadioButton"):  # the sizes of the level (ADR-0029); with no density the control keeps its Material ones
+            node["density"] = level
     elif widget in ("LinearProgress", "CircularProgress", "LoadingIndicator"):
         if widget != "LoadingIndicator" and "value" not in values:
             node["value"] = None  # no value is a wait with no end

@@ -62,27 +62,32 @@ class Control:
     role = "none"
     #: The touch target's width and height.
     target = (TARGET_SIZE, TARGET_SIZE)
+    #: Whether the control's sizes follow a density (the checkbox and the radio button: ADR-0029): at a level the touch target and the state layer are the control height of that level (40, 32, 28), not 48 and 40.
+    DENSITY_AWARE = False
 
     def __init__(self, window: Any, *, theme: Optional[Theme] = None, label: Optional[str] = None,
                  disabled: bool = False, listen: Optional[Listen] = None, size: Optional[float] = None,
-                 width: Optional[float] = None, height: Optional[float] = None) -> None:
+                 width: Optional[float] = None, height: Optional[float] = None, density: str = "") -> None:
         self.window = window
+        self.density = density if self.DENSITY_AWARE else ""
+        self.layer = tokens.density_token(self.density, "control_height") if self.density else STATE_LAYER_SIZE  # the state layer's diameter
         self.theme = initial_theme(window, theme, self)  # the app's, followed, without one (M50)
         self.disabled = Signal(bool(disabled))
         self._listen: Listen = listen if listen is not None else Listeners().listen
         self._changes: list[Callable[[Any], None]] = []
         self._undo: list[Callable[[], None]] = []
         self._painted = False
-        width = float(width if width is not None else size if size is not None else self.target[0])
-        height = float(height if height is not None else size if size is not None else self.target[1])
+        target = (self.layer, self.layer) if self.density else self.target
+        width = float(width if width is not None else size if size is not None else target[0])
+        height = float(height if height is not None else size if size is not None else target[1])
         self.target = (width, height)
         self.node = window.create("box", width=width, height=height, align_items="center",
                                   justify_content="center", focusable=True, role=self.role, cursor="pointer")
         if label is not None:
             a11y.describe(self.node, label=label)
-        self.surface = window.create("box", position="absolute", x=(width - STATE_LAYER_SIZE) / 2,
-                                     y=(height - STATE_LAYER_SIZE) / 2, width=STATE_LAYER_SIZE,
-                                     height=STATE_LAYER_SIZE, corner_radius=STATE_LAYER_SIZE / 2,
+        self.surface = window.create("box", position="absolute", x=(width - self.layer) / 2,
+                                     y=(height - self.layer) / 2, width=self.layer,
+                                     height=self.layer, corner_radius=self.layer / 2,
                                      hit_testable=False, a11y_hidden=True)
         self.node.add_child(self.surface)
         self._build()
@@ -185,7 +190,10 @@ class Checkbox(Control):
     replaces `primary` (a fragment's `background:`)."""
 
     role = "checkbox"
+    DENSITY_AWARE = True
     SIZE = 18.0
+    #: The box at each level (the spec's Checkbox: 18, 16, 14); with no density, `SIZE`.
+    SIZES = {"default": 18.0, "compact": 16.0, "dense": 14.0}
     CHECK = "M3.5,9.5 L7,13 L14.5,5.5"
     DASH = "M4,9 L14,9"  # a checkbox that is neither on nor off (a parent of some checked children)
 
@@ -196,10 +204,11 @@ class Checkbox(Control):
         super().__init__(window, **kwargs)
 
     def _build(self) -> None:
-        self.box = self.window.create("box", width=self.SIZE, height=self.SIZE, corner_radius=2.0, stroke_width=2.0,
+        box = self.SIZES.get(self.density, self.SIZE)
+        self.box = self.window.create("box", width=box, height=box, corner_radius=2.0, stroke_width=2.0,
                                       hit_testable=False, a11y_hidden=True)
         self.mark = self.window.create("path", data=self.CHECK, view_box=(0, 0, self.SIZE, self.SIZE),
-                                       width=self.SIZE, height=self.SIZE, stroke_width=2.0, fill=_CLEAR,
+                                       width=box, height=box, stroke_width=2.0, fill=_CLEAR,
                                        trim_end=0.0, hit_testable=False, a11y_hidden=True)
         self.box.add_child(self.mark)
         self.node.add_child(self.box)
@@ -305,8 +314,11 @@ class RadioButton(Control):
     deselects the others. `color` replaces `primary`."""
 
     role = "radio"
+    DENSITY_AWARE = True
     SIZE = 20.0
     DOT = 10.0
+    #: The ring at each level (the spec's Radio Button: 20, 18, 16; the dot is half of it); with no density, `SIZE`.
+    SIZES = {"default": 20.0, "compact": 18.0, "dense": 16.0}
 
     def __init__(self, window: Any, *, selected: bool = False, group: Optional[RadioGroup] = None,
                  color: Optional[RGBA] = None, error: bool = False, **kwargs: Any) -> None:
@@ -321,10 +333,12 @@ class RadioButton(Control):
             self._undo.append(lambda: group._remove(self))
 
     def _build(self) -> None:
-        self.ring = self.window.create("box", width=self.SIZE, height=self.SIZE, corner_radius=self.SIZE / 2,
+        ring = self.SIZES.get(self.density, self.SIZE)
+        dot = ring / 2
+        self.ring = self.window.create("box", width=ring, height=ring, corner_radius=ring / 2,
                                        stroke_width=2.0, align_items="center", justify_content="center",
                                        hit_testable=False, a11y_hidden=True)
-        self.dot = self.window.create("box", width=self.DOT, height=self.DOT, corner_radius=self.DOT / 2, scale=0.0,
+        self.dot = self.window.create("box", width=dot, height=dot, corner_radius=dot / 2, scale=0.0,
                                       hit_testable=False, a11y_hidden=True)
         self.ring.add_child(self.dot)
         self.node.add_child(self.ring)
@@ -510,7 +524,7 @@ class Slider(Control):
                  step: Optional[float] = None, width: Optional[float] = None, height: Optional[float] = None,
                  color: Optional[RGBA] = None, ticks: bool = False, value_indicator: bool = False,
                  vertical: bool = False, size: Optional[str] = None, icon: Optional[str] = None, **kwargs: Any) -> None:
-        node_size = self._configure(min, max, step, width, height, color, ticks, value_indicator, vertical, size, icon)
+        node_size: dict[str, Any] = self._configure(min, max, step, width, height, color, ticks, value_indicator, vertical, size, icon)
         self._start: float = 0.0
         self.value = Signal(self._snap(value))
         super().__init__(window, **node_size, **kwargs)
@@ -814,7 +828,7 @@ class RangeSlider(Slider):
                  color: Optional[RGBA] = None, ticks: bool = False, value_indicator: bool = False,
                  vertical: bool = False, size: Optional[str] = None, icon: Optional[str] = None, label: Optional[str] = None,
                  **kwargs: Any) -> None:
-        node_size = self._configure(min, max, step, width, height, color, ticks, value_indicator, vertical, size, icon)
+        node_size: dict[str, Any] = self._configure(min, max, step, width, height, color, ticks, value_indicator, vertical, size, icon)
         self._label = label
         self.low = Signal(self._snap(low))
         self.high = Signal(_max(self._snap(high), self.low.get()))  # a `high` below `low` is raised to it
