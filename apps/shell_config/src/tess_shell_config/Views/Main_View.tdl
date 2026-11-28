@@ -132,11 +132,6 @@ Container {
               Style { Flex_Direction: vertical, Width: 100%, Flex: expand_vertical, Min_Height: 0, Gap: 4, Background: surface_container_low, Corner_Radius: 12, Padding: 8 }
               Children {
                 Text {
-                  Name: files_heading
-                  Text: Files
-                  Typography_Role: title_small
-                }
-                Text {
                   Name: folder_text
                   Text: <| folder |>
                   Tooltip: <| folder |>
@@ -235,11 +230,6 @@ Container {
               }
               Style { Flex_Direction: vertical, Width: 100%, Flex: expand_vertical, Min_Height: 0, Gap: 4, Background: surface_container_low, Corner_Radius: 12, Padding: 8 }
               Children {
-                Text {
-                  Name: structure_heading
-                  Text: Structure
-                  Typography_Role: title_small
-                }
                 Text {
                   Name: selection_text
                   Text: <| selected_label |>
@@ -379,11 +369,6 @@ Container {
               }
               Style { Flex_Direction: vertical, Width: 100%, Flex: expand_vertical, Min_Height: 0, Gap: 4, Background: surface_container_low, Corner_Radius: 12, Padding: 8 }
               Children {
-                Text {
-                  Name: form_heading
-                  Text: Properties
-                  Typography_Role: title_small
-                }
                 Text {
                   Name: form_title
                   Text: <| form_title |>
@@ -950,11 +935,6 @@ Container {
                 Min_Width: 0
               }
               Children {
-                Text {
-                  Name: text_heading
-                  Text: Editor
-                  Typography_Role: title_small
-                }
                 TextInput {
                   Name: editor
                   Text: <| text |>

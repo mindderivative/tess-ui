@@ -215,3 +215,25 @@ def test_the_real_preview_of_the_recorded_config_is_a_model_the_view_draws(tmp_p
     assert [s["name"] for s in data["surfaces"]] == ["Top_Bar"]
     over = build_preview(folder, {folder / "Shells" / "Main_Shell.tdl": "{"})
     assert not over["surfaces"] and any(f["severity"] == "error" for f in over["findings"]), "unsaved text that does not parse is an error with no surface"
+
+
+def test_a_module_slot_says_the_words_the_file_gives_it_else_its_name():
+    from tess_shell_config.preview_view import module_label
+
+    assert module_label({"type": "module", "module": "Button", "label": "x", "params": {"Label": "", "Text": "Notes"}}) == "Notes"
+    assert module_label({"type": "module", "module": "Clock", "label": "Clock", "params": {}}) == "Clock"
+    assert module_label({"type": "module", "module": "Slider", "name": "Volume", "label": "Slider", "params": {"Value": 3}}) == "Volume"
+    assert module_label({"type": "module", "module": "Text", "label": "Text", "params": {"Text": {"slot": "battery.level"}}}) == "Text"
+
+
+def test_a_pane_does_not_repeat_its_tab_title_as_a_heading(tmp_path, schema):
+    import shutil
+
+    from test_shell_config_form_window import FormWindow
+    from test_shell_config_window import CONFIG
+
+    folder = tmp_path / "cfg"
+    shutil.copytree(CONFIG, folder)
+    w = FormWindow(folder, tmp_path, schema)
+    names = {inst.name for inst in w.built.view.handle.composition.walk()}
+    assert not names & {"files_heading", "structure_heading", "form_heading", "text_heading"}
