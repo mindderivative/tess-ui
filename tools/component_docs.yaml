@@ -1130,6 +1130,39 @@ components:
       actions.open(save.node)
     see: [guide/overlays.md, guide/effects.md]
 
+  - slug: menu-bars
+    title: Menu bars
+    group: Navigation
+    views: [MenuBar]
+    md3: |
+      Material 3 has no menu bar (it targets touch and has the top app bar); this is the desktop one of the Tesserae UX specification: a row of titles across the top of a window, each opening a menu of
+      commands with their shortcuts beside them.
+    built: |
+      `MenuBar` is a view Tesserae ships (`MenuBar_View.tdl`): a row of titles, each with a `Menu` opened under it. `Menus` is a list of `{label, items}` (and `disabled`); the `items` are the rows a `Menu` takes, and
+      the `value` of the row pressed goes to `Chosen`. A `&` in a label marks the mnemonic letter (`&File`), underlined while the bar is active (`Mnemonics: on_alt`, the default; `always`, `never`).
+
+      The bar is one Tab stop; Left and Right (Home, End, a letter) move between titles and skip a disabled one, and Down, Up, Enter and Space open the menu with its first row in focus. With a menu open,
+      Left and Right on a row that has no submenu open the previous and the next title's menu, and the pointer over another title opens that one at once; pressing an open title closes it. Alt pressed and released
+      alone, or F10, focus the first title and make the bar active (the same again, or Escape, gives the focus back); Alt and the mnemonic letter open that menu from anywhere in the window. The bar
+      and its titles are as high as a control of the density (40, 32, 28), and its menus take the same density. A shortcut shown in a row is the caller's to bind; the menu only shows it.
+
+      Not built yet: the overflow ("More") item for titles that do not fit, and Up opening the menu at its last row (it opens at the first). The role is `group` named `Label` until the engine has `menubar`.
+    usage_view: |
+      Container {
+        Name: window
+        Style { Width: 480, Height: 240 }
+        Children {
+          MenuBar {
+            Chosen: <| command |>
+            Menus {
+              Item { Label: "&File", Items { Item { Value: new, Label: New, Shortcut: "Ctrl+N" }, Item { Value: save, Label: Save, Shortcut: "Ctrl+S" } } }
+              Item { Label: "&Edit", Items { Item { Value: undo, Label: Undo, Shortcut: "Ctrl+Z" } } }
+            }
+          }
+        }
+      }
+    see: [guide/overlays.md]
+
   - slug: search
     title: Search
     group: Navigation

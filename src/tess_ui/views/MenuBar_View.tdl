@@ -1,0 +1,85 @@
+---
+TDL: 0.2
+Name: MenuBar
+Tesserae: "0.6"
+---
+# The desktop menu bar: a row of titles (File, Edit, View ...) across the top of a window, each opening a `Menu` of commands (ux spec Menu Bar; Material 3 has none). `menus` is a list of
+# {label, items} and optionally {disabled}: `label` may mark a mnemonic letter with `&` (`&File`: the F is underlined while the bar is active, and Alt+F opens the menu from anywhere in
+# the window), `items` are the rows of a Menu ({value, label} and optionally {icon, shortcut, checked, disabled, submenu}, {divider: true}); pressing a row sets `chosen` to its `value`. The bar is
+# one Tab stop; Left and Right (and Home, End, a letter) move between the titles, Down, Up, Enter and Space open the menu with its first row in focus; with a menu open Left and Right on a row
+# without a submenu open the previous and the next title's menu, and the pointer moving over another title opens that one at once. Alt pressed and released alone, or F10, makes the bar active
+# (focus on its first title, mnemonics shown); Escape leaves it. A shortcut shown in a row is the caller's to bind: the menu only shows it. The role is `group` named `label` until the engine has `menubar`.
+Container {
+  Params {
+    Menus { Type: list, Default: [], Doc: "The titles, each {label, items} and optionally {disabled}; `&` before a letter of `label` marks its mnemonic." }
+    Chosen { Type: any, Default: "", Model: true, Doc: "The value of the row last pressed in any menu." }
+    Label { Type: str, Default: "Menu bar", Doc: "The bar's accessible name." }
+    Mnemonics {
+      Type: enum
+      Choices: [on_alt, always, never]
+      Default: on_alt
+      Doc: "on_alt: the underlines show while the bar is active; always: at rest too; never: not at all (the Alt+letter keys still work)."
+    }
+    Menu_Width { Type: float, Default: 240, Doc: "How wide each menu is, from 112 to 280 pixels." }
+  }
+  State { Open_Menu: -1, Keyed: false, Active: false }
+  A11y { Role: group, Label: <| label |> }
+  Style {
+    Flex_Direction: horizontal
+    Align_Content: left
+    Width: 100%
+  }
+  Children {
+    Container {
+      Name: strip
+      Focus_Group: horizontal
+      Style { Flex_Direction: horizontal, Align_Content: left }
+      Children {
+        For i, m In <| enumerate(menus) |> Key <| i |> {
+          Container {
+            Name: title
+            Interaction: true
+            Disabled: <| m.get('disabled', False) |>
+            Classes: [menubar_title]
+            A11y {
+              Role: menuitem
+              Label: <| mnemonic_plain(m['label']) |>
+              Expanded: <| open_menu == i |>
+            }
+            Handlers {
+              On_Press { Set { Target: keyed, Value: <| False |> } }
+              On_Click { Set { Target: open_menu, Value: <| -1 if open_menu == i else i |> } }
+              On_Hover_Enter { Set { Target: open_menu, Value: <| i if open_menu >= 0 else open_menu |> } }
+              On_Key {
+                Set { Target: keyed, Value: <| True if event.key in ('arrow_down', 'arrow_up', 'enter', ' ') else keyed |> }
+                Set { Target: open_menu, Value: <| i if event.key in ('arrow_down', 'arrow_up') else open_menu |> }
+              }
+            }
+            Children {
+              Text {
+                Name: label
+                Runs: <| mnemonic_runs(m['label'], mnemonics == 'always' or (mnemonics == 'on_alt' and active)) |>
+                Typography_Role: label_large
+                Font_Size: <| dense_text_size(density) |>
+              }
+              Menu {
+                Name: menu
+                Open: <| open_menu == i |>
+                Focus_First: <| keyed |>
+                Anchor: parent
+                Placement: below
+                Items: <| m['items'] |>
+                Chosen: <| chosen |>
+                Width: <| menu_width |>
+                On_Pick: "open_menu = -1; active = False"
+                Handlers {
+                  On_Dismiss { Set { Target: open_menu, Value: <| -1 if open_menu == i else open_menu |> } }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

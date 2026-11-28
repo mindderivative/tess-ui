@@ -1,0 +1,21 @@
+---
+TDL: 0.2
+Name: MenuBar
+Tesserae: "0.6"
+---
+# The look of MenuBar (ux spec Menu Bar): the bar and its titles are as high as a control of the density (40, 32, 28), a title has the field padding at each side and the extra-small corner, the
+# bar is `surface` and a title `on_surface`; the bar has no elevation.
+Styles {
+  Rule { Widget: MenuBar, Style { Background: surface, Padding: <| {'left': 4, 'right': 4, 'top': 0, 'bottom': 0} |> } }
+  Rule {
+    Widget: MenuBar
+    Part: title
+    Style {
+      Height: <| 40 if density == '' else density_token(density, 'control_height') |>
+      Padding: <| {'left': 12 if density == '' else density_token(density, 'field_padding_x'), 'right': 12 if density == '' else density_token(density, 'field_padding_x'), 'top': 0, 'bottom': 0} |>
+      Align_Content: center
+      Corner_Radius: 4
+    }
+  }
+  Rule { Widget: MenuBar, Part: label, Style { Foreground: on_surface } }
+}

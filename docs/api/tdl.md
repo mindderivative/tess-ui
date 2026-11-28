@@ -128,6 +128,7 @@ A node's widget is a built-in one, one the app registered, or a view found by na
 | [`ListModel`](../components/list-editors.md) | The list editor's mind: it draws nothing. |
 | [`LoadingIndicator`](../components/progress-indicators.md) | An indeterminate wait indicator. |
 | [`Menu`](../components/menus.md) | The Material 3 menu: a list of choices on a temporary surface next to the node it comes from (`Anchor`, the name of a node in the view that has the m… |
+| [`MenuBar`](../components/menu-bars.md) | The desktop menu bar: a row of titles (File, Edit, View ...) across the top of a window, each opening a `Menu` of commands (ux spec Menu Bar; Materia… |
 | [`MenuItem`](../components/menus.md) | One row of a menu (Material 3): 48 pixels tall, `label_large` text, an optional 24 pixel leading icon, trailing text such as a keyboard shortcut, and… |
 | [`NavigationDrawer`](../components/navigation-drawer.md) | The Material 3 standard navigation drawer: a permanent column of destinations beside the content, 360 pixels wide (256 to 360), a `surface` column. |
 | [`NavigationDrawerItem`](../components/navigation-drawer.md) | One destination of a navigation drawer (Material 3): a 56 pixel tall pill with a 24 pixel icon, a `label_large` label and, at the end, a badge (a cou… |

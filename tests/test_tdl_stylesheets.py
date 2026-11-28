@@ -58,8 +58,8 @@ def text_at(lines, where, length):
 # -- (a) the shipped stylesheets ---------------------------------------------------------------------------------------------
 
 
-def test_the_49_shipped_stylesheets_load_with_position_maps_and_go_through_rule_sheet():
-    assert len(SHIPPED) == 49
+def test_the_50_shipped_stylesheets_load_with_position_maps_and_go_through_rule_sheet():
+    assert len(SHIPPED) == 50
     rules = 0
     for path in SHIPPED:
         text = path.read_text(encoding="utf-8")

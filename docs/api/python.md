@@ -361,6 +361,38 @@ dense_text_size(level: str) -> Optional[float]
 
 The font size a text at density `level` is set to over its role's: 13 at `dense` (ADR-0029's `body_dense` 13/18), `None` (the role's own) at every other level.
 
+### `mnemonic_split`
+
+```python
+mnemonic_split(label: str) -> tuple[str, str, str]
+```
+
+`(before, letter, after)` of a label with a mnemonic marked by `&` (`&File`: `("", "F", "ile")`); `&&` is a literal `&`; no mark: `(label, "", "")`.
+
+### `mnemonic_plain`
+
+```python
+mnemonic_plain(label: str) -> str
+```
+
+The label without its `&` mark: the accessible name of a title.
+
+### `mnemonic_of`
+
+```python
+mnemonic_of(label: str) -> str
+```
+
+The mnemonic letter of a label, in lower case (`""` when it has none).
+
+### `mnemonic_runs`
+
+```python
+mnemonic_runs(label: str, show: bool) -> list[Any]
+```
+
+The runs of a `Text` for a label: the mnemonic letter underlined while `show`, else the plain text.
+
 ### `baseline_scheme`
 
 ```python

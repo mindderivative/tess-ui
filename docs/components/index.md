@@ -44,6 +44,7 @@ Material Design 3's components, as Tesserae builds them. Each page says what the
 | [Top app bar](top-app-bar.md) | `TopAppBar` |
 | [Tabs](tabs.md) | `Tabs` |
 | [Menus](menus.md) | `Menu`, `MenuItem` |
+| [Menu bars](menu-bars.md) | `MenuBar` |
 | [Search](search.md) | `SearchBar`, `SearchView` |
 | [Toolbars](toolbars.md) | `Toolbar` |
 | [Links](links.md) | `Link` |
