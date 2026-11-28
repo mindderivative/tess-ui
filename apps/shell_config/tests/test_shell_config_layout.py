@@ -23,11 +23,12 @@ def named(w, name):
     return [(inst, view.node(inst.id)) for inst in view.handle.composition.walk() if inst.name == name]
 
 
-def test_tree_rows_are_dense_four_pixels_in_and_sixteen_per_level(w):
+def test_tree_rows_are_dense_four_pixels_in_and_twelve_per_level(w):
+    """The Structure pane is `Density: dense` (ADR-0029): a root row is 4 px in and a level 12 px (compact: 8 and 16; the toolkit default 16 and 24)."""
     view = w.built.view
     pads = sorted({view._built.outer[inst.id].get("padding_left") for inst, _ in named(w, "row") if "structure_tree" in inst.id})
-    assert pads[0] == 8, f"a root row is 8 px in at the compact density (the toolkit default is 16): {pads}"
-    assert {b - a for a, b in zip(pads, pads[1:])} == {16}, f"16 px per level (the default is 24): {pads}"
+    assert pads[0] == 4, f"a root row is 4 px in at the dense density: {pads}"
+    assert {b - a for a, b in zip(pads, pads[1:])} == {12}, f"12 px per level at the dense density: {pads}"
 
 
 def test_the_folder_path_stays_inside_the_files_pane_and_says_the_whole_path_in_a_tooltip(w):
@@ -177,3 +178,17 @@ def test_the_unit_picker_of_a_length_is_as_high_as_the_field_and_at_least_56_wid
     assert found
     for node in found:
         assert node.get("layout_height") == 32.0 and node.get("layout_width") >= 56.0
+
+
+def test_the_files_and_structure_panes_are_dense_and_the_rest_of_the_window_is_compact_AC_CFG_12(w):
+    """ADR-0029: `Density: dense` on the two panes gives their trees 24 dp rows with 13 dp text and their buttons 28 dp; the window is compact (32 dp controls)."""
+    outer = w.built.view._built.outer
+    files = [i for i in outer if ".files_tree.row[" in i and i.endswith("]")]
+    assert files and {outer[i].get("layout_height") for i in files} == {24.0}
+    assert outer[next(i for i in outer if i.endswith("file_new_button"))].get("layout_height") == 28.0
+    w.vm.open_file("Shells/Main_Shell.tdl")
+    w.settle(6)
+    structure = [i for i in outer if ".structure_tree.row[" in i and i.endswith("]")]
+    assert structure and {outer[i].get("layout_height") for i in structure} == {24.0}
+    assert outer[next(i for i in outer if i.endswith("add_button"))].get("layout_height") == 28.0
+    assert w.built.view.node("root.menu_row.menubar.strip.title[0]").get("layout_height") == 32.0  # the rest is compact

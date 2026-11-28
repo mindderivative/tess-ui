@@ -23,7 +23,7 @@ Styles {
       Transition { Corner_Radius: 200, Background: 150 }
     }
   }
-  Rule { Widget: IconButton, Size: xs, Style { Height: 32 } }
+  Rule { Widget: IconButton, Size: xs, Style { Height: <| (32 if density == '' else min(32, density_token(density, 'icon_button_container'))) |> } }
   Rule { Widget: IconButton, Size: s, Style { Height: <| 40 if density == '' else density_token(density, 'icon_button_container') |> } }
   Rule { Widget: IconButton, Size: m, Style { Height: 56 } }
   Rule { Widget: IconButton, Size: l, Style { Height: 96 } }
@@ -31,7 +31,7 @@ Styles {
   Rule {
     Widget: IconButton
     Style {
-      Width: <| {'xs': {'narrow': 28, 'default': 32, 'wide': 40}, 's': {'narrow': 32, 'default': (40 if density == '' else density_token(density, 'icon_button_container')), 'wide': 52}, 'm': {'narrow': 48, 'default': 56, 'wide': 72}, 'l': {'narrow': 64, 'default': 96, 'wide': 128}, 'xl': {'narrow': 104, 'default': 136, 'wide': 184}}[size][width_kind] |>
+      Width: <| {'xs': {'narrow': 28, 'default': (32 if density == '' else min(32, density_token(density, 'icon_button_container'))), 'wide': 40}, 's': {'narrow': 32, 'default': (40 if density == '' else density_token(density, 'icon_button_container')), 'wide': 52}, 'm': {'narrow': 48, 'default': 56, 'wide': 72}, 'l': {'narrow': 64, 'default': 96, 'wide': 128}, 'xl': {'narrow': 104, 'default': 136, 'wide': 184}}[size][width_kind] |>
     }
   }
   # shapes
@@ -100,12 +100,12 @@ Each rule names `Widget: IconButton` and may add the properties the view declare
 | always | `Height` | `<\| 40 if density == '' else density_token(density, 'icon_button_container') \|>` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
 | always | `Width` | `<\| 40 if density == '' else density_token(density, 'icon_button_container') \|>` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
 | always | `Transition` | `{ Corner_Radius: 200, Background: 150 }` | Which style changes ease to their new value: a duration in milliseconds, or `{Duration, easing, bounce}`. `all` covers every one that can. A node is where it says when first drawn; only a change eases. |
-| `Size: xs` | `Height` | `32` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| `Size: xs` | `Height` | `<\| (32 if density == '' else min(32, density_token(density, 'icon_button_container'))) \|>` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
 | `Size: s` | `Height` | `<\| 40 if density == '' else density_token(density, 'icon_button_container') \|>` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
 | `Size: m` | `Height` | `56` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
 | `Size: l` | `Height` | `96` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
 | `Size: xl` | `Height` | `136` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
-| always | `Width` | `<\| {'xs': {'narrow': 28, 'default': 32, 'wide': 40}, 's': {'narrow': 32, 'default': (40 if density == '' else…` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| always | `Width` | `<\| {'xs': {'narrow': 28, 'default': (32 if density == '' else min(32, density_token(density, 'icon_button_con…` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
 | `Shape: round` | `Corner_Radius` | `full` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`Top`, `Right`, `Bottom`, `Left`) with the rest square. |
 | `Shape: square` | `Corner_Radius` | `<\| {'xs': 12, 's': 12, 'm': 16, 'l': 28, 'xl': 28}[size] \|>` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`Top`, `Right`, `Bottom`, `Left`) with the rest square. |
 | `Shape: round`, state `selected` | `Corner_Radius` | `<\| {'xs': 12, 's': 12, 'm': 16, 'l': 28, 'xl': 28}[size] \|>` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`Top`, `Right`, `Bottom`, `Left`) with the rest square. |

@@ -52,6 +52,7 @@ Container {
           Children {
             Container {
               Name: files_pane
+              Density: dense
               A11y {
                 Role: group
                 Label: Files
@@ -151,6 +152,7 @@ Container {
           Children {
             Container {
               Name: structure_pane
+              Density: dense
               A11y {
                 Role: group
                 Label: Structure

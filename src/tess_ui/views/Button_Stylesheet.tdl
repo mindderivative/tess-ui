@@ -14,7 +14,7 @@ Styles {
     }
   }
   # sizes
-  Rule { Widget: Button, Size: xs, Style { Height: 32, Gap: 4 } }
+  Rule { Widget: Button, Size: xs, Style { Height: <| (32 if density == '' else min(32, density_token(density, 'icon_button_container'))) |>, Gap: 4 } }
   Rule { Widget: Button, Size: s, Style { Height: <| 40 if density == '' else density_token(density, 'control_height') |>, Gap: 8 } }
   Rule { Widget: Button, Size: m, Style { Height: 56, Gap: 8 } }
   Rule { Widget: Button, Size: l, Style { Height: 96, Gap: 12 } }
