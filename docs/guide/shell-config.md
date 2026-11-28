@@ -8,7 +8,7 @@ the second half is for the person who reads it as an example of a Tesserae UI ap
 
 ## Using it
 
-The application edits the `.tdl` files of your shell's configuration folder in place. It changes only the lines you change: comments, blank lines and the order of everything else stay as you wrote them. It needs
+The application is Linux only (it configures the shell, which runs on Linux). It edits the `.tdl` files of your shell's configuration folder in place. It changes only the lines you change: comments, blank lines and the order of everything else stay as you wrote them. It needs
 the `tesserae-shell` command on the `PATH` (it asks it for the schema, so a form never offers a key the shell does not know) and Python 3.14.
 
 ```bash
