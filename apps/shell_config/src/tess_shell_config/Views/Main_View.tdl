@@ -586,6 +586,7 @@ Container {
                                                         Label: <| unit |>
                                                         Variant: outlined
                                                         Size: xs
+                                                        Style { Min_Width: 32, Padding { Left: 8, Right: 8, Top: 0, Bottom: 0 } }  # "px" is a circle like the buttons beside it; a longer unit (EXPAND) is a pill
                                                         A11y { Label: <| item['label'] |> unit, Description: <| item['doc'] |> }
                                                         Handlers {
                                                           On_Click { Call { Action: "form_units", Args: [<| cell['id'] |>, <| draft |>] } }
@@ -860,6 +861,7 @@ Container {
                                                   Label: "{ }"
                                                   Variant: <| 'tonal' if cell['expression'] else 'text' |>
                                                   Size: xs
+                                                  Style { Width: 32, Min_Width: 32, Height: 32, Padding: 0 }  # square like the reset arrow beside it, so the round shape is a circle
                                                   A11y {
                                                     Label: Expression for <| item['label'] |>
                                                     Description: "Swap the widget for a field that holds an expression, written between double braces"

@@ -99,6 +99,18 @@ def test_a_long_file_name_ends_in_an_ellipsis_inside_the_files_dock_and_nothing_
     assert w.built.view._built.outer["root.dock.files_panel.files_pane.files_scroll"].get("orientation") == "vertical"
 
 
+def test_the_expression_button_is_as_wide_as_it_is_high_so_its_round_shape_is_a_circle(w):
+    """Round 2 (fb05): the `{ }` button beside a value was a pill (its label sized it); its neighbour, the reset arrow, is a square 32."""
+    w.select("Text")
+    w.open_all_groups()
+    buttons = [(i, n) for i, n in named(w, "expression_button")]
+    assert buttons, "the keys of a Text block take an expression: they have the button"
+    for _, n in buttons:
+        assert n.get("layout_width") == n.get("layout_height") == 32.0
+    arrows = [n for _, n in named(w, "reset_button")]
+    assert arrows[0].get("layout_width") == buttons[0][1].get("layout_width")
+
+
 def test_a_marker_under_a_label_wraps_inside_the_label_column_and_never_runs_under_the_field(w):
     """The owner's fb06: the second line under a label ("written in a module's file, not here") was one long line, laid over the field and clipped by it. It wraps in the label column."""
     w.select("Text")
@@ -157,3 +169,14 @@ Container {
     bare = view.node("root.bare")
     box = pixel(bare.get("layout_x") + bare.get("layout_width") - 6, bare.get("layout_y") + bare.get("layout_height") / 2)
     assert max(abs(a - b) for a, b in zip(frame_inside, box)) > 12, "the window's own input keeps its box"
+
+
+def test_the_unit_button_of_a_length_is_a_circle_for_px_and_a_pill_only_for_a_longer_word(w):
+    """Round 2 (item 33): the `px` button was a 39 x 32 pill, oval beside the round buttons next to it."""
+    sizes = {}
+    for inst, node in named(w, "unit_button"):
+        text = w.built.view.node(inst.id + ".label").get("text")
+        sizes[text] = (node.get("layout_width"), node.get("layout_height"))
+    assert sizes.get("px") == (32.0, 32.0), sizes
+    for text, (width, height) in sizes.items():
+        assert height == 32.0 and width >= 32.0, (text, width, height)
