@@ -1191,6 +1191,8 @@ class ComposedView(View):
 
             for event, name, value in (("pointer_enter", "hovered", True), ("pointer_leave", "hovered", False),
                                        ("pointer_down", "pressed", True), ("pointer_up", "pressed", False), ("pointer_cancel", "pressed", False),
+                                       # the engine does not capture a press: a release after the pointer left goes to whatever is under it, so leaving cancels the press (as the ripple does)
+                                       ("pointer_leave", "pressed", False),
                                        # focus events bubble: a widget is focused when something inside it is
                                        ("focus", "focused", True), ("unfocus", "focused", False),
                                        ("focus", "focus_visible", lambda e: bool(getattr(e, "focus_visible", False))), ("unfocus", "focus_visible", False)):
