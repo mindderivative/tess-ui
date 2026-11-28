@@ -11,8 +11,8 @@ Styles {
     Widget: Chip
     Style {
       Corner_Radius: 8
-      Gap: 8
-      Padding: <| {'left': 8 if (avatar_text != '' or icon != '' or (variant == 'filter' and selected)) else 16, 'right': 8 if removable else 16, 'top': 0, 'bottom': 0} |>
+      Gap: <| 8 if density == '' else density_token(density, 'chip_gap') |>
+      Padding: <| {'left': (8 if density == '' else density_token(density, 'chip_padding_inner')) if (avatar_text != '' or icon != '' or (variant == 'filter' and selected)) else (16 if density == '' else density_token(density, 'chip_padding_x')), 'right': (8 if density == '' else density_token(density, 'chip_padding_inner')) if removable else (16 if density == '' else density_token(density, 'chip_padding_x')), 'top': 0, 'bottom': 0} |>
       Transition { Background: 150 }
       Border_Width: <| 0 if (elevated or (selected and variant in ('filter', 'input'))) else 1 |>
       Border_Color: outline_variant
@@ -31,25 +31,25 @@ Styles {
     Widget: Chip
     Part: icon
     Style {
-      Width: 18
-      Height: 18
+      Width: <| 18 if density == '' else density_token(density, 'chip_icon') |>
+      Height: <| 18 if density == '' else density_token(density, 'chip_icon') |>
       Foreground: <| 'on_secondary_container' if (selected and variant in ('filter', 'input')) else ('primary' if variant in ('assist', 'suggestion') else 'on_surface_variant') |>
     }
   }
   Rule {
     Widget: Chip
     Part: avatar
-    Style { Width: 24, Height: 24, Corner_Radius: full, Background: primary_container, Align_Content: center }
+    Style { Width: <| 24 if density == '' else density_token(density, 'chip_avatar') |>, Height: <| 24 if density == '' else density_token(density, 'chip_avatar') |>, Corner_Radius: full, Background: primary_container, Align_Content: center }
   }
   Rule { Widget: Chip, Part: avatar_text, Style { Foreground: on_primary_container } }
   Rule {
     Widget: Chip
     Part: close
-    Style { Width: 18, Height: 18, Corner_Radius: 9, Align_Content: center }
+    Style { Width: <| 18 if density == '' else density_token(density, 'chip_icon') |>, Height: <| 18 if density == '' else density_token(density, 'chip_icon') |>, Corner_Radius: 9, Align_Content: center }
   }
   Rule {
     Widget: Chip
     Part: close_icon
-    Style { Width: 18, Height: 18, Foreground: <| 'on_secondary_container' if selected else 'on_surface_variant' |> }
+    Style { Width: <| 18 if density == '' else density_token(density, 'chip_icon') |>, Height: <| 18 if density == '' else density_token(density, 'chip_icon') |>, Foreground: <| 'on_secondary_container' if selected else 'on_surface_variant' |> }
   }
 }

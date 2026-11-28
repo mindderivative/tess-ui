@@ -73,6 +73,12 @@ DENSITY: dict[str, tuple[float, float, float]] = {
     "tree_indent": (20.0, 16.0, 12.0),
     "chevron_box": (24.0, 20.0, 16.0),
     "swatch": (24.0, 20.0, 16.0),
+    "chip_height": (32.0, 28.0, 24.0),
+    "chip_icon": (18.0, 16.0, 14.0),
+    "chip_avatar": (24.0, 20.0, 18.0),
+    "chip_padding_x": (16.0, 12.0, 8.0),
+    "chip_padding_inner": (8.0, 8.0, 4.0),
+    "chip_gap": (8.0, 8.0, 4.0),
     "dock_tab_height": (48.0, 40.0, 32.0),
     "dock_tab_padding": (16.0, 12.0, 8.0),
 }

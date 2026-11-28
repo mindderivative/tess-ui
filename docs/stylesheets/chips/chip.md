@@ -20,8 +20,8 @@ Styles {
     Widget: Chip
     Style {
       Corner_Radius: 8
-      Gap: 8
-      Padding: <| {'left': 8 if (avatar_text != '' or icon != '' or (variant == 'filter' and selected)) else 16, 'right': 8 if removable else 16, 'top': 0, 'bottom': 0} |>
+      Gap: <| 8 if density == '' else density_token(density, 'chip_gap') |>
+      Padding: <| {'left': (8 if density == '' else density_token(density, 'chip_padding_inner')) if (avatar_text != '' or icon != '' or (variant == 'filter' and selected)) else (16 if density == '' else density_token(density, 'chip_padding_x')), 'right': (8 if density == '' else density_token(density, 'chip_padding_inner')) if removable else (16 if density == '' else density_token(density, 'chip_padding_x')), 'top': 0, 'bottom': 0} |>
       Transition { Background: 150 }
       Border_Width: <| 0 if (elevated or (selected and variant in ('filter', 'input'))) else 1 |>
       Border_Color: outline_variant
@@ -40,26 +40,26 @@ Styles {
     Widget: Chip
     Part: icon
     Style {
-      Width: 18
-      Height: 18
+      Width: <| 18 if density == '' else density_token(density, 'chip_icon') |>
+      Height: <| 18 if density == '' else density_token(density, 'chip_icon') |>
       Foreground: <| 'on_secondary_container' if (selected and variant in ('filter', 'input')) else ('primary' if variant in ('assist', 'suggestion') else 'on_surface_variant') |>
     }
   }
   Rule {
     Widget: Chip
     Part: avatar
-    Style { Width: 24, Height: 24, Corner_Radius: full, Background: primary_container, Align_Content: center }
+    Style { Width: <| 24 if density == '' else density_token(density, 'chip_avatar') |>, Height: <| 24 if density == '' else density_token(density, 'chip_avatar') |>, Corner_Radius: full, Background: primary_container, Align_Content: center }
   }
   Rule { Widget: Chip, Part: avatar_text, Style { Foreground: on_primary_container } }
   Rule {
     Widget: Chip
     Part: close
-    Style { Width: 18, Height: 18, Corner_Radius: 9, Align_Content: center }
+    Style { Width: <| 18 if density == '' else density_token(density, 'chip_icon') |>, Height: <| 18 if density == '' else density_token(density, 'chip_icon') |>, Corner_Radius: 9, Align_Content: center }
   }
   Rule {
     Widget: Chip
     Part: close_icon
-    Style { Width: 18, Height: 18, Foreground: <| 'on_secondary_container' if selected else 'on_surface_variant' |> }
+    Style { Width: <| 18 if density == '' else density_token(density, 'chip_icon') |>, Height: <| 18 if density == '' else density_token(density, 'chip_icon') |>, Foreground: <| 'on_secondary_container' if selected else 'on_surface_variant' |> }
   }
 }
 ```
@@ -75,8 +75,8 @@ Each rule names `Widget: Chip` and may add the properties the view declares (a `
 | When | Field | Value | What it does |
 | --- | --- | --- | --- |
 | always | `Corner_Radius` | `8` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`Top`, `Right`, `Bottom`, `Left`) with the rest square. |
-| always | `Gap` | `8` | Space between its children. |
-| always | `Padding` | `<\| {'left': 8 if (avatar_text != '' or icon != '' or (variant == 'filter' and selected)) else 16, 'right': 8 …` | Space inside it: one number, or `{Left, Right, Top, Bottom}`. |
+| always | `Gap` | `<\| 8 if density == '' else density_token(density, 'chip_gap') \|>` | Space between its children. |
+| always | `Padding` | `<\| {'left': (8 if density == '' else density_token(density, 'chip_padding_inner')) if (avatar_text != '' or i…` | Space inside it: one number, or `{Left, Right, Top, Bottom}`. |
 | always | `Transition` | `{ Background: 150 }` | Which style changes ease to their new value: a duration in milliseconds, or `{Duration, easing, bounce}`. `all` covers every one that can. A node is where it says when first drawn; only a change eases. |
 | always | `Border_Width` | `<\| 0 if (elevated or (selected and variant in ('filter', 'input'))) else 1 \|>` | The width of its border, in pixels. |
 | always | `Border_Color` | `outline_variant` | The colour of its border: a colour or a gradient. |
@@ -93,16 +93,16 @@ Each rule names `Widget: Chip` and may add the properties the view declares (a `
 
 | When | Field | Value | What it does |
 | --- | --- | --- | --- |
-| always | `Width` | `18` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
-| always | `Height` | `18` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| always | `Width` | `<\| 18 if density == '' else density_token(density, 'chip_icon') \|>` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| always | `Height` | `<\| 18 if density == '' else density_token(density, 'chip_icon') \|>` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
 | always | `Foreground` | `<\| 'on_secondary_container' if (selected and variant in ('filter', 'input')) else ('primary' if variant in ('…` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
 
 ### `avatar` (Container)
 
 | When | Field | Value | What it does |
 | --- | --- | --- | --- |
-| always | `Width` | `24` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
-| always | `Height` | `24` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| always | `Width` | `<\| 24 if density == '' else density_token(density, 'chip_avatar') \|>` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| always | `Height` | `<\| 24 if density == '' else density_token(density, 'chip_avatar') \|>` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
 | always | `Corner_Radius` | `full` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`Top`, `Right`, `Bottom`, `Left`) with the rest square. |
 | always | `Background` | `primary_container` | Its fill: a theme role such as `surface`, `#RRGGBB`, any CSS colour, or a gradient such as `linear-gradient(90deg, primary, tertiary)`. |
 | always | `Align_Content` | `center` | Where its children sit: `top_left`, `Top`, `top_right`, `Left`, `center`, `Right`, `bottom_left`, `Bottom` or `bottom_right`. Not set, they fill the space across the layout. |
@@ -117,8 +117,8 @@ Each rule names `Widget: Chip` and may add the properties the view declares (a `
 
 | When | Field | Value | What it does |
 | --- | --- | --- | --- |
-| always | `Width` | `18` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
-| always | `Height` | `18` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| always | `Width` | `<\| 18 if density == '' else density_token(density, 'chip_icon') \|>` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| always | `Height` | `<\| 18 if density == '' else density_token(density, 'chip_icon') \|>` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
 | always | `Corner_Radius` | `9` | Pixels, or a shape token (`none` to `extra_large`, or `full` for a pill or circle). Per corner: a list `[top_left, top_right, bottom_right, bottom_left]`, or a mapping of corners and edges (`Top`, `Right`, `Bottom`, `Left`) with the rest square. |
 | always | `Align_Content` | `center` | Where its children sit: `top_left`, `Top`, `top_right`, `Left`, `center`, `Right`, `bottom_left`, `Bottom` or `bottom_right`. Not set, they fill the space across the layout. |
 
@@ -126,8 +126,8 @@ Each rule names `Widget: Chip` and may add the properties the view declares (a `
 
 | When | Field | Value | What it does |
 | --- | --- | --- | --- |
-| always | `Width` | `18` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
-| always | `Height` | `18` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| always | `Width` | `<\| 18 if density == '' else density_token(density, 'chip_icon') \|>` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| always | `Height` | `<\| 18 if density == '' else density_token(density, 'chip_icon') \|>` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
 | always | `Foreground` | `<\| 'on_secondary_container' if selected else 'on_surface_variant' \|>` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
 
 ## Changing it

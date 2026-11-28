@@ -36,7 +36,7 @@ Container {
   Style {
     Flex_Direction: horizontal
     Align_Content: center
-    Height: 32
+    Height: <| 32 if density == '' else density_token(density, 'chip_height') |>
   }
   Handlers {
     On_Click { Set { Target: selected, Value: <| (not selected) if (variant == 'filter' and flip) else selected |> } }
@@ -69,6 +69,7 @@ Container {
       Name: label
       Text: <| label |>
       Typography_Role: label_large
+      Font_Size: <| dense_text_size(density) |>
     }
     If <| removable |> {
       Container {
