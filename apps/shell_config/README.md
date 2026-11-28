@@ -4,6 +4,8 @@
 
 The window has the Files, Structure, Editor, View, Properties and Problems panels (docked: Files and Structure on the left, Editor and View in the middle, Properties on the right, Problems at the bottom); it opens and saves files, builds the form of a block's keys from the schema, adds, removes, moves and duplicates blocks with undo and redo, runs `check` and lists its findings, applies as you edit, watches the files, and has pages for themes, stylesheets and settings, module calls (the shipped modules and your own), a Files area that makes, copies, renames and deletes files, and the keyboard map below. The user guide (with pictures) is in the Tesserae UI documentation, `guide/shell-config.md`.
 
+The application targets the Linux desktop where the shell runs; its tests are Linux and macOS only (they are skipped on Windows).
+
 ## Install and start
 
 The application needs Python 3.14 (the TDL library's floor) and the `tesserae-shell` command on the `PATH`; it bundles no schema of its own and reads the shell's with `tesserae-shell schema --json`.
