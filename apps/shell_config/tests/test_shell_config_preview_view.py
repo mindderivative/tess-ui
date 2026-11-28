@@ -131,3 +131,87 @@ def test_the_picture_matches_its_golden_screenshot(name):
     assert (gw, gh) == (width, height)
     total = sum(abs(a - b) for a, b in zip(pixels, data, strict=True))
     assert total / len(pixels) < 2.0, f"the picture differs from {golden.name}: mean channel difference {total / len(pixels):.2f}"
+
+
+# -- the live preview: what the editor holds, a worker thread, 300 ms -------------------------------------------------------------------
+
+def test_overrides_are_the_text_of_the_files_with_unsaved_changes_only():
+    from tess_shell_config.preview_source import overrides_of
+
+    class Held:
+        def __init__(self, text, dirty):
+            self.text, self.dirty = text, dirty
+
+    got = overrides_of(Path("/cfg"), {"Shells/Main_Shell.tdl": Held("new", True), "settings.tdl": Held("same", False)})
+    assert got == {Path("/cfg/Shells/Main_Shell.tdl"): "new"}
+
+
+@pytest.fixture
+def live(tmp_path, schema):
+    import shutil
+
+    from test_shell_config_form_window import FormWindow
+    from test_shell_config_window import CONFIG
+
+    folder = tmp_path / "cfg"
+    shutil.copytree(CONFIG, folder)
+    w = FormWindow(folder, tmp_path, schema)
+    heard = []
+    services = w.vm.services
+    services.preview_sink = lambda model, reason: heard.append((model, reason))
+    services.timer = lambda ms, fn: w.window.after(ms, fn)
+    services.offload = __import__("tess_shell_config.shell", fromlist=["InlineOffload"]).InlineOffload()
+    return w, heard
+
+
+def test_an_edit_draws_the_view_once_after_300_ms_of_rest_from_the_editors_text(live, monkeypatch):
+    w, heard = live
+    seen = []
+    monkeypatch.setattr("tess_shell_config.services.build_preview", lambda folder, overrides: seen.append(dict(overrides)) or {"surfaces": [], "findings": [], "outputs": [], "tokens": {}, "desktop": []})
+    w.open()
+    assert len(seen) == 1 and seen[0] == {}, "opening a file draws at once, from the disk"
+    w.vm.services.edited(typing=True)
+    w.vm.services.edited(typing=True)
+    w.vm.services.edited(typing=True)
+    w.settle(10)  # 160 ms: still resting
+    assert len(seen) == 1
+    w.settle(12)  # past 300 ms
+    assert len(seen) == 2, "three edits in a burst are one drawing"
+
+
+def test_unsaved_text_stands_in_for_the_file_in_the_overrides(live, monkeypatch):
+    w, heard = live
+    seen = []
+    monkeypatch.setattr("tess_shell_config.services.build_preview", lambda folder, overrides: seen.append(dict(overrides)) or {"surfaces": [], "findings": [], "outputs": [], "tokens": {}, "desktop": []})
+    w.open()
+    w.session.model.set_text(w.session.model.text + "\n# typed\n")
+    assert w.session.model.dirty
+    w.vm.services.request_preview(soon=True)
+    assert list(seen[-1].values()) == [w.session.model.text] and list(seen[-1])[0].name == "Main_Shell.tdl"
+
+
+def test_a_shell_without_the_preview_model_says_so_instead_of_failing(live, monkeypatch):
+    from tess_shell_config.preview_source import PreviewMissing
+
+    w, heard = live
+
+    def missing(folder, overrides):
+        raise PreviewMissing("The View needs a newer tesserae-shell (one with the preview model).")
+
+    monkeypatch.setattr("tess_shell_config.services.build_preview", missing)
+    w.vm.services.request_preview(soon=True)
+    assert heard[-1] == (None, "The View needs a newer tesserae-shell (one with the preview model).")
+
+
+def test_the_real_preview_of_the_recorded_config_is_a_model_the_view_draws(tmp_path):
+    pytest.importorskip("tess_shell.preview", reason="the shell's preview model needs a newer tesserae-shell")
+    from tess_shell_config.preview_source import build_preview
+
+    folder = tmp_path / "cfg"
+    (folder / "Shells").mkdir(parents=True)
+    (folder / "Shells" / "Main_Shell.tdl").write_text('---\nTDL: 0.2\nName: Main_Shell\n---\nShell { Monitor { Name: Main\n Index: default\n Children { Bar { Name: Top_Bar\n Edge: TOP\n Width: EXPAND\n Height: 32 } } } }\n')
+    (folder / "settings.tdl").write_text('---\nTDL: 0.2\nName: Settings\n---\nSettings { Main_Shell: "Main_Shell.tdl" }\n')
+    data = build_preview(folder, {})
+    assert [s["name"] for s in data["surfaces"]] == ["Top_Bar"]
+    over = build_preview(folder, {folder / "Shells" / "Main_Shell.tdl": "{"})
+    assert not over["surfaces"] and any(f["severity"] == "error" for f in over["findings"]), "unsaved text that does not parse is an error with no surface"

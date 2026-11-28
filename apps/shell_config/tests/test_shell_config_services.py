@@ -316,7 +316,7 @@ def test_apply_writes_after_each_commit_undo_redo_and_structure_edit_but_not_whi
 
 def test_typing_in_the_text_view_is_written_once_it_rests_and_only_when_it_parses(rig):
     timers = []
-    rig.services.timer = lambda ms, fn: timers.append((ms, fn))
+    rig.services.timer = lambda ms, fn: timers.append((ms, fn)) if ms == 200 else None  # (the View's 300 ms rest is not what this test is about)
     rig.services.apply_changed(True)
     model = rig.open()
     text = model.text
