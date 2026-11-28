@@ -471,7 +471,7 @@ Container {
                                             Name: marker_text
                                             Text: <| marker |>
                                             Typography_Role: label_small
-                                            Style { Foreground: on_surface_variant }
+                                            Style { Width: 100%, Foreground: on_surface_variant }
                                           }
                                         }
                                       }
@@ -540,6 +540,7 @@ Container {
                                                   Children {
                                                     If <| cell['ui'] == 'field' or cell['number_enabled'] |> {
                                                       TextInput {
+                                                        Classes: [boxed]
                                                         Name: field
                                                         Text: <| draft |>
                                                         Placeholder: <| cell['placeholder'] |>
@@ -615,6 +616,7 @@ Container {
                                                   Style { Flex_Direction: horizontal, Align_Content: left, Gap: 4, Flex: expand_horizontal, Min_Width: 0 }
                                                   Children {
                                                     TextInput {
+                                                      Classes: [boxed]
                                                       Name: side_0
                                                       Text: <| d0 |>
                                                       Placeholder: <| cell['placeholder'] |>
@@ -645,6 +647,7 @@ Container {
                                                     }
                                                     If <| not linked |> {
                                                       TextInput {
+                                                        Classes: [boxed]
                                                         Name: side_1
                                                         Text: <| d1 |>
                                                         Placeholder: <| cell['placeholder'] |>
@@ -676,6 +679,7 @@ Container {
                                                     }
                                                     If <| not linked |> {
                                                       TextInput {
+                                                        Classes: [boxed]
                                                         Name: side_2
                                                         Text: <| d2 |>
                                                         Placeholder: <| cell['placeholder'] |>
@@ -707,6 +711,7 @@ Container {
                                                     }
                                                     If <| not linked |> {
                                                       TextInput {
+                                                        Classes: [boxed]
                                                         Name: side_3
                                                         Text: <| d3 |>
                                                         Placeholder: <| cell['placeholder'] |>
@@ -936,6 +941,7 @@ Container {
               }
               Children {
                 TextInput {
+                  Classes: [boxed]
                   Name: editor
                   Text: <| text |>
                   Multiline: true
@@ -1237,6 +1243,7 @@ Container {
               Style { Flex_Direction: vertical, Width: 100%, Gap: 8 }
               Children {
                 TextInput {
+                  Classes: [boxed]
                   Name: prompt_field
                   Text: <| typed |>
                   Typography_Role: body_medium
