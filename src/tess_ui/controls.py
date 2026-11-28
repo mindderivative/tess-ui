@@ -77,7 +77,7 @@ class Control:
         self._changes: list[Callable[[Any], None]] = []
         self._undo: list[Callable[[], None]] = []
         self._painted = False
-        target = (self.layer, self.layer) if self.density else self.target
+        target = self._density_target() if self.density else self.target
         width = float(width if width is not None else size if size is not None else target[0])
         height = float(height if height is not None else size if size is not None else target[1])
         self.target = (width, height)
@@ -130,6 +130,10 @@ class Control:
         self.node.destroy()
 
     # -- for subclasses --------------------------------------------------------------
+
+    def _density_target(self) -> tuple[float, float]:
+        """The touch target at a density: a square as big as the state layer (the control height of the level)."""
+        return (self.layer, self.layer)
 
     def _build(self) -> None:
         raise NotImplementedError
@@ -392,44 +396,53 @@ class Switch(Control):
     border and a 16 px `outline` handle; on, it's `primary` with a 24 px
     `on_primary` handle. Pressed, the handle grows to 28 px. `color`
     replaces `primary`. The state layer follows the handle; the focus ring
-    goes around the track."""
+    goes around the track. At a density (ADR-0029) the track is 40×24 (compact) or 36×20 (dense), the handles
+    12 / 18 / 20 and 10 / 15 / 17, and the state layer and the hit row are the control height of the level."""
 
     role = "switch"
+    DENSITY_AWARE = True
     target = (52.0, TARGET_SIZE)
     WIDTH, HEIGHT = 52.0, 32.0
     HANDLE = 28.0  # drawn at this size and scaled: 16 off, 24 on, 28 pressed
     OFF, ON, PRESSED = 16.0, 24.0, 28.0
+    TRAVEL = WIDTH - HEIGHT  # the Material handle's travel; an instance at a density has its own
+    #: The track (width, height), the handle off, on and pressed, and the icon, at each level; with no density the Material sizes above.
+    SIZES = {"default": (52.0, 32.0, 16.0, 24.0, 28.0, 16.0), "compact": (40.0, 24.0, 12.0, 18.0, 20.0, 12.0), "dense": (36.0, 20.0, 10.0, 15.0, 17.0, 10.0)}
 
     def __init__(self, window: Any, *, selected: bool = False, color: Optional[RGBA] = None, icons: bool = False, **kwargs: Any) -> None:
         self.selected = Signal(bool(selected))
         self._color = color
         self.icons = bool(icons)  # a check on the handle when on, a cross when off; the off handle is then as big as the on one
         self._pressed = False
+        density = kwargs.get("density", "")
+        self.width, self.height, self.OFF, self.ON, self.PRESSED, self.icon_size = self.SIZES.get(density, (52.0, 32.0, 16.0, 24.0, 28.0, 16.0))
+        self.HANDLE = self.PRESSED  # the handle is drawn at its pressed size and scaled
+        self.TRAVEL = self.width - self.height  # the handle's centre travels this far, from `height / 2` to `width - height / 2`
         super().__init__(window, **kwargs)
         self._undo.append(self._listen(self.node, "pointer_down", lambda e: self._press(True)))
         self._undo.append(self._listen(self.node, "pointer_up", lambda e: self._press(False)))
         self._undo.append(self._listen(self.node, "pointer_cancel", lambda e: self._press(False)))  # 0.3.0 M2
         self._undo.append(self._listen(self.node, "pointer_leave", lambda e: self._press(False)))
 
-    #: The handle's centre travels this far, from `HEIGHT / 2` to `WIDTH - HEIGHT / 2`.
-    TRAVEL = WIDTH - HEIGHT
+    def _density_target(self) -> tuple[float, float]:
+        return (self.width, self.layer)  # the hit row: the track's width and the control height
 
     def _build(self) -> None:
-        self.track = self.window.create("box", width=self.WIDTH, height=self.HEIGHT, corner_radius=self.HEIGHT / 2,
+        self.track = self.window.create("box", width=self.width, height=self.height, corner_radius=self.height / 2,
                                         stroke_width=2.0, hit_testable=False, a11y_hidden=True)
-        centre = self.HEIGHT / 2
+        centre = self.height / 2
         self.handle = self.window.create("box", position="absolute", x=centre - self.HANDLE / 2,
                                          y=centre - self.HANDLE / 2, width=self.HANDLE, height=self.HANDLE,
                                          corner_radius=self.HANDLE / 2, hit_testable=False, a11y_hidden=True)
         self.track.add_child(self.handle)
-        self.icon = self.window.create("path", data=icon_path("check"), view_box=icon_view_box("check"), width=16.0, height=16.0,
-                                       position="absolute", x=(self.HANDLE - 16.0) / 2, y=(self.HANDLE - 16.0) / 2,
+        self.icon = self.window.create("path", data=icon_path("check"), view_box=icon_view_box("check"), width=self.icon_size, height=self.icon_size,
+                                       position="absolute", x=(self.HANDLE - self.icon_size) / 2, y=(self.HANDLE - self.icon_size) / 2,
                                        visible=self.icons, hit_testable=False, a11y_hidden=True)
         self.handle.add_child(self.icon)
         self.node.add_child(self.track)
         # the state layer's circle rides on the handle
-        offset = (self.target[1] - self.HEIGHT) / 2  # the track is centred in the target
-        self.surface.set(x=centre - STATE_LAYER_SIZE / 2, y=offset + centre - STATE_LAYER_SIZE / 2)
+        offset = (self.target[1] - self.height) / 2  # the track is centred in the target
+        self.surface.set(x=centre - self.layer / 2, y=offset + centre - self.layer / 2)
 
     def _ring_around(self) -> Any:
         return self.track
