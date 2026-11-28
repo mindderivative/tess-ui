@@ -63,6 +63,7 @@ See [The View Language](../guide/view-language.md#style) for the rule syntax and
 - **Navigation drawer**: [`NavigationDrawer`](navigation-drawer/navigation-drawer.md), [`NavigationDrawerItem`](navigation-drawer/navigation-drawer-item.md), [`NavigationDrawerModal`](navigation-drawer/navigation-drawer-modal.md), [`NavigationDrawerPanel`](navigation-drawer/navigation-drawer-panel.md), [`NavigationDrawerScreens`](navigation-drawer/navigation-drawer-screens.md)
 - **Top app bar**: [`TopAppBar`](top-app-bar/top-app-bar.md)
 - **Menus**: [`Menu`](menus/menu.md), [`MenuItem`](menus/menu-item.md)
+- **Menu bars**: [`MenuBar`](menu-bars/menu-bar.md)
 - **Search**: [`SearchBar`](search/search-bar.md), [`SearchView`](search/search-view.md)
 - **Toolbars**: [`Toolbar`](toolbars/toolbar.md)
 - **Links**: [`Link`](links/link.md)

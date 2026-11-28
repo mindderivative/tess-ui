@@ -32,7 +32,7 @@ from materialyoucolor.scheme.scheme_tonal_spot import SchemeTonalSpot
 from tess_utils import parse_color
 
 __all__ = [
-    "BASELINE", "DRAG_START_PX", "LAYER_FLIP_THRESHOLD", "LAYER_VIEWPORT_MARGIN", "DENSITY", "DENSITY_LEVELS", "density_token", "body_role", "dense_text_size", "DENSE_TEXT_SIZE", "ELEVATION_LEVELS", "baseline_scheme", "ROLES", "SHAPES", "TYPE_SCALE", "TypeStyle", "color_scheme",
+    "BASELINE", "DRAG_START_PX", "LAYER_FLIP_THRESHOLD", "LAYER_VIEWPORT_MARGIN", "DENSITY", "DENSITY_LEVELS", "density_token", "body_role", "dense_text_size", "DENSE_TEXT_SIZE", "mnemonic_split", "mnemonic_plain", "mnemonic_of", "mnemonic_runs", "ELEVATION_LEVELS", "baseline_scheme", "ROLES", "SHAPES", "TYPE_SCALE", "TypeStyle", "color_scheme",
     "RIPPLE_INITIAL_SCALE", "RIPPLE_MS", "STATE_LAYER",
     "elevation", "elevation_shadows", "FULL_RADIUS", "HEIGHT_CLASSES", "MD3_TRACKING", "MD3_TRACKING_TYPOGRAPHY", "WIDTH_CLASSES", "height_class", "width_class", "resolve_color", "resolve_scheme", "shape", "type_style",
 ]
@@ -96,6 +96,40 @@ def body_role(level: str) -> str:
 def dense_text_size(level: str) -> Optional[float]:
     """The font size a text at density `level` is set to over its role's: 13 at `dense` (ADR-0029's `body_dense` 13/18), `None` (the role's own) at every other level."""
     return DENSE_TEXT_SIZE if level == "dense" else None
+
+
+def mnemonic_split(label: str) -> tuple[str, str, str]:
+    """`(before, letter, after)` of a label with a mnemonic marked by `&` (`&File`: `("", "F", "ile")`); `&&` is a literal `&`; no mark: `(label, "", "")`."""
+    text, i = "", 0
+    while i < len(label):
+        ch = label[i]
+        if ch == "&" and i + 1 < len(label):
+            if label[i + 1] == "&":
+                text, i = text + "&", i + 2
+                continue
+            rest = label[i + 2:].replace("&&", "&")
+            return text, label[i + 1], rest
+        text, i = text + ch, i + 1
+    return text, "", ""
+
+
+def mnemonic_plain(label: str) -> str:
+    """The label without its `&` mark: the accessible name of a title."""
+    before, letter, after = mnemonic_split(label)
+    return before + letter + after if letter else before
+
+
+def mnemonic_of(label: str) -> str:
+    """The mnemonic letter of a label, in lower case (`""` when it has none)."""
+    return mnemonic_split(label)[1].lower()
+
+
+def mnemonic_runs(label: str, show: bool) -> list[Any]:
+    """The runs of a `Text` for a label: the mnemonic letter underlined while `show`, else the plain text."""
+    before, letter, after = mnemonic_split(label)
+    if not letter or not show:
+        return [mnemonic_plain(label)]
+    return [piece for piece in (before, {"text": letter, "underline": True}, after) if piece != ""]
 
 
 #: `body_dense`, the body size at the `dense` level (a type role of its own in ADR-0029; the engine's theme has the 15 MD3 roles, so a text takes `body_medium` and this size).

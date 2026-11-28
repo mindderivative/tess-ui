@@ -112,6 +112,7 @@ nav:
           - Top app bar: components/top-app-bar.md
           - Tabs: components/tabs.md
           - Menus: components/menus.md
+          - Menu bars: components/menu-bars.md
           - Search: components/search.md
           - Toolbars: components/toolbars.md
           - Links: components/links.md
@@ -198,6 +199,8 @@ nav:
           - Menus:
               - Menu: stylesheets/menus/menu.md
               - MenuItem: stylesheets/menus/menu-item.md
+          - Menu bars:
+              - MenuBar: stylesheets/menu-bars/menu-bar.md
           - Search:
               - SearchBar: stylesheets/search/search-bar.md
               - SearchView: stylesheets/search/search-view.md

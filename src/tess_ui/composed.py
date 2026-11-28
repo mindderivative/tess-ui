@@ -242,6 +242,8 @@ class ComposedView(View):
         self._layer_timeouts: dict[str, Callable[[], None]] = {}
         self._shown_layers: dict[str, Any] = {}  # each Overlay showing: its id -> the layer node shown
         self._overlay_undos: list[Callable[[], None]] = []
+        self._menubar_undos: list[Callable[[], None]] = []
+        self._menubar_held: dict[str, Any] = {"alt_clean": False, "back": None}
         self._dismissed_open: set[str] = set()  # overlays closed by the user whose `open` is not a Signal: not reopened until `open` goes false
         self._anchor_hidden: set[str] = set()  # the anchored nodes hidden because their anchor is not there or not shown (the node's own `visible:` is not this)
         self._anchored: dict[str, tuple] = {}  # a node placed against another by its style: its id -> (the anchor's id, placement, offset) as last set; or ('gone',) while hidden
@@ -375,6 +377,7 @@ class ComposedView(View):
             untrack(self._wire_measures)
             untrack(self._wire_states)
             untrack(self._wire_focus_groups)
+            untrack(self._wire_menubars)
             untrack(self._wire_selection)
             untrack(lambda: self.root.get("visible") != visible and self.root.set(visible=visible))
         finally:
@@ -1337,6 +1340,109 @@ class ComposedView(View):
             self._group_undos.append(self._listen(box, "focus", on_focus))
             self._group_undos.append(self._listen(box, "key_down", on_key))
 
+    def _wire_menubars(self) -> None:
+        """The keys of a `MenuBar` that no node of it can hear: F10 and a bare Alt (press and release with no other key between) make the bar active; Alt and a title's mnemonic opens its menu from anywhere in
+        the window; with a menu open, Left and Right on a row that has no submenu open the previous and the next title's menu; Escape on an active bar with no menu open leaves it, the focus back where it was."""
+        for undo in self._menubar_undos:
+            undo()
+        self._menubar_undos = []
+        bars = [inst for inst in self.handle.composition.walk() if inst.id in self._built.outer and any(i.widget == "MenuBar" and i.part is None for i in inst.identities)]
+        if not bars:
+            return
+        held = self._menubar_held  # kept between wirings: a change of the bar's state wires it again
+
+        def titles(bar: Instance) -> list[tuple[int, Instance, dict[str, Any]]]:
+            ident = next(i for i in bar.identities if i.widget == "MenuBar" and i.part is None)
+            menus = list(ident.get("menus") or ())
+            found = [inst for inst in bar.walk() if inst.name == "title" and inst.id in self._built.nodes]
+            return [(i, found[i], menus[i]) for i in range(min(len(found), len(menus)))]
+
+        def enabled(bar: Instance) -> list[int]:
+            return [i for i, _, menu in titles(bar) if not menu.get("disabled")]
+
+        def focused_node() -> Any:
+            return next((n for n in self._built.nodes.values() if n.get("focused") is True), None)
+
+        def instance_of(node: Any) -> Optional[Instance]:
+            ident = next((i for i, n in self._built.nodes.items() if n == node), None)
+            return next((inst for inst in self.handle.composition.walk() if inst.id == ident), None) if ident is not None else None
+
+        def activate(bar: Instance) -> None:
+            first = next(((i, t) for i, t, _ in titles(bar) if i in enabled(bar)), None)
+            if first is None:
+                return
+            held["back"] = focused_node()
+            bar.state["active"].set(True)
+            self._built.nodes[first[1].id].focus()
+
+        def deactivate(bar: Instance) -> None:
+            bar.state["active"].set(False)
+            bar.state["open_menu"].set(-1)
+            back, held["back"] = held["back"], None
+            if back is not None:
+                back.focus()
+
+        def open_menu(bar: Instance, index: int) -> None:
+            bar.state["active"].set(True)
+            bar.state["keyed"].set(True)
+            bar.state["open_menu"].set(index)
+
+        def menus_of(inst: Optional[Instance], bar: Instance) -> int:
+            """How many menus lie between `inst` and `bar` (1: a row of a title's own menu; 2: a row of a submenu)."""
+            count = 0
+            while inst is not None and inst is not bar:
+                if any(i.widget == "Menu" and i.part is None for i in inst.identities):
+                    count += 1
+                inst = inst.parent
+            return count
+
+        def key_down(event: Any) -> None:
+            key = str(getattr(event, "key", "")).lower()
+            alt, ctrl, meta, shift = (bool(getattr(event, n, False)) for n in ("alt", "ctrl", "meta", "shift"))
+            if key == "alt":
+                held["alt_clean"] = True
+                return
+            held["alt_clean"] = False
+            for bar in bars:
+                state = bar.state
+                if key == "f10" and not (alt or ctrl or meta or shift):
+                    deactivate(bar) if state["active"].get() else activate(bar)
+                    return
+                if alt and not (ctrl or meta) and len(key) == 1:
+                    from tess_ui.tokens import mnemonic_of
+
+                    for i, _, menu in titles(bar):
+                        if i in enabled(bar) and mnemonic_of(str(menu.get("label", ""))) == key:
+                            open_menu(bar, i)
+                            return
+                current = state["open_menu"].get()
+                if current >= 0 and key in ("arrow_left", "arrow_right") and not (alt or ctrl or meta or shift):
+                    target = instance_of(getattr(event, "target", None) or focused_node())
+                    if menus_of(target, bar) != 1 or (key == "arrow_right" and target is not None and any(i.widget == "MenuItem" and i.part is None and bool(i.get("submenu")) for i in target.identities)):
+                        continue
+                    order = enabled(bar)
+                    if order and current in order:
+                        step = 1 if key == "arrow_right" else -1
+                        open_menu(bar, order[(order.index(current) + step) % len(order)])
+                        return
+                if key == "escape" and state["active"].get() and current < 0:
+                    deactivate(bar)
+                    return
+
+        def key_up(event: Any) -> None:
+            if str(getattr(event, "key", "")).lower() == "alt" and held["alt_clean"]:
+                held["alt_clean"] = False
+                for bar in bars:
+                    deactivate(bar) if bar.state["active"].get() else activate(bar)
+                    return
+
+        self._menubar_undos.append(self._listen(self.window.root, "key_down", key_down))
+        for bar in bars:  # a menu is a layer of its own: the keys of its rows reach its layer, not the window's root
+            for inst in bar.walk():
+                if inst.widget == "Overlay" and inst.id in self._built.nodes and menus_of(inst, bar) == 1:
+                    self._menubar_undos.append(self._listen(self._built.nodes[inst.id], "key_down", key_down))
+        self._menubar_undos.append(self._listen(self.window.root, "key_up", key_up))
+
     def _selects_many(self, group: Instance) -> bool:
         return "selection_mode" in group.props and group.value("selection_mode") == "multiple"
 
@@ -1474,6 +1580,8 @@ class ComposedView(View):
             undo()
         for inst_id in list(self._shown_layers):
             self._hide_layer(inst_id)
+        for undo in self._menubar_undos:
+            undo()
         for undo in self._overlay_undos:
             undo()
         for undo in (*self._handler_undos, *self._state_undos, *self._group_undos):
