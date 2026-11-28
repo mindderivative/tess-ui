@@ -29,7 +29,9 @@ from typing import Any, Callable, Iterable, Iterator, Mapping, Optional
 
 from loguru import logger
 
+from tess_ui import tel
 from tess_ui.reactive import Computed, Effect, Signal, untrack
+from tess_ui.spec.density import DensityNode
 from tess_ui.spec.nodes import VISIBLE, Handler, LoadError, Node, ViewDoc
 from tess_ui.spec.rules import INTERACTION_STATES, Identity, Rule, RuleSheet
 from tess_ui.spec.widgets import PropertyError, WidgetDecl
@@ -286,7 +288,9 @@ class Instance:
         self._istates: dict[str, Signal] = {}
         self._rules: Optional[Computed] = None
         self._release_rules: list[Callable[[], None]] = []
-        self.parent: Optional["Instance"] = None
+        self._parent: Optional["Instance"] = None
+        #: its density (the node's own `Density`, its rules', then its parent's): what the name `density` is in an expression written for it
+        self.density_node = DensityNode(node.density)
         self.children: list["Instance"] = []
         self.disposed = False
         self._regions: list[_Region] = []
@@ -328,6 +332,15 @@ class Instance:
         if prop is None:
             raise KeyError(name)
         return prop.default
+
+    @property
+    def parent(self) -> Optional["Instance"]:
+        return self._parent
+
+    @parent.setter
+    def parent(self, parent: Optional["Instance"]) -> None:
+        self._parent = parent
+        self.density_node.attach(parent.density_node if parent is not None else None)
 
     def style_value(self, name: str) -> Any:
         """The inline value of a style field (what the node or the call gave)."""
@@ -659,8 +672,9 @@ class _For(_Region):
 class _Owner:
     """The view call a node is inside, as a stylesheet names it: the widget, how it reads that widget's properties, and where its rules read."""
 
-    def __init__(self, widget: str, get: Callable[[str], Any], scope: Scope) -> None:
+    def __init__(self, widget: str, get: Callable[[str], Any], scope: Scope, density: Optional[DensityNode] = None) -> None:
         self.widget, self.get, self.scope = widget, get, scope
+        self.density = density  # the call's density, which the callee's root instance takes
         self.root: Optional[Instance] = None  # the view's root instance, whose interaction state a part's rules read
 
 
@@ -797,7 +811,7 @@ class Composer:
         ctx = _Ctx(doc, 0, (doc.name or doc.file,))
         self._windowed = doc.root.widget == "Window"
         self._check_root(doc.root, ctx)
-        scope = Scope(None, {}, root=self.viewmodel, actions=self.actions)
+        scope = Scope(None, {"density": tel._app_density.get()}, root=self.viewmodel, actions=self.actions)  # the top of the cascade; a view call has the density of its own node (below)
         return Composition(self._instance(doc.root, "root", scope, ctx, forced_id=root_id), self)
 
     # errors and lookup
@@ -990,6 +1004,11 @@ class Composer:
 
     def _builtin(self, node: Node, iid: str, scope: Scope, ctx: _Ctx, forced: bool = False) -> Instance:
         inst = Instance(node, node.widget, iid, node.decl)
+        if forced and ctx.owner is not None and ctx.owner.density is not None:  # the root of a view call is the call: what the call said, the callee's own root said, and the rules for either
+            own = inst.density_node.own.get()
+            inst.density_node = ctx.owner.density
+            if own:
+                inst.density_node.own.set(own)
         self._register(inst, ctx)
         if forced and ctx.owner is not None:
             ctx.owner.root = inst
@@ -1067,6 +1086,7 @@ class Composer:
                 release()
             inst._release_rules = []
             inst._rules = None
+            inst.density_node.ruled_source.set(None)
         if not self.rules:
             return
         widgets = {ident.widget for ident in inst.identities}
@@ -1074,22 +1094,40 @@ class Composer:
         if not any(candidates for _, candidates in layers):
             return
 
-        def resolve() -> dict[str, Any]:
-            style: dict[str, Any] = {}
+        def matched() -> list[tuple[Rule, Identity]]:
+            """The rules that apply to `inst` now, layer by layer, the least specific first inside a layer."""
+            out: list[tuple[Rule, Identity]] = []
             for _, candidates in layers:
-                matched: list[tuple[Rule, Identity]] = []
+                found: list[tuple[Rule, Identity]] = []
                 for rule in candidates:
                     for ident in inst.identities:
                         if rule.matches(ident, inst.classes, inst.name) and _state_holds(rule, inst, ident):
-                            matched.append((rule, ident))
+                            found.append((rule, ident))
                             break
-                for rule, ident in sorted(matched, key=lambda pair: (pair[0].specificity, pair[0].order)):
-                    for field_name, value in rule.style.items():
-                        style[field_name] = value.evaluate(ident.scope) if hasattr(value, "evaluate") else value
+                out.extend(sorted(found, key=lambda pair: (pair[0].specificity, pair[0].order)))
+            return out
+
+        applying = Computed(matched)
+
+        def resolve() -> dict[str, Any]:
+            style: dict[str, Any] = {}
+            for rule, ident in applying.get():
+                for field_name, value in rule.style.items():
+                    style[field_name] = value.evaluate(ident.scope) if hasattr(value, "evaluate") else value
             return style
+
+        def ruled_density() -> Optional[str]:
+            level = None
+            for rule, _ in applying.get():
+                if rule.density:
+                    level = rule.density
+            return level
 
         inst._rules = Computed(resolve)
         inst._release_rules.append(_release_computed(inst._rules))
+        ruled = Computed(ruled_density)
+        inst.density_node.ruled_source.set(ruled)
+        inst._release_rules.extend((_release_computed(ruled), _release_computed(applying)))
 
     def _model_ref(self, decl: Optional[WidgetDecl], name: str, value: Any, scope: Scope) -> Optional[str]:
         """The name a `model` property is two-way with: it is given one bare reference to a writable Signal (spec 9.3)."""
@@ -1180,6 +1218,8 @@ class Composer:
                 raise self._fail(ctx, child.at, f"{node.widget} has no slot '{slot}'", f"slots: {', '.join(available)}")
             content.setdefault(slot, []).append((index, child))
 
+        density = DensityNode(node.density)
+        values["density"] = density.resolved
         callee_scope = Scope(None, values, root=self.viewmodel, readonly=True, writable=models, actions=self.actions)
 
         def param(name: str) -> Any:
@@ -1187,7 +1227,7 @@ class Composer:
             return held.get() if isinstance(held, (Signal, Computed)) else held
 
         record = self._records.get(id(node)) if node.route is not None else None
-        sub = _Ctx(doc, ctx.depth + 1, (*ctx.chain, node.widget), content, call_scope, ctx, iid, owner=_Owner(node.widget, param, callee_scope),
+        sub = _Ctx(doc, ctx.depth + 1, (*ctx.chain, node.widget), content, call_scope, ctx, iid, owner=_Owner(node.widget, param, callee_scope, density),
                    route_parent=record if record is not None else ctx.route_parent)
         self._check_root(doc.root, sub)
         inst = self._instance(doc.root, "root", callee_scope, sub, forced_id=iid)

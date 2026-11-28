@@ -208,7 +208,7 @@ def _recorded(name: str, function: Callable[..., Any]) -> Callable[..., Any]:
 
 #: What an expression may call besides TEL's own built-ins (`len min max abs round sum str int float bool sorted reversed range enumerate zip any all
 #: list dict tuple set isinstance clamp`): the functions TEL leaves to its host.
-#: The density the app asked for (`""`: none), which `app_density()` reads in a view or a stylesheet where there is no `app` name (a widget a Python factory builds has none). `App` sets it.
+#: The density the app asked for (`""`: none), which the top of every density cascade reads (the name `density` in a view or a stylesheet, `spec/density.py`). `App` sets it.
 class _Held:
     """A value with `get` and `set` that nothing subscribes to: a Signal here would make every live view's effect (a finished test's, another app's) run again whenever any `App` is made."""
 
@@ -261,7 +261,6 @@ HOST_FUNCTIONS: dict[str, Callable[..., Any]] = {
     "format_number": _format_number, "pluralize": _pluralize, "date_add_days": _date_add_days, "date_weekday": _date_weekday,
     "days_in_month": _days_in_month, "format_date": _format_date, "current_date": _today,
     "density_token": tokens.density_token,
-    "app_density": lambda: _app_density.get(),
     "tree_rows": _tree_rows,
     "tree_row": _tree_row,
 }

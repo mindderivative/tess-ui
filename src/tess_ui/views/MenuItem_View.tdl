@@ -26,7 +26,7 @@ Container {
   Style {
     Flex_Direction: horizontal
     Align_Content: left
-    Height: <| 48 if app_density() == '' else density_token(app_density(), 'menu_item_height') |>
+    Height: <| 48 if density == '' else density_token(density, 'menu_item_height') |>
     Width: 100%
   }
   Children {

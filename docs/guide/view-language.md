@@ -65,6 +65,7 @@ is written for ([the metadata](naming-convention.md#the-metadata-block)). The ro
 | `Window_Region` | `drag` or `none`, for a custom title bar |
 | `Route` | on a view call inside a window: makes it a screen |
 | `Focus_Group` | `horizontal`, `vertical` or `both`: the focusable nodes under it share one tab stop and the arrow keys move among them |
+| `Density` | `default`, `compact` or `dense`: the sizes of this node and of everything inside it, unless something inside says another; a node that says nothing takes its nearest ancestor's, at the top the app's (`App(density=)`). A stylesheet rule may say it too (`Rule { Classes: [tight], Density: dense }`). A number written on a node (`Height: 50`) is over any density. In an expression the resolved level is the name `density` (`""` when no density is asked) |
 | `Children` | child nodes |
 | anything else | a **property** of the widget |
 

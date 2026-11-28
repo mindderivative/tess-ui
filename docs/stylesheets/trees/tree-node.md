@@ -18,14 +18,14 @@ Styles {
   Rule {
     Widget: TreeNode
     Style {
-      Padding: <| {'left': (16 + 24 * level) if (density or app_density()) == '' else density_token((density or app_density()), 'row_padding_x') + density_token((density or app_density()), 'tree_indent') * level, 'right': 16 if (density or app_density()) == '' else density_token((density or app_density()), 'row_padding_x'), 'top': 0, 'bottom': 0} |>
-      Gap: <| 8 if (density or app_density()) == '' else density_token((density or app_density()), 'icon_label_gap') |>
+      Padding: <| {'left': (16 + 24 * level) if density == '' else density_token(density, 'row_padding_x') + density_token(density, 'tree_indent') * level, 'right': 16 if density == '' else density_token(density, 'row_padding_x'), 'top': 0, 'bottom': 0} |>
+      Gap: <| 8 if density == '' else density_token(density, 'icon_label_gap') |>
       Background: <| 'secondary_container' if selected else 'transparent' |>
       Transition { Background: 150 }
     }
   }
   Rule { Widget: TreeNode, Part: label, Style { Flex: expand_horizontal, Min_Width: 0 } }  # a long label ends in an ellipsis instead of being cut (AC-TRN-07)
-  Rule { Widget: TreeNode, Part: chevron, Style { Width: <| 24 if (density or app_density()) == '' else density_token((density or app_density()), 'chevron_box') |>, Height: <| 24 if (density or app_density()) == '' else density_token((density or app_density()), 'chevron_box') |>, Foreground: on_surface_variant } }
+  Rule { Widget: TreeNode, Part: chevron, Style { Width: <| 24 if density == '' else density_token(density, 'chevron_box') |>, Height: <| 24 if density == '' else density_token(density, 'chevron_box') |>, Foreground: on_surface_variant } }
   Rule {
     Widget: TreeNode
     Part: icon
@@ -45,8 +45,8 @@ Each rule names `Widget: TreeNode` and may add the properties the view declares 
 
 | When | Field | Value | What it does |
 | --- | --- | --- | --- |
-| always | `Padding` | `<\| {'left': (16 + 24 * level) if (density or app_density()) == '' else density_token((density or app_density(…` | Space inside it: one number, or `{Left, Right, Top, Bottom}`. |
-| always | `Gap` | `<\| 8 if (density or app_density()) == '' else density_token((density or app_density()), 'icon_label_gap') \|>` | Space between its children. |
+| always | `Padding` | `<\| {'left': (16 + 24 * level) if density == '' else density_token(density, 'row_padding_x') + density_token(d…` | Space inside it: one number, or `{Left, Right, Top, Bottom}`. |
+| always | `Gap` | `<\| 8 if density == '' else density_token(density, 'icon_label_gap') \|>` | Space between its children. |
 | always | `Background` | `<\| 'secondary_container' if selected else 'transparent' \|>` | Its fill: a theme role such as `surface`, `#RRGGBB`, any CSS colour, or a gradient such as `linear-gradient(90deg, primary, tertiary)`. |
 | always | `Transition` | `{ Background: 150 }` | Which style changes ease to their new value: a duration in milliseconds, or `{Duration, easing, bounce}`. `all` covers every one that can. A node is where it says when first drawn; only a change eases. |
 
@@ -62,8 +62,8 @@ Each rule names `Widget: TreeNode` and may add the properties the view declares 
 
 | When | Field | Value | What it does |
 | --- | --- | --- | --- |
-| always | `Width` | `<\| 24 if (density or app_density()) == '' else density_token((density or app_density()), 'chevron_box') \|>` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
-| always | `Height` | `<\| 24 if (density or app_density()) == '' else density_token((density or app_density()), 'chevron_box') \|>` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| always | `Width` | `<\| 24 if density == '' else density_token(density, 'chevron_box') \|>` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
+| always | `Height` | `<\| 24 if density == '' else density_token(density, 'chevron_box') \|>` | Pixels, `auto` (its content's size, or stretched), `fit-content`, a percentage of the parent such as `50%`, or a sum such as `calc(100% - 16)` or `100% - 16` (a space each side of `+` and `-`; `16px` may be written inside a sum). |
 | always | `Foreground` | `on_surface_variant` | Its text or glyph colour: a theme role, `#RRGGBB`, any CSS colour, or a gradient. |
 
 ### `icon` (Icon)
