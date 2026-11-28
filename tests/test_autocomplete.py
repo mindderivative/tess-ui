@@ -153,3 +153,22 @@ def test_the_active_row_is_the_fields_active_descendant_and_none_when_the_list_c
     rig.key("escape")
     assert field.get("active_descendant") is None
     assert rig.view.node("root.ac.layer.surface").get("role") == "listbox" if "root.ac.layer.surface" in rig.view._built.nodes else True
+
+
+def test_a_row_can_have_a_swatch_an_icon_or_the_label_in_its_own_font(tmp_path):
+    body = """Container {
+  Name: main
+  Style { Flex_Direction: vertical, Align_Content: top_left, Width: 600, Height: 400 }
+  Children {
+    Autocomplete { Name: ac, Label: Pick, Value: '', Options: <| [{'value': 'a', 'label': 'Red', 'swatch': '#ff0000'}, {'value': 'b', 'label': 'Home', 'icon': 'home'}, {'value': 'c', 'label': 'Roboto', 'font': 'Roboto'}, {'value': 'd', 'label': 'Plain'}] |> }
+  }
+}
+"""
+    r = Rig(tmp_path, body=body)
+    r.field().focus()
+    r.key("arrow_down")
+    nodes = r.view._built.nodes
+    rows = r.rows()
+    assert any(i.startswith(rows[0]) and i.endswith(".swatch") for i in nodes) and any(i.startswith(rows[1]) and i.endswith(".lead_icon") for i in nodes)
+    assert not any(i.startswith(rows[3]) and (i.endswith(".swatch") or i.endswith(".lead_icon")) for i in nodes)
+    assert [r.view.node(i + ".texts.row_label").get("text") for i in rows] == ["Red", "Home", "Roboto", "Plain"]

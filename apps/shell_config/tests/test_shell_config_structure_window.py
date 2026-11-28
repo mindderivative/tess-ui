@@ -27,9 +27,14 @@ def value_of(w, label):
 
 
 def pick(w, value):
-    """Arrow down the open command chooser to the row of the option `value` and press Enter on it."""
+    """Choose the option `value` in the open command chooser: a short list is a menu (arrow down to its row, Enter); a long one has a filter field (type the label, Down, Enter)."""
     assert w.vm.picker_open.get()
     label = next(o["label"] for o in w.vm.picker_items.get() if o["value"] == value)
+    if len(w.vm.picker_items.get()) > 12:
+        w.type(label)
+        w.key("arrow_down")
+        w.key("enter")
+        return
     for _ in range(80):
         if any(w.built.view.node(f).get("label") == label and ".picker." in f + "." for f in w.focused()):
             w.key("enter")
@@ -318,3 +323,18 @@ def test_escape_closes_the_command_chooser_runs_nothing_and_the_focus_is_back_in
     w.key("escape")
     assert not w.vm.picker_open.get() and not w.built.view._shown_layers and w.session.model.text == before
     assert w.region() == 1, w.focused()
+
+
+def test_a_long_command_chooser_has_a_filter_field_in_focus_and_escape_runs_nothing_AC_CHO_15(w):
+    w.select("Bar  Top_Bar")
+    before = w.session.model.text
+    w.key("n", ctrl=True, shift=True)
+    w.settle(6)
+    assert w.vm.picker_open.get() and len(w.vm.picker_items.get()) > 12
+    assert w.focused() and ".finder." in w.focused()[0] + "." and w.focused()[0].endswith(".input")
+    w.type("Box")
+    found = w.built.view._built.controls["root.finder.find_box.find.mind"].model.results
+    assert found and all("box" in r["label"].lower() for r in found) and len(found) < len(w.vm.picker_items.get())
+    w.key("escape")
+    w.key("escape")
+    assert not w.vm.picker_open.get() and w.session.model.text == before

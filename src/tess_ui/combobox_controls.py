@@ -3,7 +3,7 @@
 `ComboboxModel` is the behaviour, with no window: the options, the text in the field, the value, whether the list is open, which row is active and what each key and each leaving of the field does. The field keeps the
 keyboard focus all the time (the active row is the *active descendant*, not a focused row), so everything is decided here from keys the field hears.
 
-- Options are `{value, label}` and optionally `{hint, disabled}`. Matching is by containing text, case-insensitively, and keeps the order of the options. The matched part of a label is given as `runs`.
+- Options are `{value, label}` and optionally `{hint, disabled, swatch, icon, font}` (the row templates: a colour swatch, an icon, or the label set in a font). Matching is by containing text, case-insensitively, and keeps the order of the options. The matched part of a label is given as `runs`.
 - *Strict*: the value is always one of the options; text that is not one is only a query, and leaving the field puts the last value back. *Free*: the text may be the value; the list only suggests.
 - Keys (the field's own Home, End and letters are the text's): Down opens the list (the selected row, or the first enabled row, active; with Alt it opens and makes no row active) and then moves to the next enabled row and stops
   at the last; Up opens with the last enabled row, then moves up, and from the first row makes none active; Page Down and Page Up move a page; Enter picks the active row (with none: Strict closes and puts the value back, Free takes the text
@@ -83,7 +83,8 @@ class ComboboxModel:
             if words and at < 0:
                 continue
             rows.append({"value": option["value"], "label": label, "hint": str(option.get("hint", "")), "disabled": bool(option.get("disabled", False)),
-                         "runs": _runs(label, at, len(words)) if words else [label], "selected": option["value"] == self.value})
+                         "runs": _runs(label, at, len(words)) if words else [label], "selected": option["value"] == self.value,
+                         "swatch": str(option.get("swatch", "")), "icon": str(option.get("icon", "")), "font": str(option.get("font", ""))})
         self.results = rows
         self.active, self.by_arrow = -1, False
         self.version += 1
@@ -203,7 +204,7 @@ class ComboboxControl(Mind):
     """The control of the widget kind `Combobox` (made by the view builder; `values` are the node's properties).
 
     Two-way: `value`, `text` (the field's text: the view's field writes it as the person types), `expanded` (the popup is open), `scroll`. Read: `options`, `strict`, `rows`, `row_height`, `command`. Out: `entries` (the rows that match, each
-    {value, label, hint, disabled, runs, selected}), `active` (the active row's place, -1 none), `count`."""
+    {value, label, hint, disabled, runs, selected, swatch, icon, font}), `active` (the active row's place, -1 none), `count`."""
 
     TWO_WAY = ("value", "text", "scroll", "expanded")
     READ = ("options", "strict", "rows", "row_height")
