@@ -742,6 +742,11 @@ def natural_size(window: Any, props: dict[str, Any], style: dict[str, Any]) -> d
     leaves out: `tess_re` 0.3.4's text has no intrinsic size, so text
     without one was 0 px wide -- every fragment's label was invisible."""
     missing = [d for d in ("width", "height") if style.get(d) is None]
+    width_style = style.get("width")
+    if isinstance(width_style, str):
+        # A width that is a percentage (or `auto`) is only known to the layout: the engine measures the text wrapped at it. Measuring here, with no width to wrap at,
+        # gave one line's height, so a wrapped text was laid out one line tall and painted over the rows below it.
+        missing = [d for d in missing if d != "height"]
     if not missing:
         return {}
     if "_pieces" in props:  # rich text: each run in its own weight and size

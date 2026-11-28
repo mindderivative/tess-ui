@@ -187,3 +187,30 @@ def test_changing_centred_text_keeps_it_filling_its_parent():
     model.words.set("Add a task")
     app.window.advance(16)
     assert (view.node("t").get("layout_width"), view.node("t").get("min_width")) == (276.0, 67.0)
+
+
+def test_a_wrapping_text_with_a_percent_width_is_as_tall_as_its_lines(tmp_path):
+    """A `Width: 100%` text has no width of its own to wrap at when it is built: its height is the engine's (the lines it wraps to at the width it is given), not one line's.
+    It was one line's, so a paragraph was laid out one line tall and the rows below it were placed over it."""
+    (tmp_path / "Views").mkdir()
+    (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
+TDL: 0.2
+Name: main
+---
+Container {{
+  Name: main
+  Style {{ Flex_Direction: vertical, Width: 200, Height: 400 }}
+  Children {{
+    Text {{ Name: para, Text: "{LONG}. {LONG}.", Typography_Role: body_small, Style {{ Width: 100%, Foreground: on_surface }} }}
+    Text {{ Name: after, Text: "after", Typography_Role: body_small, Style {{ Foreground: on_surface }} }}
+  }}
+}}
+""")
+    app = App(root=tmp_path, width=200, height=400)
+    view = app.open_view("Main")
+    app.show("main")
+    for _ in range(6):
+        view.window.advance(16)
+    para, after = view.node("root.para"), view.node("root.after")
+    assert para.get("layout_height") >= 3 * 16
+    assert after.get("layout_y") >= para.get("layout_y") + para.get("layout_height") - 0.5
