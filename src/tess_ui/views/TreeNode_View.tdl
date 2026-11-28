@@ -66,6 +66,8 @@ Container {
       Typography_Role: body_large
       Max_Lines: 1
       Overflow: ellipsis
+      Wrap: none
+      Style { Flex: expand_horizontal, Min_Width: 0 }
     }
   }
 }
