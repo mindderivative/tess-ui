@@ -32,7 +32,7 @@ def test_tree_rows_are_dense_four_pixels_in_and_sixteen_per_level(w):
 
 def test_the_folder_path_stays_inside_the_files_pane_and_says_the_whole_path_in_a_tooltip(w):
     (inst, text), = named(w, "folder_text")
-    pane = w.built.view.node("root.panes.files_pane")
+    pane = w.built.view.node("root.dock.files_panel.files_pane")
     assert text.get("layout_x") + text.get("layout_width") <= pane.get("layout_x") + pane.get("layout_width") - 8 + 0.5
     assert inst.tooltip and str(w.vm.folder.get()) in str(inst.tooltip["text"].get())
 

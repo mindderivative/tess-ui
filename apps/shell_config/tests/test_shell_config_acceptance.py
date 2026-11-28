@@ -179,7 +179,8 @@ def test_one_pass_from_the_keyboard_alone_open_select_change_add_move_duplicate_
     w.key("F6")
     w.row(value_of(w, "Bar  Top_Bar"))
     w.key("enter")  # select
-    w.key("F6")
+    w.key("F6")  # the Editor
+    w.key("F6")  # the Properties
     w.tab(4)
     w.key("enter")
     w.tab(3)
@@ -189,6 +190,7 @@ def test_one_pass_from_the_keyboard_alone_open_select_change_add_move_duplicate_
     changed = w.session.model.text
     assert w.diff(original.decode()) == ["-Height: 32", "+Height: 48"]
     w.key("F6")
+    w.key("F6", shift=True)
     w.key("F6", shift=True)
     w.key("F6", shift=True)
     assert w.region() == 1

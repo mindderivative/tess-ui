@@ -200,8 +200,9 @@ def test_undo_and_redo_after_each_structure_edit_restore_the_bytes_the_selection
 
 def test_a_right_click_in_the_structure_area_and_the_menu_key_open_the_menu_and_a_choice_runs_the_action(w):
     w.select("Popup  Calendar_Popup")
-    x = 216 + 20
-    w.window.simulate("secondary_click", x=x, y=300)
+    w.built.shortcuts.reveal("structure_tree")  # the Structure tab shows
+    w.settle()
+    w.window.simulate("secondary_click", node=w.built.view.node("root.dock.structure_panel.structure_pane"), x=20.0, y=300.0)
     w.settle()
     assert w.vm.menu_open.get() and any("structure_menu" in f for f in w.focused())
     w.key("escape")
@@ -235,7 +236,8 @@ def test_open_select_change_a_value_add_a_block_move_it_duplicate_undo_redo_and_
     w.key("F6")
     w.row(value_of(w, "Bar  Top_Bar"))
     w.key("enter")  # select
-    w.key("F6")
+    w.key("F6")  # the Editor
+    w.key("F6")  # the Properties
     w.tab(4)
     w.key("enter")
     w.tab(3)
@@ -245,6 +247,7 @@ def test_open_select_change_a_value_add_a_block_move_it_duplicate_undo_redo_and_
     changed = w.session.model.text
     assert w.diff(original.decode()) == ["-Height: 32", "+Height: 48"]
     w.key("F6")
+    w.key("F6", shift=True)
     w.key("F6", shift=True)
     w.key("F6", shift=True)
     assert w.region() == 1
@@ -297,9 +300,9 @@ def test_a_form_edit_a_structure_edit_and_a_text_edit_each_undo_as_one_step_and_
 def test_delete_outside_the_structure_tree_is_the_fields_own_and_removes_no_block(w):
     w.select("Popup  Calendar_Popup")
     before = w.session.model.text
-    w.built.shortcuts.move_focus(-1)  # the Text area
-    assert w.region() == 3
+    w.built.shortcuts._focus("editor")  # the Editor area
+    assert w.region() == 2
     w.key("delete")
-    w.built.shortcuts.move_focus(-1)  # the Form area
+    w.built.shortcuts._focus("form_pane")  # the Properties area
     w.key("delete")
     assert w.session.model.text == before and not w.vm.can_undo.get()

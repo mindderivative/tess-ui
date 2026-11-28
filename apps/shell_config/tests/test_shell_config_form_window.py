@@ -141,8 +141,9 @@ def test_a_value_is_changed_from_the_keyboard_alone_and_the_text_the_tree_and_th
     w.key("F6")
     w.row(next(r["value"] for r in _rows(w.vm.structure_nodes.get()) if r["label"] == "Bar  Top_Bar"))
     w.key("enter")
-    w.key("F6")
-    assert w.region() == 2 and w.where() == "g:Identity.group_header"
+    w.key("F6")  # the Editor
+    w.key("F6")  # the Properties
+    assert w.region() == 3 and w.where() == "g:Identity.group_header"
     w.tab(4)
     assert w.where() == "g:Size.group_header"
     w.key("enter")  # opens the group
@@ -381,9 +382,7 @@ def test_every_row_of_the_form_is_reached_by_tab(w):
     w.open_all_groups()
     rows = [i["id"] for i in w.vm.form_items.get() if i["type"] == "row"]
     assert len(rows) >= 30
-    w.built.shortcuts.move_focus(-1)
-    w.key("F6", shift=True)
-    w.built.shortcuts.move_focus(1) if w.region() != 2 else None
+    w.built.shortcuts._focus("form_pane")
     visited = set()
     for _ in range(600):
         found = re.search(r"form_item\[([^#\]]+)#", w.focused()[0]) if w.focused() else None

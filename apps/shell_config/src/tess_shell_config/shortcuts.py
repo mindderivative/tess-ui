@@ -39,7 +39,10 @@ _FOCUSABLE = ("switch", "choose", "block_button", "field", "unit_button", "side_
 #: The structure actions that have a Ctrl+Shift+letter, by the letter.
 _STRUCTURE = {"n": "add", "m": "move_to", "d": "duplicate"}
 #: The four areas in the order F6 visits them: (the node that takes the focus, the pane it is in).
-REGIONS = (("files_tree", "files_pane"), ("structure_tree", "structure_pane"), ("form_pane", "form_pane"), ("editor", "text_pane"), ("problem_row", "problems_pane"))
+REGIONS = (("files_tree", "files_pane"), ("structure_tree", "structure_pane"), ("editor", "text_pane"), ("form_pane", "form_pane"), ("problem_row", "problems_pane"))
+#: The tab of the dock each pane is in (a pane in a tab that is not showing has no focus to give: its tab is shown first).
+PANEL_TITLES = {"files_pane": "Files", "files_tree": "Files", "structure_pane": "Structure", "structure_tree": "Structure", "text_pane": "Editor", "editor": "Editor",
+                "form_pane": "Properties", "problems_pane": "Problems", "problem_row": "Problems"}
 
 
 #: The Ctrl+Shift+letter shortcuts of the shell and disk actions, by the letter.
@@ -167,14 +170,26 @@ class Shortcuts:
         self._focus("structure_tree")
 
     def _focus_row(self, value: str) -> bool:
+        self.reveal("structure_tree")
         for inst in self.view.handle.composition.walk():
             if inst.name == "row" and "structure_tree." in inst.id and inst.id.endswith(f".row[{value}]"):
                 self.view.node(inst.id).focus()
                 return True
         return False
 
+    def reveal(self, area: str) -> None:
+        """Show the tab of the dock that holds `area` (a pane or the node that takes its focus), so that the area is there to take the focus."""
+        title = PANEL_TITLES.get(area)
+        if title is None:
+            return
+        dock = self.view.dock_host("root.dock").dock
+        panel = dock.panel(title)
+        if panel is not None and dock.shown(dock.side_of(panel)) is not panel:
+            dock.show(panel)
+
     def _focus(self, name: str) -> None:
         """Give the focus to an area. A tree is one tab stop whose arrow keys work from a row, so the focus goes to the chosen row (else the first); the form takes it at its first group header; the editor takes it itself."""
+        self.reveal(name)
         if name == "form_pane":
             headers = [inst.id for inst in self.view.handle.composition.walk() if inst.name == "group_header"]
             if headers:
