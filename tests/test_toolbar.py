@@ -93,34 +93,34 @@ def test_floating_is_a_pill_with_a_shadow_as_long_as_its_buttons(tmp_path):
 def test_floating_vertical_is_a_column_64_wide(tmp_path):
     view, _ = opened(tmp_path, "Variant: floating; Orientation: vertical")
     t = tb(view)
-    first, last = view.node("root.tb.group.item[bold]"), view.node("root.tb.group.item[italic]")
+    first, last = view.node("root.tb.group.entry[bold].item"), view.node("root.tb.group.entry[italic].item")
     assert t.get("layout_width") == 64.0 and t.get("layout_height") > 64 and last.get("layout_y") > first.get("layout_y") and last.get("layout_x") == first.get("layout_x")
 
 
 def test_vibrant_uses_primary_container_and_the_icons_on_primary_container(tmp_path):
     view, _ = opened(tmp_path, "Vibrant: true")
     assert tb(view).get("fill") == role(view, "primary_container")
-    assert view.node("root.tb.group.item[bold].icon").get("fill") == role(view, "on_primary_container")
+    assert view.node("root.tb.group.entry[bold].item.icon").get("fill") == role(view, "on_primary_container")
 
 
 def test_pressing_an_item_sets_chosen(tmp_path):
     view, vm = opened(tmp_path)
-    view.window.simulate("click", node=view.node("root.tb.group.item[italic]"))
+    view.window.simulate("click", node=view.node("root.tb.group.entry[italic].item"))
     settle(view, 4)
     assert vm.chosen.get() == "italic"
 
 
 def test_a_disabled_item_does_not_respond(tmp_path):
     view, vm = opened(tmp_path)
-    view.window.simulate("click", node=view.node("root.tb.group.item[link]"))
+    view.window.simulate("click", node=view.node("root.tb.group.entry[link].item"))
     settle(view, 4)
     assert vm.chosen.get() == ""
 
 
 def test_every_item_has_a_label_for_a_screen_reader(tmp_path):
     view, _ = opened(tmp_path)
-    assert [view.node(f"root.tb.group.item[{k}]").get("label") for k in ("bold", "italic", "link")] == ["Bold", "Italic", "Link"]
-    assert tb(view).get("role") == "group" and tb(view).get("label") == "Toolbar"
+    assert [view.node(f"root.tb.group.entry[{k}].item").get("label") for k in ("bold", "italic", "link")] == ["Bold", "Italic", "Link"]
+    assert tb(view).get("role") == "toolbar" and tb(view).get("label") == "Toolbar"
 
 
 def test_the_overflow_menu_opens_under_the_more_button_and_chooses(tmp_path):
@@ -142,7 +142,7 @@ def test_no_more_button_without_overflow(tmp_path):
 
 def test_the_action_button_is_at_the_end_and_calls_on_fab(tmp_path):
     view, vm = opened(tmp_path, "Fab_Icon: plus; Fab_Label: Add; On_Fab: add")
-    fab, last = view.node("root.tb.fab"), view.node("root.tb.group.item[italic]")
+    fab, last = view.node("root.tb.fab"), view.node("root.tb.group.entry[italic].item")
     assert fab.get("layout_x") > last.get("layout_x") and abs(fab.get("layout_x") + fab.get("layout_width") - (600 - 16)) < 0.5
     view.window.simulate("click", node=fab)
     settle(view, 4)
@@ -162,17 +162,17 @@ def test_hidden_fades_it_out_and_takes_it_out_of_the_tab_order(tmp_path):
 
 def test_disabled_stops_every_button(tmp_path):
     view, vm = opened(tmp_path, "Disabled: true")
-    view.window.simulate("click", node=view.node("root.tb.group.item[bold]"))
+    view.window.simulate("click", node=view.node("root.tb.group.entry[bold].item"))
     settle(view, 4)
     assert vm.chosen.get() == ""
 
 
 def test_arrow_keys_move_between_the_buttons(tmp_path):
     view, _ = opened(tmp_path)
-    view.node("root.tb.group.item[bold]").focus()
+    view.node("root.tb.group.entry[bold].item").focus()
     view.window.simulate("key_down", key="arrow_right")
     settle(view, 2)
-    assert view.node("root.tb.group.item[italic]").get("focused") is True
+    assert view.node("root.tb.group.entry[italic].item").get("focused") is True
 
 
 def test_a_slot_holds_your_own_content_after_the_items(tmp_path):
@@ -200,7 +200,7 @@ Container {{
     view = app.open_view("Main")
     app.show("main")
     settle(view, 8)
-    assert view.node("root.tb.extra").get("layout_x") > view.node("root.tb.group.item[italic]").get("layout_x")
+    assert view.node("root.tb.extra").get("layout_x") > view.node("root.tb.group.entry[italic].item").get("layout_x")
 
 
 # -- fit: what does not fit moves into the overflow menu -----------------------------------------------------------------------
@@ -209,7 +209,7 @@ MANY = _list("Items", [{"value": f"v{i}", "icon": "star", "label": f"Item {i}"} 
 
 
 def count(view):
-    return len([k for k in view._built.specs if k.startswith("root.tb.group.item[") and k.endswith("]")])
+    return len([k for k in view._built.specs if k.startswith("root.tb.group.entry[") and k.endswith("].item")])
 
 
 def test_without_fit_every_item_shows_however_narrow(tmp_path):

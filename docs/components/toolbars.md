@@ -17,8 +17,13 @@ the `Value` of the item or overflow row pressed goes to `Chosen`. `Overflow` is 
 action button at the end. With `Fit`, items that do not fit move, in order, into the overflow menu; a docked toolbar measures itself, a floating one uses `Max_Length` pixels.
 `Hidden` fades it out and takes its buttons out of the tab order (bind it to the way a list scrolls). `Label` is its accessible name, and `Disabled` stops every button.
 
-Your own content goes in the default slot after the items. The arrow keys move between the buttons (one Tab stop). The role is `Group`: the engine has no toolbar role.
+Your own content goes in the default slot after the items. The arrow keys move between the buttons (one Tab stop). The role is `toolbar`.
 With `Fit`, the items that spill and the rows of `Overflow` share one menu, a divider between. Not built: sliding out of the way (it fades).
+
+The desktop form (ADR-0029): at `compact` a docked bar is 40 tall with 32 pixel buttons and at `dense` 32 with 28 (64 and 40 at `default`). An item may also be `{divider: true}`, a thin line between groups that no arrow
+key stops at, or `{toggle: true, pressed: <whether it is on>}`, a toggle button that shows its state (pressing one still writes its `value` to `Chosen`; the caller writes `pressed`), and may carry a `shortcut`,
+which its tooltip shows after the name (`Save (Ctrl+S)`; the accessible name stays `Save`). Not built: a divider that would end the visible run is not dropped when items spill, and the shortcut is not
+exposed to assistive technology as a key shortcut (the engine has no such property).
 
 ## How it is built
 
@@ -26,7 +31,7 @@ A view Tesserae ships is a `<Name>_View.tdl` (what it takes and what it is made 
 
 ### `Toolbar`
 
-The Material 3 toolbar: a row (or, floating, a column) of icon buttons with an optional action button at the end and an overflow menu. `Variant: docked` spans its width, 64 tall, on `surface_container`; `floating` is a pill with a shadow that is as long as its buttons, and `Vibrant: true` puts it on `primary_container` (the icons on_primary_container). `Items` is a list of {value, icon, label} and optionally {disabled}: pressing one sets `Chosen` to its `Value`; every icon has a label (its name and its tooltip). `Overflow` is a list of Menu rows shown under a more button at the end; with `Fit: true` the items that do not fit go there by themselves. Your own content goes in the default slot after the items. `Fab_Icon` (with `Fab_Label` and `On_Fab`) adds an action button at the end. `Hidden: true` fades the toolbar out of the way and out of the tab order (bind it to the way a list scrolls). The arrow keys move between the buttons (one Tab stop). Role: a group, because the engine has no toolbar role.
+The Material 3 toolbar: a row (or, floating, a column) of icon buttons with an optional action button at the end and an overflow menu. `Variant: docked` spans its width, 64 tall, on `surface_container`; `floating` is a pill with a shadow that is as long as its buttons, and `Vibrant: true` puts it on `primary_container` (the icons on_primary_container). `Items` is a list of {value, icon, label} and optionally {disabled}: pressing one sets `Chosen` to its `Value`; every icon has a label (its name and its tooltip). `Overflow` is a list of Menu rows shown under a more button at the end; with `Fit: true` the items that do not fit go there by themselves. Your own content goes in the default slot after the items. `Fab_Icon` (with `Fab_Label` and `On_Fab`) adds an action button at the end. `Hidden: true` fades the toolbar out of the way and out of the tab order (bind it to the way a list scrolls). The arrow keys move between the buttons (one Tab stop). Items may also be {divider: true} (a thin vertical line between groups, never a focus stop) and {toggle: true, pressed: bool} (a toggle button: it shows `Pressed`; pressing one still sets `Chosen`, and the caller writes the new `Pressed`); an item may have a `Shortcut`, shown in its tooltip as "Name (Ctrl+S)". At `Compact` the docked bar is 40 tall with 32 pixel buttons and at `dense` 32 with 28 (ADR-0029). Role: toolbar.
 
 | Parameter | Type | Default | Meaning |
 | --- | --- | --- | --- |
@@ -35,7 +40,7 @@ The Material 3 toolbar: a row (or, floating, a column) of icon buttons with an o
 | `Vibrant` | `bool` | `false` | primary_container, with on_primary_container icons. |
 | `Width` | `any` |  | A docked toolbar's width; the width of its place when not given. |
 | `Label` | `str` | `Toolbar` | The toolbar's accessible name. |
-| `Items` | `list` | `[]` | The icon buttons, each {value, icon, label} and optionally {disabled}. |
+| `Items` | `list` | `[]` | The icon buttons, each {value, icon, label} and optionally {disabled, shortcut, toggle, pressed}; {divider: true} is a line between groups. |
 | `Overflow` | `list` | `[]` | Menu rows under a more button at the end (empty shows no button). |
 | `Chosen` | `any` |  | The value of the item or overflow row last pressed. Two-way: give it a bare reference and the view writes it back. |
 | `Fab_Icon` | `str` |  | An action button at the end (empty shows none). |
@@ -49,7 +54,7 @@ The Material 3 toolbar: a row (or, floating, a column) of icon buttons with an o
 
 Children go in the default slot.
 
-Its parts, by name (a stylesheet rule's `Part` or `Name` addresses one): `group` (Container), `item` (IconButton), `more` (IconButton), `menu` (Menu), `fab` (Fab).
+Its parts, by name (a stylesheet rule's `Part` or `Name` addresses one): `group` (Container), `entry` (Container), `divider` (Divider), `item` (IconButton), `more` (IconButton), `menu` (Menu), `fab` (Fab).
 
 Its look is in [`Toolbar_Stylesheet.tdl`](../stylesheets/toolbars/toolbar.md).
 

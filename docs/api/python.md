@@ -361,6 +361,14 @@ dense_text_size(level: str) -> Optional[float]
 
 The font size a text at density `level` is set to over its role's: 13 at `dense` (ADR-0029's `body_dense` 13/18), `None` (the role's own) at every other level.
 
+### `toolbar_step`
+
+```python
+toolbar_step(level: str) -> float
+```
+
+How much room one item of a toolbar takes along it at density `level`: the button and the 4 dp gap (44 with no density: a 40 dp button).
+
 ### `mnemonic_split`
 
 ```python

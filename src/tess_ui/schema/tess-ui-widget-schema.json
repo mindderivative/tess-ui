@@ -8483,6 +8483,18 @@
             ],
             "description": "What it does: its accessible name and its tooltip."
           },
+          "shortcut": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "Its shortcut, written after the name in the tooltip (`Save (Ctrl+S)`); the accessible name stays the label."
+          },
           "variant": {
             "anyOf": [
               {
@@ -8627,6 +8639,7 @@
             "icon",
             "selected_icon",
             "label",
+            "shortcut",
             "variant",
             "size",
             "width_kind",
@@ -22564,7 +22577,7 @@
                 "pattern": "<\\|"
               }
             ],
-            "description": "The icon buttons, each {value, icon, label} and optionally {disabled}."
+            "description": "The icon buttons, each {value, icon, label} and optionally {disabled, shortcut, toggle, pressed}; {divider: true} is a line between groups."
           },
           "overflow": {
             "anyOf": [

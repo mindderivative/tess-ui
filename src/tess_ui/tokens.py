@@ -32,7 +32,7 @@ from materialyoucolor.scheme.scheme_tonal_spot import SchemeTonalSpot
 from tess_utils import parse_color
 
 __all__ = [
-    "BASELINE", "DRAG_START_PX", "LAYER_FLIP_THRESHOLD", "LAYER_VIEWPORT_MARGIN", "DENSITY", "DENSITY_LEVELS", "density_token", "body_role", "dense_text_size", "DENSE_TEXT_SIZE", "mnemonic_split", "mnemonic_plain", "mnemonic_of", "mnemonic_runs", "ELEVATION_LEVELS", "baseline_scheme", "ROLES", "SHAPES", "TYPE_SCALE", "TypeStyle", "color_scheme",
+    "BASELINE", "DRAG_START_PX", "LAYER_FLIP_THRESHOLD", "LAYER_VIEWPORT_MARGIN", "DENSITY", "DENSITY_LEVELS", "density_token", "body_role", "dense_text_size", "DENSE_TEXT_SIZE", "toolbar_step", "mnemonic_split", "mnemonic_plain", "mnemonic_of", "mnemonic_runs", "ELEVATION_LEVELS", "baseline_scheme", "ROLES", "SHAPES", "TYPE_SCALE", "TypeStyle", "color_scheme",
     "RIPPLE_INITIAL_SCALE", "RIPPLE_MS", "STATE_LAYER",
     "elevation", "elevation_shadows", "FULL_RADIUS", "HEIGHT_CLASSES", "MD3_TRACKING", "MD3_TRACKING_TYPOGRAPHY", "WIDTH_CLASSES", "height_class", "width_class", "resolve_color", "resolve_scheme", "shape", "type_style",
 ]
@@ -96,6 +96,11 @@ def body_role(level: str) -> str:
 def dense_text_size(level: str) -> Optional[float]:
     """The font size a text at density `level` is set to over its role's: 13 at `dense` (ADR-0029's `body_dense` 13/18), `None` (the role's own) at every other level."""
     return DENSE_TEXT_SIZE if level == "dense" else None
+
+
+def toolbar_step(level: str) -> float:
+    """How much room one item of a toolbar takes along it at density `level`: the button and the 4 dp gap (44 with no density: a 40 dp button)."""
+    return 44.0 if level in ("", "default") else density_token(level, "icon_button_container") + 4.0
 
 
 def mnemonic_split(label: str) -> tuple[str, str, str]:
