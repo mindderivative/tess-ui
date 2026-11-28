@@ -135,7 +135,7 @@ def test_a_zone_is_as_big_as_its_panel_said_and_the_rest_is_the_centre():
     _, view = _view()
     assert view.node("files").get("layout_width") == 200.0
     editor = view.node("editor")
-    assert editor.get("layout_x") >= 200.0 + 16 and editor.get("layout_width") == pytest.approx(800 - 200 - 16, abs=1)
+    assert editor.get("layout_x") >= 200.0 + 24 and editor.get("layout_width") == pytest.approx(800 - 200 - 24, abs=1)
     assert view.node("left_half").get("layout_width") == 300.0
 
 
@@ -278,3 +278,13 @@ def test_a_dock_in_a_removed_view_is_disposed():
     host = view.dock_host("dock")
     view._dispose_controls()
     assert not host._handles and not view._docks
+
+
+def test_a_zone_handle_is_24_across_and_spans_the_whole_zone_edge_with_the_role_separator_AC_DCK_2():
+    _, view = _view()
+    host = view.dock_host("dock")
+    handle = host._handles["left"]
+    node = handle.node
+    zone = view.node("files")
+    assert node.get("layout_width") >= 24.0 and node.get("role") == "separator"
+    assert node.get("layout_height") >= zone.get("layout_height") - 1.0
