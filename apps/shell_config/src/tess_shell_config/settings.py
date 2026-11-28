@@ -24,7 +24,7 @@ class Settings:
 
     def __init__(self, folder: str | Path) -> None:
         self.path = Path(folder) / FILE_NAME
-        self.values: dict[str, Any] = {"apply_as_i_edit": False, "theme": "system"}
+        self.values: dict[str, Any] = {"apply_as_i_edit": False, "theme": "system", "dock_layout": None}
         try:
             data = json.loads(self.path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
@@ -33,6 +33,8 @@ class Settings:
             self.values["apply_as_i_edit"] = data["apply_as_i_edit"]
         if isinstance(data, dict) and data.get("theme") in THEMES:
             self.values["theme"] = data["theme"]
+        if isinstance(data, dict) and isinstance(data.get("dock_layout"), dict):
+            self.values["dock_layout"] = data["dock_layout"]
 
     @property
     def apply_as_i_edit(self) -> bool:
@@ -41,6 +43,17 @@ class Settings:
     @property
     def theme(self) -> str:
         return str(self.values["theme"])
+
+    @property
+    def dock_layout(self) -> dict[str, Any] | None:
+        """Where the window's panels were left (`DockHost.layout()`: zones, shown tabs, sizes), or `None`."""
+        held = self.values["dock_layout"]
+        return held if isinstance(held, dict) else None
+
+    def set_dock_layout(self, layout: dict[str, Any]) -> None:
+        """Remember the dock's arrangement. Raises `SaveError` when the state folder cannot be written."""
+        self.values["dock_layout"] = layout
+        self._write()
 
     def set_theme(self, theme: str) -> None:
         """Remember the choice (`system`, `light` or `dark`). Raises `SaveError` when the state folder cannot be written."""

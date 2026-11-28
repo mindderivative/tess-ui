@@ -48,7 +48,7 @@ def test_check_the_problems_area_and_apply_work_from_the_keyboard_alone(folder, 
     assert w.region() == 4 and w.focused()[0].endswith("problem_row[p:0]"), w.focused()
     # Enter on a finding opens its file, selects the block and puts the focus on the key's widget
     w.key("enter")
-    assert w.session.current == MAIN and w.session.model.selected.name == "Top_Bar" and w.region() == 2
+    assert w.session.current == MAIN and w.session.model.selected.name == "Top_Bar" and w.region() == 3
     assert any("form_item[k:Width#" in i for i in w.focused()), w.focused()
     # Ctrl+Shift+A switches Apply as I edit on: from now on every commit is written
     w.key("a", ctrl=True, shift=True)

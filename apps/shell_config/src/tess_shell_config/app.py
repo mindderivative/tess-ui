@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -9,6 +10,7 @@ from typing import Any
 from tess_ui import App
 from tess_ui.listeners import handled
 
+from tess_shell_config.files import SaveError
 from tess_shell_config.session import ConfigSession
 from tess_shell_config.shortcuts import Shortcuts
 from tess_shell_config.viewmodel import ShellConfigViewModel
@@ -29,10 +31,18 @@ class Built:
     viewmodel: ShellConfigViewModel
     window: Any
     shortcuts: Shortcuts
+    settings: Any = None
 
     def close(self) -> None:
-        """Stop what `live` started (the file watch)."""
+        """Keep where the panels are, and stop what `live` started (the file watch)."""
+        self.remember_layout()
         self.viewmodel.services.stop()
+
+    def remember_layout(self) -> None:
+        """Write the dock's arrangement to the settings (the state folder): the next start puts the panels back. A folder that cannot be written is not worth a message here."""
+        if self.settings is not None:
+            with contextlib.suppress(SaveError, KeyError, ValueError):
+                self.settings.set_dock_layout(self.view.dock_host("root.dock").layout())
 
 
 #: The window's accent seed (Material's baseline purple); the light and dark schemes are made from it.
@@ -60,8 +70,12 @@ def build(session: ConfigSession, *, width: int = 1280, height: int = 800, dark:
     window = app.show("main")
     viewmodel.shortcuts = shortcuts = Shortcuts(view, viewmodel)
     # a right click anywhere in the Structure area opens the Structure menu (the Menu key and Shift+F10 do too: see `shortcuts.py`)
-    view._listen(view.node("root.panes.structure_pane"), "secondary_click", handled(lambda event: viewmodel.structure_actions.open_menu()))
+    view._listen(view.node("root.dock.structure_panel.structure_pane"), "secondary_click", handled(lambda event: viewmodel.structure_actions.open_menu()))
     if live:
         viewmodel.services.start(app.thread_handle().call_soon, lambda ms, fn: window.after(ms, fn))
-    shortcuts.move_focus(1)  # a key press goes to the focused node, so the window starts with the focus in the Files area
-    return Built(app, view, viewmodel, window, shortcuts)
+    settings = Settings(session.state_dir)
+    if settings.dock_layout is not None:  # the panels where the person left them (a layout that no longer fits is skipped, not an error: `restore` ignores what the dock does not have)
+        with contextlib.suppress(KeyError, ValueError, TypeError):
+            view.dock_host("root.dock").restore(settings.dock_layout)
+    shortcuts.move_focus(1)  # (this shows the Files tab) a key press goes to the focused node, so the window starts with the focus in the Files area
+    return Built(app, view, viewmodel, window, shortcuts, settings)

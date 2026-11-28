@@ -103,7 +103,7 @@ def test_a_dialog_the_prompt_and_the_problems_list_are_named(folder, tmp_path, s
     assert named["prompt_field"].get("description")
 
 
-def test_tab_visits_the_toolbar_then_the_files_then_the_structure_then_the_form_then_the_text_in_reading_order(w):
+def test_tab_visits_the_toolbar_then_the_files_then_the_editor_with_f6_the_way_to_the_rest(w):
     w.built.shortcuts.move_focus(-1)  # the last area
     w.key("F6")  # wraps to the first
     w.vm.shortcuts.view.node(next(i.id for i, _ in nodes(w) if i.name == "save_button" or i.name == "format_button")).focus()
@@ -119,13 +119,15 @@ def test_tab_visits_the_toolbar_then_the_files_then_the_structure_then_the_form_
         if order and order[-1] == "text_pane":
             break
         w.key("tab")
-    assert order == ["toolbar", "files_pane", "structure_pane", "form_pane", "text_pane"], order
+    # the Structure tab is not showing (the Files tab is), so Tab passes it by, and the Properties dock comes after the centre in the dock's tab order, which the Editor
+    # does not let Tab out of: F6 is the way to both (it shows the Structure tab, and leaves the editor)
+    assert order == ["toolbar", "files_pane", "text_pane"], order
 
 
 def test_tab_goes_through_the_form_rows_in_the_order_they_are_listed(w):
     w.built.shortcuts._focus("form_pane")
     w.settle()
-    assert w.region() == 2
+    assert w.region() == 3
     rows = [i["id"] for i in w.vm.form_items.get() if i["type"] == "row"]
     seen = []
     for _ in range(500):
