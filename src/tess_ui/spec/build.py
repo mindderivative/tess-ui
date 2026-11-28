@@ -1324,7 +1324,7 @@ def _control(ctx: _Context, node: dict[str, Any], style: dict[str, Any], built: 
             control = controls.RadioButton(ctx.window, selected=bool(node.get("selected") or False),
                                            group=radio_group, error=bool(node.get("error")), **sized, **common)
         elif kind == "Switch":
-            control = controls.Switch(ctx.window, selected=bool(node.get("selected") or False), icons=bool(node.get("icons")), **size, **common)
+            control = controls.Switch(ctx.window, selected=bool(node.get("selected") or False), icons=bool(node.get("icons")), **sized, **common)
         elif kind == "Slider":
             control = controls.Slider(ctx.window, value=float(node.get("value") or 0.0), min=float(node.get("min") or 0.0),
                                       max=1.0 if node.get("max") is None else float(node["max"]), step=node.get("step"),

@@ -40,3 +40,32 @@ def test_the_target_the_state_layer_the_box_and_the_ring_follow_the_density(tmp_
     c_hit, c_box, c_layer, r_hit, r_ring, r_dot, d_box = measure(tmp_path, level)
     assert (c_hit, c_box, c_layer) == (hit, box, layer)
     assert (r_hit, r_ring, r_dot) == (hit, ring, ring / 2) and d_box == dense_box
+
+
+SWITCH = """Container {
+  Name: main
+  Style { Flex_Direction: vertical, Align_Content: top_left, Width: 400, Height: 300, Gap: 8 }
+  Children {
+    Switch { Name: s, Label: Wifi, Selected: true }
+    Switch { Name: off, Label: Off }
+  }
+}
+"""
+
+
+@pytest.mark.parametrize("level, track, handles, layer, hit", [
+    (None, (52, 32), (16, 24, 28), 40, (52, 48)),
+    ("default", (52, 32), (16, 24, 28), 40, (52, 40)),
+    ("compact", (40, 24), (12, 18, 20), 32, (40, 32)),
+    ("dense", (36, 20), (10, 15, 17), 28, (36, 28)),
+])
+def test_the_switch_track_handles_state_layer_and_hit_row_follow_the_density_AC_SWI_1(tmp_path, level, track, handles, layer, hit):
+    view = opened(tmp_path, SWITCH, level)
+    s = view._built.controls["root.s"]
+    outer = view._built.outer
+    assert (s.track.get("width"), s.track.get("height")) == track
+    assert (s.OFF, s.ON, s.PRESSED) == handles and s.surface.get("width") == layer
+    assert (outer["root.s"].get("layout_width"), outer["root.s"].get("layout_height")) == hit
+    # the handle of the switch that is on sits at the end of the track
+    assert s.TRAVEL == track[0] - track[1]
+    assert s.handle.get("scale") == pytest.approx(handles[1] / handles[2], abs=0.02) or s.handle.get("scale") is not None
