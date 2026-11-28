@@ -66,12 +66,21 @@ class Palette:
         return self.color(default)
 
 
+def module_label(block: dict[str, Any]) -> str:
+    """What a module slot says: the words the file gives it (its `Text`, `Label` or `Title` parameter, when it is plain text), else its name, else the model's placeholder label, else the module's kind."""
+    for key in ("text", "label", "title"):
+        for name, value in (block.get("params") or {}).items():
+            if name.lower() == key and isinstance(value, str) and value.strip():
+                return value.strip()
+    return str(block.get("name") or block.get("label") or block.get("module") or "module")
+
+
 def chips(blocks: list[dict[str, Any]]) -> list[str]:
     """The labels of what a surface shows, in order: each module by its name (or label), each other block by its kind; containers are looked through."""
     labels: list[str] = []
     for block in blocks:
         if block.get("type") == "module":
-            labels.append(str(block.get("label") or block.get("name") or block.get("module") or "module"))
+            labels.append(module_label(block))
         elif block.get("type") in ("block", "if", "for"):
             inner = chips(block.get("children", []) or [])
             if inner:
