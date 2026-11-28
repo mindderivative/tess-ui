@@ -92,4 +92,6 @@ def build(session: ConfigSession, *, width: int = 1280, height: int = 800, dark:
             preview.refit()
 
     view._listen(stage, "layout", refit)
+    viewmodel.services.preview_sink = preview.show
+    viewmodel.services.request_preview(soon=True)
     return Built(app, view, viewmodel, window, shortcuts, settings, preview)

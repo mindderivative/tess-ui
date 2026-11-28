@@ -134,6 +134,7 @@ class ShellConfigViewModel(ViewModel):
             self._say(f"Cannot open {rel}: {error}", error=True)
             return
         self._show(model, new_file=True)
+        self.services.request_preview(soon=True)
         if model.valid:
             self._say(f"Opened {rel}")
         else:

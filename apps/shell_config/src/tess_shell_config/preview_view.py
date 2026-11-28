@@ -92,16 +92,18 @@ class PreviewPane:
         self.model: dict[str, Any] | None = None
         self._nodes: list[Any] = []
         self.unavailable = False
+        self.reason = ""
 
     # -- the model ---------------------------------------------------------------------------------------------------
 
-    def show(self, model: dict[str, Any] | None) -> None:
+    def show(self, model: dict[str, Any] | None, reason: str = "") -> None:
         """A new model replaces the picture. A model with no surface and an error finding (a syntax error in the main shell file) is not a picture: the last good one stays, dimmed."""
+        self.reason = reason  # why there is no model (a missing preview module, a failed run), said in place of the picture
         usable = model is not None and (model.get("surfaces") or not any(f.get("severity") == "error" for f in model.get("findings", [])))
         if usable:
             self.model = model
             self.unavailable = False
-        elif model is not None or self.model is None:
+        else:
             self.unavailable = True
         self.paint()
 
@@ -141,7 +143,7 @@ class PreviewPane:
         if width < 1 or height < 1:
             return
         if self.model is None:
-            self._text(self.stage, "Preview unavailable: see Problems" if self.unavailable else "No preview yet.", 8.0, 8.0, 12.0, self.ink, width - 16)
+            self._text(self.stage, self.reason or ("Preview unavailable: see Problems" if self.unavailable else "No preview yet."), 8.0, 8.0, 12.0, self.ink, width - 16)
             return
         if width < MIN_WIDTH or height < MIN_HEIGHT:
             self._text(self.stage, "Make the pane larger to see the preview", 8.0, 8.0, 12.0, (200, 200, 200, 255), width - 16)

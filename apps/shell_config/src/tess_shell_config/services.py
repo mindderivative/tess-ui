@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, Any
 from tess_ui import Signal, batch
 
 from tess_shell_config.files import ChangedOnDisk, SaveError
+from tess_shell_config.preview_source import PreviewMissing, build_preview, overrides_of
 from tess_shell_config.problems import failure_rows, locate, relative_to_folder, rows_for, title_for
 from tess_shell_config.settings import THEMES, Settings
 from tess_shell_config.shell import CheckResult, InlineOffload, Offload, ShellCommandError, Status
@@ -34,6 +35,8 @@ __all__ = ["Services", "TEXT_SAVE_DELAY_MS"]
 
 #: How long typing in the text view rests before "Apply as I edit" writes it.
 TEXT_SAVE_DELAY_MS = 200
+#: How long the edits rest before the View is drawn again (the vault's Preview Pane: 300 ms).
+PREVIEW_DELAY_MS = 300
 THEME_LABELS = {"system": "Theme: System", "light": "Theme: Light", "dark": "Theme: Dark"}
 
 
@@ -64,6 +67,10 @@ class Services:
         self._check_failed = False
         self._check_again = False
         self._text_generation = 0
+        self._preview_generation = 0
+        self._previewing = False
+        self._preview_again = False
+        self.preview_sink: Callable[[dict[str, Any] | None, str], None] | None = None  # set by `build`: gets the model, or None and why there is none
         self._pending_disk: dict[str, bytes] = {}
         self._findings: list[Any] = []
         for name, signal in {"problems": self.problems, "problems_title": self.problems_title, "has_problems": self.has_problems, "checking": self.checking, "shell_state": self.shell_state,
@@ -83,6 +90,7 @@ class Services:
         self.watch.start()
         self.refresh_status()
         self.request_check()
+        self.request_preview(soon=True)
 
     def stop(self) -> None:
         if self.watch is not None:
@@ -244,13 +252,59 @@ class Services:
         vm._flags(model)
         vm._relabel_files()
         self.request_check()
+        self.request_preview(soon=True)
         self.refresh_status()
         if self.apply_on_edit.get() and self.shell_running.get() and self.session.shell is not None:
             self.reload_shell()
         return True
 
+    # -- the preview --------------------------------------------------------------------------------------------------------------
+
+    def request_preview(self, *, soon: bool = False) -> None:
+        """Draw the View again from what the editor holds: asked for at once (`soon`: a file opened, saved or changed on disk) or once the edits rest for `PREVIEW_DELAY_MS`.
+        The model is made on a worker thread; one runs at a time and a change made meanwhile asks again."""
+        if self.preview_sink is None:
+            return
+        self._preview_generation += 1
+        generation = self._preview_generation
+        if soon or self.timer is None:
+            self._run_preview()
+        else:
+            self.timer(PREVIEW_DELAY_MS, lambda: self._rest_preview(generation))
+
+    def _rest_preview(self, generation: int) -> None:
+        if generation == self._preview_generation:
+            self._run_preview()
+
+    def _run_preview(self) -> None:
+        if self._previewing:
+            self._preview_again = True
+            return
+        self._previewing = True
+        folder = self.session.folder
+        overrides = overrides_of(folder, self.session.models)  # read here, on the loop: the worker never touches the models
+        self.offload.submit(lambda: build_preview(folder, overrides), self._previewed, self._preview_failed)
+
+    def _previewed(self, model: dict[str, Any]) -> None:
+        self._previewing = False
+        if self.preview_sink is not None:
+            self.preview_sink(model, "")
+        self._preview_next()
+
+    def _preview_failed(self, error: BaseException) -> None:
+        self._previewing = False
+        if self.preview_sink is not None:
+            self.preview_sink(None, str(error) if isinstance(error, PreviewMissing) else f"The preview failed: {error}")
+        self._preview_next()
+
+    def _preview_next(self) -> None:
+        if self._preview_again:
+            self._preview_again = False
+            self._run_preview()
+
     def edited(self, *, typing: bool = False) -> None:
         """A commit happened (or, with `typing`, a text edit): with "Apply as I edit" on the file is written now, or for typing once it rests."""
+        self.request_preview()
         if not self.apply_on_edit.get():
             return
         model = self.session.model
@@ -365,6 +419,7 @@ class Services:
         else:
             vm._relabel_files()
         vm._say(f"Reloaded {rel} from disk")
+        self.request_preview(soon=True)
         self._show_disk_change()
         if vm.shortcuts is not None:
             vm.shortcuts.keep_focus()
