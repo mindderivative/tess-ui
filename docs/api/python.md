@@ -1612,7 +1612,8 @@ class Control(
     listen: Optional[Listen] = None,
     size: Optional[float] = None,
     width: Optional[float] = None,
-    height: Optional[float] = None
+    height: Optional[float] = None,
+    density: str = ''
 ) -> None
 ```
 

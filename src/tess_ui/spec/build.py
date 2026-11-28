@@ -60,6 +60,7 @@ _KINDS = _CONTROL_KINDS | _WIDGET_KINDS | {"Rect", "Container", "Text", "Link", 
 _NODE_KEYS = frozenset({
     "id", "kind", "classes", "style", "text", "checked", "selected", "value", "hour", "minute",
     "image", "icon", "svg", "canvas", "scroll", "overlay", "virtual", "track", "stop_indicator", "buffer", "error", "icons", "ticks", "value_indicator", "vertical", "size", "low", "high", "thickness", "two_bar", "contained", "wavy", "bindings", "handlers", "two_way", "interaction", "a11y", "a11y_literal", "group", "children",
+    "density",  # the density a checkbox or a radio button is built at (ADR-0029; the cascade has resolved it)
     "component_of",  # the fragment a node is the root of (M57): its theme `components:` entry
     "window",  # a root `kind: Window`, made a container (0.4.4): the OS window's title, borderless, sizes
     "dock", "dock_panel", "split_handle",  # a Dock, a DockPanel and the handle between split panels, made containers (0.4.4)
@@ -1313,14 +1314,15 @@ def _control(ctx: _Context, node: dict[str, Any], style: dict[str, Any], built: 
             control = controls.LoadingIndicator(ctx.window, size=size.get("width", 48.0), contained=bool(node.get("contained")), **common)
     else:
         common["listen"] = ctx.listen
+        sized: dict[str, Any] = {**size, "density": str(node.get("density") or "")}  # a checkbox and a radio button also take the density
         if kind == "Checkbox":
-            control = controls.Checkbox(ctx.window, checked=_checked(node), error=bool(node.get("error")), **size, **common)
+            control = controls.Checkbox(ctx.window, checked=_checked(node), error=bool(node.get("error")), **sized, **common)
         elif kind == "RadioButton":
             radio_group = None
             if group is not None:
                 radio_group = built.radio_groups.setdefault(group, controls.RadioGroup())
             control = controls.RadioButton(ctx.window, selected=bool(node.get("selected") or False),
-                                           group=radio_group, error=bool(node.get("error")), **size, **common)
+                                           group=radio_group, error=bool(node.get("error")), **sized, **common)
         elif kind == "Switch":
             control = controls.Switch(ctx.window, selected=bool(node.get("selected") or False), icons=bool(node.get("icons")), **size, **common)
         elif kind == "Slider":
