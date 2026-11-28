@@ -23,17 +23,17 @@ real_session.ensure()
 HERE = Path(__file__).resolve().parent
 FIXTURES = HERE / "fixtures"
 
-UNAVAILABLE = importlib.util.find_spec("tess_dl") is None or sys.platform == "win32"
+UNAVAILABLE = importlib.util.find_spec("tess_dl") is None or sys.platform != "linux"
 if UNAVAILABLE:
     collect_ignore_glob = ["test_*.py"]  # a directory run; a file named on the command line (CI's partial run) is not ignored, so the hook below skips it
 
 
 def pytest_collection_modifyitems(config, items):
-    """The application is not run on Windows (the tests write their files with `write_text`, which turns every `\\n` into `\\r\\n`, and compare the text a form edit writes line by line). A directory run never
-    collects these files there (`collect_ignore_glob`), but CI's partial run names the files a change touches, and a named file is collected and imports fine on Windows: skip its tests with that reason."""
-    if sys.platform != "win32":
+    """The Configuration Application is Linux only (it configures the shell, which runs on Linux). A directory run never collects its tests elsewhere (`collect_ignore_glob`), but a file named on the command
+    line (CI's partial run) is collected: skip its tests on every other platform."""
+    if sys.platform == "linux":
         return
-    skip = pytest.mark.skip(reason="the Configuration Application's tests are not run on Windows (CRLF in the files the tests write)")
+    skip = pytest.mark.skip(reason="the Configuration Application is Linux only")
     for item in items:
         if HERE in Path(str(item.path)).parents:
             item.add_marker(skip)
@@ -41,13 +41,13 @@ def pytest_collection_modifyitems(config, items):
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_make_collect_report(collector):
-    """A test module of the application that cannot be imported here (no `tess_dl`: it needs Python 3.14; Windows is not run) is skipped, not an error."""
+    """A test module of the application that cannot be imported here (no `tess_dl`: it needs Python 3.14; it is Linux only) is skipped, not an error."""
     outcome = yield
     report = outcome.get_result()
     path = getattr(collector, "path", None)
     if UNAVAILABLE and report.failed and path is not None and HERE in Path(path).parents:
         report.outcome = "skipped"
-        report.longrepr = (str(path), 0, "Skipped: the Configuration Application needs tess_dl (Python 3.14) and is not run on Windows")
+        report.longrepr = (str(path), 0, "Skipped: the Configuration Application needs tess_dl (Python 3.14) and is Linux only")
 
 
 @pytest.fixture(scope="session")
