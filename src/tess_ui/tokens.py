@@ -32,7 +32,7 @@ from materialyoucolor.scheme.scheme_tonal_spot import SchemeTonalSpot
 from tess_utils import parse_color
 
 __all__ = [
-    "BASELINE", "DRAG_START_PX", "LAYER_FLIP_THRESHOLD", "LAYER_VIEWPORT_MARGIN", "DENSITY", "DENSITY_LEVELS", "density_token", "ELEVATION_LEVELS", "baseline_scheme", "ROLES", "SHAPES", "TYPE_SCALE", "TypeStyle", "color_scheme",
+    "BASELINE", "DRAG_START_PX", "LAYER_FLIP_THRESHOLD", "LAYER_VIEWPORT_MARGIN", "DENSITY", "DENSITY_LEVELS", "density_token", "body_role", "dense_text_size", "DENSE_TEXT_SIZE", "ELEVATION_LEVELS", "baseline_scheme", "ROLES", "SHAPES", "TYPE_SCALE", "TypeStyle", "color_scheme",
     "RIPPLE_INITIAL_SCALE", "RIPPLE_MS", "STATE_LAYER",
     "elevation", "elevation_shadows", "FULL_RADIUS", "HEIGHT_CLASSES", "MD3_TRACKING", "MD3_TRACKING_TYPOGRAPHY", "WIDTH_CLASSES", "height_class", "width_class", "resolve_color", "resolve_scheme", "shape", "type_style",
 ]
@@ -85,6 +85,21 @@ def density_token(level: str, token: str) -> float:
         return DENSITY[token][DENSITY_LEVELS.index(level)]
     except KeyError:
         raise ValueError(f"no density token {token!r} (known: {', '.join(DENSITY)})") from None
+
+
+def body_role(level: str) -> str:
+    """The type role of body text (a row label, a field's text) at density `level`: `body_large` 16/24 at `default` and with no density, `body_medium` 14/20 at `compact` and `dense`
+    (ADR-0029; at `dense` the size is 13, see `dense_text_size`: the engine has no 13 dp role)."""
+    return "body_large" if level in ("", "default") else "body_medium"
+
+
+def dense_text_size(level: str) -> Optional[float]:
+    """The font size a text at density `level` is set to over its role's: 13 at `dense` (ADR-0029's `body_dense` 13/18), `None` (the role's own) at every other level."""
+    return DENSE_TEXT_SIZE if level == "dense" else None
+
+
+#: `body_dense`, the body size at the `dense` level (a type role of its own in ADR-0029; the engine's theme has the 15 MD3 roles, so a text takes `body_medium` and this size).
+DENSE_TEXT_SIZE = 13.0
 
 
 #: How far a held press moves before it is a drag, in dp (the spec's Drag and Drop start distance; the window's `drag_start_px`).

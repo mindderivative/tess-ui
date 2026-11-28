@@ -261,6 +261,8 @@ HOST_FUNCTIONS: dict[str, Callable[..., Any]] = {
     "format_number": _format_number, "pluralize": _pluralize, "date_add_days": _date_add_days, "date_weekday": _date_weekday,
     "days_in_month": _days_in_month, "format_date": _format_date, "current_date": _today,
     "density_token": tokens.density_token,
+    "body_role": tokens.body_role,
+    "dense_text_size": tokens.dense_text_size,
     "tree_rows": _tree_rows,
     "tree_row": _tree_row,
 }

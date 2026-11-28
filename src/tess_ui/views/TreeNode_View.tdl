@@ -62,7 +62,8 @@ Container {
     Text {
       Name: label
       Text: <| label |>
-      Typography_Role: body_large
+      Typography_Role: <| body_role(density) |>
+      Font_Size: <| dense_text_size(density) |>
       Max_Lines: 1
       Overflow: ellipsis
       Wrap: none

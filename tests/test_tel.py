@@ -128,7 +128,7 @@ def test_event_is_a_name_only_when_the_caller_gives_one():
 def test_the_host_functions_are_the_ones_tel_leaves_to_its_host():
     import tess_el._whitelist as whitelist
 
-    assert set(tel.HOST_FUNCTIONS) == {"format_number", "pluralize", "date_add_days", "date_weekday", "days_in_month", "format_date", "current_date", "density_token", "tree_rows", "tree_row"}
+    assert set(tel.HOST_FUNCTIONS) == {"format_number", "pluralize", "date_add_days", "date_weekday", "days_in_month", "format_date", "current_date", "density_token", "body_role", "dense_text_size", "tree_rows", "tree_row"}
     assert tel.BUILTIN_NAMES == whitelist.BUILTIN_NAMES | set(tel.HOST_FUNCTIONS)
 
 

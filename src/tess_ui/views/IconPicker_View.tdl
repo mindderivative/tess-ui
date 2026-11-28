@@ -65,7 +65,8 @@ Container {
           Text {
             Name: trigger_text
             Text: <| value if value != '' else placeholder |>
-            Typography_Role: body_large
+            Typography_Role: <| body_role(density) |>
+            Font_Size: <| dense_text_size(density) |>
             Style { Foreground: on_surface }
           }
           Icon {

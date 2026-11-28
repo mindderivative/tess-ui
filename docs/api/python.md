@@ -345,6 +345,22 @@ density_token(level: str, token: str) -> float
 
 The value of density token `token` at `level` (`default`, `compact` or `dense`).
 
+### `body_role`
+
+```python
+body_role(level: str) -> str
+```
+
+The type role of body text (a row label, a field's text) at density `level`: `body_large` 16/24 at `default` and with no density, `body_medium` 14/20 at `compact` and `dense` (ADR-0029; at `dense` the size is 13, see `dense_text_size`: the engine has no 13 dp role).
+
+### `dense_text_size`
+
+```python
+dense_text_size(level: str) -> Optional[float]
+```
+
+The font size a text at density `level` is set to over its role's: 13 at `dense` (ADR-0029's `body_dense` 13/18), `None` (the role's own) at every other level.
+
 ### `baseline_scheme`
 
 ```python
@@ -439,6 +455,7 @@ The font size, weight, line height and tracking of the MD3 type role `role`, or 
 - `LAYER_VIEWPORT_MARGIN` = `8.0`
 - `DENSITY` = `dict of 12`
 - `DENSITY_LEVELS` = `('default', 'compact', 'dense')`
+- `DENSE_TEXT_SIZE` = `13.0`
 - `ELEVATION_LEVELS` = `dict of 6`
 - `ROLES` = `tuple of 49`
 - `SHAPES` = `dict of 6`
