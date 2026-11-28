@@ -27,7 +27,7 @@ Container {
       A11y { Role: tablist }
       Style {
         Flex_Direction: horizontal
-        Height: <| 64 if (variant == 'primary' and any([t.get('icon', '') != '' for t in tabs])) else 48 |>
+        Height: <| 64 if (variant == 'primary' and density in ('', 'default') and any([t.get('icon', '') != '' for t in tabs])) else (48 if density in ('', 'default') else density_token(density, 'control_height')) |>
       }
       Children {
         For t In <| tabs |> Key <| t['value'] |> {
@@ -36,9 +36,9 @@ Container {
             Interaction: true
             Style {
               Width: <| tab_width |>
-              Flex_Direction: vertical
+              Flex_Direction: <| 'vertical' if density in ('', 'default') else 'horizontal' |>
               Align_Content: center
-              Gap: 2
+              Gap: <| 2 if density in ('', 'default') else (8 if density == 'compact' else 4) |>
             }
             Handlers {
               On_Click { Set { Target: selected, Value: <| t['value'] |> } }
@@ -59,7 +59,7 @@ Container {
                     Icon {
                       Name: badged_icon
                       Icon: <| t['icon'] |>
-                      Style { Width: 24, Height: 24, Foreground: <| 'primary' if t['value'] == selected else 'on_surface_variant' |> }
+                      Style { Width: <| 24 if density in ('', 'default') else density_token(density, 'icon_button_icon') |>, Height: <| 24 if density in ('', 'default') else density_token(density, 'icon_button_icon') |>, Foreground: <| 'primary' if t['value'] == selected else 'on_surface_variant' |> }
                     }
                   }
                 }
@@ -68,13 +68,14 @@ Container {
                 Icon {
                   Name: icon
                   Icon: <| t['icon'] |>
-                  Style { Width: 24, Height: 24, Foreground: <| 'primary' if t['value'] == selected else 'on_surface_variant' |> }
+                  Style { Width: <| 24 if density in ('', 'default') else density_token(density, 'icon_button_icon') |>, Height: <| 24 if density in ('', 'default') else density_token(density, 'icon_button_icon') |>, Foreground: <| 'primary' if t['value'] == selected else 'on_surface_variant' |> }
                 }
               }
               Text {
                 Name: label
                 Text: <| t['label'] |>
                 Typography_Role: title_small
+                Font_Size: <| dense_text_size(density) |>
                 Style { Foreground: <| 'primary' if t['value'] == selected else 'on_surface_variant' |> }
               }
             }
