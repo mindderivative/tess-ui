@@ -18,8 +18,8 @@ tesserae-shell-config --config-dir ~/shell   # a folder of your own
 
 ![The window with a bar selected: the Files, Structure, Form and Text areas](img/shell-config-bar.png)
 
-The window has four areas side by side: **Files** (the folder by type: shells, modules, styles, stylesheets, themes, settings), **Structure** (the open file's blocks as a tree), **Form** (the keys of the selected
-block, in groups, each with its doc line as a tooltip) and **Text** (the same file as TDL). Below them are the **Problems** list and the status line. Choosing a block selects it in the Form; editing in the Text area
+The window is a toolbar over docked panels: **Files** and **Structure** are tabs on the left, **Editor** and **View** tabs in the middle, **Properties** is on the right and **Problems** at the bottom. **Files** (the folder by type: shells, modules, styles, stylesheets, themes, settings), **Structure** (the open file's blocks as a tree), **Properties** (the keys of the selected
+block, in groups, each with its doc line as a tooltip) and **Editor** (the same file as TDL). The **Problems** list is below the Editor, and the status line at the bottom. Choosing a block selects it in the Properties; editing in the Editor
 updates the others as soon as the text parses.
 
 ### Open a folder and a file
@@ -30,7 +30,7 @@ wrong); the Structure and Form come back when it parses.
 ### Edit a bar
 
 1. Open your shell file (`Main_Shell.tdl`), choose the **Bar** in the Structure tree.
-2. In the Form, open a group (Enter on its header) and change a value: type in the field and press Enter (or leave it); a switch toggles with Space; a choice (`Edge`, `Layer`) opens a list; a colour opens the colour picker.
+2. In the Properties, open a group (Enter on its header) and change a value: type in the field and press Enter (or leave it); a switch toggles with Space; a choice (`Edge`, `Layer`) opens a list; a colour opens the colour picker.
    A number outside the key's range is refused and the message says the range. The reset button next to a key removes it from the file, which gives its default.
 3. Add something to the bar with **Add child** (Ctrl+Shift+N): a list of what a bar may hold. It is written with its required keys only. **Move up** and **Move down** (Alt+Up, Alt+Down) reorder; **Move to** (Ctrl+Shift+M) moves a block into another block; **Duplicate** (Ctrl+Shift+D) copies it with a new `Name`.
 
@@ -132,7 +132,7 @@ the window gives the keyboard a way out (F6 moves between the three areas).
 
 ## The form generator (a generated form from data)
 
-The Form area shows the keys of the selected block, one row each, **generated entirely from the schema**: no key name, enum value or default is in the code. It is a good example of data-driven views.
+The Properties area shows the keys of the selected block, one row each, **generated entirely from the schema**: no key name, enum value or default is in the code. It is a good example of data-driven views.
 
 | Part | Does |
 |---|---|

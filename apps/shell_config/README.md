@@ -2,7 +2,7 @@
 
 `tesserae-shell-config` is the graphical editor for the files of [Tesserae Shell](https://github.com/mindderivative): the shell files, modules, styles, stylesheets, themes and `settings.tdl` in the shell's configuration folder. It is built on Tesserae UI and edits the `.tdl` files in place, so comments, blank lines, order and everything you did not touch stay byte for byte as you wrote them.
 
-The window has the Files, Structure, Form, Text and Problems areas; it opens and saves files, builds the form of a block's keys from the schema, adds, removes, moves and duplicates blocks with undo and redo, runs `check` and lists its findings, applies as you edit, watches the files, and has pages for themes, stylesheets and settings, module calls (the shipped modules and your own), a Files area that makes, copies, renames and deletes files, and the keyboard map below. The user guide (with pictures) is in the Tesserae UI documentation, `guide/shell-config.md`.
+The window has the Files, Structure, Editor, View, Properties and Problems panels (docked: Files and Structure on the left, Editor and View in the middle, Properties on the right, Problems at the bottom); it opens and saves files, builds the form of a block's keys from the schema, adds, removes, moves and duplicates blocks with undo and redo, runs `check` and lists its findings, applies as you edit, watches the files, and has pages for themes, stylesheets and settings, module calls (the shipped modules and your own), a Files area that makes, copies, renames and deletes files, and the keyboard map below. The user guide (with pictures) is in the Tesserae UI documentation, `guide/shell-config.md`.
 
 ## Install and start
 
@@ -31,14 +31,14 @@ Without the `tesserae-shell` command, or with a schema whose major version the a
 |---|---|---|
 | Files | The folder's files by type, read from each file's root block: Shells, Modules, Styles, Stylesheets, Themes, Settings | Enter on a file opens it. A file with syntax errors or unsaved changes says so in words |
 | Structure | The open file's blocks as a tree, with `If` and `For` as labelled nodes (an `If` with an `Else` shows the else body under an `Else` node) | Choosing a row selects that block. Add a child, remove, move up or down, move into another block, duplicate (buttons above the tree, a menu, shortcuts; see below) |
-| Problems | The findings of the last `check` (below the three areas): an icon and a word (Error, Warning, Note), `file:line:column`, the message and what to write instead. A message row says when `check` did not run | Click a finding, or Tab to it and press Enter: its file opens, the block it points at is selected and the key's widget in the Form has the focus |
+| Problems | The findings of the last `check` (in the dock at the bottom): an icon and a word (Error, Warning, Note), `file:line:column`, the message and what to write instead. A message row says when `check` did not run | Click a finding, or Tab to it and press Enter: its file opens, the block it points at is selected and the key's widget in the Form has the focus |
 | Text | The file as TDL | Edit it by hand; the structure follows when the text parses. A file with syntax errors is edited here only, with its errors listed (line, column, what is wrong, what to write) |
 
 The toolbar has Save, Undo, Redo, Format file (formatting is never done unless you press it), Check, Reload shell and the switch Apply as I edit. Everything works from the keyboard:
 
 | Keys | Does |
 |---|---|
-| Tab, Shift+Tab | Move through the toolbar, the Files tree, the Structure tree, the form and the text |
+| Tab, Shift+Tab | Move through the toolbar, the Files tree, the Structure tree, the Properties and the Editor |
 | Arrow keys, Enter | Move in a tree, open or select the row |
 | Space, Enter | Toggle a switch, press a button, open or close a group of keys |
 | Enter, or Tab out of a field | Write the field's value (nothing is written while you type) |
@@ -47,7 +47,7 @@ The toolbar has Save, Undo, Redo, Format file (formatting is never done unless y
 | Ctrl+S | Save the open file |
 | Ctrl+Z | Undo |
 | Ctrl+Y, Ctrl+Shift+Z | Redo |
-| F6, Shift+F6 | Move the focus to the next, or the previous, of the areas: Files, Structure, Form, Text, and Problems when it lists something |
+| F6, Shift+F6 | Move the focus to the next, or the previous, of the areas: Files, Structure (its tab shows), Editor, Properties, and Problems when it lists something |
 | F5 | Run `check` on the folder (the Check button) |
 | Ctrl+Shift+R | Ask the running shell to reload (Reload shell) |
 | Ctrl+Shift+A | Switch "Apply as I edit" on or off |
@@ -68,7 +68,7 @@ A right click in the Structure area opens the same menu. Every area, button, for
 
 ## The form
 
-Choosing a block (or a setting section, a module call, a theme token group) fills the Form area with its keys, in the schema's groups. Each group is a header; the first group is open, and Enter on a header opens or closes it (the choice is remembered by group name from block to block). One key is one row: its name, the widget of its kind, then the shipped `TokenButton` (it shows the token the key holds with a swatch for a colour, and opens a searchable list of the theme tokens of the groups the key accepts, the schema's `preferred_tokens` first, each with its value; choosing one writes `$group.name`), a `{ }` button for a key that takes an expression (the widget is swapped for a field holding `<| ... |>`, written as it is) and a reset button (removes the property, so the shell's default applies; disabled while the key is absent). The schema's default is the placeholder; the doc is the row's tooltip and shows under the row that has the focus; a required key that is absent is marked.
+Choosing a block (or a setting section, a module call, a theme token group) fills the Properties area with its keys, in the schema's groups. Each group is a header; the first group is open, and Enter on a header opens or closes it (the choice is remembered by group name from block to block). One key is one row: its name, the widget of its kind, then the shipped `TokenButton` (it shows the token the key holds with a swatch for a colour, and opens a searchable list of the theme tokens of the groups the key accepts, the schema's `preferred_tokens` first, each with its value; choosing one writes `$group.name`), a `{ }` button for a key that takes an expression (the widget is swapped for a field holding `<| ... |>`, written as it is) and a reset button (removes the property, so the shell's default applies; disabled while the key is absent). The schema's default is the placeholder; the doc is the row's tooltip and shows under the row that has the focus; a required key that is absent is marked.
 
 | Kind | Widget |
 |---|---|
@@ -90,7 +90,7 @@ A value the widget cannot show (a call, a token reference, a hand-written expres
 
 ## Themes, stylesheets and settings
 
-- **A theme file.** Choose a token group (`Color`, `Type`, `Shape`, `Space`, `Elevation`, `Motion`) in the Structure: the Form lists the group's tokens (from the schema's `tokens` table) with a column for the base and one for each mode the file defines under `Modes`; a colour token has a swatch in each column. **Add child** on the theme offers the token groups the file lacks and `Modes`; on `Modes` it offers the modes (Light, Dark, High_Contrast, Reduced_Motion), and a new mode is a new column; removing the mode's block removes the column.
+- **A theme file.** Choose a token group (`Color`, `Type`, `Shape`, `Space`, `Elevation`, `Motion`) in the Structure: the Properties lists the group's tokens (from the schema's `tokens` table) with a column for the base and one for each mode the file defines under `Modes`; a colour token has a swatch in each column. **Add child** on the theme offers the token groups the file lacks and `Modes`; on `Modes` it offers the modes (Light, Dark, High_Contrast, Reduced_Motion), and a new mode is a new column; removing the mode's block removes the column.
 - **A stylesheet.** The Structure lists the `Rule`s in the order they are written, each with its selector (`Rule  Text:hovered`); order decides ties, so Move up and Move down (Alt+Up, Alt+Down) reorder. The Form of a rule starts with the **selector builder**: Applies to (a block or module name, a class, a name), Target, Part (`Module::part`, modules only) and State (`hovered`, `pressed`, `disabled`, `selected`, `checked`, `focused`); each change writes the whole `Selector:`. The style keys below are those of the selector's block type (a module's root block for a module name), every style key for a class or a name; a key the rule already has stays shown. A selector the builder cannot read (a descendant, a state the shell does not know) is shown as written with the union of style keys.
 - **settings.tdl.** Each section (`Logging`, `Validation`, `Appearance`, `Directories`, `Debug`, and `Shortcuts` when the shell exports it) is a page: choose it in the Structure. A section the file lacks is in the **Add child** list of the root block.
 - **Popups.** A `Popup` named like a default popup of the schema's `popups` table (`Tray_Menu`...) says which module opens it and that it replaces that popup whole, and shows its values (`Attach`, `Alignment`, `Gap`, `Max_Height`) as placeholders; any other `Popup` is told the names it could take.
