@@ -745,6 +745,18 @@
             ],
             "description": "Dimmed and does not take the focus."
           },
+          "start_open": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "The list is open when the field is made (a chooser that has no button: the field takes the focus and the options are already there)."
+          },
           "on_pick": {
             "anyOf": [
               {
@@ -791,6 +803,7 @@
             "placeholder",
             "strict",
             "disabled",
+            "start_open",
             "on_pick"
           ]
         }
@@ -4882,7 +4895,7 @@
                 "pattern": "<\\|"
               }
             ],
-            "description": "The options, each {value, label} and optionally {hint, disabled}."
+            "description": "The options, each {value, label} and optionally {hint, disabled, swatch, icon, font}: a colour swatch, an icon, or the label set in that font."
           },
           "strict": {
             "anyOf": [
@@ -4954,7 +4967,7 @@
                 "pattern": "<\\|"
               }
             ],
-            "description": "Output: written to the name it is bound to. The options that match the text, each {value, label, hint, disabled, runs, selected}: `runs` is the label with the matched part in weight 500."
+            "description": "Output: written to the name it is bound to. The options that match the text, each {value, label, hint, disabled, runs, selected, swatch, icon, font}: `runs` is the label with the matched part in weight 500."
           },
           "active": {
             "anyOf": [

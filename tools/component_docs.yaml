@@ -1139,7 +1139,7 @@ components:
       Material 3 has no combo box (it has the menu-based select and the search view); the baseline is the WAI-ARIA combobox with a listbox popup.
     built: |
       `Autocomplete` is a view Tesserae ships (`Autocomplete_View.tdl`) with a mind, the `Combobox` widget (`combobox_controls.py`), which holds the behaviour in Python so that it can be tested with no window. It is an outlined
-      text field with a popup list that narrows as the person types, for a closed set too long to scan. `Options` are `{value, label}` and optionally `{hint, disabled}`; matching is by containing text, case aside, in the
+      text field with a popup list that narrows as the person types, for a closed set too long to scan. `Options` are `{value, label}` and optionally `{hint, disabled, swatch, icon, font}`; matching is by containing text, case aside, in the
       order of the options, with the matched letters in weight 500; `Strict` (the default) keeps the value one of the options, and `Strict: false` lets the typed text be the value. `Picked` holds the value of the option last
       picked when `On_Pick` runs.
 
@@ -1149,8 +1149,8 @@ components:
       else the option whose label the text is (case aside), else Strict puts the value back and Free keeps the text. A press on a row picks it. The list shows eight rows (a row is a menu row high: 40, 32, 28, with a hint 56, 48, 40),
       scrolls, and the popup is as wide as the field, 160 to 360. "No matches" shows when nothing matches.
 
-      Not built: inline completion, the chevron and clear buttons, row templates (swatch, icon, font sample), the count announcement, and the 40 dp field at `default` (it is the Text Field's own height there). The tess-behavior
-      combobox cases (SPEC 2.5d) are not adapted yet.
+      A row may be a template: `swatch` (a colour), `icon` (an icon name) or `font` (the label set in that font). `Start_Open: true` makes the list open when the field is made (a chooser with no button).
+      Not built: inline completion, the chevron and clear buttons, the count announcement, and the 40 dp field at `default` (it is the Text Field's own 56 there). The tess-behavior combobox cases (SPEC 2.5d) are not adapted yet.
     usage_view: |
       Container {
         Name: panel
