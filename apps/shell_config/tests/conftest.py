@@ -103,3 +103,14 @@ class FakeShell:
 @pytest.fixture
 def fake_shell(tmp_path):
     return FakeShell(tmp_path / "bin")
+
+
+@pytest.fixture(autouse=True)
+def _keep_the_density_of_the_app_to_this_test():
+    """`App(density=...)` sets the density every view and stylesheet reads (`tess_ui.tel._app_density`, one per process): the configuration window is compact, so a test that built it left every later
+    test of the same process (the toolkit's, in one pytest worker) at compact. Put back what it was."""
+    from tess_ui import tel
+
+    before = tel._app_density.get()
+    yield
+    tel._app_density.set(before)
