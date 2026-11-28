@@ -66,7 +66,7 @@ DENSITY: dict[str, tuple[float, float, float]] = {
     "row_height": (40.0, 32.0, 24.0),
     "menu_item_height": (40.0, 32.0, 28.0),
     "icon_button_container": (40.0, 32.0, 28.0),
-    "icon_button_icon": (24.0, 20.0, 20.0),
+    "icon_button_icon": (24.0, 20.0, 18.0),
     "row_padding_x": (12.0, 8.0, 4.0),
     "icon_label_gap": (8.0, 8.0, 4.0),
     "field_padding_x": (12.0, 8.0, 8.0),
@@ -79,7 +79,7 @@ DENSITY: dict[str, tuple[float, float, float]] = {
     "chip_padding_x": (16.0, 12.0, 8.0),
     "chip_padding_inner": (8.0, 8.0, 4.0),
     "chip_gap": (8.0, 8.0, 4.0),
-    "dock_tab_height": (48.0, 40.0, 32.0),
+    "dock_tab_height": (48.0, 32.0, 28.0),
     "dock_tab_padding": (16.0, 12.0, 8.0),
 }
 

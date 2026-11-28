@@ -25,7 +25,7 @@ def tabs_at(level):
     return node.get("layout_height"), node.get("layout_width")
 
 
-@pytest.mark.parametrize("level, height", [("", 48), ("default", 48), ("compact", 40), ("dense", 32)])
+@pytest.mark.parametrize("level, height", [("", 48), ("default", 48), ("compact", 32), ("dense", 28)])
 def test_the_dock_tab_height_follows_the_density_AC_DKP_1(level, height):
     assert tabs_at(level)[0] == height
 
