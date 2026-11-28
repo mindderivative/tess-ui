@@ -2882,6 +2882,7 @@
             "ColourField",
             "ColourStrip",
             "ColourSwatches",
+            "Combobox",
             "Container",
             "FileBrowser",
             "FontBrowser",

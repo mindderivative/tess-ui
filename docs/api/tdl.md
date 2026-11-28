@@ -82,6 +82,7 @@ A node's widget is a built-in one, one the app registered, or a view found by na
 | --- | --- |
 | [`Accordion`](../components/accordions.md) | One section of an accordion: a 56 pixel header button (the title, and a chevron that turns over when it opens) and, while `Expanded`, the content (th… |
 | [`AccordionGroup`](../components/accordions.md) | Several accordion sections as one set, with a divider between them. |
+| [`Autocomplete`](../components/autocompletes.md) | The combo box (ux spec Autocomplete; the WAI-ARIA combobox with a listbox popup): an outlined text field with a popup list of options that narrows as… |
 | [`Badge`](../components/badges.md) | The Material 3 badge: a 6 dp dot (no value) or a 16 dp pill holding a count or short text. |
 | [`Button`](../components/buttons.md) | The Material 3 button: filled, tonal, elevated, outlined or text, in five sizes, with a leading and a trailing icon, a toggle form, a loading form an… |
 | [`ButtonGroup`](../components/button-groups.md) | The Material 3 button group: buttons that behave as a set. |
@@ -100,6 +101,7 @@ A node's widget is a built-in one, one the app registered, or a view found by na
 | [`ColourPickerPanel`](../components/colour-pickers.md) | The inside of a colour picker, with no surface and no trigger: a square of saturation and value for the hue, a hue strip, an alpha strip, the hex tex… |
 | [`ColourStrip`](../components/colour-pickers.md) | A strip with a handle that picks a colour's hue or its alpha: drag it, or use the arrow, Page Up, Page Down, Home and End keys. |
 | [`ColourSwatches`](../components/colour-pickers.md) | A row of the theme's colour roles; pressing one sets `Value` to its colour. |
+| [`Combobox`](../components/autocompletes.md) | The combo box's mind: it draws nothing. |
 | `Container` | A box with an optional fill that lays out its children. |
 | [`DatePicker`](../components/date-pickers.md) | The Material 3 modal date picker: a dialog with the chosen date at the top (and a button that swaps the grid for a typed field), the month with arrow… |
 | [`DatePickerDay`](../components/date-pickers.md) | One day of a date picker (Material 3): a 48 pixel target holding a 40 pixel circle with the number in `body_large`. |
@@ -455,7 +457,7 @@ Theme {
 | `Typography.<Name>.Tracking` | a number | Extra space between letters, in pixels (Material 3's tracking: `tokens.MD3_TRACKING`). |
 | `Components` | a block | Per-component shape and elevation. |
 | `Styles` | a list | Style rules, in order. |
-| `Styles[].Kind` | one of 33 names | Every node of this kind. |
+| `Styles[].Kind` | one of 34 names | Every node of this kind. |
 | `Styles[].Classes` | a list | Nodes with all of these classes. |
 | `Styles[].Id` | text | The node with this id. |
 | `Styles[].Style` | a `Style` block | How the matching nodes look. |
