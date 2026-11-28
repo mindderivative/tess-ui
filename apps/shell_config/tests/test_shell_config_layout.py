@@ -109,3 +109,63 @@ def test_the_expression_button_is_as_wide_as_it_is_high_so_its_round_shape_is_a_
         assert n.get("layout_width") == n.get("layout_height") == 32.0
     arrows = [n for _, n in named(w, "reset_button")]
     assert arrows[0].get("layout_width") == buttons[0][1].get("layout_width")
+
+
+def test_a_marker_under_a_label_wraps_inside_the_label_column_and_never_runs_under_the_field(w):
+    """The owner's fb06: the second line under a label ("written in a module's file, not here") was one long line, laid over the field and clipped by it. It wraps in the label column."""
+    w.select("Text")
+    w.open_all_groups()
+    markers = [(inst, node) for inst, node in named(w, "marker_text")]
+    assert markers, "a Text block has a row with a marker"
+    for inst, marker in markers:
+        label_box = w.built.view.node(inst.id.rsplit(".", 1)[0])
+        cells = w.built.view.node(label_box and inst.id.rsplit(".", 2)[0] + ".cells")
+        assert marker.get("layout_x") + marker.get("layout_width") <= cells.get("layout_x") + 0.5, "the marker ends before the cells begin"
+        assert marker.get("layout_width") <= label_box.get("layout_width") + 0.5
+
+
+def test_the_window_stylesheet_boxes_its_own_inputs_not_the_input_inside_a_text_field(tmp_path):
+    """The owner's fb01: the token search (a TextField) showed a dark pill of its own inside its outlined frame, over the frame: the window stylesheet's rule for every TextInput also matched the input a
+    TextField holds. The dark box is for the inputs the window writes itself (class `boxed`)."""
+    from tess_ui import App
+
+    from tess_shell_config.app import ROOT
+
+    (tmp_path / "Views").mkdir()
+    shutil.copy(ROOT / "Views" / "Main_Stylesheet.tdl", tmp_path / "Views" / "Main_Stylesheet.tdl")
+    (tmp_path / "Views" / "Main_View.tdl").write_text("""---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Flex_Direction: vertical, Width: 400, Height: 200, Gap: 8 }
+  Children {
+    TextField { Name: field, Variant: outlined, Label: "Search tokens", Leading: search, Style { Width: 360 } }
+    TextInput { Name: bare, Classes: [boxed], Text: "x", Typography_Role: body_medium, Style { Width: 200 } }
+  }
+}
+""")
+    app = App(root=tmp_path, width=400, height=200, dark=True, theme_seed=(0x67, 0x50, 0xA4, 0xFF), stylesheet=tmp_path / "Views" / "Main_Stylesheet.tdl")
+    view = app.open_view("Main")
+    app.show("main")
+    for _ in range(8):
+        view.window.advance(16)
+    window = view.window
+    try:
+        pixels, width, _ = window.snapshot()
+    except RuntimeError as error:
+        pytest.skip(f"no GPU to render with: {error}")
+    field = view.node("root.field")
+    inner = next(n for i in view.handle.composition.walk() if i.id.startswith("root.field.") for n in [view._built.nodes.get(i.id)] if n is not None and n.get("kind") == "text_input")
+
+    def pixel(x, y):
+        at = (int(y) * width + int(x)) * 4
+        return tuple(pixels[at : at + 3])
+
+    frame_inside = pixel(field.get("layout_x") + 5, field.get("layout_y") + field.get("layout_height") / 2 - 6)  # inside the frame, left of the icon
+    over_input = pixel(inner.get("layout_x") + inner.get("layout_width") - 20, inner.get("layout_y") + inner.get("layout_height") / 2 + 6)  # where the dark pill was
+    assert max(abs(a - b) for a, b in zip(frame_inside, over_input)) < 12, f"the input paints no box of its own: {frame_inside} vs {over_input}"
+    bare = view.node("root.bare")
+    box = pixel(bare.get("layout_x") + bare.get("layout_width") - 6, bare.get("layout_y") + bare.get("layout_height") / 2)
+    assert max(abs(a - b) for a, b in zip(frame_inside, box)) > 12, "the window's own input keeps its box"
