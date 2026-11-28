@@ -72,6 +72,7 @@ DENSITY: dict[str, tuple[float, float, float]] = {
     "field_padding_x": (12.0, 8.0, 8.0),
     "tree_indent": (20.0, 16.0, 12.0),
     "chevron_box": (24.0, 20.0, 16.0),
+    "swatch": (24.0, 20.0, 16.0),
     "dock_tab_height": (48.0, 40.0, 32.0),
     "dock_tab_padding": (16.0, 12.0, 8.0),
 }

@@ -63,14 +63,14 @@ Container {
     Container {
       Name: field
       A11y { Hidden: true }
-      Style { Flex_Direction: horizontal, Align_Content: center, Gap: 12 }
+      Style { Flex_Direction: horizontal, Align_Content: center }
       Children {
         If <| current.get('swatch', '') != '' |> {
           Container {
             Name: current_swatch
             Style {
-              Width: 24
-              Height: 24
+              Width: <| 24 if density == '' else density_token(density, 'swatch') |>
+              Height: <| 24 if density == '' else density_token(density, 'swatch') |>
               Corner_Radius: 6
               Border_Width: 1
               Border_Color: outline

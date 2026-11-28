@@ -152,7 +152,7 @@ class VM(ViewModel):
 CALL = "TokenButton { Name: tb, Tokens: <| tokens |>, Value: <| ref |>, Open: <| pop |>, On_Pick: picked%s }"
 
 
-def opened(tmp_path, call=CALL, options="", ref=None, size=(560, 700), dark=False):
+def opened(tmp_path, call=CALL, options="", ref=None, size=(560, 700), dark=False, density=None):
     (tmp_path / "Views").mkdir(parents=True, exist_ok=True)
     (tmp_path / "Views" / "Main_View.tdl").write_text(f"""---
 TDL: 0.2
@@ -168,7 +168,7 @@ Container {{
   }}
 }}
 """)
-    app = App(root=tmp_path, width=size[0], height=size[1], theme_seed=(0x67, 0x50, 0xA4, 0xFF), dark=dark)
+    app = App(root=tmp_path, width=size[0], height=size[1], theme_seed=(0x67, 0x50, 0xA4, 0xFF), dark=dark, density=density)
     app.bind(VM)
     view = app.open_view("Main")
     app.show("main")
@@ -559,3 +559,12 @@ def test_after_a_pick_the_focus_is_on_the_button_again(tmp_path):
     press(view, row(view, "$space.md"))
     settle(view, 8)
     assert vm.pop.get() is False and trigger(view).get("focused")
+
+
+@pytest.mark.parametrize("level, height, swatch, pad", [(None, 48, 24, 12), ("default", 40, 24, 12), ("compact", 32, 20, 8), ("dense", 28, 16, 8)])
+def test_the_field_has_the_height_of_a_text_field_and_its_swatch_and_padding_follow_the_density(tmp_path, level, height, swatch, pad):
+    view, _ = opened(tmp_path, ref="$color.primary", density=level)
+    field = nodes(view, "field")
+    current = nodes(view, "field.current_swatch")
+    assert field.get("layout_height") == height and (current.get("layout_width"), current.get("layout_height")) == (swatch, swatch)
+    assert current.get("layout_x") - field.get("layout_x") == pad
