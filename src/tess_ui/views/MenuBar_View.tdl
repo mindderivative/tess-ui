@@ -21,6 +21,7 @@ Container {
       Doc: "on_alt: the underlines show while the bar is active; always: at rest too; never: not at all (the Alt+letter keys still work)."
     }
     Menu_Width { Type: float, Default: 240, Doc: "How wide each menu is, from 112 to 280 pixels." }
+    On_Pick { Type: handler, Doc: "Called after a row has been chosen (`chosen` holds its value): what the application does with the command." }
   }
   State { Open_Menu: -1, Keyed: false, Active: false }
   A11y { Role: group, Label: <| label |> }
@@ -71,7 +72,7 @@ Container {
                 Items: <| m['items'] |>
                 Chosen: <| chosen |>
                 Width: <| menu_width |>
-                On_Pick: "open_menu = -1; active = False"
+                On_Pick: "open_menu = -1; active = False; on_pick()"
                 Handlers {
                   On_Dismiss { Set { Target: open_menu, Value: <| -1 if open_menu == i else open_menu |> } }
                 }

@@ -11,6 +11,7 @@ from typing import Any
 
 from tess_ui import Effect, Signal, ViewModel, batch, untrack
 
+from tess_shell_config.commands import Commands
 from tess_shell_config.fileactions import FileActions
 from tess_shell_config.folder import FileType
 from tess_shell_config.actions import StructureActions
@@ -63,6 +64,7 @@ class ShellConfigViewModel(ViewModel):
         self.structure_actions = StructureActions(self)  # the Structure area's actions (`structure_*`, `can_*`, `menu_*`)
         self.file_actions = FileActions(self)  # the Files area's actions (`file_*`, `can_file_*`, the name prompt)
         self.services = Services(self)  # check and the problems list, status, reload, Apply as I edit, the file watch (`problems`, `check_run`, `shell_state`, `disk_*`, ...)
+        self.commands = Commands(self)  # the one table the menu bar, the toolbar and the keyboard map read (`menu_bar`, `tool_items`, `run_command`)
         self._effects = [Effect(self._file_picked), Effect(self._structure_picked)]
         self.refresh_files()
 
@@ -187,6 +189,10 @@ class ShellConfigViewModel(ViewModel):
             self.shortcuts.handle(str(key), bool(ctrl), bool(shift), bool(alt))
 
     # -- actions -----------------------------------------------------------------------------------------------------------------
+
+    def run_command(self, command_id: str) -> None:
+        """What a menu entry or a toolbar button does (`commands.py`): the command runs when it can."""
+        self.commands.run(command_id)
 
     def save(self) -> None:
         """Write the open file (a temporary file and a rename; the first save keeps the old content in the application's state folder), then check it. A file another program changed since is not overwritten."""

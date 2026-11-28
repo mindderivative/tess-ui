@@ -75,6 +75,17 @@ def build(session: ConfigSession, *, width: int = 1280, height: int = 800, dark:
     view._listen(view.node("root.dock.structure_panel.structure_pane"), "secondary_click", handled(lambda event: viewmodel.structure_actions.open_menu()))
     if live:
         viewmodel.services.start(app.thread_handle().call_soon, lambda ms, fn: window.after(ms, fn))
+    dock_host = view.dock_host("root.dock")
+    arrangement = dock_host.layout()  # as the dock starts, before a remembered layout is put back: what Reset layout goes back to
+    viewmodel.commands.hooks["quit"] = app.close
+
+    def reset_layout() -> None:
+        with contextlib.suppress(KeyError, ValueError, TypeError):
+            dock_host.restore(arrangement)
+        with contextlib.suppress(SaveError, KeyError, ValueError):
+            Settings(session.state_dir).set_dock_layout(arrangement)
+
+    viewmodel.commands.hooks["reset_layout"] = reset_layout
     settings = Settings(session.state_dir)
     if settings.dock_layout is not None:  # the panels where the person left them (a layout that no longer fits is skipped, not an error: `restore` ignores what the dock does not have)
         with contextlib.suppress(KeyError, ValueError, TypeError):

@@ -2,7 +2,7 @@
 
 `tesserae-shell-config` is the graphical editor for the files of [Tesserae Shell](https://github.com/mindderivative): the shell files, modules, styles, stylesheets, themes and `settings.tdl` in the shell's configuration folder. It is built on Tesserae UI and edits the `.tdl` files in place, so comments, blank lines, order and everything you did not touch stay byte for byte as you wrote them.
 
-The window has the Files, Structure, Editor, View, Properties and Problems panels (docked: Files and Structure on the left, Editor and View in the middle, Properties on the right, Problems at the bottom); it opens and saves files, builds the form of a block's keys from the schema, adds, removes, moves and duplicates blocks with undo and redo, runs `check` and lists its findings, applies as you edit, watches the files, and has pages for themes, stylesheets and settings, module calls (the shipped modules and your own), a Files area that makes, copies, renames and deletes files, and the keyboard map below. The user guide (with pictures) is in the Tesserae UI documentation, `guide/shell-config.md`.
+The window has a menu bar (File, Edit, View, Shell: every command with its shortcut; Alt or F10 reaches it, Alt+F, E, V, S open the menus), a toolbar of icons for the frequent commands (Save, Undo, Redo, Format file, Check, Reload shell, Apply as I edit: each is also a menu entry, enabled together) and the Files, Structure, Editor, View, Properties and Problems panels (docked: Files and Structure on the left, Editor and View in the middle, Properties on the right, Problems at the bottom); it opens and saves files, builds the form of a block's keys from the schema, adds, removes, moves and duplicates blocks with undo and redo, runs `check` and lists its findings, applies as you edit, watches the files, and has pages for themes, stylesheets and settings, module calls (the shipped modules and your own), a Files area that makes, copies, renames and deletes files, and the keyboard map below. The user guide (with pictures) is in the Tesserae UI documentation, `guide/shell-config.md`.
 
 The application targets the Linux desktop where the shell runs and is Linux only (its tests are skipped on every other platform).
 
@@ -47,6 +47,8 @@ The toolbar has Save, Undo, Redo, Format file (formatting is never done unless y
 | Up, Down (in a number field) | One step of the key's `step`, inside its range |
 | Escape | Close a list, a menu or a dialog |
 | Ctrl+S | Save the open file |
+| Ctrl+Q | Quit (closes the window as its close button does) |
+| F10, Alt pressed and released alone | The menu bar: focus its first title; Alt+F, Alt+E, Alt+V and Alt+S open File, Edit, View and Shell from anywhere |
 | Ctrl+Z | Undo |
 | Ctrl+Y, Ctrl+Shift+Z | Redo |
 | F6, Shift+F6 | Move the focus to the next, or the previous, of the areas: Files, Structure (its tab shows), Editor, Properties, and Problems when it lists something |

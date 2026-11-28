@@ -3,7 +3,7 @@ TDL: 0.2
 Name: main
 Tesserae: "0.6"
 ---
-# The configuration application's window: a toolbar over a dock (Files and Structure as tabs, Editor and View as tabs, Properties, Problems) and a status line. The ViewModel (viewmodel.py) holds every value
+# The configuration application's window: a menu bar (File, Edit, View, Shell) and a toolbar of icons over a dock (Files and Structure as tabs, Editor and View as tabs, Properties, Problems) and a status line. The ViewModel (viewmodel.py) holds every value
 # and action; this file only says where they show. Tab moves through the toolbar, the Files tree, the Structure tree and the text; each tree takes the arrow keys.
 Container {
   Name: main
@@ -14,94 +14,15 @@ Container {
   }
   Children {
     Container {
-      Name: toolbar
-      A11y {
-        Role: group
-        Label: Actions
-        Description: "Save, undo, redo, format, check and reload the shell; Apply as I edit writes each change at once."
-      }
-      Style { Flex_Direction: horizontal, Align_Content: left, Gap: 8, Padding: 8, Width: 100% }
+      Name: menu_row
+      Style { Flex_Direction: horizontal, Align_Content: left, Width: 100% }
       Children {
-        Button {
-          Name: save_button
-          Label: Save
-          Variant: filled
-          A11y { Label: Save, Description: "Write the open file to disk and run check (Ctrl+S)" }
-          Disabled: <| not dirty |>
-          Handlers {
-            On_Click: save
-          }
-        }
-        Button {
-          Name: undo_button
-          Label: Undo
-          Variant: tonal
-          A11y { Label: Undo, Description: "Undo the last edit of the open file (Ctrl+Z)" }
-          Disabled: <| not can_undo |>
-          Handlers {
-            On_Click: undo
-          }
-        }
-        Button {
-          Name: redo_button
-          Label: Redo
-          Variant: tonal
-          A11y { Label: Redo, Description: "Redo the edit that was undone (Ctrl+Y)" }
-          Disabled: <| not can_redo |>
-          Handlers {
-            On_Click: redo
-          }
-        }
-        Button {
-          Name: format_button
-          Label: "Format file"
-          Variant: outlined
-          A11y { Label: "Format file", Description: "Lay the open file out with the formatter; never done unless you ask" }
-          Disabled: <| not has_tree |>
-          Handlers {
-            On_Click: format_file
-          }
-        }
-        Button {
-          Name: check_button
-          Label: Check
-          Variant: outlined
-          A11y { Label: Check, Description: "Run the shell's check on the folder (F5)" }
-          Disabled: <| checking |>
-          Handlers {
-            On_Click: check_run
-          }
-        }
-        Button {
-          Name: reload_button
-          Label: "Reload shell"
-          Variant: outlined
-          A11y { Label: "Reload shell", Description: "Ask the running shell to reload its files (Ctrl+Shift+R)" }
-          Disabled: <| not shell_running |>
-          Handlers {
-            On_Click: shell_reload
-          }
-        }
-        Button {
-          Name: theme_button
-          Label: <| theme_label |>
-          Variant: outlined
-          A11y { Label: <| theme_label |>, Description: "Light or dark: System follows the desktop's setting; each press goes to the next (System, Light, Dark). Kept for next time (Ctrl+Shift+T)" }
-          Handlers {
-            On_Click: theme_cycle
-          }
-        }
-        Switch {
-          Name: apply_switch
-          Label: "Apply as I edit"
-          Selected: <| apply_on_edit |>
-          A11y {
-            Label: "Apply as I edit"
-            Description: "Write each change to the file at once and reload the running shell; off, nothing is written until Save (Ctrl+Shift+A)"
-          }
-          Handlers {
-            On_Change { Call { Action: "apply_changed", Args: [<| apply_on_edit |>] } }
-          }
+        MenuBar {
+          Name: menubar
+          Menus: <| menu_bar |>
+          Chosen: <| menubar_chosen |>
+          On_Pick: "run_command(menubar_chosen)"
+          Style { Width: auto }
         }
         Text {
           Name: title
@@ -109,9 +30,16 @@ Container {
           Typography_Role: title_small
           Max_Lines: 1
           Overflow: ellipsis
-          Style { Flex: expand_horizontal, Min_Width: 0 }
+          Style { Flex: expand_horizontal, Min_Width: 0, Padding { Left: 8, Right: 12 } }
         }
       }
+    }
+    Toolbar {
+      Name: toolbar
+      Label: Actions
+      Items: <| tool_items |>
+      Chosen: <| toolbar_chosen |>
+      On_Pick: "run_command(toolbar_chosen)"
     }
     Dock {
       Name: dock

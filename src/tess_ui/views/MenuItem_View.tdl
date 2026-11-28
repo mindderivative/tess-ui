@@ -33,7 +33,7 @@ Container {
     If <| checked is True or icon != '' |> {
       Icon {
         Name: lead
-        Icon: <| 'check' if checked is True else icon |>
+        Icon: <| 'check' if (checked is True or icon == '') else icon |>
       }
     }
     If <| checked is False and icon == '' |> {
