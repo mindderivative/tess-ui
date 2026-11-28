@@ -157,7 +157,7 @@ def test_a_value_is_changed_from_the_keyboard_alone_and_the_text_the_tree_and_th
     assert w.vm.text.get() == w.session.model.text and w.vm.dirty.get() and main.read_bytes() == before, "the Text area shows it; the disk is untouched until Save"
     assert w.where() == "k:Height.field", "the focus stays on the field that was edited"
     w.tab()
-    assert w.where() == "k:Height.unit_button"
+    assert w.where() == "k:Height.button"
     w.key("s", ctrl=True)
     assert main.read_bytes() == before.replace(b"Height: 32", b"Height: 48")
     w.key("z", ctrl=True)
@@ -223,22 +223,23 @@ def test_the_arrow_keys_step_a_number_field(w):
     assert "Offset: 1" in w.session.model.text
 
 
-def test_a_length_unit_is_chosen_from_a_list_of_the_keys_units(w):
+def test_a_length_unit_is_chosen_from_a_popup_of_the_keys_units(w):
     w.open_group("Size")
     before = w.session.model.text
-    w.focus("k:Height", "unit_button")
+    w.focus("k:Height", "unit_button.button")
     w.key("enter")
-    assert w.vm.picker_open.get() and [o["value"] for o in w.vm.picker_items.get()] == ["px", "%", "AUTO", "EXPAND"]
-    assert w.vm.picker_title.get() == "Unit of Height" and w.vm.picker_current.get() == "px"
-    w.vm.pick_option("%")
-    w.settle()
+    rows = [i for i in w.built.view._built.nodes if "k:Height" in i and ".unit_button.button.menu.surface.row[" in i and i.endswith(".item")]
+    assert w.built.view._shown_layers and [w.built.view.node(i).get("label") for i in sorted(rows)] == ["px", "%", "AUTO", "EXPAND"]
+    w.key("arrow_down")  # px is checked and has the focus first: the next row is %
+    w.key("enter")
     assert w.diff(before) == ["-Height: 32", "+Height: 32%"]
-    assert not w.vm.picker_open.get()
-    w.focus("k:Height", "unit_button")
+    assert not w.built.view._shown_layers
+    w.focus("k:Height", "unit_button.button")
     w.key("enter")
-    w.vm.pick_option("EXPAND")
-    w.settle()
-    assert "Height: EXPAND" in w.session.model.text and w.node("k:Height", "unit_button").get("label") if False else "Height: EXPAND" in w.session.model.text
+    for _ in range(3):
+        w.key("arrow_down")
+    w.key("enter")
+    assert "Height: EXPAND" in w.session.model.text
 
 
 BOX_SHELL = """---
@@ -293,16 +294,19 @@ def test_a_switch_toggles_from_the_keyboard_and_writes_one_line(w):
     assert "Reserve: true" in w.session.model.text
 
 
-def test_an_enum_is_chosen_from_a_list_with_each_choice(w):
+def test_an_enum_is_chosen_from_a_popup_with_each_choice_and_its_documentation_line(w):
     before = w.session.model.text
     w.open_group("Placement")
-    w.focus("k:Edge", "choose")
+    w.focus("k:Edge", "choose.button")
+    assert w.node("k:Edge", "choose.button").get("expanded") is False
     w.key("enter")
-    assert w.vm.picker_open.get() and [o["value"] for o in w.vm.picker_items.get()] == ["TOP", "BOTTOM", "LEFT", "RIGHT"] and w.vm.picker_current.get() == "TOP"
-    names = {inst.name for inst in w.built.view.handle.composition.walk() if inst.name}
-    assert "picker" in names and "option" in names
-    w.vm.pick_option("RIGHT")
-    w.settle()
+    assert w.built.view._shown_layers and w.node("k:Edge", "choose.button").get("expanded") is True
+    rows = sorted(i for i in w.built.view._built.nodes if "k:Edge" in i and ".choose.button.menu.surface.row[" in i and i.endswith(".item"))
+    assert [w.built.view.node(i).get("label") for i in rows] == ["TOP", "BOTTOM", "LEFT", "RIGHT"]
+    assert w.node("k:Edge", "choose.button.shown").get("text") == "TOP"
+    for _ in range(3):
+        w.key("arrow_down")
+    w.key("enter")
     assert w.diff(before) == ["-Edge: TOP", "+Edge: RIGHT"]
 
 

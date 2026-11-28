@@ -67,6 +67,7 @@ Overlay {
                   Label: <| it['label'] |>
                   Icon: <| it.get('icon', '') |>
                   Trailing_Text: <| it.get('shortcut', '') |>
+                  Hint: <| it.get('hint', '') |>
                   Checked: <| ((it['value'] in checks) if mode == 'check' else (it['value'] == selected)) if mode != 'plain' else it.get('checked') |>
                   Disabled: <| it.get('disabled', False) |>
                   Handlers {
