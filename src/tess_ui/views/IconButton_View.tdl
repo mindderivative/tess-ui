@@ -12,6 +12,7 @@ Container {
     Icon { Type: str, Default: "", Doc: "The icon." }
     Selected_Icon { Type: str, Default: "", Doc: "For a toggle: the icon while it is on (the same icon when empty)." }
     Label { Type: str, Default: "", Doc: "What it does: its accessible name and its tooltip." }
+    Shortcut { Type: str, Default: "", Doc: "Its shortcut, written after the name in the tooltip (`Save (Ctrl+S)`); the accessible name stays the label." }
     Variant {
       Type: enum
       Choices: [standard, filled, tonal, outlined]
@@ -49,7 +50,7 @@ Container {
     Label: <| label |>
     Pressed: <| selected if toggle else None |>
   }
-  Tooltip: <| label |>
+  Tooltip: <| label + (' (' + shortcut + ')' if shortcut != '' else '') |>
   Children {
     Icon {
       Name: icon

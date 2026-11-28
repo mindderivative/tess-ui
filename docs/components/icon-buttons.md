@@ -33,6 +33,7 @@ The Material 3 icon button: standard, filled, tonal or outlined, in five sizes a
 | `Icon` | `str` |  | The icon. |
 | `Selected_Icon` | `str` |  | For a toggle: the icon while it is on (the same icon when empty). |
 | `Label` | `str` |  | What it does: its accessible name and its tooltip. |
+| `Shortcut` | `str` |  | Its shortcut, written after the name in the tooltip (`Save (Ctrl+S)`); the accessible name stays the label. |
 | `Variant` | `standard` or `filled` or `tonal` or `outlined` | `standard` | standard has no container; filled is the strongest; tonal is softer; outlined has a border. |
 | `Size` | `xs` or `s` or `m` or `l` or `xl` | `s` | 32, 40, 56, 96 or 136 pixels tall. |
 | `Width_Kind` | `narrow` or `default` or `wide` | `default` | narrow, as tall as it is, or wide. |

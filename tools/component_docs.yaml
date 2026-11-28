@@ -1226,8 +1226,13 @@ components:
       action button at the end. With `Fit`, items that do not fit move, in order, into the overflow menu; a docked toolbar measures itself, a floating one uses `Max_Length` pixels.
       `Hidden` fades it out and takes its buttons out of the tab order (bind it to the way a list scrolls). `Label` is its accessible name, and `Disabled` stops every button.
 
-      Your own content goes in the default slot after the items. The arrow keys move between the buttons (one Tab stop). The role is `Group`: the engine has no toolbar role.
+      Your own content goes in the default slot after the items. The arrow keys move between the buttons (one Tab stop). The role is `toolbar`.
       With `Fit`, the items that spill and the rows of `Overflow` share one menu, a divider between. Not built: sliding out of the way (it fades).
+
+      The desktop form (ADR-0029): at `compact` a docked bar is 40 tall with 32 pixel buttons and at `dense` 32 with 28 (64 and 40 at `default`). An item may also be `{divider: true}`, a thin line between groups that no arrow
+      key stops at, or `{toggle: true, pressed: <whether it is on>}`, a toggle button that shows its state (pressing one still writes its `value` to `Chosen`; the caller writes `pressed`), and may carry a `shortcut`,
+      which its tooltip shows after the name (`Save (Ctrl+S)`; the accessible name stays `Save`). Not built: a divider that would end the visible run is not dropped when items spill, and the shortcut is not
+      exposed to assistive technology as a key shortcut (the engine has no such property).
     usage_view: |
       Container {
         Name: editor

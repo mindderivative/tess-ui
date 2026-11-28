@@ -262,6 +262,7 @@ HOST_FUNCTIONS: dict[str, Callable[..., Any]] = {
     "days_in_month": _days_in_month, "format_date": _format_date, "current_date": _today,
     "density_token": tokens.density_token,
     "body_role": tokens.body_role,
+    "toolbar_step": tokens.toolbar_step,
     "mnemonic_plain": tokens.mnemonic_plain,
     "mnemonic_of": tokens.mnemonic_of,
     "mnemonic_runs": tokens.mnemonic_runs,
