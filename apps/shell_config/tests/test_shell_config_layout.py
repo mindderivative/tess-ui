@@ -97,3 +97,15 @@ def test_a_long_file_name_ends_in_an_ellipsis_inside_the_files_dock_and_nothing_
     assert all(n.get("layout_x") + n.get("layout_width") <= right + 0.5 for n in labels), "the label ends inside the row"
     assert all(n.get("wrap") == "none" and n.get("overflow") == "ellipsis" for n in labels)
     assert w.built.view._built.outer["root.dock.files_panel.files_pane.files_scroll"].get("orientation") == "vertical"
+
+
+def test_the_expression_button_is_as_wide_as_it_is_high_so_its_round_shape_is_a_circle(w):
+    """Round 2 (fb05): the `{ }` button beside a value was a pill (its label sized it); its neighbour, the reset arrow, is a square 32."""
+    w.select("Text")
+    w.open_all_groups()
+    buttons = [(i, n) for i, n in named(w, "expression_button")]
+    assert buttons, "the keys of a Text block take an expression: they have the button"
+    for _, n in buttons:
+        assert n.get("layout_width") == n.get("layout_height") == 32.0
+    arrows = [n for _, n in named(w, "reset_button")]
+    assert arrows[0].get("layout_width") == buttons[0][1].get("layout_width")

@@ -855,6 +855,7 @@ Container {
                                                   Label: "{ }"
                                                   Variant: <| 'tonal' if cell['expression'] else 'text' |>
                                                   Size: xs
+                                                  Style { Width: 32, Min_Width: 32, Height: 32, Padding: 0 }  # square like the reset arrow beside it, so the round shape is a circle
                                                   A11y {
                                                     Label: Expression for <| item['label'] |>
                                                     Description: "Swap the widget for a field that holds an expression, written between double braces"
