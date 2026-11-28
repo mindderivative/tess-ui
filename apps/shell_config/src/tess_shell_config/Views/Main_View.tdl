@@ -3,7 +3,7 @@ TDL: 0.2
 Name: main
 Tesserae: "0.6"
 ---
-# The configuration application's window: a toolbar, three areas side by side (Files, Structure, Text) and a status line. The ViewModel (viewmodel.py) holds every value
+# The configuration application's window: a toolbar over a dock (Files and Structure as tabs, Editor and View as tabs, Properties, Problems) and a status line. The ViewModel (viewmodel.py) holds every value
 # and action; this file only says where they show. Tab moves through the toolbar, the Files tree, the Structure tree and the text; each tree takes the arrow keys.
 Container {
   Name: main
@@ -374,14 +374,14 @@ Container {
               Name: form_pane
               A11y {
                 Role: group
-                Label: Form
+                Label: Properties
                 Description: "The keys of the selected block in groups. Enter on a group header opens or closes it; Enter in a field writes it."
               }
               Style { Flex_Direction: vertical, Width: 100%, Flex: expand_vertical, Min_Height: 0, Gap: 4, Background: surface_container_low, Corner_Radius: 12, Padding: 8 }
               Children {
                 Text {
                   Name: form_heading
-                  Text: Form
+                  Text: Properties
                   Typography_Role: title_small
                 }
                 Text {
@@ -937,7 +937,7 @@ Container {
           Children {
             Container {
               Name: text_pane
-              A11y { Role: group, Label: Text, Description: "The open file as TDL text. Edit it by hand; the structure follows when it parses." }
+              A11y { Role: group, Label: Editor, Description: "The open file as TDL text. Edit it by hand; the structure follows when it parses." }
               Style {
                 Flex_Direction: vertical
                 Gap: 4
@@ -952,7 +952,7 @@ Container {
               Children {
                 Text {
                   Name: text_heading
-                  Text: Text
+                  Text: Editor
                   Typography_Role: title_small
                 }
                 TextInput {
