@@ -14,7 +14,7 @@ Styles {
       Transition { Corner_Radius: 200, Background: 150 }
     }
   }
-  Rule { Widget: IconButton, Size: xs, Style { Height: 32 } }
+  Rule { Widget: IconButton, Size: xs, Style { Height: <| (32 if density == '' else min(32, density_token(density, 'icon_button_container'))) |> } }
   Rule { Widget: IconButton, Size: s, Style { Height: <| 40 if density == '' else density_token(density, 'icon_button_container') |> } }
   Rule { Widget: IconButton, Size: m, Style { Height: 56 } }
   Rule { Widget: IconButton, Size: l, Style { Height: 96 } }
@@ -22,7 +22,7 @@ Styles {
   Rule {
     Widget: IconButton
     Style {
-      Width: <| {'xs': {'narrow': 28, 'default': 32, 'wide': 40}, 's': {'narrow': 32, 'default': (40 if density == '' else density_token(density, 'icon_button_container')), 'wide': 52}, 'm': {'narrow': 48, 'default': 56, 'wide': 72}, 'l': {'narrow': 64, 'default': 96, 'wide': 128}, 'xl': {'narrow': 104, 'default': 136, 'wide': 184}}[size][width_kind] |>
+      Width: <| {'xs': {'narrow': 28, 'default': (32 if density == '' else min(32, density_token(density, 'icon_button_container'))), 'wide': 40}, 's': {'narrow': 32, 'default': (40 if density == '' else density_token(density, 'icon_button_container')), 'wide': 52}, 'm': {'narrow': 48, 'default': 56, 'wide': 72}, 'l': {'narrow': 64, 'default': 96, 'wide': 128}, 'xl': {'narrow': 104, 'default': 136, 'wide': 184}}[size][width_kind] |>
     }
   }
   # shapes
