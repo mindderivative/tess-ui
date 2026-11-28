@@ -398,7 +398,7 @@ def test_every_row_of_the_form_is_reached_by_tab(w):
 
 def test_selecting_a_block_builds_its_form_and_a_group_of_a_dozen_keys_opens_in_a_bounded_time(w):
     """The bound that holds on any machine is structural: opening a group adds the rows of that group and nothing else. The time is measured and printed; it is asserted (loosely) only off CI,
-    where a loaded runner made a wall-clock bound fail (macOS, 1762 ms against 1000, twice)."""
+    where a loaded runner made a wall-clock bound fail twice."""
     import os
 
     w.select("Monitor  Primary")
