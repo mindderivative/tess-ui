@@ -1015,12 +1015,6 @@ Container {
               A11y { Role: group, Label: "Shell preview", Description: "A picture of the shell's surfaces (bars, panels, frame) as the files describe them. Not interactive." }
               Style { Flex_Direction: vertical, Width: 100%, Flex: expand_vertical, Min_Height: 0, Background: surface_container_low, Corner_Radius: 12, Padding: 8 }
               Children {
-                Text {
-                  Name: preview_message
-                  Text: "No preview yet."
-                  Typography_Role: body_small
-                  Style { Foreground: on_surface_variant }
-                }
                 Container {
                   Name: preview_stage
                   A11y { Hidden: true }

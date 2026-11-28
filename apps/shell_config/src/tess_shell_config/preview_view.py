@@ -84,10 +84,11 @@ def chips(blocks: list[dict[str, Any]]) -> list[str]:
 class PreviewPane:
     """Draws a preview model into `stage` (a node of `window` with a layout size) and keeps the last good picture."""
 
-    def __init__(self, window: Any, stage: Any, message: Any = None) -> None:
+    def __init__(self, window: Any, stage: Any, ink: tuple[int, int, int, int] = (230, 230, 235, 255), plate: tuple[int, int, int, int] = (32, 32, 40, 240)) -> None:
+        """`ink` and `plate` are the application's own text and surface colours (the picture itself uses the model's): the message over a dimmed picture is drawn in them, so it reads."""
         self.window = window
         self.stage = stage
-        self.message = message  # a node whose text says why the picture is not current, or None
+        self.ink, self.plate = ink, plate
         self.model: dict[str, Any] | None = None
         self._nodes: list[Any] = []
         self.unavailable = False
@@ -137,9 +138,10 @@ class PreviewPane:
     def paint(self) -> None:
         self._clear()
         width, height = float(self.stage.get("layout_width") or 0.0), float(self.stage.get("layout_height") or 0.0)
-        if self.message is not None:
-            self.message.set(text="Preview unavailable: see Problems" if self.unavailable else "")
-        if self.model is None or width < 1 or height < 1:
+        if width < 1 or height < 1:
+            return
+        if self.model is None:
+            self._text(self.stage, "Preview unavailable: see Problems" if self.unavailable else "No preview yet.", 8.0, 8.0, 12.0, self.ink, width - 16)
             return
         if width < MIN_WIDTH or height < MIN_HEIGHT:
             self._text(self.stage, "Make the pane larger to see the preview", 8.0, 8.0, 12.0, (200, 200, 200, 255), width - 16)
@@ -147,6 +149,10 @@ class PreviewPane:
         palette = Palette(self.model.get("tokens", {}))
         for output in self.model.get("outputs", [])[:1]:
             self._output(palette, output, width, height)
+        if self.unavailable:
+            text = "Preview unavailable: see Problems"
+            plate = self._box(self.stage, 8.0, height - 32.0, min(width - 16.0, 8.0 * len(text) + 24.0), 24.0, self.plate, 6.0)
+            self._text(plate, text, 12.0, 5.0, 12.0, self.ink, width - 40.0)
 
     def _output(self, palette: Palette, output: dict[str, Any], width: float, height: float) -> None:
         ow, oh = float(output["width"]), float(output["height"])
@@ -165,8 +171,10 @@ class PreviewPane:
         screen.set(clip_children=True)
         for area in self.model.get("desktop", []) if self.model else []:
             if area.get("output") == name:
-                self._box(self.stage, sx(area["x"]), sy(area["y"]), area["width"] * scale, area["height"] * scale, rgba(palette.color("color.surface"), 0.35 * dim), 0.0,
-                          stroke_width=1.0, stroke_color=rgba(palette.color("color.outline"), 0.6 * dim))
+                tint = palette.color("color.primary")
+                area_box = self._box(self.stage, sx(area["x"]), sy(area["y"]), area["width"] * scale, area["height"] * scale, rgba(tint, 0.12 * dim), 0.0,
+                                     stroke_width=1.0, stroke_color=rgba(tint, 0.55 * dim))
+                self._text(area_box, "Desktop", area["width"] * scale - 58.0, area["height"] * scale - 16.0, 10.0, rgba(tint, 0.9 * dim), 52.0)
         for surface in (self.model or {}).get("surfaces", []):
             if surface.get("output") not in (None, name):
                 continue

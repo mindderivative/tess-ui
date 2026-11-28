@@ -26,14 +26,13 @@ def drawn(data, *, bad=None, width=W, height=H):
     window.root.add_child(stage)
     for _ in range(3):
         window.advance(16)
-    message = window.create("text", text="")
-    pane = PreviewPane(window, stage, message)
+    pane = PreviewPane(window, stage)
     pane.show(data)
     if bad is not None:
         pane.show(bad)
     for _ in range(4):
         window.advance(16)
-    return window, pane, message
+    return window, pane
 
 
 def texts(node):
@@ -53,7 +52,7 @@ def test_colours_sides_and_chips_read_the_models_shapes():
 
 
 def test_the_picture_draws_the_surfaces_at_their_real_proportions_in_the_pane():
-    window, pane, _ = drawn(model("panels"))
+    window, pane = drawn(model("panels"))
     screen = max((n for n in pane.stage.children() if n.get("kind") == "box"), key=lambda n: n.get("layout_height"))
     scale = screen.get("layout_width") / 1920
     assert screen.get("layout_height") == pytest.approx(1080 * scale, abs=1.0)
@@ -70,28 +69,46 @@ def test_the_colours_are_the_models_not_the_windows():
     data = model("panels")
     data["tokens"]["color.surface"] = "#ff0000"
     data["surfaces"][0]["style"] = {"Background": {"token": "color.surface", "value": "#ff0000"}}
-    window, pane, _ = drawn(data)
+    window, pane = drawn(data)
     bar = next(n for n in pane.stage.children() if n.get("kind") == "box" and n.get("layout_height") < 20 and n.get("layout_width") > 300)
     assert bar.get("fill")[:3] == (255, 0, 0)
 
 
 def test_a_model_with_a_syntax_error_keeps_the_last_good_picture_dimmed_under_a_message():
-    window, pane, message = drawn(model("panels"), bad={"findings": [{"severity": "error", "message": "x"}], "surfaces": []})
-    assert pane.unavailable and message.get("text") == "Preview unavailable: see Problems"
+    window, pane = drawn(model("panels"), bad={"findings": [{"severity": "error", "message": "x"}], "surfaces": []})
+    assert pane.unavailable and "Preview unavailable: see Problems" in texts(pane.stage)
     assert "Top_Bar" in texts(pane.stage), "the last good picture is still there"
     screen = max((n for n in pane.stage.children() if n.get("kind") == "box"), key=lambda n: n.get("layout_height"))
     assert screen.get("fill")[3] == round(255 * DIM)
     pane.show(model("panels"))
-    assert not pane.unavailable and message.get("text") == ""
+    assert not pane.unavailable and "Preview unavailable: see Problems" not in texts(pane.stage)
+
+
+def test_the_unavailable_message_is_readable_over_the_dimmed_picture_not_lost_in_it():
+    good = drawn(model("panels"))[0].snapshot()
+    bad = drawn(model("panels"), bad={"findings": [{"severity": "error"}], "surfaces": []})[0].snapshot()
+    ink, plate = (230, 230, 235), (32, 32, 40)
+    pixels, width, _ = bad
+    corner = [tuple(pixels[(y * width + x) * 4 : (y * width + x) * 4 + 3]) for y in range(H - 32, H - 8) for x in range(8, 200)]
+    assert any(max(abs(a - b) for a, b in zip(px, ink)) < 30 for px in corner), "light text pixels over the plate"
+    assert sum(1 for px in corner if max(abs(a - b) for a, b in zip(px, plate)) < 12) > 500, "the plate under the message"
+    assert bad[0] != good[0]
+
+
+def test_the_desktop_work_area_is_drawn_and_named():
+    window, pane = drawn(model("panels"))
+    assert "Desktop" in texts(pane.stage)
+    area = next(n for n in pane.stage.children() if n.get("kind") == "box" and n.get("layout_y") > 10 and n.get("fill")[3] < 60 and n.get("layout_height") > 200)
+    assert area.get("stroke_width") == 1.0
 
 
 def test_a_pane_that_is_too_small_says_so():
-    window, pane, _ = drawn(model("panels"), width=120, height=80)
+    window, pane = drawn(model("panels"), width=120, height=80)
     assert texts(pane.stage) == ["Make the pane larger to see the preview"]
 
 
 def test_the_text_alternative_names_the_surfaces_and_says_when_the_picture_is_old():
-    window, pane, _ = drawn(model("panels"))
+    window, pane = drawn(model("panels"))
     alternative = pane.alternative()
     assert alternative.startswith("Shell preview:") and "bar Top_Bar, 1920 by 36 at 0, 0" in alternative and "panel Notes" in alternative
     pane.show({"findings": [{"severity": "error"}], "surfaces": []})
@@ -100,7 +117,7 @@ def test_the_text_alternative_names_the_surfaces_and_says_when_the_picture_is_ol
 
 @pytest.mark.parametrize("name", ["panels", "frame"])
 def test_the_picture_matches_its_golden_screenshot(name):
-    window, _, _ = drawn(model(name))
+    window, _ = drawn(model(name))
     try:
         pixels, width, height = window.snapshot()
     except RuntimeError as error:

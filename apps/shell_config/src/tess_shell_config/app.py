@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from tess_ui import App
+from tess_ui import App, tokens
 from tess_ui.listeners import handled
 
 from tess_shell_config.files import SaveError
@@ -81,7 +81,8 @@ def build(session: ConfigSession, *, width: int = 1280, height: int = 800, dark:
             view.dock_host("root.dock").restore(settings.dock_layout)
     shortcuts.move_focus(1)  # (this shows the Files tab) a key press goes to the focused node, so the window starts with the focus in the Files area
     stage = view.node("root.dock.view_panel.view_pane.preview_stage")
-    preview = PreviewPane(window, stage, view.node("root.dock.view_panel.view_pane.preview_message"))
+    roles = view._scheme or tokens.BASELINE
+    preview = PreviewPane(window, stage, tuple(roles["on_surface"]), tuple(roles["surface_container_high"]))
     drawn = [(0.0, 0.0)]
 
     def refit(event: Any = None) -> None:
