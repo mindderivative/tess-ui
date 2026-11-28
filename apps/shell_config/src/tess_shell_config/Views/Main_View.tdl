@@ -358,7 +358,7 @@ Container {
         DockPanel {
           Name: form_panel
           Title: Properties
-          Style { Zone: right, Width: 320 }
+          Style { Zone: right, Width: 380 }
           Children {
             Container {
               Name: form_pane

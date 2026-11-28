@@ -49,7 +49,7 @@ Container {
       Text: <| draft |>
       Error: <| message if invalid else '' |>
       Disabled: <| disabled |>
-      Style { Flex: fill }
+      Style { Flex: fill, Width: 0, Min_Width: 0 }
       Handlers {
         On_Submit {
           Set { Target: n, Value: <| n + 1 |> }
