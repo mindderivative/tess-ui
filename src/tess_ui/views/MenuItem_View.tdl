@@ -11,6 +11,7 @@ Container {
     Label { Type: str, Default: "", Doc: "The text." }
     Icon { Type: str, Default: "", Doc: "A leading icon." }
     Trailing_Text { Type: str, Default: "", Doc: "Text at the end, such as a shortcut." }
+    Hint { Type: str, Default: "", Doc: "A line of explanation under the label (`body_small`, `on_surface_variant`, up to two lines): the row grows to hold it." }
     Checked { Type: any, Default: null, Doc: "true: a check shows; false: its space is kept; empty: not checkable." }
     Submenu { Type: bool, Default: false, Doc: "A chevron at the end: the item opens another menu." }
     Disabled { Type: bool, Default: false, Doc: "Dimmed, not focusable, and it does not respond." }
@@ -26,7 +27,8 @@ Container {
   Style {
     Flex_Direction: horizontal
     Align_Content: left
-    Height: <| 48 if density == '' else density_token(density, 'menu_item_height') |>
+    Height: <| 'auto' if hint != '' else (48 if density == '' else density_token(density, 'menu_item_height')) |>
+    Min_Height: <| 48 if density == '' else density_token(density, 'menu_item_height') |>
     Width: 100%
   }
   Children {
@@ -44,10 +46,10 @@ Container {
     }
     Text {
       Name: label
-      Text: <| label |>
+      Runs: <| [label, {'text': '\n' + hint, 'font_size': 12, 'weight': 400, 'color': 'on_surface_variant'}] if hint != '' else [label] |>
       Typography_Role: label_large
       Font_Size: <| dense_text_size(density) |>
-      Max_Lines: 1
+      Max_Lines: <| 3 if hint != '' else 1 |>
       Overflow: ellipsis
     }
     Container {

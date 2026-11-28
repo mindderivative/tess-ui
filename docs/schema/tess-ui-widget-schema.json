@@ -22,6 +22,7 @@
         "Checkbox",
         "Chip",
         "ChipGroup",
+        "ChoicePicker",
         "ChordRecorder",
         "CircularProgress",
         "ColourArea",
@@ -2883,6 +2884,232 @@
             "elevated",
             "placeholder",
             "entry"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "widget": {
+            "const": "ChoicePicker"
+          }
+        },
+        "required": [
+          "widget"
+        ]
+      },
+      "then": {
+        "properties": {
+          "widget": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          },
+          "if": {
+            "type": "string"
+          },
+          "for": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "slot": {
+            "type": "string"
+          },
+          "state": {
+            "type": "object"
+          },
+          "style": {
+            "$ref": "#/definitions/style"
+          },
+          "classes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "handlers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "a11y": {
+            "type": "object"
+          },
+          "interaction": {
+            "type": [
+              "boolean",
+              "string"
+            ]
+          },
+          "visible": {
+            "type": [
+              "boolean",
+              "string"
+            ]
+          },
+          "window_region": {
+            "enum": [
+              "drag",
+              "none"
+            ]
+          },
+          "route": {
+            "type": "string"
+          },
+          "focus_group": {
+            "enum": [
+              "horizontal",
+              "vertical",
+              "both"
+            ]
+          },
+          "tooltip": {
+            "type": [
+              "string",
+              "object"
+            ]
+          },
+          "params": {
+            "type": [
+              "array",
+              "object"
+            ]
+          },
+          "expects": {
+            "type": "object"
+          },
+          "tesserae": {
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The release series of Tesserae this file was written for (0.6)."
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#"
+            }
+          },
+          "options": {
+            "anyOf": [
+              {
+                "type": "array"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "The choices, each {value, label} and optionally {hint, disabled}."
+          },
+          "value": {
+            "description": "The value of the chosen option: a pick writes it (a caller that gives an expression keeps its own copy until the expression changes)."
+          },
+          "picked": {
+            "description": "The value of the row last pressed, written before `on_pick` is called: bind it to a name the caller reads in its `On_Pick`."
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "What is being chosen: the button's accessible name."
+          },
+          "placeholder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "Shown while no option has the value."
+          },
+          "hug": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "As wide as the longest label (at least 56 pixels) instead of the width of its place."
+          },
+          "disabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "Dimmed and does not open."
+          },
+          "on_pick": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "Called after a row has been chosen (`value` holds it)."
+          }
+        },
+        "required": [
+          "widget"
+        ],
+        "propertyNames": {
+          "enum": [
+            "widget",
+            "name",
+            "if",
+            "for",
+            "key",
+            "slot",
+            "state",
+            "style",
+            "classes",
+            "handlers",
+            "a11y",
+            "interaction",
+            "visible",
+            "window_region",
+            "route",
+            "focus_group",
+            "tooltip",
+            "params",
+            "expects",
+            "tesserae",
+            "children",
+            "options",
+            "value",
+            "picked",
+            "label",
+            "placeholder",
+            "hug",
+            "disabled",
+            "on_pick"
           ]
         }
       }
@@ -12788,6 +13015,18 @@
             ],
             "description": "Text at the end, such as a shortcut."
           },
+          "hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "A line of explanation under the label (`body_small`, `on_surface_variant`, up to two lines): the row grows to hold it."
+          },
           "checked": {
             "description": "true: a check shows; false: its space is kept; empty: not checkable."
           },
@@ -12845,6 +13084,7 @@
             "label",
             "icon",
             "trailing_text",
+            "hint",
             "checked",
             "submenu",
             "disabled"

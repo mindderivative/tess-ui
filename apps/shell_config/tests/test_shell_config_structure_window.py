@@ -27,13 +27,14 @@ def value_of(w, label):
 
 
 def pick(w, value):
-    """Tab through the open choice list to the row `value` and press Enter on it."""
+    """Arrow down the open command chooser to the row of the option `value` and press Enter on it."""
     assert w.vm.picker_open.get()
+    label = next(o["label"] for o in w.vm.picker_items.get() if o["value"] == value)
     for _ in range(80):
-        if any(re.search(rf"option\[{re.escape(value)}\]$", f) for f in w.focused()):
+        if any(w.built.view.node(f).get("label") == label and ".picker." in f + "." for f in w.focused()):
             w.key("enter")
             return
-        w.key("tab")
+        w.key("arrow_down")
     raise AssertionError(f"no {value} in the list: {[o['value'] for o in w.vm.picker_items.get()]}")
 
 
@@ -306,3 +307,14 @@ def test_delete_outside_the_structure_tree_is_the_fields_own_and_removes_no_bloc
     w.built.shortcuts._focus("form_pane")  # the Properties area
     w.key("delete")
     assert w.session.model.text == before and not w.vm.can_undo.get()
+
+
+def test_escape_closes_the_command_chooser_runs_nothing_and_the_focus_is_back_in_the_structure_tree_AC_CHO_15(w):
+    w.select("Monitor  Primary")
+    before = w.session.model.text
+    w.key("n", ctrl=True, shift=True)
+    assert w.vm.picker_open.get() and len(w.built.view._shown_layers) == 1
+    assert w.built.view.node(w.focused()[0]).get("label") == w.vm.picker_items.get()[0]["label"] and ".picker." in w.focused()[0] + "."
+    w.key("escape")
+    assert not w.vm.picker_open.get() and not w.built.view._shown_layers and w.session.model.text == before
+    assert w.region() == 1, w.focused()

@@ -171,12 +171,9 @@ Container {
     assert max(abs(a - b) for a, b in zip(frame_inside, box)) > 12, "the window's own input keeps its box"
 
 
-def test_the_unit_button_of_a_length_is_a_circle_for_px_and_a_pill_only_for_a_longer_word(w):
-    """Round 2 (item 33): the `px` button was a 39 x 32 pill, oval beside the round buttons next to it."""
-    sizes = {}
-    for inst, node in named(w, "unit_button"):
-        text = w.built.view.node(inst.id + ".label").get("text")
-        sizes[text] = (node.get("layout_width"), node.get("layout_height"))
-    assert sizes.get("px") == (32.0, 32.0), sizes
-    for text, (width, height) in sizes.items():
-        assert height == 32.0 and width >= 32.0, (text, width, height)
+def test_the_unit_picker_of_a_length_is_as_high_as_the_field_and_at_least_56_wide_AC_CHO_14(w):
+    """The unit beside a number is a hugging choice picker: a control's height (32 at compact), content-wide, never under 56."""
+    found = [node for inst, node in named(w, "unit_button")]
+    assert found
+    for node in found:
+        assert node.get("layout_height") == 32.0 and node.get("layout_width") >= 56.0

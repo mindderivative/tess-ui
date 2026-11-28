@@ -91,7 +91,7 @@ def test_every_entry_of_the_structure_menu_and_the_choice_list_has_a_name(w):
     w.settle()
     w.vm.structure_add()
     w.settle()
-    options = [(inst.id, node.get("label")) for inst, node in nodes(w) if inst.name == "option"]
+    options = [(inst.id, node.get("label")) for inst, node in nodes(w) if inst.name == "item" and ".picker." in inst.id + "."]
     assert len(options) >= 3 and all(label for _, label in options)
 
 

@@ -74,7 +74,7 @@ Container {
   Children {
     Autocomplete {
       Label: Fruit
-      Value: <| fruit |>
+      Value: banana
       Options {
         Item { Value: apple, Label: Apple }
         Item { Value: avocado, Label: Avocado, Hint: "Green" }

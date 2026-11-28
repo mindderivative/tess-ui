@@ -1,0 +1,24 @@
+---
+TDL: 0.2
+Name: ChoicePicker
+Tesserae: "0.6"
+---
+# The look of ChoicePicker (ux spec Choice Picker): the button is an outlined control as high as a control of the density (40, 32, 28) with a 1 pixel `outline` border, corners of half its height, padding
+# 16 / 12 / 8 at the start and 12 / 8 / 8 beside the chevron (24, 16, 12 on the label side), the label in `on_surface` and the chevron in `on_surface_variant`.
+Styles {
+  Rule {
+    Widget: ChoicePicker
+    Part: button
+    Style {
+      Height: <| 40 if density == '' else density_token(density, 'control_height') |>
+      Flex_Direction: horizontal
+      Align_Content: left
+      Border_Width: 1
+      Border_Color: outline
+      Corner_Radius: <| 20 if density == '' else density_token(density, 'control_height') / 2 |>
+      Padding: <| {'left': 16 if density in ('', 'default') else (12 if density == 'compact' else 8), 'right': 12 if density in ('', 'default') else 8, 'top': 0, 'bottom': 0} |>
+      Gap: <| 8 if density in ('', 'default', 'compact') else 4 |>
+    }
+  }
+  Rule { Widget: ChoicePicker, Part: chevron, Style { Width: 20, Height: 20, Foreground: on_surface_variant } }
+}

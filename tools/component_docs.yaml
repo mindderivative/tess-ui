@@ -1158,11 +1158,43 @@ components:
         Children {
           Autocomplete {
             Label: Fruit
-            Value: <| fruit |>
+            Value: banana
             Options {
               Item { Value: apple, Label: Apple }
               Item { Value: avocado, Label: Avocado, Hint: "Green" }
               Item { Value: banana, Label: Banana }
+            }
+          }
+        }
+      }
+    see: [guide/overlays.md]
+
+  - slug: choice-pickers
+    title: Choice pickers
+    group: Selection
+    views: [ChoicePicker]
+    md3: |
+      Material 3 has the menu used as a select (Material Web `md-outlined-select`): an outlined button that shows the current choice and opens a menu of the options under it.
+    built: |
+      `ChoicePicker` is a view Tesserae ships (`ChoicePicker_View.tdl`): an outlined button and a `Menu` of the `Options` under it, an anchored popup. `Options` are `{value, label}` and optionally
+      `{hint, disabled}`; a `hint` is a line of explanation under the label (a menu row takes it too: `Hint` on `MenuItem`), the row of the current `Value` is checked, and a disabled row is skipped
+      by the keys. A pick writes `Value` (and `Picked`, for a caller that gives `Value` as an expression and reads the choice in its `On_Pick`). The button is as high as a control of the density (40, 32, 28);
+      `Hug` makes it as wide as its longest label, at least 56 pixels (a length's unit beside its number), otherwise it takes the width of its place.
+
+      Down, Up, Enter and Space on the button open the menu with its first row in focus (a press opens it with none); Escape closes it and the focus is on the button; the rows take the arrow keys, Home, End and
+      typing the start of a label. The button is named by `Label` and says whether it is expanded. Not built: the filter field over about 12 options (an Autocomplete is the control for those), the dialog form
+      below 600 dp, and the `haspopup` flag (the engine has no such property yet). The command chooser (a choice made for a command, with no button) is a `Menu` the application opens under a node it names.
+    usage_view: |
+      Container {
+        Name: panel
+        Style { Width: 360, Height: 160, Padding: 16 }
+        Children {
+          ChoicePicker {
+            Label: Edge
+            Value: <| edge |>
+            Options {
+              Item { Value: top, Label: TOP, Hint: "The top edge of the screen" }
+              Item { Value: bottom, Label: BOTTOM }
             }
           }
         }

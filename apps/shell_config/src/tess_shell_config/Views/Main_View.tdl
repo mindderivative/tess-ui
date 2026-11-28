@@ -448,14 +448,15 @@ Container {
                                                 }
                                               }
                                               If <| cell['ui'] == 'choice' |> {
-                                                Button {
+                                                ChoicePicker {
                                                   Name: choose
-                                                  Label: <| cell['shown'] |>
-                                                  Variant: <| 'tonal' if cell['present'] else 'outlined' |>
-                                                  Size: xs
-                                                  A11y { Label: <| item['label'] |>, Description: <| item['doc'] |> }
+                                                  Label: <| item['label'] |>
+                                                  Value: <| cell['current'] |>
+                                                  Picked: <| picked_value |>
+                                                  Placeholder: <| cell['shown'] |>
+                                                  Options: <| [{'value': c['value'], 'label': c['label'], 'hint': c['doc']} for c in cell['choices']] |>
+                                                  On_Pick: "form_pick_choice(cell['id'], picked_value)"
                                                   Handlers {
-                                                    On_Click { Call { Action: "form_choices", Args: [<| cell['id'] |>] } }
                                                     On_Focus_Enter { Set { Target: active, Value: <| True |> } }
                                                     On_Focus_Exit { Set { Target: active, Value: <| False |> } }
                                                   }
@@ -509,15 +510,15 @@ Container {
                                                       }
                                                     }
                                                     If <| cell['ui'] == 'length' |> {
-                                                      Button {
+                                                      ChoicePicker {
                                                         Name: unit_button
-                                                        Label: <| unit |>
-                                                        Variant: outlined
-                                                        Size: xs
-                                                        Style { Min_Width: 32, Padding { Left: 8, Right: 8, Top: 0, Bottom: 0 } }  # "px" is a circle like the buttons beside it; a longer unit (EXPAND) is a pill
-                                                        A11y { Label: <| item['label'] |> unit, Description: <| item['doc'] |> }
+                                                        Hug: true
+                                                        Label: <| item['label'] |> unit
+                                                        Value: <| cell['unit'] |>
+                                                        Picked: <| picked_value |>
+                                                        Options: <| [{'value': u['value'], 'label': u['label']} for u in cell['units']] |>
+                                                        On_Pick: "form_pick_unit(cell['id'], draft, picked_value)"
                                                         Handlers {
-                                                          On_Click { Call { Action: "form_units", Args: [<| cell['id'] |>, <| draft |>] } }
                                                           On_Focus_Enter { Set { Target: active, Value: <| True |> } }
                                                           On_Focus_Exit { Set { Target: active, Value: <| False |> } }
                                                         }
@@ -1095,64 +1096,16 @@ Container {
       }
     }
     If <| picker_open |> {
-      Dialog {
+      Menu {
         Name: picker
         Open: <| picker_open |>
-        Headline: <| picker_title |>
-        Width: 440
-        Max_Height: 400
-        Actions {
-          Item { Label: Cancel, Value: cancel }
-        }
-        Children {
-          Container {
-            Name: picker_list
-            A11y { Role: list, Label: <| picker_title |> }
-            Style { Flex_Direction: vertical, Width: 100% }
-            Children {
-              For option In <| picker_items |> Key <| option['value'] |> {
-                Container {
-                  Name: option
-                  Interaction: true
-                  A11y { Role: listitem, Label: <| option['label'] |>, Selected: <| option['value'] == picker_current |> }
-                  Handlers {
-                    On_Click { Call { Action: "pick_option", Args: [<| option['value'] |>] } }
-                  }
-                  Style {
-                    Flex_Direction: horizontal
-                    Align_Content: left
-                    Gap: 8
-                    Padding: 8
-                    Width: 100%
-                    Corner_Radius: 8
-                    Background: <| 'secondary_container' if option['value'] == picker_current else 'transparent' |>
-                  }
-                  Children {
-                    If <| option['colour'] != '' |> {
-                      Rect {
-                        Name: swatch
-                        Style { Width: 20, Height: 20, Corner_Radius: 4, Background: <| option['colour'] |>, Border_Width: 1, Border_Color: outline }
-                      }
-                    }
-                    Text {
-                      Name: option_label
-                      Text: <| option['label'] |>
-                      Typography_Role: body_medium
-                      Style { Width: 150 }
-                    }
-                    Text {
-                      Name: option_hint
-                      Text: <| option['hint'] |>
-                      Typography_Role: body_small
-                      Max_Lines: 2
-                      Style { Flex: expand_horizontal, Min_Width: 0, Foreground: on_surface_variant }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
+        Anchor: <| picker_anchor |>
+        Items: <| picker_items |>
+        Chosen: <| picker_chosen |>
+        Focus_First: true
+        Placement: below
+        Width: 320
+        On_Pick: "pick_option(picker_chosen)"
       }
     }
     If <| prompt_open |> {
