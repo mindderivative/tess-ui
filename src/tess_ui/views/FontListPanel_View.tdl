@@ -121,7 +121,8 @@ Container {
                         Text {
                           Name: row_name
                           Text: <| row['family'] |>
-                          Typography_Role: body_large
+                          Typography_Role: <| body_role(density) |>
+                          Font_Size: <| dense_text_size(density) |>
                           Font_Family: <| row['family'] if row['loadable'] else '' |>
                           Max_Lines: 1
                           Overflow: ellipsis

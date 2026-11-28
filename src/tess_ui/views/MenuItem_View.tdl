@@ -46,6 +46,7 @@ Container {
       Name: label
       Text: <| label |>
       Typography_Role: label_large
+      Font_Size: <| dense_text_size(density) |>
       Max_Lines: 1
       Overflow: ellipsis
     }
@@ -58,6 +59,7 @@ Container {
         Name: trailing
         Text: <| trailing_text |>
         Typography_Role: label_large
+        Font_Size: <| dense_text_size(density) |>
       }
     }
     If <| submenu |> {
