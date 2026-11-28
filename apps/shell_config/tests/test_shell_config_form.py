@@ -693,3 +693,32 @@ def test_every_key_of_the_schema_gets_a_widget_shows_its_default_and_writes_a_va
     assert reasons <= {"the shell refuses this key", "cannot be written here", "written in a module's file, not here"}, reasons
     assert {row_id for _, row_id, markers in unwritable if "cannot be written here" in markers} == {"k:Key"}, "the one word of the schema that TDL 0.1 reserves"
     print(f"{seen_keys} cells; not editable: {len(unwritable)} ({len([u for u in unwritable if 'the shell refuses this key' in u[2]])} the shell refuses, the rest reserved words)")
+
+
+# -- a list that must have an item (Transition) ---------------------------------------------------------------------------------------
+
+TRANSITION_DOC = DOC.replace("Box { Name: Item, Width: 30%, Margin: 4 }", "Box { Name: Item, Width: 30%, Margin: 4, Style { Transition: [Width, Opacity] } }")
+
+
+def test_the_last_item_of_a_list_can_be_removed_and_the_key_goes_away(tmp_path, schema):
+    """Round 2 (fb07): with one item the trash button did nothing (the editor stopped at the key's `min_length` of 1); only the reset arrow emptied it. An emptied list takes the key out of the file."""
+    r = Rig(tmp_path, schema, text=TRANSITION_DOC)
+    r.select("Box", "Item")
+    widget = next(x for x in r.build().rows if x.key.name == "Transition").cells[0].widget
+    assert widget._props(["Width"])["min_items"] == 0, "the editor lets the list be emptied"
+    outcome, diff = r.commit("Transition", {"items": []})
+    assert outcome.ok and "Transition" not in r.text and any(line.startswith("-") and "Transition" in line for line in diff)
+
+
+def test_a_blank_name_in_a_list_is_not_an_error_while_it_is_being_typed(tmp_path, schema):
+    """Round 2 (fb08): adding an item shows a blank row, and the form said "Transition, item 1 takes a name ...; '' is not one" at once."""
+    r = Rig(tmp_path, schema, text=TRANSITION_DOC)
+    r.select("Box", "Item")
+    before = r.text
+    outcome, diff = r.commit("Transition", {"items": ["Width", ""]})
+    assert diff == [] and r.text == before, "nothing is written for an unfinished list"
+    assert not r.form.errors, "and nothing is said about it"
+    outcome, diff = r.commit("Transition", {"items": ["Width", "Margin"]})
+    assert "[Width, Margin]" in r.text
+    outcome, _ = r.commit("Transition", {"items": ["Width", "two words"]})
+    assert r.form.errors, "a finished item that is not a name is still refused"

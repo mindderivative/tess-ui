@@ -23,20 +23,31 @@ real_session.ensure()
 HERE = Path(__file__).resolve().parent
 FIXTURES = HERE / "fixtures"
 
-UNAVAILABLE = importlib.util.find_spec("tess_dl") is None or sys.platform == "win32"
+UNAVAILABLE = importlib.util.find_spec("tess_dl") is None or sys.platform != "linux"
 if UNAVAILABLE:
     collect_ignore_glob = ["test_*.py"]  # a directory run; a file named on the command line (CI's partial run) is not ignored, so the hook below skips it
 
 
+def pytest_collection_modifyitems(config, items):
+    """The Configuration Application is Linux only (it configures the shell, which runs on Linux). A directory run never collects its tests elsewhere (`collect_ignore_glob`), but a file named on the command
+    line (CI's partial run) is collected: skip its tests on every other platform."""
+    if sys.platform == "linux":
+        return
+    skip = pytest.mark.skip(reason="the Configuration Application is Linux only")
+    for item in items:
+        if HERE in Path(str(item.path)).parents:
+            item.add_marker(skip)
+
+
 @pytest.hookimpl(hookwrapper=True)
 def pytest_make_collect_report(collector):
-    """A test module of the application that cannot be imported here (no `tess_dl`: it needs Python 3.14; Windows is not run) is skipped, not an error."""
+    """A test module of the application that cannot be imported here (no `tess_dl`: it needs Python 3.14; it is Linux only) is skipped, not an error."""
     outcome = yield
     report = outcome.get_result()
     path = getattr(collector, "path", None)
     if UNAVAILABLE and report.failed and path is not None and HERE in Path(path).parents:
         report.outcome = "skipped"
-        report.longrepr = (str(path), 0, "Skipped: the Configuration Application needs tess_dl (Python 3.14) and is not run on Windows")
+        report.longrepr = (str(path), 0, "Skipped: the Configuration Application needs tess_dl (Python 3.14) and is Linux only")
 
 
 @pytest.fixture(scope="session")
@@ -103,3 +114,14 @@ class FakeShell:
 @pytest.fixture
 def fake_shell(tmp_path):
     return FakeShell(tmp_path / "bin")
+
+
+@pytest.fixture(autouse=True)
+def _keep_the_density_of_the_app_to_this_test():
+    """`App(density=...)` sets the density every view and stylesheet reads (`tess_ui.tel._app_density`, one per process): the configuration window is compact, so a test that built it left every later
+    test of the same process (the toolkit's, in one pytest worker) at compact. Put back what it was."""
+    from tess_ui import tel
+
+    before = tel._app_density.get()
+    yield
+    tel._app_density.set(before)

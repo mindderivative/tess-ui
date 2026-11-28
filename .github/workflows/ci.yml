@@ -164,8 +164,15 @@ jobs:
         run: |
           echo "mode $MODE: $REASON"
           if [ "$MODE" = full ]; then pytest tests/ -n auto; else
-            # A partial selection may be a file whose tests this platform skips whole (the shell-config app's, on Windows): pytest then exits 5, "no tests ran", which is not a failure. Full mode keeps its strictness.
-            pytest $TESTS || { code=$?; [ "$code" -eq 5 ] || exit "$code"; echo "no test ran on this platform (all skipped): ok"; }
+            # The Configuration Application (`apps/shell_config`) is Linux only: its tests run here on Linux and in the `shell-config` job, never on macOS or Windows. Drop its files from the selection by name (not by a skip),
+            # so a PR that touches the app never starts the app's tests on those platforms. A selection left empty is not a failure; a selection whose tests this platform skips whole (pytest exit 5) is not either.
+            selected="$TESTS"
+            if [ "$RUNNER_OS" != Linux ]; then
+              selected=""
+              for t in $TESTS; do case "$t" in apps/shell_config/*) ;; *) selected="$selected $t" ;; esac; done
+            fi
+            if [ -z "$selected" ]; then echo "only Linux-only application tests selected: nothing to run on this platform: ok"
+            else pytest $selected || { code=$?; [ "$code" -eq 5 ] || exit "$code"; echo "no test ran on this platform (all skipped): ok"; }; fi
           fi
 
   # The Configuration Application (`apps/shell_config`). Its tests use a fake `tesserae-shell` script and recorded fixtures; the real shell is never started.
