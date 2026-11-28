@@ -34,6 +34,7 @@ The desktop menu bar: a row of titles (File, Edit, View ...) across the top of a
 | `Label` | `str` | `"Menu bar"` | The bar's accessible name. |
 | `Mnemonics` | `on_alt` or `always` or `never` | `on_alt` | on_alt: the underlines show while the bar is active; always: at rest too; never: not at all (the Alt+letter keys still work). |
 | `Menu_Width` | `float` | `240` | How wide each menu is, from 112 to 280 pixels. |
+| `On_Pick` | `handler` |  | Called after a row has been chosen (`Chosen` holds its value): what the application does with the command. |
 
 Its parts, by name (a stylesheet rule's `Part` or `Name` addresses one): `strip` (Container), `title` (Container), `label` (Text), `menu` (Menu).
 

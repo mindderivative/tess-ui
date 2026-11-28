@@ -18,7 +18,7 @@ tesserae-shell-config --config-dir ~/shell   # a folder of your own
 
 ![The window with a bar selected: the Files, Structure, Form and Text areas](img/shell-config-bar.png)
 
-The window is a toolbar over docked panels: **Files** and **Structure** are tabs on the left, **Editor** and **View** tabs in the middle, **Properties** is on the right and **Problems** at the bottom. **Files** (the folder by type: shells, modules, styles, stylesheets, themes, settings), **Structure** (the open file's blocks as a tree), **Properties** (the keys of the selected
+The window is a menu bar (File, Edit, View, Shell) and a toolbar of icons over docked panels (every toolbar button is also a menu entry, with its shortcut): **Files** and **Structure** are tabs on the left, **Editor** and **View** tabs in the middle, **Properties** is on the right and **Problems** at the bottom. **Files** (the folder by type: shells, modules, styles, stylesheets, themes, settings), **Structure** (the open file's blocks as a tree), **Properties** (the keys of the selected
 block, in groups, each with its doc line as a tooltip) and **Editor** (the same file as TDL). The **Problems** list is below the Editor, and the status line at the bottom. Choosing a block selects it in the Properties; editing in the Editor
 updates the others as soon as the text parses.
 
@@ -84,13 +84,15 @@ Every action works from the keyboard alone; the buttons, the Structure menu and 
 
 | Keys | Does |
 |---|---|
-| Tab, Shift+Tab | Move through the toolbar, the Files tree, the Structure tree, the form and the text |
+| Tab, Shift+Tab | Move through the toolbar (the menu bar is reached with Alt or F10), the Files tree, the Structure tree, the form and the text |
 | Arrow keys, Enter | Move in a tree, open or select the row |
 | Space, Enter | Toggle a switch, press a button, open or close a group of keys |
 | Enter, or Tab out of a field | Write the field's value (nothing is written while you type) |
 | Up, Down (in a number field) | One step of the key's `step`, inside its range |
 | Escape | Close a list, a menu or a dialog |
 | Ctrl+S | Save the open file |
+| Ctrl+Q | Quit (closes the window as its close button does) |
+| F10, Alt pressed and released alone | The menu bar: focus its first title; Alt+F, Alt+E, Alt+V and Alt+S open File, Edit, View and Shell from anywhere |
 | Ctrl+Z | Undo |
 | Ctrl+Y, Ctrl+Shift+Z | Redo |
 | F6, Shift+F6 | Move the focus to the next, or the previous, of the areas: Files, Structure, Form, Text, and Problems when it lists something |

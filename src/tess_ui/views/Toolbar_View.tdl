@@ -24,6 +24,7 @@ Container {
     Fab_Icon { Type: str, Default: "", Doc: "An action button at the end (empty shows none)." }
     Fab_Label { Type: str, Default: "", Doc: "Its name and tooltip." }
     On_Fab { Type: handler, Doc: "What the action button does." }
+    On_Pick { Type: handler, Doc: "Called after an item has been pressed (`chosen` holds its value)." }
     Fit {
       Type: bool
       Default: false
@@ -40,7 +41,7 @@ Container {
   A11y { Role: toolbar, Label: <| label |>, Hidden: <| hidden |> }
   Style {
     Flex_Direction: <| 'vertical' if (variant == 'floating' and orientation == 'vertical') else 'horizontal' |>
-    Align_Content: center
+    Align_Content: <| 'left' if (variant == 'docked') else 'center' |>
     Opacity: <| 0 if hidden else 1 |>
     Transition { Opacity: 200 }
     Width: <| (64 if orientation == 'vertical' else 'auto') if variant == 'floating' else (width if width is not None else '100%') |>
@@ -79,7 +80,10 @@ Container {
                     Tint: <| 'on_primary_container' if vibrant else '' |>
                     Disabled: <| disabled or hidden or o.get('disabled', False) |>
                     Handlers {
-                      On_Click { Set { Target: chosen, Value: <| o['value'] |> } }
+                      On_Click {
+                    Set { Target: chosen, Value: <| o['value'] |> }
+                    Call { Action: "on_pick" }
+                  }
                     }
                   }
                 }

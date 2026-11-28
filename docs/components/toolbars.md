@@ -46,6 +46,7 @@ The Material 3 toolbar: a row (or, floating, a column) of icon buttons with an o
 | `Fab_Icon` | `str` |  | An action button at the end (empty shows none). |
 | `Fab_Label` | `str` |  | Its name and tooltip. |
 | `On_Fab` | `handler` |  | What the action button does. |
+| `On_Pick` | `handler` |  | Called after an item has been pressed (`Chosen` holds its value). |
 | `Fit` | `bool` | `false` | Items that do not fit move into the overflow menu, after the ones that do (a docked toolbar measures itself; a floating one uses `Max_Length`). |
 | `Max_Length` | `any` |  | A floating toolbar's longest length in pixels, for `Fit`. |
 | `Hidden` | `bool` | `false` | Faded out of the way and out of the tab order. |

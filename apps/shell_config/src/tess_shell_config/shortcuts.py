@@ -4,6 +4,8 @@ focus is; the text editor takes Tab and the arrow keys itself, so a shortcut is 
 | Keys | Does |
 |---|---|
 | Ctrl+S | Save the open file |
+| Ctrl+Q | Quit (closes the window as its close button does) |
+| F10, Alt pressed and released alone | The menu bar: focus its first title; Alt+F, Alt+E, Alt+V and Alt+S open File, Edit, View and Shell (the menu bar of the toolkit hears these, not `handle`) |
 | Ctrl+Z | Undo |
 | Ctrl+Y, Ctrl+Shift+Z | Redo |
 | F6, Shift+F6 | Move the focus to the next, or the previous, of the areas: Files, Structure, Form, Text, and Problems when it lists something |
@@ -41,7 +43,7 @@ _STRUCTURE = {"n": "add", "m": "move_to", "d": "duplicate"}
 #: The four areas in the order F6 visits them: (the node that takes the focus, the pane it is in).
 REGIONS = (("files_tree", "files_pane"), ("structure_tree", "structure_pane"), ("editor", "text_pane"), ("form_pane", "form_pane"), ("problem_row", "problems_pane"))
 #: The tab of the dock each pane is in (a pane in a tab that is not showing has no focus to give: its tab is shown first).
-PANEL_TITLES = {"files_pane": "Files", "files_tree": "Files", "structure_pane": "Structure", "structure_tree": "Structure", "text_pane": "Editor", "editor": "Editor",
+PANEL_TITLES = {"view_pane": "View", "files_pane": "Files", "files_tree": "Files", "structure_pane": "Structure", "structure_tree": "Structure", "text_pane": "Editor", "editor": "Editor",
                 "form_pane": "Properties", "problems_pane": "Problems", "problem_row": "Problems"}
 
 
@@ -86,6 +88,8 @@ class Shortcuts:
             self.viewmodel.structure_actions.remove()
         elif key == "contextmenu" or (key == "f10" and shift and not ctrl):
             self.viewmodel.structure_actions.open_menu()
+        elif ctrl and not shift and key == "q":
+            self.viewmodel.run_command("quit")
         elif ctrl and key == "s":
             self.viewmodel.save()
         elif ctrl and key == "z" and not shift:
@@ -176,6 +180,13 @@ class Shortcuts:
                 self.view.node(inst.id).focus()
                 return True
         return False
+
+    def go_to(self, area: str) -> None:
+        """`View > Go to`: show the panel of `area` and give it the focus (the View panel is a picture with nothing to focus: its tab is shown)."""
+        if area == "view_pane":
+            self.reveal(area)
+        else:
+            self._focus(area)
 
     def reveal(self, area: str) -> None:
         """Show the tab of the dock that holds `area` (a pane or the node that takes its focus), so that the area is there to take the focus."""

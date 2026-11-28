@@ -349,12 +349,12 @@ def test_the_apply_choice_is_kept_in_the_state_folder_and_read_back(tmp_path, fa
     assert rig.vm.apply_on_edit.get() is False
 
 
-def test_the_apply_switch_in_the_window_is_the_signal(rig):
-    switch = rig.built.view.node("root.apply_switch") if False else None
-    names = rig.row_names()
-    assert {"apply_switch", "check_button", "reload_button"} <= set(names) and switch is None
+def test_the_apply_toggle_in_the_toolbar_is_the_signal(rig):
+    toggle = rig.built.view.node("root.toolbar.group.entry[apply].item")
+    assert toggle.get("pressed") is False
     rig.vm.apply_on_edit.set(True)
     rig.settle()
+    assert toggle.get("pressed") is True
     rig.vm.apply_changed(True)
     assert rig.services.settings.apply_as_i_edit and "Apply as I edit is on" in rig.vm.status.get()
 

@@ -239,10 +239,10 @@ def test_the_toolbar_buttons_follow_the_state_and_save_writes_the_file(folder, t
     w.session.model.set_value((0,), "Index", "7")
     w.vm.sync()
     assert w.vm.dirty.get() and w.vm.can_undo.get()
-    w.window.simulate("click", node=w.built.view.node("root.toolbar.save_button"))
+    w.window.simulate("click", node=w.built.view.node("root.toolbar.group.entry[save].item"))
     w.settle()
     assert b"Index: 7" in (folder / "Shells" / "Main_Shell.tdl").read_bytes() and not w.vm.dirty.get()
-    w.window.simulate("click", node=w.built.view.node("root.toolbar.undo_button"))
+    w.window.simulate("click", node=w.built.view.node("root.toolbar.group.entry[undo].item"))
     w.settle()
     assert w.vm.dirty.get() and "Index: 0" in w.vm.text.get()
 
@@ -253,7 +253,7 @@ def test_the_format_button_formats_only_when_asked(folder, tmp_path):
     w.vm.open_file("Shells/Main_Shell.tdl")
     w.settle()
     assert w.session.model.text == shell.read_text(), "opening formats nothing"
-    w.window.simulate("click", node=w.built.view.node("root.toolbar.format_button"))
+    w.window.simulate("click", node=w.built.view.node("root.toolbar.group.entry[format].item"))
     w.settle()
     assert w.vm.status.get() == "Formatted" and w.session.model.dirty and shell.read_bytes() == (CONFIG / "Shells" / "Main_Shell.tdl").read_bytes()
 

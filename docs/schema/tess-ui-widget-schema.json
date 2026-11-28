@@ -12073,6 +12073,18 @@
               }
             ],
             "description": "How wide each menu is, from 112 to 280 pixels."
+          },
+          "on_pick": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "Called after a row has been chosen (`chosen` holds its value): what the application does with the command."
           }
         },
         "required": [
@@ -12105,7 +12117,8 @@
             "chosen",
             "label",
             "mnemonics",
-            "menu_width"
+            "menu_width",
+            "on_pick"
           ]
         }
       }
@@ -22630,6 +22643,18 @@
             ],
             "description": "What the action button does."
           },
+          "on_pick": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "pattern": "<\\|"
+              }
+            ],
+            "description": "Called after an item has been pressed (`chosen` holds its value)."
+          },
           "fit": {
             "anyOf": [
               {
@@ -22719,6 +22744,7 @@
             "fab_icon",
             "fab_label",
             "on_fab",
+            "on_pick",
             "fit",
             "max_length",
             "hidden",
