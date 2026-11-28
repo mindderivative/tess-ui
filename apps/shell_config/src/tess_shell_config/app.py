@@ -11,6 +11,7 @@ from tess_ui import App
 from tess_ui.listeners import handled
 
 from tess_shell_config.files import SaveError
+from tess_shell_config.preview_view import PreviewPane
 from tess_shell_config.session import ConfigSession
 from tess_shell_config.shortcuts import Shortcuts
 from tess_shell_config.viewmodel import ShellConfigViewModel
@@ -32,6 +33,7 @@ class Built:
     window: Any
     shortcuts: Shortcuts
     settings: Any = None
+    preview: Any = None
 
     def close(self) -> None:
         """Keep where the panels are, and stop what `live` started (the file watch)."""
@@ -78,4 +80,15 @@ def build(session: ConfigSession, *, width: int = 1280, height: int = 800, dark:
         with contextlib.suppress(KeyError, ValueError, TypeError):
             view.dock_host("root.dock").restore(settings.dock_layout)
     shortcuts.move_focus(1)  # (this shows the Files tab) a key press goes to the focused node, so the window starts with the focus in the Files area
-    return Built(app, view, viewmodel, window, shortcuts, settings)
+    stage = view.node("root.dock.view_panel.view_pane.preview_stage")
+    preview = PreviewPane(window, stage, view.node("root.dock.view_panel.view_pane.preview_message"))
+    drawn = [(0.0, 0.0)]
+
+    def refit(event: Any = None) -> None:
+        size = (float(stage.get("layout_width") or 0.0), float(stage.get("layout_height") or 0.0))
+        if size != drawn[0]:  # drawing adds nodes, which lays out again: only a new size draws again
+            drawn[0] = size
+            preview.refit()
+
+    view._listen(stage, "layout", refit)
+    return Built(app, view, viewmodel, window, shortcuts, settings, preview)

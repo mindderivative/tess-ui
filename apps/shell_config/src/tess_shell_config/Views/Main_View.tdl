@@ -1010,19 +1010,24 @@ Container {
           Title: View
           Style { Zone: center }
           Children {
-                Container {
-                  Name: view_pane
-                  A11y { Role: group, Label: View, Description: "A live picture of the shell's surfaces. Not built yet." }
-                  Style { Flex_Direction: vertical, Align_Content: center, Width: 100%, Flex: expand_vertical, Min_Height: 0, Background: surface_container_low, Corner_Radius: 12, Padding: 8 }
-                  Children {
-                    Text {
-                      Name: view_placeholder
-                      Text: "The shell mockup will show here."
-                      Typography_Role: body_medium
-                      Style { Foreground: on_surface_variant }
-                    }
-                  }
+            Container {
+              Name: view_pane
+              A11y { Role: group, Label: "Shell preview", Description: "A picture of the shell's surfaces (bars, panels, frame) as the files describe them. Not interactive." }
+              Style { Flex_Direction: vertical, Width: 100%, Flex: expand_vertical, Min_Height: 0, Background: surface_container_low, Corner_Radius: 12, Padding: 8 }
+              Children {
+                Text {
+                  Name: preview_message
+                  Text: "No preview yet."
+                  Typography_Role: body_small
+                  Style { Foreground: on_surface_variant }
                 }
+                Container {
+                  Name: preview_stage
+                  A11y { Hidden: true }
+                  Style { Width: 100%, Flex: expand_vertical, Min_Height: 0 }
+                }
+              }
+            }
           }
         }
         DockPanel {
