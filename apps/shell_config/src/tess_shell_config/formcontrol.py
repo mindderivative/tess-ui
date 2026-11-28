@@ -11,7 +11,8 @@ import re
 from pathlib import Path
 from typing import Any
 
-from tess_ui import Signal, batch
+from tess_ui import Effect, Signal, batch
+from tess_ui.reactive import untrack
 from tess_ui.file_dialog import FileDialogRequest
 
 from tess_shell_config.form import BlockStore, Form, Outcome
@@ -40,14 +41,18 @@ class FormController:
         self.picker_title = Signal("")
         self.picker_items = Signal([])
         self.picker_current = Signal("")
+        self.picker_chosen = Signal("")
+        self.picked_value = Signal("")  # the row a choice picker of the form last chose (it writes it before the key is committed)
+        self.picker_anchor = Signal("structure_tree")
         self.files = FileDialogRequest(viewmodel)
-        self._picking: tuple[str, str, str] | None = None  # (what, cell id, the number typed beside a unit choice)
+        self._picking: str | None = None  # which command chooser is open
         self._busy = False
         self._hooks: dict[str, Any] = {}
+        self._closing = Effect(self._chooser_closed)
         for name, signal in {"form_items": self.items, "form_notes": self.notes, "form_title": self.title, "picker_open": self.picker_open, "picker_title": self.picker_title,
-                             "picker_items": self.picker_items, "picker_current": self.picker_current}.items():
+                             "picker_items": self.picker_items, "picker_current": self.picker_current, "picker_chosen": self.picker_chosen, "picked_value": self.picked_value, "picker_anchor": self.picker_anchor}.items():
             setattr(viewmodel, name, signal)
-        for name in ("commit", "reset", "expression", "token", "choices", "units", "pick_option", "browse", "colour", "key", "group", "block"):
+        for name in ("commit", "reset", "expression", "token", "pick_choice", "pick_unit", "pick_option", "browse", "colour", "key", "group", "block"):
             setattr(viewmodel, ("form_" if name != "pick_option" else "") + name, getattr(self, name))
 
     # -- publishing --------------------------------------------------------------------------------------------------------------
@@ -174,21 +179,15 @@ class FormController:
         if self.form is not None and name in _UP | _DOWN:
             self._done(self.form.step(str(cell_id), 1 if name in _UP else -1, str(text)))
 
-    def choices(self, cell_id: str) -> None:
-        """Open the list of an enum's choices, each with its doc where the schema has one."""
-        if self.form is None:
-            return
-        cell = self.form.cell(str(cell_id))
-        options = [{"value": c["value"], "label": c["label"], "hint": c["doc"], "colour": ""} for c in cell.shown.get("choices", [])]
-        self._open_picker("choice", str(cell_id), f"Choose {self._label(cell_id)}", options, str(cell.shown.get("current", "")))
+    def pick_choice(self, cell_id: str, value: str) -> None:
+        """The choice picker of an enum key chose `value`: write it."""
+        if self.form is not None and not self._busy:
+            self._done(self.form.commit(str(cell_id), {"value": str(value)}))
 
-    def units(self, cell_id: str, number: str) -> None:
-        """Open the list of a length's units (`px`, `%`, `AUTO`, `EXPAND`...)."""
-        if self.form is None:
-            return
-        cell = self.form.cell(str(cell_id))
-        options = [{"value": u["value"], "label": u["label"], "hint": "", "colour": ""} for u in cell.shown.get("units", [])]
-        self._open_picker("unit", str(cell_id), f"Unit of {self._label(cell_id)}", options, str(cell.shown.get("unit", "")), str(number))
+    def pick_unit(self, cell_id: str, number: str, value: str) -> None:
+        """The unit picker beside a length's number chose `value`: write the number typed with it."""
+        if self.form is not None and not self._busy:
+            self._done(self.form.commit(str(cell_id), {"text": str(number), "unit": str(value)}))
 
     def token(self, cell_id: str, ref: str) -> None:
         """The shipped token button picked a token: write `$group.name` (a reference is a plain word, written as it is). The button lists only the groups the key accepts, the preferred tokens first."""
@@ -200,35 +199,42 @@ class FormController:
         row_id = str(cell_id).split("|", 1)[0]
         return next((r.label for r in self.form.view.rows if r.id == row_id), row_id)
 
-    def _open_picker(self, what: str, cell_id: str, title: str, options: list[dict[str, str]], current: str, number: str = "") -> None:
-        self._picking = (what, cell_id, number)
+    def open_choice(self, what: str, title: str, options: list[dict[str, str]], current: str = "", hooks: dict[str, Any] | None = None, anchor: str = "structure_tree") -> None:
+        """Open the command chooser for an action (the Structure area's Add child and Move into, the Files area's New file): a menu of `options` under the node called `anchor`; `hooks[what](value)` is
+        called with the value of the row the person picks, and Escape or a press outside runs nothing."""
+        self._hooks = hooks or {}
+        self._picking = what
         self.picker_title.set(title)
         self.picker_items.set(options)
         self.picker_current.set(current)
+        self.picker_chosen.set("")
+        self.picker_anchor.set(anchor)
         self.picker_open.set(True)
 
-    def open_choice(self, what: str, title: str, options: list[dict[str, str]], current: str = "", hooks: dict[str, Any] | None = None) -> None:
-        """Open the choice list for an action that is not a form cell (the Structure area's Add and Move to): `hooks[what](value)` is called with the value of the row the person picks."""
-        self._hooks = hooks or {}
-        self._open_picker(what, "", title, options, current)
+    def _chooser_closed(self) -> None:
+        """The command chooser's `open` turned false. A pick turns it false first and calls `pick_option` right after (so `_picking` is cleared by the next tick); Escape or a press outside leaves it set:
+        nothing runs then, and the focus goes back to the tree the chooser was opened for."""
+        if self.picker_open.get() or self._picking is None:
+            return
+        shortcuts = self.vm.shortcuts
+        if shortcuts is None:
+            return
+        anchor = untrack(self.picker_anchor.get)
+
+        def dismissed() -> None:
+            if self._picking is not None and not self.picker_open.get():
+                self._picking = None
+                shortcuts._focus(anchor)
+
+        shortcuts.view.window.after(0.0, dismissed)
 
     def pick_option(self, value: str) -> None:
-        """The person chose a row of the picker list."""
-        picking, self._picking = self._picking, None
+        """The person chose a row of the command chooser."""
+        what, self._picking = self._picking, None
         self.picker_open.set(False)
-        if picking is None:
-            return
-        what, cell_id, number = picking
-        hook = self._hooks.get(what)
+        hook = self._hooks.get(what) if what is not None else None
         if hook is not None:
             hook(str(value))
-            return
-        if self.form is None:
-            return
-        if what == "choice":
-            self._done(self.form.commit(cell_id, {"value": str(value)}))
-        elif what == "unit":
-            self._done(self.form.commit(cell_id, {"text": number, "unit": str(value)}))
 
     def block(self, cell_id: str) -> None:
         """The button of a key whose value is a block: add the block, or (when the file has it) choose it in the structure, where its own keys and children are edited."""

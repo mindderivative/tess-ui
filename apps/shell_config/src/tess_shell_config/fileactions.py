@@ -92,7 +92,7 @@ class FileActions:
     def new(self) -> None:
         """Ask which type of file to make (the choice list), then its name."""
         options = [{"value": t.root, "label": t.root, "hint": line, "colour": ""} for t, line in NEW_TYPES]
-        self.vm.form.open_choice("new_file", "New file of type", options, hooks={"new_file": self._type_chosen})
+        self.vm.form.open_choice("new_file", "New file of type", options, hooks={"new_file": self._type_chosen}, anchor="files_tree")
 
     def _type_chosen(self, root: str) -> None:
         file_type = FileType.for_root(root)

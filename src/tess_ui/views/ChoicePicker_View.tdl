@@ -1,0 +1,74 @@
+---
+TDL: 0.2
+Name: ChoicePicker
+Tesserae: "0.6"
+---
+# The choice picker (ux spec Choice Picker): an outlined button that shows the current choice of a closed set, and opens a `Menu` of the options under it (an anchored popup, not a dialog). `options` is a
+# list of {value, label} and optionally {hint, disabled}: a `hint` is a line of explanation under the label; the row of the current value is checked. Pressing a row writes its `value` to `value` and calls `on_pick`.
+# Down, Up, Enter and Space on the button open the menu with the first row in focus; Escape closes it and the focus is on the button; the rows take the arrow keys, Home, End and typing the start of a label.
+# `hug: true` makes the button as wide as its longest label (a length's unit beside a number field, at least 56 pixels); otherwise it takes the width of its place. The button is as tall as a control of the
+# density (40, 32, 28). Not built: the filter field over about 12 options (use an Autocomplete), the dialog form below 600 dp and `haspopup` (the engine has no such property yet).
+Container {
+  Params {
+    Options { Type: list, Default: [], Doc: "The choices, each {value, label} and optionally {hint, disabled}." }
+    Value { Type: any, Default: "", Model: true, Doc: "The value of the chosen option: a pick writes it (a caller that gives an expression keeps its own copy until the expression changes)." }
+    Picked { Type: any, Default: "", Model: true, Doc: "The value of the row last pressed, written before `on_pick` is called: bind it to a name the caller reads in its `On_Pick`." }
+    Label { Type: str, Default: "", Doc: "What is being chosen: the button's accessible name." }
+    Placeholder { Type: str, Default: "Choose", Doc: "Shown while no option has the value." }
+    Hug { Type: bool, Default: false, Doc: "As wide as the longest label (at least 56 pixels) instead of the width of its place." }
+    Disabled { Type: bool, Default: false, Doc: "Dimmed and does not open." }
+    On_Pick { Type: handler, Doc: "Called after a row has been chosen (`value` holds it)." }
+  }
+  State { Menu_Open: false, Keyed: false, Avail: 0 }
+  Style { Flex_Direction: vertical, Width: <| 'auto' if hug else '100%' |>, Min_Width: <| 56 if hug else 0 |> }
+  Children {
+    Container {
+      Name: button
+      Interaction: true
+      Measured_Width: <| avail |>
+      Disabled: <| disabled |>
+      A11y {
+        Role: button
+        Label: <| label |>
+        Value_Text: <| ([o['label'] for o in options if o['value'] == value] + [placeholder])[0] |>
+        Expanded: <| menu_open |>
+      }
+      Handlers {
+        On_Press { Set { Target: keyed, Value: <| False |> } }
+        On_Click { Set { Target: menu_open, Value: <| not menu_open |> } }
+        On_Key {
+          Set { Target: keyed, Value: <| True if event.key in ('arrow_down', 'arrow_up', 'enter', ' ') else keyed |> }
+          Set { Target: menu_open, Value: <| True if event.key in ('arrow_down', 'arrow_up') else menu_open |> }
+        }
+      }
+      Children {
+        Text {
+          Name: shown
+          Text: <| ([o['label'] for o in options if o['value'] == value] + [placeholder])[0] |>
+          Typography_Role: label_large
+          Font_Size: <| dense_text_size(density) |>
+          Max_Lines: 1
+          Overflow: ellipsis
+          Style { Flex: expand_horizontal, Min_Width: 0, Foreground: <| 'on_surface' if len([o for o in options if o['value'] == value]) > 0 else 'on_surface_variant' |> }
+        }
+        Icon {
+          Name: chevron
+          Icon: <| 'chevron_up' if menu_open else 'chevron_down' |>
+        }
+        Menu {
+          Name: menu
+          Open: <| menu_open |>
+          Focus_First: <| keyed |>
+          Anchor: parent
+          Placement: below
+          Mode: radio
+          Selected: <| value |>
+          Chosen: <| picked |>
+          Items: <| [dict(o, checked=(o['value'] == value)) for o in options] |>
+          Width: <| max(160, avail) |>
+          On_Pick: "value = picked; menu_open = False; on_pick()"
+        }
+      }
+    }
+  }
+}

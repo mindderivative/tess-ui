@@ -91,6 +91,7 @@ A node's widget is a built-in one, one the app registered, or a view found by na
 | [`Checkbox`](../components/checkboxes.md) | A box that is on or off. |
 | [`Chip`](../components/chips.md) | The Material 3 chip: assist (an action), filter (a toggle), input (a piece of what the user entered, with a close) or suggestion (a suggested reply o… |
 | [`ChipGroup`](../components/chips.md) | A group of chips, wrapping onto new rows. |
+| [`ChoicePicker`](../components/choice-pickers.md) | The choice picker (ux spec Choice Picker): an outlined button that shows the current choice of a closed set, and opens a `Menu` of the options under… |
 | [`ChordRecorder`](../components/key-chord-fields.md) | The key-chord field's mind: it draws nothing. |
 | [`CircularProgress`](../components/progress-indicators.md) | A progress ring. |
 | [`ColourArea`](../components/colour-pickers.md) | A square of saturation (across) and value (up) for the colour's hue, with a handle: drag it, or move it with the arrow keys (Shift for a bigger step). |

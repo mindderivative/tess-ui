@@ -58,6 +58,7 @@ One row of a menu (Material 3): 48 pixels tall, `label_large` text, an optional 
 | `Label` | `str` |  | The text. |
 | `Icon` | `str` |  | A leading icon. |
 | `Trailing_Text` | `str` |  | Text at the end, such as a shortcut. |
+| `Hint` | `str` |  | A line of explanation under the label (`body_small`, `on_surface_variant`, up to two lines): the row grows to hold it. |
 | `Checked` | `any` |  | true: a check shows; false: its space is kept; empty: not checkable. |
 | `Submenu` | `bool` | `false` | A chevron at the end: the item opens another menu. |
 | `Disabled` | `bool` | `false` | Dimmed, not focusable, and it does not respond. |
