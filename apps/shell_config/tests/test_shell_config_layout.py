@@ -97,3 +97,50 @@ def test_a_long_file_name_ends_in_an_ellipsis_inside_the_files_dock_and_nothing_
     assert all(n.get("layout_x") + n.get("layout_width") <= right + 0.5 for n in labels), "the label ends inside the row"
     assert all(n.get("wrap") == "none" and n.get("overflow") == "ellipsis" for n in labels)
     assert w.built.view._built.outer["root.dock.files_panel.files_pane.files_scroll"].get("orientation") == "vertical"
+
+
+def test_the_window_stylesheet_boxes_its_own_inputs_not_the_input_inside_a_text_field(tmp_path):
+    """The owner's fb01: the token search (a TextField) showed a dark pill of its own inside its outlined frame, over the frame: the window stylesheet's rule for every TextInput also matched the input a
+    TextField holds. The dark box is for the inputs the window writes itself (class `boxed`)."""
+    from tess_ui import App
+
+    from tess_shell_config.app import ROOT
+
+    (tmp_path / "Views").mkdir()
+    shutil.copy(ROOT / "Views" / "Main_Stylesheet.tdl", tmp_path / "Views" / "Main_Stylesheet.tdl")
+    (tmp_path / "Views" / "Main_View.tdl").write_text("""---
+TDL: 0.2
+Name: main
+---
+Container {
+  Name: main
+  Style { Flex_Direction: vertical, Width: 400, Height: 200, Gap: 8 }
+  Children {
+    TextField { Name: field, Variant: outlined, Label: "Search tokens", Leading: search, Style { Width: 360 } }
+    TextInput { Name: bare, Classes: [boxed], Text: "x", Typography_Role: body_medium, Style { Width: 200 } }
+  }
+}
+""")
+    app = App(root=tmp_path, width=400, height=200, dark=True, theme_seed=(0x67, 0x50, 0xA4, 0xFF), stylesheet=tmp_path / "Views" / "Main_Stylesheet.tdl")
+    view = app.open_view("Main")
+    app.show("main")
+    for _ in range(8):
+        view.window.advance(16)
+    window = view.window
+    try:
+        pixels, width, _ = window.snapshot()
+    except RuntimeError as error:
+        pytest.skip(f"no GPU to render with: {error}")
+    field = view.node("root.field")
+    inner = next(n for i in view.handle.composition.walk() if i.id.startswith("root.field.") for n in [view._built.nodes.get(i.id)] if n is not None and n.get("kind") == "text_input")
+
+    def pixel(x, y):
+        at = (int(y) * width + int(x)) * 4
+        return tuple(pixels[at : at + 3])
+
+    frame_inside = pixel(field.get("layout_x") + 5, field.get("layout_y") + field.get("layout_height") / 2 - 6)  # inside the frame, left of the icon
+    over_input = pixel(inner.get("layout_x") + inner.get("layout_width") - 20, inner.get("layout_y") + inner.get("layout_height") / 2 + 6)  # where the dark pill was
+    assert max(abs(a - b) for a, b in zip(frame_inside, over_input)) < 12, f"the input paints no box of its own: {frame_inside} vs {over_input}"
+    bare = view.node("root.bare")
+    box = pixel(bare.get("layout_x") + bare.get("layout_width") - 6, bare.get("layout_y") + bare.get("layout_height") / 2)
+    assert max(abs(a - b) for a, b in zip(frame_inside, box)) > 12, "the window's own input keeps its box"
